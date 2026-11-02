@@ -10,7 +10,8 @@ permissions:
   contents: read
 concurrency:
   group: backend-${{ github.ref }}
-  cancel-in-progress: true
+  # Termine o ensaio com banco e registre o resultado antes de iniciar a próxima revisão.
+  cancel-in-progress: false
 jobs:
   test:
     runs-on: ubuntu-latest

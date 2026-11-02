@@ -5,12 +5,12 @@ void main() {
   group('WebSocketService URL builder', () {
     test('keeps explicit 443 for https base urls', () {
       final url = buildWebSocketUrlForTest(
-        'http://127.0.0.1:8080',
+        'https://api.example.invalid',
       );
 
       expect(
         url,
-        'http://127.0.0.1:8080:443/ws-location',
+        'https://api.example.invalid:443/ws-location',
       );
     });
 
