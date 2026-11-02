@@ -3,6 +3,7 @@ name: WhatsApp, workflows e receptor sintético
   pull_request:
     paths: ['src/whatsapp/**', 'src/backend/contracts/**', 'scripts/check_whatsapp.py', '.github/workflows/whatsapp.yml']
   push:
+    branches: [main]
     paths: ['src/whatsapp/**', 'src/backend/contracts/**', 'scripts/check_whatsapp.py', '.github/workflows/whatsapp.yml']
   workflow_dispatch:
 permissions:

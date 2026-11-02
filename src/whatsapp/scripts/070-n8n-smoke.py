@@ -270,7 +270,7 @@ def smoke(runtime, receipt, manifest, hashes, workflows):
         endpoint = r.call("endpoint", ["context", "inspect", context, "--format", "{{.Endpoints.docker.Host}}"]).decode().strip()
         require(endpoint.startswith("unix:///") and "\n" not in endpoint, "DOCKER_NOT_LOCAL_UNIX")
         r.context = context
-        image_platform = r.call("image-platform", ["image", "inspect", "--platform=linux/amd64", IMAGE, "--format", "{{.Os}}/{{.Architecture}}"]).decode().strip()
+        image_platform = r.call("image-platform", ["image", "inspect", IMAGE, "--format", "{{.Os}}/{{.Architecture}}"]).decode().strip()
         require(image_platform == manifest["imagePlatform"], "IMAGE_PLATFORM")
         receipt.update({"image": IMAGE, "imagePlatform": image_platform, "hostPlatform": platform.system()+"/"+platform.machine()})
         env = {"N8N_ENCRYPTION_KEY": key, "N8N_DIAGNOSTICS_ENABLED": "false", "N8N_VERSION_NOTIFICATIONS_ENABLED": "false",

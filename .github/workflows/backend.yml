@@ -3,6 +3,7 @@ name: Backend e integração sintética
   pull_request:
     paths: ['src/backend/**', 'src/whatsapp/**', 'scripts/check_backend.sh', '.github/workflows/backend.yml']
   push:
+    branches: [main]
     paths: ['src/backend/**', 'src/whatsapp/**', 'scripts/check_backend.sh', '.github/workflows/backend.yml']
   workflow_dispatch:
 permissions:
@@ -29,8 +30,6 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-          cache: maven
-          cache-dependency-path: src/backend/pom.xml
       - name: Node 22 do worker
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:

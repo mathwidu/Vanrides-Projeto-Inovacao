@@ -328,6 +328,27 @@ class EvidenceTest(unittest.TestCase):
                 self.assertNotIn(SENTINEL, json.dumps(kwargs["env"]))
                 self.assertFalse(kwargs.get("shell", False))
 
+    def test_image_inspect_uses_supported_arguments_and_still_rejects_wrong_platform(self):
+        manifest, hashes, workflows = smoke.load_bundle()
+        for platform, code in ((b"linux/amd64", "STOP_BEFORE_MUTATION"), (b"linux/arm64", "IMAGE_PLATFORM")):
+            with self.subTest(platform=platform), tempfile.TemporaryDirectory() as tmp:
+                calls = []
+                receipt = {"steps": []}
+                def call(_runner, step, args, *unused, **kwargs):
+                    calls.append((step, args))
+                    if step == "context": return b"local-test"
+                    if step == "endpoint": return b"unix:///synthetic/docker.sock"
+                    if step == "image-platform": return platform
+                    raise smoke.SmokeError("STOP_BEFORE_MUTATION")
+                with patch.object(smoke.Runner, "call", call), self.assertRaisesRegex(smoke.SmokeError, "^" + code + "$"):
+                    smoke.smoke(Path(tmp), receipt, manifest, hashes, workflows)
+                image_call = next(args for step, args in calls if step == "image-platform")
+                self.assertEqual(image_call, ["image", "inspect", smoke.IMAGE, "--format", "{{.Os}}/{{.Architecture}}"])
+                self.assertEqual(any(step == "network" for step, _ in calls), platform == b"linux/amd64")
+                if platform != b"linux/amd64":
+                    self.assertFalse((Path(tmp) / "n8n.env").exists())
+                    self.assertFalse((Path(tmp) / "fake.env").exists())
+
     def test_remote_docker_is_rejected_before_any_mutation_or_secret_file(self):
         manifest, hashes, workflows = smoke.load_bundle()
         with tempfile.TemporaryDirectory() as tmp, patch.object(smoke.subprocess, "run") as run:

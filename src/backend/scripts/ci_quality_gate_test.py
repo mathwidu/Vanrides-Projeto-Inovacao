@@ -619,6 +619,9 @@ class BackendCiQualityGateWiringTest(unittest.TestCase):
                           "docker push", "docker/login-action", "upload-artifact", "ssh "):
             self.assertNotIn(forbidden, workflow)
         self.assertIn("persist-credentials: false", workflow)
+        self.assertIn("  push:\n    branches: [main]", workflow)
+        self.assertNotIn("cache: maven", workflow)
+        self.assertNotIn("cache-dependency-path:", workflow)
 
     def test_container_build_runs_after_the_canonical_quality_gate(self) -> None:
         workflow = WORKFLOW.read_text(encoding="utf-8")
