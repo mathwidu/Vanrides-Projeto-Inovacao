@@ -51,7 +51,7 @@ export async function runScenarios({ input, tools, actor, instance, address, cre
   }
   async function control(route, kind, status) {
     const response = await interruption.wait(() => worker.request(route));
-    demand(response.status === 200, 'CONTROL_HTTP_FAILED'); summary(response.data, kind, status);
+    demand(response.status === 200, 'CONTROL_HTTP_FAILED'); summary(response.data, kind, status, response.status);
     return response.data;
   }
   const event = text => ({ event: 'messages.upsert', instance, date_time: new Date().toISOString(),

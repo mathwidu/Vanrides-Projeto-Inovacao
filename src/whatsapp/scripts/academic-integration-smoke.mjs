@@ -15,7 +15,7 @@ import { runTrackingScenarios } from './110-run-scenarios.mjs';
 import { startProvider, createWorkerProcess } from './070-worker-runtime.mjs';
 import { createInterruption } from './070-worker-lifecycle.mjs';
 import { expectedApiExit } from './academic-process-exit.mjs';
-import { demand, digest, quote, privateWrite, localJson, safeCode } from './070-worker-common.mjs';
+import { SmokeFailure, demand, digest, quote, privateWrite, localJson, safeCode } from './070-worker-common.mjs';
 
 const root = fs.realpathSync(fileURLToPath(new URL('../../../', import.meta.url)));
 const backend = path.join(root, 'src/backend');
@@ -216,10 +216,14 @@ async function run() {
     interruption.dispose();
     fs.rmSync(work, { recursive: true, force: true });
   }
-  demand(!failure && cleanupErrors.length === 0,
-    failure ? safeCode(failure, 'SMOKE_SCENARIO_FAILED') : 'SMOKE_CLEANUP_FAILED');
+  if (failure) throw failure instanceof SmokeFailure ? failure : new SmokeFailure('SMOKE_SCENARIO_FAILED');
+  demand(cleanupErrors.length === 0, 'SMOKE_CLEANUP_FAILED');
   console.log(JSON.stringify({ status: 'PASS', sourceSha, sourceTree, jarSha256: jarHash,
     checks: checks.length, scenarios: totals, realWhatsApp: false, physicalDevices: false,
     provider: 'FAKE_LOOPBACK', cleanup: 'OWNED_RESOURCES_REMOVED' }));
 }
-run().catch(error => { console.error(JSON.stringify({ status: 'FAIL', code: safeCode(error, 'SMOKE_PREFLIGHT_FAILED') })); process.exitCode = 1; });
+run().catch(error => {
+  const result = { status: 'FAIL', code: safeCode(error, 'SMOKE_PREFLIGHT_FAILED') };
+  if (error instanceof SmokeFailure && error.code === 'CONTROL_SUMMARY_INVALID') result.detail = error.controlSummary;
+  console.error(JSON.stringify(result)); process.exitCode = 1;
+});

@@ -87,12 +87,31 @@ export async function localJson(base, route, { method = 'GET', body, headers = {
   finally { clearTimeout(timer); controller.abort(); }
 }
 
-export function summary(value, kind, status) {
+const controlStatuses = new Set(['IDLE', 'BUSY', 'PROCESSED', 'RETRY', 'PAUSED', 'UNAVAILABLE',
+  'SUBMITTED', 'NOT_SUBMITTED', 'UNKNOWN', 'FAILED']);
+function controlDiagnostic(value, kind, expected, httpStatus) {
+  const knownKind = ['process', 'dispatch'].includes(kind) ? kind : 'INVALID';
+  const names = knownKind === 'process' ? ['claimed', 'processed', 'retried', 'paused']
+    : knownKind === 'dispatch' ? ['claimed', 'submitted', 'unknown', 'failed'] : [];
+  const record = object(value) ? value : {};
+  return Object.freeze({ kind: knownKind,
+    expected: controlStatuses.has(expected) ? expected : 'INVALID',
+    httpStatus: Number.isInteger(httpStatus) && httpStatus >= 100 && httpStatus <= 599 ? httpStatus : 'INVALID',
+    observedStatus: controlStatuses.has(record.status) ? record.status : 'INVALID',
+    counters: Object.fromEntries(names.map(name => [name,
+      Object.hasOwn(record, name) && [0, 1].includes(record[name]) ? record[name] : 'INVALID'])) });
+}
+
+export function summary(value, kind, status, httpStatus) {
   const names = kind === 'process' ? ['claimed', 'processed', 'retried', 'paused']
     : ['claimed', 'submitted', 'unknown', 'failed'];
-  demand(exact(value, ['status', ...names]) && value.status === status
+  const valid = exact(value, ['status', ...names]) && value.status === status
     && names.every(name => value[name] === (name === 'claimed' && !['IDLE', 'BUSY'].includes(status)
       || name === 'processed' && status === 'PROCESSED' || name === 'submitted' && status === 'SUBMITTED'
-      || name === 'unknown' && status === 'UNKNOWN' || name === 'failed' && status === 'FAILED' ? 1 : 0)),
-  'CONTROL_SUMMARY_INVALID');
+      || name === 'unknown' && status === 'UNKNOWN' || name === 'failed' && status === 'FAILED' ? 1 : 0));
+  if (!valid) {
+    const error = new SmokeFailure('CONTROL_SUMMARY_INVALID');
+    error.controlSummary = controlDiagnostic(value, kind, status, httpStatus);
+    throw error;
+  }
 }

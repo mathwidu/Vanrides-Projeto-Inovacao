@@ -28,7 +28,7 @@ export async function runDriverScenarios({ input, tools, actor, instance, addres
   async function control(route, kind, expected) {
     const response = await interruption.wait(() => worker.request(route));
     privateWrite(tools.next('driver-control-result.json'), JSON.stringify({ route, kind, expected, response }) + '\n');
-    demand(response.status === 200, 'DRIVER_CONTROL_HTTP_FAILED'); summary(response.data, kind, expected);
+    demand(response.status === 200, 'DRIVER_CONTROL_HTTP_FAILED'); summary(response.data, kind, expected, response.status);
   }
   const event = value => ({ event: 'messages.upsert', instance, date_time: new Date().toISOString(),
     data: { key: { id: 'wa080_message_' + crypto.randomUUID().replaceAll('-', ''), fromMe: false, remoteJid: address },

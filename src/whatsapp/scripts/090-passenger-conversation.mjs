@@ -23,7 +23,7 @@ export function passengerConversation({ input, tools, actor, address, peers, ins
   async function control(route, kind, status) {
     const response = await interruption.wait(() => worker.request(route));
     demand(response.status === 200, 'PASSENGER_CONTROL_HTTP_FAILED');
-    summary(response.data, kind, status);
+    summary(response.data, kind, status, response.status);
   }
 
   async function send(person, message, command, { notify, expectedError, verifyRunLink } = {}) {
