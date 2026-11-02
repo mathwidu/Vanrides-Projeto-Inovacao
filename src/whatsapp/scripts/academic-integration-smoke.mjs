@@ -14,6 +14,7 @@ import { runAttendanceScenarios } from './100-attendance-scenarios.mjs';
 import { runTrackingScenarios } from './110-run-scenarios.mjs';
 import { startProvider, createWorkerProcess } from './070-worker-runtime.mjs';
 import { createInterruption } from './070-worker-lifecycle.mjs';
+import { expectedApiExit } from './academic-process-exit.mjs';
 import { demand, digest, quote, privateWrite, localJson, safeCode } from './070-worker-common.mjs';
 
 const root = fs.realpathSync(fileURLToPath(new URL('../../../', import.meta.url)));
@@ -50,6 +51,9 @@ async function run() {
     : command('/usr/bin/which', ['java']);
   demand(fs.realpathSync(git('rev-parse', '--show-toplevel')) === root, 'SMOKE_GIT_ROOT_MISMATCH');
   const sourceSha = git('rev-parse', 'HEAD'), sourceTree = git('rev-parse', 'HEAD^{tree}');
+  if (process.env.VANRIDES_EXPECTED_SOURCE_SHA !== undefined)
+    demand(/^[a-f0-9]{40}$/.test(process.env.VANRIDES_EXPECTED_SOURCE_SHA)
+      && process.env.VANRIDES_EXPECTED_SOURCE_SHA === sourceSha, 'SMOKE_SOURCE_SHA_MISMATCH');
   demand(git('status', '--porcelain', '--untracked-files=all') === '', 'SMOKE_CLEAN_CHECKOUT_REQUIRED');
   const jars = fs.readdirSync(path.join(backend, 'target')).filter(name => name.endsWith('.jar'));
   demand(jars.length === 1, 'SMOKE_PACKAGED_JAR_REQUIRED');
@@ -72,7 +76,7 @@ async function run() {
   const owner = crypto.randomUUID(), containerName = 'vanrides-academic-' + owner;
   const cidfile = path.join(work, 'container.id');
   const databasePassword = crypto.randomBytes(32).toString('base64url');
-  let container = null, api = null, apiExited = false, apiExit = null, failure = null;
+  let container = null, api = null, apiExited = false, apiExit = null, apiSignal = null, apiStopRequested = false, failure = null;
   const cleanupErrors = [];
   const checks = [], totals = [];
   const assertContainer = () => {
@@ -131,7 +135,7 @@ async function run() {
         env: { ...minimal, SPRING_CONFIG_IMPORT: 'file:' + configFile + '[.properties]' },
         stdio: ['ignore', apiStdout, apiStdout] });
     } finally { fs.closeSync(apiStdout); }
-    api.on('exit', code => { apiExited = true; apiExit = code; });
+    api.on('exit', (code, signal) => { apiExited = true; apiExit = code; apiSignal = signal; });
     api.on('error', () => { apiExited = true; });
     let healthy = false;
     const deadline = Date.now() + 90000;
@@ -192,12 +196,13 @@ async function run() {
   } catch (error) { failure = error; }
   finally {
     if (api && !apiExited) {
-      api.kill('SIGTERM');
+      apiStopRequested = api.kill('SIGTERM');
       const deadline = Date.now() + 30000;
       while (!apiExited && Date.now() < deadline) await pause(100);
       if (!apiExited) { api.kill('SIGKILL'); cleanupErrors.push('API_FORCED_STOP'); }
     }
-    if (apiExited && apiExit !== 0 && !failure) cleanupErrors.push('API_EXIT_FAILED');
+    if (apiExited && !failure && !expectedApiExit({ requested: apiStopRequested, code: apiExit, signal: apiSignal }))
+      cleanupErrors.push('API_EXIT_FAILED');
     try {
       if (!container && fs.existsSync(cidfile)) {
         const candidate = fs.readFileSync(cidfile, 'utf8').trim();

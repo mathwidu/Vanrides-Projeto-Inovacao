@@ -28,11 +28,24 @@ e executa a jornada HTTP sintética com Spring/PostgreSQL/worker Node reais e
 um provedor Evolution simulado em loopback. Não requer número, WhatsApp, IA
 paga nem credencial externa. Os recursos temporários pertencem à execução.
 
-CI: [backend.yml](../../.github/workflows/backend.yml), Ubuntu padrão, Java 17,
-Node fixado e permissão `contents: read`. Ela também constrói a imagem local;
-não publica imagens, não implanta e não envia logs brutos como artefato.
-PASS remoto deve ser conferido no SHA efetivamente avaliado. Um `mvnw test`
+CI: [backend.yml](../../.github/workflows/backend.yml), com dois jobs paralelos
+obrigatórios, Ubuntu padrão e permissão `contents: read`:
+
+- **Suíte canônica PostgreSQL**: executa o gate completo, toda a matriz e os
+  contratos, sem reduzir testes nem aceitar skips.
+- **Integração HTTP e imagem**: empacota o mesmo checkout com testes pulados
+  somente nesse empacotamento, executa as quatro jornadas reais sintéticas e
+  constrói a imagem local. A aprovação da suíte canônica continua obrigatória.
+
+Os dois checkouts usam explicitamente o mesmo `github.sha` (merge de teste em
+PR), com proveniência e árvore limpa; o smoke rejeita um SHA diferente do esperado.
+O workflow só fica aprovado quando ambos os jobs passam. Não há cache Maven,
+publicação de imagens, implantação ou upload de logs brutos. Um `mvnw test`
 isolado que tenha testes pulados não substitui o gate.
+
+`bash scripts/check_backend.sh --integration-only` é essa checagem parcial de
+package e jornada; não equivale ao gate completo. O comando local sem flags
+continua sequencial: primeiro a suíte canônica, depois a integração.
 
 ## Executar uma API de desenvolvimento
 

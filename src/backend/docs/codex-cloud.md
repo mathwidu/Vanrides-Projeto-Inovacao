@@ -20,9 +20,13 @@ SHA, tree e fingerprint de alterações cobrem todo o repositório acadêmico.
 PASS só é materializado após validar os relatórios e confirmar o release do lock.
 XML raw, stdout/stderr, dumps e tokens não são artefatos públicos.
 
-O workflow `../../../.github/workflows/backend.yml` executa o gate completo e
-smoke sintético do mesmo checkout em Ubuntu padrão, somente `contents: read`.
-Ele não publica pacotes nem implanta. Resultados só comprovam o SHA da execução.
+O workflow `../../../.github/workflows/backend.yml` tem dois jobs paralelos
+obrigatórios no mesmo `github.sha`: suíte canônica completa e integração HTTP
+mais imagem. O segundo empacota com `-DskipTests` somente para obter seu JAR;
+não substitui a suíte canônica. O comando local sem flags permanece sequencial.
+`--integration-only` é checagem parcial explicitamente identificada.
+Os checkouts são limpos, sem cache Maven, em Ubuntu padrão e `contents: read`.
+Não há publicação de pacotes ou deploy. Resultados comprovam apenas o SHA testado.
 
 Do not make the CI/CD `test` job depend on the published DEV API.
 

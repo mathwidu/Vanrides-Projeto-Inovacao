@@ -604,10 +604,13 @@ class BackendCiQualityGateWiringTest(unittest.TestCase):
 
     def test_workflow_runs_only_canonical_gate_in_test_job(self) -> None:
         workflow = WORKFLOW.read_text(encoding="utf-8")
-        self.assertIn("runs-on: ubuntu-latest", workflow)
-        self.assertEqual(1, workflow.count("run: bash scripts/check_backend.sh"))
-        self.assertIn('VANRIDES_QA_REQUIRE_CLEAN: "1"', workflow)
-        self.assertIn('VANRIDES_QA_RETENTION_CLASS: ci', workflow)
+        canonical = workflow.split("\n  test:\n", 1)[1].split("\n  integration:\n", 1)[0]
+        self.assertIn("runs-on: ubuntu-latest", canonical)
+        self.assertEqual(1, workflow.count("run: ./scripts/ci_quality_gate.sh"))
+        self.assertIn("working-directory: src/backend", canonical)
+        self.assertIn('VANRIDES_QA_REQUIRE_CLEAN: "1"', canonical)
+        self.assertIn('VANRIDES_QA_RETENTION_CLASS: ci', canonical)
+        self.assertNotIn("skipTests", canonical)
         for forbidden in ("continue-on-error", "target/surefire-reports", "*.txt", "*.dump",
                           "run: ./mvnw -B test", "pull_request_target", "secrets.", "self-hosted"):
             self.assertNotIn(forbidden, workflow)
@@ -618,15 +621,49 @@ class BackendCiQualityGateWiringTest(unittest.TestCase):
         for forbidden in ("packages: write", "contents: write", "build_and_push:", "deploy_swarm:",
                           "docker push", "docker/login-action", "upload-artifact", "ssh "):
             self.assertNotIn(forbidden, workflow)
-        self.assertIn("persist-credentials: false", workflow)
+        self.assertEqual(2, workflow.count("persist-credentials: false"))
+        self.assertEqual(2, workflow.count("ref: ${{ github.sha }}"))
         self.assertIn("  push:\n    branches: [main]", workflow)
         self.assertNotIn("cache: maven", workflow)
         self.assertNotIn("cache-dependency-path:", workflow)
 
-    def test_container_build_runs_after_the_canonical_quality_gate(self) -> None:
+    def test_parallel_integration_is_required_and_builds_the_same_clean_revision(self) -> None:
         workflow = WORKFLOW.read_text(encoding="utf-8")
-        self.assertLess(workflow.index("run: bash scripts/check_backend.sh"),
-                        workflow.index("docker build -t vanrides-backend:ci src/backend"))
+        canonical, integration = workflow.split("\n  test:\n", 1)[1].split("\n  integration:\n", 1)
+        for job in (canonical, integration):
+            self.assertNotRegex(job, r"(?m)^    (?:if|continue-on-error|needs):")
+            self.assertIn("runs-on: ubuntu-latest", job)
+        self.assertIn("VANRIDES_EXPECTED_SOURCE_SHA: ${{ github.sha }}", integration)
+        self.assertEqual(1, integration.count("run: bash scripts/check_backend.sh --integration-only"))
+        self.assertNotIn("ci_quality_gate.sh", integration)
+        self.assertLess(integration.index("run: bash scripts/check_backend.sh --integration-only"),
+                        integration.index("docker build -t vanrides-backend:ci src/backend"))
+
+    def test_local_team_gate_preserves_full_sequence_and_explicit_partial_mode(self) -> None:
+        wrapper = ROOT.parents[1] / "scripts/check_backend.sh"
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            scripts = root / "scripts"
+            module = root / "src/backend"
+            fake_bin = root / "bin"
+            scripts.mkdir()
+            (module / "scripts").mkdir(parents=True)
+            fake_bin.mkdir()
+            shutil.copy2(wrapper, scripts / wrapper.name)
+            for target, event in ((module / "scripts/ci_quality_gate.sh", "canonical"),
+                                  (module / "mvnw", "package"), (fake_bin / "node", "smoke")):
+                target.write_text('#!/usr/bin/env bash\nprintf "%s\\n" "' + event + '" >> "$VANRIDES_TEST_TRACE"\n')
+                target.chmod(0o755)
+            trace = root / "events"
+            environment = {**os.environ, "PATH": str(fake_bin) + os.pathsep + os.environ["PATH"],
+                           "VANRIDES_TEST_TRACE": str(trace)}
+            for arguments, expected in (([], ["canonical", "package", "smoke"]),
+                                        (["--integration-only"], ["package", "smoke"])):
+                trace.unlink(missing_ok=True)
+                result = subprocess.run([str(scripts / wrapper.name), *arguments], env=environment,
+                                        capture_output=True, text=True, check=False)
+                self.assertEqual(0, result.returncode, result.stderr)
+                self.assertEqual(expected, trace.read_text().splitlines())
 
     def test_monorepo_profile_passes_the_real_git_root_to_every_evidence_phase(self) -> None:
         result, _, validator_args, _ = self._run_profile_with_fake_runtime(

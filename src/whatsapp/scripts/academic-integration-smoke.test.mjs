@@ -23,3 +23,9 @@ for (const variable of ['GIT_DIR', 'GIT_WORK_TREE', 'GIT_CONFIG_COUNT', 'DOCKER_
     rejected([], { [variable]: sentinel }, 'SMOKE_RUNTIME_OVERRIDE_REJECTED');
   });
 }
+
+// A mismatched expected CI revision must fail before clean-tree and Docker checks.
+test('a different expected CI SHA is rejected before starting a runtime', () => {
+  rejected([], { PATH: process.env.PATH, JAVA_HOME: '/synthetic-java-not-executed',
+    VANRIDES_EXPECTED_SOURCE_SHA: '0'.repeat(40) }, 'SMOKE_SOURCE_SHA_MISMATCH');
+});

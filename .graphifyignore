@@ -63,3 +63,6 @@ uv.lock
 *.mp4
 *.mp3
 # graphify-standard:end
+
+# Livro gerado de proveniência: hashes conferidos separadamente, fora do grafo de código.
+docs/desenvolvimento/inventario-migracao.json

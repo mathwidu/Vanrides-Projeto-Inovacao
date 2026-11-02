@@ -4,6 +4,10 @@ export PYTHONDONTWRITEBYTECODE=1
 REPOSITORY_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BACKEND_DIR="$REPOSITORY_DIR/src/backend"
 cd "$BACKEND_DIR"
+run_integration() {
+  ./mvnw -B -DskipTests package
+  node "$REPOSITORY_DIR/src/whatsapp/scripts/academic-integration-smoke.mjs"
+}
 case "${1:-}" in
   --light)
     # Same contract tests as the canonical gate, without Maven, Docker or a network request.
@@ -15,11 +19,15 @@ case "${1:-}" in
     done
     ./scripts/quality_gate.sh
     ;;
+  --integration-only)
+    # Partial check, never a substitute for the mandatory canonical gate.
+    printf "Checagem parcial de integração; a suíte canônica continua obrigatória.\n"
+    run_integration
+    ;;
   "")
     ./scripts/ci_quality_gate.sh
-    # The tests just passed for this checkout. Packaging reuses that compilation.
-    ./mvnw -B -DskipTests package
-    node "$REPOSITORY_DIR/src/whatsapp/scripts/academic-integration-smoke.mjs"
+    # Sequential local gate: every test must pass before integration starts.
+    run_integration
     ;;
-  *) printf 'Uso: bash scripts/check_backend.sh [--light]\n' >&2; exit 2 ;;
+  *) printf 'Uso: bash scripts/check_backend.sh [--light | --integration-only]\n' >&2; exit 2 ;;
 esac
