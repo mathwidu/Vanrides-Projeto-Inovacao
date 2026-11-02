@@ -1,0 +1,9 @@
+{
+  "event": "messages.upsert",
+  "instance": "synthetic-transport",
+  "date_time": "2030-01-01T12:00:00Z",
+  "data": {
+    "key": {"id": "synthetic-message-echo-001", "fromMe": true, "remoteJid": "000000000000000@lid"},
+    "message": {"conversation": "Eco artificial da própria instância"}
+  }
+}

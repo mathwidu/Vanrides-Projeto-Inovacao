@@ -1,0 +1,10 @@
+{
+  "event": "messages.upsert",
+  "instance": "synthetic-transport",
+  "date_time": "2030-01-01T09:00:00-03:00",
+  "data": {
+    "key": {"id": "synthetic-message-reply-001", "fromMe": false, "remoteJid": "000000000000000@lid"},
+    "message": {"extendedTextMessage": {"text": "Concordo", "contextInfo": {"stanzaId": "synthetic-outbound-001", "quotedMessage": {"conversation": "Conteúdo citado artificial"}}}},
+    "messageType": "extendedTextMessage"
+  }
+}

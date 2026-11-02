@@ -1,0 +1,5 @@
+// Build-time value only. Do not source the origin from Dart, a URI or user input.
+// Copy the assignment to the reviewed build configuration or pass the setting to
+// xcodebuild. The empty/unresolved setting leaves session.v1 UNCONFIGURED.
+// Xcconfig treats // as a comment; $() preserves the two URL slashes.
+VANRIDES_PAIRING_API_ORIGIN = https:/$()/pairing.vanrides.invalid

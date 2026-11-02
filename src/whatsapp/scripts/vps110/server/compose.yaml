@@ -1,0 +1,63 @@
+services:
+  postgres:
+    image: ${WA110_POSTGRES_IMAGE:?}
+    user: "0"
+    platform: linux/amd64
+    restart: "no"
+    labels:
+      traefik.enable: "false"
+      wa110.owner: ${WA110_OWNER:?}
+      wa110.backend: 5ddb7c3db6c38385c018028741470ab6a509604f
+    environment:
+      POSTGRES_DB: vanrides_wa070
+      POSTGRES_USER: vanrides_wa070
+      POSTGRES_PASSWORD_FILE: /run/secrets/db-password
+      PGPASSFILE: /run/secrets/pgpass
+      POSTGRES_INITDB_ARGS: --auth-local=scram-sha-256 --auth-host=scram-sha-256
+    volumes:
+      - ./runtime/db-password:/run/secrets/db-password:ro
+      - ./runtime/pgpass:/run/secrets/pgpass:ro
+    tmpfs:
+      - /var/lib/postgresql/data:rw,nosuid,nodev,size=402653184
+    command: [postgres, -c, log_statement=none, -c, log_min_error_statement=panic, -c, log_min_messages=panic]
+    mem_limit: 512m
+    cpus: 1
+    logging:
+      driver: none
+    networks: [private]
+  api:
+    image: ${WA110_JAVA_IMAGE:?}
+    user: "${WA110_API_UID:?}:${WA110_API_GID:?}"
+    platform: linux/amd64
+    restart: "no"
+    labels:
+      traefik.enable: "false"
+      wa110.owner: ${WA110_OWNER:?}
+      wa110.backend: 5ddb7c3db6c38385c018028741470ab6a509604f
+    working_dir: /run/wa110
+    command: [java, -Xms24m, -Xmx192m, -XX:MaxMetaspaceSize=192m, -XX:+UseSerialGC, -XX:ActiveProcessorCount=2, -jar, /opt/wa110/app.jar]
+    environment:
+      SPRING_CONFIG_IMPORT: file:/run/wa110/application.properties[.properties]
+    ports:
+      - 127.0.0.1:28083:18083
+    volumes:
+      - ./inputs/backend.jar:/opt/wa110/app.jar:ro
+      - ./runtime/application.properties:/run/wa110/application.properties:ro
+    mem_limit: 1280m
+    cpus: 2
+    logging:
+      driver: none
+    networks: [private, edge]
+networks:
+  private:
+    driver: bridge
+    internal: true
+    labels:
+      wa110.owner: ${WA110_OWNER:?}
+      traefik.enable: "false"
+  edge:
+    driver: bridge
+    internal: false
+    labels:
+      wa110.owner: ${WA110_OWNER:?}
+      traefik.enable: "false"

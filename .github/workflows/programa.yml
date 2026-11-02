@@ -1,0 +1,35 @@
+name: Programa
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: programa-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  controle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Testar regras do programa e da topologia
+        run: |
+          python3 scripts/program_control_test.py
+          python3 scripts/workspace_profile_test.py
+      - name: Gerar projeção local e verificar programa
+        run: |
+          python3 scripts/program_control.py dashboard --workspace core
+          python3 scripts/program_control.py check --workspace core
+          python3 scripts/program_control.py next --workspace core

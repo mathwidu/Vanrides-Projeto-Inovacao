@@ -1,0 +1,42 @@
+# Dependências e saídas locais
+**/node_modules/
+**/target/
+**/build/
+**/.dart_tool/
+**/.gradle/
+**/Pods/
+**/.symlinks/
+**/DerivedData/
+**/coverage/
+**/__pycache__/
+**/*.pyc
+.DS_Store
+# Credenciais, dados e configuração pessoal
+.env
+.env.*
+!.env.example
+!**/.env.example
+**/local.properties
+**/key.properties
+**/Secrets.xcconfig
+**/*.keystore
+**/*.jks
+**/*.p12
+**/*.mobileprovision
+**/*.db
+**/*.sqlite*
+**/logs/
+**/tmp/
+**/outputs/
+**/test-results/
+**/playwright-report/
+.dev-harness/
+.graphify/state.json
+.graphify/backups/
+graphify-out/
+
+# graphify-standard:start
+/graphify-out/
+/.graphify/*
+!/.graphify/config.json
+# graphify-standard:end

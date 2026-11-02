@@ -1,0 +1,6 @@
+{
+  "event": "connection.update",
+  "instance": "synthetic-transport",
+  "date_time": "2030-01-01T12:00:00Z",
+  "data": {"instance": "synthetic-transport", "state": "open", "statusReason": 200}
+}

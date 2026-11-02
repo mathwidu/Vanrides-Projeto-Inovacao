@@ -1,0 +1,11 @@
+{
+  "event": "messages.upsert",
+  "instance": "synthetic-transport",
+  "date_time": "2030-01-01T12:00:00Z",
+  "data": {
+    "key": {"id": "synthetic-message-text-001", "fromMe": false, "remoteJid": "000000000000@s.whatsapp.net", "remoteJidAlt": "000000000000000@lid"},
+    "message": {"conversation": "Olá, quero começar."},
+    "messageType": "conversation",
+    "messageTimestamp": 1893499200
+  }
+}

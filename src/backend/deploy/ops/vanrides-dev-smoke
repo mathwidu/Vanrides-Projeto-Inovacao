@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=lib/vanrides-dev-common.sh
+source "$SCRIPT_DIR/lib/vanrides-dev-common.sh"
+
+require_root
+require_docker
+assert_dev_guardrails
+
+expect_status() {
+  local method="$1"
+  local path="$2"
+  local expected="$3"
+  shift 3
+  local retries="${VANRIDES_DEV_SMOKE_RETRIES:-60}"
+  local status=""
+
+  for ((i = 1; i <= retries; i++)); do
+    status="$(http_status "$method" "$VANRIDES_DEV_BASE_URL$path" "$@")" || status="curl_error"
+    if [[ "$status" == "$expected" ]]; then
+      printf 'PASS %s %s -> %s\n' "$method" "$path" "$status"
+      return 0
+    fi
+    sleep 2
+  done
+
+  die "expected $method $path -> $expected, got $status"
+}
+
+log "running DEV smoke against $VANRIDES_DEV_BASE_URL"
+wait_for_service_container "$VANRIDES_DEV_API_SERVICE" 120
+
+expect_status GET "/motoristas" "200"
+expect_status OPTIONS "/motoristas" "200"
+expect_status POST "/auth/refresh" "400" -H 'Content-Type: application/json' -d '{}'
+expect_status GET "/account/me" "401"
+
+log "DEV smoke passed"

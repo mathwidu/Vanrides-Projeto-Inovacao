@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=lib/vanrides-dev-common.sh
+source "$SCRIPT_DIR/lib/vanrides-dev-common.sh"
+
+print_path_only="0"
+if [[ "${1:-}" == "--print-path-only" ]]; then
+  print_path_only="1"
+fi
+
+require_root
+require_docker
+assert_dev_guardrails
+
+umask 077
+mkdir -p "$VANRIDES_DEV_BACKUP_DIR"
+
+db_container="$(require_running_container_for_service "$VANRIDES_DEV_DB_SERVICE")"
+timestamp="$(date -u +%Y%m%dT%H%M%SZ)"
+backup_file="$VANRIDES_DEV_BACKUP_DIR/vanrides-dev-${timestamp}.dump"
+sha_file="$backup_file.sha256"
+
+if [[ "$print_path_only" != "1" ]]; then
+  log "creating DEV database backup at $backup_file"
+fi
+
+docker exec "$db_container" pg_dump \
+  -U "$VANRIDES_DEV_DB_USER" \
+  -d "$VANRIDES_DEV_DB_NAME" \
+  --format=custom \
+  --no-owner \
+  --no-privileges \
+  > "$backup_file"
+
+sha256sum "$backup_file" > "$sha_file"
+
+if [[ "$print_path_only" == "1" ]]; then
+  printf '%s\n' "$backup_file"
+else
+  log "backup complete: $backup_file"
+  log "checksum: $sha_file"
+fi

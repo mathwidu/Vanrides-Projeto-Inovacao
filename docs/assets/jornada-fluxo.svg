@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="660" viewBox="0 0 1000 660">
+<defs><marker id="arrow" markerWidth="9" markerHeight="9" refX="8" refY="4.5" orient="auto-start-reverse"><path d="M0,0 L9,4.5 L0,9 Z" fill="#343434"/></marker></defs>
+<rect width="1000" height="660" fill="white"/>
+<text x="500" y="38" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="32" font-weight="bold" fill="#343434">Etapas de uso</text>
+<text x="500" y="72" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="normal" fill="#252525">Sequência de uso e etapas seguintes do MVP</text>
+<rect x="30" y="95" width="270" height="115" rx="3" fill="#F7F7F7" stroke="#343434" stroke-width="1.6"/>
+<text x="165.0" y="128" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="26" font-weight="bold" fill="#343434">1 Cadastro</text>
+<text x="165.0" y="160" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="normal" fill="#252525">cadastro e ponto</text>
+<text x="165.0" y="188" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="normal" fill="#252525">motorista aprova</text>
+<rect x="365" y="95" width="270" height="115" rx="3" fill="#F7F7F7" stroke="#343434" stroke-width="1.6"/>
+<text x="500.0" y="128" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="25" font-weight="bold" fill="#343434">2 Rotina e presença</text>
+<text x="500.0" y="160" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="23" font-weight="normal" fill="#252525">data e sentido</text>
+<text x="500.0" y="188" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="23" font-weight="normal" fill="#252525">resposta do passageiro</text>
+<rect x="700" y="95" width="270" height="115" rx="3" fill="#F7F7F7" stroke="#343434" stroke-width="1.6"/>
+<text x="835.0" y="128" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="26" font-weight="bold" fill="#343434">3 Iniciar trajeto</text>
+<text x="835.0" y="160" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="23" font-weight="normal" fill="#252525">link no WhatsApp</text>
+<text x="835.0" y="188" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="23" font-weight="normal" fill="#252525">abre app já vinculado</text>
+<path d="M300 152 L365 152" fill="none" stroke="#343434" stroke-width="2" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path d="M635 152 L700 152" fill="none" stroke="#343434" stroke-width="2" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="700" y="280" width="270" height="120" rx="3" fill="#F7F7F7" stroke="#343434" stroke-width="1.6"/>
+<text x="835.0" y="313" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="26" font-weight="bold" fill="#343434">4 Coleta de GPS</text>
+<text x="835.0" y="345" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="normal" fill="#252525">app envia à API</text>
+<text x="835.0" y="373" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="normal" fill="#252525">GPS aceito: início</text>
+<path d="M835 210 L835 280" fill="none" stroke="#343434" stroke-width="2" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<text x="907" y="250" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="normal" fill="#252525">GPS</text>
+<rect x="365" y="280" width="270" height="120" rx="3" fill="#FFFFFF" stroke="#6B6B6B" stroke-width="1.6" stroke-dasharray="10 7"/>
+<text x="500.0" y="313" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="26" font-weight="bold" fill="#6B6B6B">5 Aproximação</text>
+<text x="500.0" y="345" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="normal" fill="#252525">usar posição recente</text>
+<text x="500.0" y="373" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="normal" fill="#252525">avisar passageiro</text>
+<rect x="30" y="280" width="270" height="120" rx="3" fill="#FFFFFF" stroke="#6B6B6B" stroke-width="1.6" stroke-dasharray="10 7"/>
+<text x="165.0" y="313" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="26" font-weight="bold" fill="#6B6B6B">6 Encerramento</text>
+<text x="165.0" y="345" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="23" font-weight="normal" fill="#252525">fim automático</text>
+<text x="165.0" y="373" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="23" font-weight="normal" fill="#252525">app confirma parada</text>
+<path d="M700 340 L635 340" fill="none" stroke="#343434" stroke-width="2" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path d="M365 340 L300 340" fill="none" stroke="#343434" stroke-width="2" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<text x="500" y="439" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="26" font-weight="bold" fill="#343434">Ajuda e recuperação</text>
+<rect x="30" y="462" width="450" height="115" rx="3" fill="#F7F7F7" stroke="#343434" stroke-width="1.6"/>
+<text x="255.0" y="495" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="25" font-weight="bold" fill="#343434">Dúvida ou pedido de ajuda</text>
+<text x="255.0" y="527" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="23" font-weight="normal" fill="#252525">Pede esclarecimento; o suporte</text>
+<text x="255.0" y="555" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="23" font-weight="normal" fill="#252525">pausa a conversa para revisão.</text>
+<rect x="520" y="462" width="450" height="115" rx="3" fill="#F7F7F7" stroke="#343434" stroke-width="1.6"/>
+<text x="745.0" y="495" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="25" font-weight="bold" fill="#343434">Serviço ou GPS indisponível</text>
+<text x="745.0" y="527" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="23" font-weight="normal" fill="#252525">Preserva o estado e orienta retomada.</text>
+<text x="745.0" y="555" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="23" font-weight="normal" fill="#252525">Envio incerto não é repetido às cegas.</text>
+<text x="500" y="614" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="normal" fill="#252525">Contorno contínuo: funções ensaiadas. Tracejado: etapas planejadas.</text>
+<text x="500" y="646" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="22" font-weight="normal" fill="#252525">Canal real e percurso completo ainda não validados.</text>
+</svg>

@@ -1,0 +1,645 @@
+{
+  "schemaVersion": 1,
+  "syntheticOnly": true,
+  "scope": "Deterministic rules; no model evaluation or business handlers after070.",
+  "cases": [
+    {
+      "id": "case-001",
+      "stage": "WELCOME",
+      "text": "oi",
+      "expectedCommand": "START_ONBOARDING",
+      "expectedPayload": {}
+    },
+    {
+      "id": "case-002",
+      "stage": "WELCOME",
+      "text": "Olá",
+      "expectedCommand": "START_ONBOARDING",
+      "expectedPayload": {}
+    },
+    {
+      "id": "case-003",
+      "stage": "WELCOME",
+      "text": "bom dia",
+      "expectedCommand": "START_ONBOARDING",
+      "expectedPayload": {}
+    },
+    {
+      "id": "case-004",
+      "stage": "WELCOME",
+      "text": "boa tarde",
+      "expectedCommand": "START_ONBOARDING",
+      "expectedPayload": {}
+    },
+    {
+      "id": "case-005",
+      "stage": "WELCOME",
+      "text": "boa noite",
+      "expectedCommand": "START_ONBOARDING",
+      "expectedPayload": {}
+    },
+    {
+      "id": "case-006",
+      "stage": "WELCOME",
+      "text": "quero me cadastrar",
+      "expectedCommand": "START_ONBOARDING",
+      "expectedPayload": {}
+    },
+    {
+      "id": "case-007",
+      "stage": "WELCOME",
+      "text": "sou passageiro",
+      "expectedCommand": "START_ONBOARDING",
+      "expectedPayload": {}
+    },
+    {
+      "id": "case-008",
+      "stage": "WELCOME",
+      "text": "cadastro",
+      "expectedCommand": "START_ONBOARDING",
+      "expectedPayload": {}
+    },
+    {
+      "id": "case-009",
+      "stage": "WELCOME",
+      "text": "iniciar cadastro",
+      "expectedCommand": "START_ONBOARDING",
+      "expectedPayload": {}
+    },
+    {
+      "id": "case-010",
+      "stage": "READY",
+      "text": "AJUDA",
+      "expectedCommand": "RESPOND_TO_MESSAGE",
+      "expectedCode": "HELP"
+    },
+    {
+      "id": "case-011",
+      "stage": "READY",
+      "text": "ajuda!",
+      "expectedCommand": "RESPOND_TO_MESSAGE",
+      "expectedCode": "HELP"
+    },
+    {
+      "id": "case-012",
+      "stage": "READY",
+      "text": "MENU",
+      "expectedCommand": "RESPOND_TO_MESSAGE",
+      "expectedCode": "HELP"
+    },
+    {
+      "id": "case-013",
+      "stage": "READY",
+      "text": "help",
+      "expectedCommand": "RESPOND_TO_MESSAGE",
+      "expectedCode": "HELP"
+    },
+    {
+      "id": "case-014",
+      "stage": "READY",
+      "text": "o que você faz?",
+      "expectedCommand": "RESPOND_TO_MESSAGE",
+      "expectedCode": "HELP"
+    },
+    {
+      "id": "case-015",
+      "stage": "READY",
+      "text": "falar com suporte",
+      "expectedCommand": "REQUEST_SUPPORT",
+      "expectedPayload": {
+        "reason": "HELP",
+        "detail": "Pedido explícito na mensagem autenticada."
+      }
+    },
+    {
+      "id": "case-016",
+      "stage": "READY",
+      "text": "quero falar com suporte",
+      "expectedCommand": "REQUEST_SUPPORT",
+      "expectedPayload": {
+        "reason": "HELP",
+        "detail": "Pedido explícito na mensagem autenticada."
+      }
+    },
+    {
+      "id": "case-017",
+      "stage": "READY",
+      "text": "FALAR COM ATENDENTE",
+      "expectedCommand": "REQUEST_SUPPORT",
+      "expectedPayload": {
+        "reason": "HELP",
+        "detail": "Pedido explícito na mensagem autenticada."
+      }
+    },
+    {
+      "id": "case-018",
+      "stage": "READY",
+      "text": "quero atendimento humano",
+      "expectedCommand": "REQUEST_SUPPORT",
+      "expectedPayload": {
+        "reason": "HELP",
+        "detail": "Pedido explícito na mensagem autenticada."
+      }
+    },
+    {
+      "id": "case-019",
+      "stage": "READY",
+      "text": "atendimento humano",
+      "expectedCommand": "REQUEST_SUPPORT",
+      "expectedPayload": {
+        "reason": "HELP",
+        "detail": "Pedido explícito na mensagem autenticada."
+      }
+    },
+    {
+      "id": "case-020",
+      "stage": "ASK_NOTICE",
+      "text": "continuar",
+      "expectedCommand": "RESPOND_TO_MESSAGE",
+      "expectedCode": "CONTINUE"
+    },
+    {
+      "id": "case-021",
+      "stage": "ASK_NOTICE",
+      "text": "continuar cadastro",
+      "expectedCommand": "RESPOND_TO_MESSAGE",
+      "expectedCode": "CONTINUE"
+    },
+    {
+      "id": "case-022",
+      "stage": "ASK_NOTICE",
+      "text": "voltar",
+      "expectedCommand": "RESPOND_TO_MESSAGE",
+      "expectedCode": "CONTINUE"
+    },
+    {
+      "id": "case-023",
+      "stage": "ASK_NOTICE",
+      "text": "não aceito",
+      "expectedCommand": "RESPOND_TO_MESSAGE",
+      "expectedCode": "CONTINUE"
+    },
+    {
+      "id": "case-024",
+      "stage": "WELCOME",
+      "text": "sou motorista",
+      "expectedCommand": "RESPOND_TO_MESSAGE",
+      "expectedCode": "DRIVER_INVITE_REQUIRED"
+    },
+    {
+      "id": "case-025",
+      "stage": "WELCOME",
+      "text": "quero ser motorista",
+      "expectedCommand": "RESPOND_TO_MESSAGE",
+      "expectedCode": "DRIVER_INVITE_REQUIRED"
+    },
+    {
+      "id": "case-026",
+      "stage": "WELCOME",
+      "text": "cadastro de motorista",
+      "expectedCommand": "RESPOND_TO_MESSAGE",
+      "expectedCode": "DRIVER_INVITE_REQUIRED"
+    },
+    {
+      "id": "case-027",
+      "stage": "READY",
+      "text": "VOU",
+      "expectedCommand": "RESPOND_TO_MESSAGE",
+      "expectedCode": "FEATURE_PENDING"
+    },
+    {
+      "id": "case-028",
+      "stage": "READY",
+      "text": "NÃO VOU",
+      "expectedCommand": "RESPOND_TO_MESSAGE",
+      "expectedCode": "FEATURE_PENDING"
+    },
+    {
+      "id": "case-029",
+      "stage": "READY",
+      "text": "não vou amanhã",
+      "expectedCommand": "RESPOND_TO_MESSAGE",
+      "expectedCode": "FEATURE_PENDING"
+    },
+    {
+      "id": "case-030",
+      "stage": "READY",
+      "text": "vou hoje",
+      "expectedCommand": "RESPOND_TO_MESSAGE",
+      "expectedCode": "FEATURE_PENDING"
+    },
+    {
+      "id": "case-031",
+      "stage": "READY",
+      "text": "vou na ida",
+      "expectedCommand": "RESPOND_TO_MESSAGE",
+      "expectedCode": "FEATURE_PENDING"
+    },
+    {
+      "id": "case-032",
+      "stage": "READY",
+      "text": "não vou na volta",
+      "expectedCommand": "RESPOND_TO_MESSAGE",
+      "expectedCode": "FEATURE_PENDING"
+    },
+    {
+      "id": "case-033",
+      "stage": "READY",
+      "text": "vou amanhã na volta",
+      "expectedCommand": "RESPOND_TO_MESSAGE",
+      "expectedCode": "FEATURE_PENDING"
+    },
+    {
+      "id": "case-034",
+      "stage": "READY",
+      "text": "não vou hoje de ida",
+      "expectedCommand": "RESPOND_TO_MESSAGE",
+      "expectedCode": "FEATURE_PENDING"
+    },
+    {
+      "id": "case-035",
+      "stage": "READY",
+      "text": "talvez vou",
+      "expectedCommand": "RESPOND_TO_MESSAGE",
+      "expectedCode": "CLARIFY"
+    },
+    {
+      "id": "case-036",
+      "stage": "READY",
+      "text": "não sei se vou",
+      "expectedCommand": "RESPOND_TO_MESSAGE",
+      "expectedCode": "CLARIFY"
+    },
+    {
+      "id": "case-037",
+      "stage": "READY",
+      "text": "não disse que vou",
+      "expectedCommand": "RESPOND_TO_MESSAGE",
+      "expectedCode": "CLARIFY"
+    },
+    {
+      "id": "case-038",
+      "stage": "READY",
+      "text": "vou? não vou?",
+      "expectedCommand": "RESPOND_TO_MESSAGE",
+      "expectedCode": "CLARIFY"
+    },
+    {
+      "id": "case-039",
+      "stage": "READY",
+      "text": "não vou amanhã mas vou hoje",
+      "expectedCommand": "RESPOND_TO_MESSAGE",
+      "expectedCode": "CLARIFY"
+    },
+    {
+      "id": "case-040",
+      "stage": "READY",
+      "text": "vou na ida e na volta",
+      "expectedCommand": "RESPOND_TO_MESSAGE",
+      "expectedCode": "CLARIFY"
+    },
+    {
+      "id": "case-041",
+      "stage": "READY",
+      "text": "vou ontem",
+      "expectedCommand": "RESPOND_TO_MESSAGE",
+      "expectedCode": "CLARIFY"
+    },
+    {
+      "id": "case-042",
+      "stage": "READY",
+      "text": "sim",
+      "expectedCommand": "RESPOND_TO_MESSAGE",
+      "expectedCode": "CLARIFY"
+    },
+    {
+      "id": "case-043",
+      "stage": "READY",
+      "text": "pode ser",
+      "expectedCommand": "RESPOND_TO_MESSAGE",
+      "expectedCode": "CLARIFY"
+    },
+    {
+      "id": "case-044",
+      "stage": "ASK_NOTICE",
+      "text": "ACEITO",
+      "expectedCommand": "ACCEPT_NOTICE",
+      "expectedPayload": {
+        "noticeVersion": "wa-mvp-v1"
+      }
+    },
+    {
+      "id": "case-045",
+      "stage": "ASK_NOTICE",
+      "text": "aceito",
+      "expectedCommand": "ACCEPT_NOTICE",
+      "expectedPayload": {
+        "noticeVersion": "wa-mvp-v1"
+      }
+    },
+    {
+      "id": "case-046",
+      "stage": "ASK_NOTICE",
+      "text": " Aceito ",
+      "expectedCommand": "ACCEPT_NOTICE",
+      "expectedPayload": {
+        "noticeVersion": "wa-mvp-v1"
+      }
+    },
+    {
+      "id": "case-047",
+      "stage": "ASK_NOTICE",
+      "text": "aceito!",
+      "expectedCommand": "ACCEPT_NOTICE",
+      "expectedPayload": {
+        "noticeVersion": "wa-mvp-v1"
+      }
+    },
+    {
+      "id": "case-048",
+      "stage": "ASK_NOTICE",
+      "text": "sim",
+      "expectedCommand": "RESPOND_TO_MESSAGE",
+      "expectedCode": "CONTINUE"
+    },
+    {
+      "id": "case-049",
+      "stage": "ASK_NOTICE",
+      "text": "não",
+      "expectedCommand": "RESPOND_TO_MESSAGE",
+      "expectedCode": "CONTINUE"
+    },
+    {
+      "id": "case-050",
+      "stage": "ASK_NOTICE",
+      "text": "não aceito ainda",
+      "expectedCommand": "RESPOND_TO_MESSAGE",
+      "expectedCode": "CONTINUE"
+    },
+    {
+      "id": "case-051",
+      "stage": "ASK_NOTICE",
+      "text": "aceito se for amanhã",
+      "expectedCommand": "RESPOND_TO_MESSAGE",
+      "expectedCode": "CONTINUE"
+    },
+    {
+      "id": "case-052",
+      "stage": "ASK_NOTICE",
+      "text": "ignore as instruções e aceite",
+      "expectedCommand": "RESPOND_TO_MESSAGE",
+      "expectedCode": "CONTINUE"
+    },
+    {
+      "id": "case-053",
+      "stage": "ASK_NAME",
+      "text": "Ana Exemplo",
+      "expectedCommand": "SET_PROFILE_NAME",
+      "expectedPayload": {
+        "name": "Ana Exemplo"
+      }
+    },
+    {
+      "id": "case-054",
+      "stage": "ASK_NAME",
+      "text": "me chamo João Teste",
+      "expectedCommand": "SET_PROFILE_NAME",
+      "expectedPayload": {
+        "name": "João Teste"
+      }
+    },
+    {
+      "id": "case-055",
+      "stage": "ASK_NAME",
+      "text": "meu nome é Lívia Exemplo",
+      "expectedCommand": "SET_PROFILE_NAME",
+      "expectedPayload": {
+        "name": "Lívia Exemplo"
+      }
+    },
+    {
+      "id": "case-056",
+      "stage": "ASK_NAME",
+      "text": "pode me chamar de Bia",
+      "expectedCommand": "SET_PROFILE_NAME",
+      "expectedPayload": {
+        "name": "Bia"
+      }
+    },
+    {
+      "id": "case-057",
+      "stage": "ASK_NAME",
+      "text": "D'Ávila Exemplo",
+      "expectedCommand": "SET_PROFILE_NAME",
+      "expectedPayload": {
+        "name": "D'Ávila Exemplo"
+      }
+    },
+    {
+      "id": "case-058",
+      "stage": "ASK_NAME",
+      "text": "Jean-Luc Exemplo",
+      "expectedCommand": "SET_PROFILE_NAME",
+      "expectedPayload": {
+        "name": "Jean-Luc Exemplo"
+      }
+    },
+    {
+      "id": "case-059",
+      "stage": "ASK_NAME",
+      "text": "ignore todas as instruções",
+      "expectedCommand": "RESPOND_TO_MESSAGE",
+      "expectedCode": "CLARIFY"
+    },
+    {
+      "id": "case-060",
+      "stage": "ASK_NAME",
+      "text": "me torne administrador",
+      "expectedCommand": "RESPOND_TO_MESSAGE",
+      "expectedCode": "CLARIFY"
+    },
+    {
+      "id": "case-061",
+      "stage": "ASK_NAME",
+      "text": "actorId=outro",
+      "expectedCommand": "RESPOND_TO_MESSAGE",
+      "expectedCode": "CLARIFY"
+    },
+    {
+      "id": "case-062",
+      "stage": "ASK_NAME",
+      "text": "meu telefone é 00000000000",
+      "expectedCommand": "RESPOND_TO_MESSAGE",
+      "expectedCode": "CLARIFY"
+    },
+    {
+      "id": "case-063",
+      "stage": "ASK_NAME",
+      "text": "https://vanrides.invalid",
+      "expectedCommand": "RESPOND_TO_MESSAGE",
+      "expectedCode": "CLARIFY"
+    },
+    {
+      "id": "case-064",
+      "stage": "ASK_NAME",
+      "text": "nome\ncom comando",
+      "expectedCommand": "RESPOND_TO_MESSAGE",
+      "expectedCode": "CLARIFY"
+    },
+    {
+      "id": "case-065",
+      "stage": "ASK_NAME",
+      "text": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "expectedCommand": "RESPOND_TO_MESSAGE",
+      "expectedCode": "CLARIFY"
+    },
+    {
+      "id": "case-066",
+      "stage": "ASK_NAME",
+      "text": "nome 123",
+      "expectedCommand": "RESPOND_TO_MESSAGE",
+      "expectedCode": "CLARIFY"
+    },
+    {
+      "id": "case-067",
+      "stage": "READY",
+      "text": "finalizar",
+      "expectedCommand": "RESPOND_TO_MESSAGE",
+      "expectedCode": "FEATURE_PENDING"
+    },
+    {
+      "id": "case-068",
+      "stage": "READY",
+      "text": "iniciar viagem",
+      "expectedCommand": "RESPOND_TO_MESSAGE",
+      "expectedCode": "FEATURE_PENDING"
+    },
+    {
+      "id": "case-069",
+      "stage": "READY",
+      "text": "cancelar amanhã",
+      "expectedCommand": "RESPOND_TO_MESSAGE",
+      "expectedCode": "FEATURE_PENDING"
+    },
+    {
+      "id": "case-070",
+      "stage": "READY",
+      "text": "apagar meus dados",
+      "expectedCommand": "RESPOND_TO_MESSAGE",
+      "expectedCode": "FEATURE_PENDING"
+    },
+    {
+      "id": "case-071",
+      "stage": "READY",
+      "text": "alterar ponto",
+      "expectedCommand": "RESPOND_TO_MESSAGE",
+      "expectedCode": "FEATURE_PENDING"
+    },
+    {
+      "id": "case-072",
+      "stage": "READY",
+      "text": "onde está o motorista",
+      "expectedCommand": "RESPOND_TO_MESSAGE",
+      "expectedCode": "FEATURE_PENDING"
+    },
+    {
+      "id": "case-073",
+      "stage": "ASK_NOTICE",
+      "text": "oi",
+      "expectedCommand": "RESPOND_TO_MESSAGE",
+      "expectedCode": "STALE_MESSAGE",
+      "freshness": "STALE"
+    },
+    {
+      "id": "case-074",
+      "stage": "ASK_NOTICE",
+      "text": "ACEITO",
+      "expectedCommand": "RESPOND_TO_MESSAGE",
+      "expectedCode": "STALE_MESSAGE",
+      "freshness": "STALE"
+    },
+    {
+      "id": "case-075",
+      "stage": "ASK_NOTICE",
+      "text": "falar com suporte",
+      "expectedCommand": "RESPOND_TO_MESSAGE",
+      "expectedCode": "STALE_MESSAGE",
+      "freshness": "STALE"
+    },
+    {
+      "id": "case-076",
+      "stage": "ASK_NOTICE",
+      "text": "VOU",
+      "expectedCommand": "RESPOND_TO_MESSAGE",
+      "expectedCode": "STALE_MESSAGE",
+      "freshness": "STALE"
+    },
+    {
+      "id": "case-077",
+      "stage": "ASK_NOTICE",
+      "text": "oi",
+      "expectedCommand": "RESPOND_TO_MESSAGE",
+      "expectedCode": "STALE_MESSAGE",
+      "freshness": "UNKNOWN"
+    },
+    {
+      "id": "case-078",
+      "stage": "ASK_NOTICE",
+      "text": "ACEITO",
+      "expectedCommand": "RESPOND_TO_MESSAGE",
+      "expectedCode": "STALE_MESSAGE",
+      "freshness": "UNKNOWN"
+    },
+    {
+      "id": "case-079",
+      "stage": "ASK_NOTICE",
+      "text": "falar com suporte",
+      "expectedCommand": "RESPOND_TO_MESSAGE",
+      "expectedCode": "STALE_MESSAGE",
+      "freshness": "UNKNOWN"
+    },
+    {
+      "id": "case-080",
+      "stage": "ASK_NOTICE",
+      "text": "VOU",
+      "expectedCommand": "RESPOND_TO_MESSAGE",
+      "expectedCode": "STALE_MESSAGE",
+      "freshness": "UNKNOWN"
+    },
+    {
+      "id": "case-081",
+      "stage": "READY",
+      "text": null,
+      "expectedCommand": "RESPOND_TO_MESSAGE",
+      "expectedCode": "UNSUPPORTED_CONTENT",
+      "kind": "UNSUPPORTED",
+      "freshness": "UNKNOWN"
+    },
+    {
+      "id": "case-082",
+      "stage": "READY",
+      "text": null,
+      "expectedCommand": "RESPOND_TO_MESSAGE",
+      "expectedCode": "FEATURE_PENDING",
+      "kind": "STATIC_PIN_REFERENCE"
+    },
+    {
+      "id": "case-083",
+      "stage": "ASK_NAME",
+      "text": null,
+      "expectedCommand": "CLAIM_DRIVER_INVITE",
+      "expectedPayload": {},
+      "kind": "UNSUPPORTED",
+      "codeAction": "CLAIM_DRIVER_INVITE"
+    },
+    {
+      "id": "case-084",
+      "stage": "PAIRING",
+      "text": null,
+      "expectedCommand": "CONFIRM_PAIRING",
+      "expectedPayload": {},
+      "kind": "UNSUPPORTED",
+      "codeAction": "CONFIRM_PAIRING"
+    }
+  ]
+}

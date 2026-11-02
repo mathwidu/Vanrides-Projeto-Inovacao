@@ -1,0 +1,42 @@
+name: WhatsApp, workflows e receptor sintético
+'on':
+  pull_request:
+    paths: ['src/whatsapp/**', 'src/backend/contracts/**', 'scripts/check_whatsapp.py', '.github/workflows/whatsapp.yml']
+  push:
+    paths: ['src/whatsapp/**', 'src/backend/contracts/**', 'scripts/check_whatsapp.py', '.github/workflows/whatsapp.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: whatsapp-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - name: Checkout da revisão avaliada
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Node do worker
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22.23.2'
+      - name: Contratos, imports e suítes offline
+        run: python3 scripts/check_whatsapp.py
+      - name: Construir e conferir imports da imagem do worker
+        run: |
+          docker build -t vanrides-whatsapp:ci -f src/whatsapp/worker/Dockerfile src/whatsapp
+          docker run --rm --network none --entrypoint node vanrides-whatsapp:ci -e "Promise.all(['./dispatch.mjs','./process-inbox.mjs','./attendance-jobs.mjs','./delivery-jobs.mjs'].map(p=>import(p)))"
+      - name: Imagem do receptor GPS, somente local
+        run: |
+          docker build -t vanrides-gps:ci src/whatsapp/gps-spike
+          docker run --rm --network none --entrypoint python vanrides-gps:ci -c "import receiver.web, receiver.service, gunicorn"
+      - name: Baixar a imagem n8n canônica exigida pelo preflight
+        run: docker pull --platform linux/amd64 docker.n8n.io/n8nio/n8n@sha256:80e23ced901f0e22597d4f3464e3aaf9d835372262ea6f08ef760d8ca35df25c
+      - name: n8n sintético CLI, oito exports inativos e controle simulado
+        run: python3 src/whatsapp/scripts/070-n8n-smoke.py

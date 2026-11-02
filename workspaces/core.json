@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "name": "core",
+  "description": "Monorepo acadêmico: coordenação/WhatsApp, backend e aplicativo do motorista; mapas adiado. O perfil não aprova piloto, produção ou iOS físico.",
+  "included": [
+    "coordination",
+    "app",
+    "backend"
+  ],
+  "deferred": {
+    "maps": "Adiado pelo proprietário em 2026-09-02; não clonar, instalar ou executar nesta etapa."
+  }
+}

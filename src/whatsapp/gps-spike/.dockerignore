@@ -1,0 +1,6 @@
+*
+!receiver/
+!receiver/*.py
+!gunicorn.conf.py
+!requirements-production.txt
+!Dockerfile

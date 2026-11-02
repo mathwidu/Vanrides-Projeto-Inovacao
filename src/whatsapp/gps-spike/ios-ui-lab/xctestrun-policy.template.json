@@ -1,0 +1,8 @@
+{
+  "UseDestinationArtifacts": true,
+  "UITargetAppBundleIdentifier": "dev.matheusduarte.vanrides.driver",
+  "SystemAttachmentLifetime": "keepNever",
+  "UserAttachmentLifetime": "keepNever",
+  "ParallelizationEnabled": false,
+  "CodeCoverageEnabled": false
+}

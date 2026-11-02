@@ -1,0 +1,94 @@
+{
+  "id": "vrWa070Flow00007",
+  "name": "VanRides070 · W07 Suporte",
+  "active": false,
+  "nodes": [
+    {
+      "id": "W07-0-errorTrigger",
+      "name": "Falha de execução",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "W07-1-set",
+      "name": "Estado sanitizado",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        260,
+        0
+      ],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "W07-status",
+              "name": "status",
+              "type": "string",
+              "value": "NEEDS_REVIEW"
+            }
+          ]
+        },
+        "includeOtherFields": false,
+        "options": {}
+      }
+    },
+    {
+      "id": "W07-0-executeWorkflowTrigger",
+      "name": "Subfluxo",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        220
+      ],
+      "parameters": {
+        "inputSource": "passthrough"
+      }
+    }
+  ],
+  "connections": {
+    "Falha de execução": {
+      "main": [
+        [
+          {
+            "node": "Estado sanitizado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Subfluxo": {
+      "main": [
+        [
+          {
+            "node": "Estado sanitizado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "none",
+    "saveDataSuccessExecution": "none",
+    "saveManualExecutions": false,
+    "saveExecutionProgress": false,
+    "executionTimeout": 40,
+    "timezone": "America/Sao_Paulo",
+    "callerPolicy": "workflowsFromAList",
+    "callerIds": "vrWa070Flow00001,vrWa070Flow00008"
+  },
+  "staticData": null,
+  "pinData": {},
+  "tags": []
+}

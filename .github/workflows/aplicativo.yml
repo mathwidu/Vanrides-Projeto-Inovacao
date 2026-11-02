@@ -1,0 +1,233 @@
+name: Aplicativo motorista
+
+on:
+  push:
+    branches: [main]
+    paths: ['src/aplicativo-motorista/**', 'scripts/check_app.sh', '.github/workflows/aplicativo.yml']
+  pull_request:
+    paths: ['src/aplicativo-motorista/**', 'scripts/check_app.sh', '.github/workflows/aplicativo.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+    working-directory: src/aplicativo-motorista
+
+concurrency:
+  group: aplicativo-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: '3.12'
+
+      - name: Set up Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@fd55f4c5af5b953cc57a2be44cb082c8f6635e8e # v2.21.0
+        with:
+          flutter-version: "3.38.5"
+          channel: stable
+          cache: false
+
+      - name: Fetch dependencies
+        run: flutter pub get --enforce-lockfile
+
+      - name: Run app CI quality gate
+        working-directory: .
+        run: bash scripts/check_app.sh
+
+      - name: Verify dependency lock stayed unchanged
+        run: git diff --exit-code -- pubspec.lock
+
+  android-driver:
+    needs: quality
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      GRADLE_OPTS: -Dorg.gradle.workers.max=2
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      - name: Set up Java
+        uses: actions/setup-java@dded0888837ed1f317902acf8a20df0ad188d165 # v5.0.0
+        with:
+          distribution: temurin
+          java-version: "21.0.13+9"
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@fd55f4c5af5b953cc57a2be44cb082c8f6635e8e # v2.21.0
+        with:
+          flutter-version: "3.38.5"
+          channel: stable
+          cache: false
+
+      - name: Fetch locked dependencies
+        run: flutter pub get --enforce-lockfile
+
+      - name: Prepare Android SDK used by this revision
+        run: |
+          sdk_manager="${ANDROID_HOME:?}/cmdline-tools/latest/bin/sdkmanager"
+          test -x "$sdk_manager"
+          "$sdk_manager" 'platforms;android-36' 'build-tools;35.0.0' 'ndk;28.2.13676358'
+
+      - name: Record source and tool versions
+        run: |
+          mkdir -p output/ci110
+          git rev-parse HEAD > output/ci110/source-sha.txt
+          flutter --version > output/ci110/flutter-version.txt
+          java -version 2> output/ci110/java-version.txt
+
+      - name: Build driver MVP debug without private signing or environment
+        run: flutter build apk --debug --no-pub --flavor driver --target lib/main_driver_mvp.dart --target-platform android-arm64
+
+      - name: Check effective MVP artifact isolation
+        run: |
+          python3 integration_test/driver_run/artifact_isolation.py --apk build/app/outputs/flutter-apk/app-driver-debug.apk --expect mvp | tee output/ci110/android-mvp-isolation.json
+
+      - name: Run production native unit tests
+        working-directory: src/aplicativo-motorista/android
+        run: ./gradlew :app:testDriverDebugUnitTest -Ptarget=lib/main_driver_mvp.dart --no-daemon --max-workers=2
+
+      - name: Preserve production native test results
+        run: cp -R build/app/test-results/testDriverDebugUnitTest output/ci110/native-tests-mvp
+
+      - name: Build explicit spike regression variant
+        run: flutter build apk --debug --no-pub --flavor driver --target lib/main_driver_gps_spike.dart --target-platform android-arm64
+
+      - name: Check effective spike artifact isolation
+        run: python3 integration_test/driver_run/artifact_isolation.py --apk build/app/outputs/flutter-apk/app-driver-debug.apk --expect spike | tee output/ci110/android-spike-isolation.json
+
+      - name: Run spike native unit tests separately
+        working-directory: src/aplicativo-motorista/android
+        run: ./gradlew :app:testDriverDebugUnitTest -Ptarget=lib/main_driver_gps_spike.dart --no-daemon --max-workers=2 --rerun-tasks
+
+      - name: Preserve spike native test results
+        run: cp -R build/app/test-results/testDriverDebugUnitTest output/ci110/native-tests-spike
+
+      - name: Verify tracked source stayed unchanged
+        run: git diff --exit-code
+
+      - name: Summarize Android preparation
+        run: |
+          printf 'Android driver checked at %s. Build, native tests and artifact isolation passed. Physical acceptance remains pending.\n' "$GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
+          sha256sum build/app/outputs/flutter-apk/app-driver-debug.apk
+
+  ios-driver-generic:
+    needs: quality
+    # Standard public macOS runner; no larger or paid runner.
+    runs-on: macos-26
+    timeout-minutes: 35
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
+      COCOAPODS_DISABLE_STATS: "true"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+
+      - name: Verify selected Xcode pin
+        run: |
+          xcodebuild -version
+          test "$(xcodebuild -version)" = "$(printf 'Xcode 26.6\nBuild version 17F113')"
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@fd55f4c5af5b953cc57a2be44cb082c8f6635e8e # v2.21.0
+        with:
+          flutter-version: "3.38.5"
+          channel: stable
+          cache: false
+
+      - name: Set up pinned CocoaPods
+        run: |
+          ruby -S gem install cocoapods --version 1.16.2 --no-document --user-install
+          task_pod_bin="$RUNNER_TEMP/vanrides-cocoapods-bin"
+          mkdir -p "$task_pod_bin"
+          printf '#!%s\n' "$(command -v ruby)" > "$task_pod_bin/pod"
+          cat >> "$task_pod_bin/pod" <<'RUBY'
+          require 'rubygems'
+          gem 'cocoapods', '= 1.16.2'
+          load Gem.bin_path('cocoapods', 'pod', '= 1.16.2')
+          RUBY
+          chmod +x "$task_pod_bin/pod"
+          printf '%s\n' "$task_pod_bin" >> "$GITHUB_PATH"
+
+      - name: Verify exact CocoaPods activation before iOS work
+        run: |
+          test "$(command -v pod)" = "$RUNNER_TEMP/vanrides-cocoapods-bin/pod"
+          test "$(pod --version)" = "1.16.2"
+          python3 -c 'import subprocess; assert subprocess.check_output(["pod", "--version"], text=True).strip() == "1.16.2"'
+          test "$(sed -n 's/^COCOAPODS: //p' ios/Podfile.lock)" = "1.16.2"
+          git diff --exit-code -- ios/Podfile.lock
+
+      - name: Fetch locked dependencies
+        run: flutter pub get --enforce-lockfile
+
+      - name: Run native session and tracking host tests
+        run: |
+          bash ios/RunnerTests/run_driver_session_host.sh
+          task_sdk="$(xcrun --sdk macosx --show-sdk-path)"
+          task_platform="$DEVELOPER_DIR/Platforms/MacOSX.platform/Developer"
+          task_output="$(mktemp -d)"
+          trap 'rm -rf "$task_output"' EXIT
+          xcrun --sdk macosx swiftc -swift-version 5 -sdk "$task_sdk" \
+            -F "$task_platform/Library/Frameworks" \
+            -I "$task_platform/usr/lib" -L "$task_platform/usr/lib" \
+            -Xlinker -rpath -Xlinker "$task_platform/Library/Frameworks" \
+            -Xlinker -rpath -Xlinker "$task_platform/usr/lib" \
+            -D DRIVER_TRACKING_STANDALONE_TESTS \
+            ios/Runner/DriverTrackingCore.swift ios/RunnerTests/DriverTrackingCoreTests.swift \
+            -o "$task_output/tracking-tests"
+          "$task_output/tracking-tests"
+
+      - name: Configure generic driver build without signing
+        run: |
+          test "$(pod --version)" = "1.16.2"
+          flutter build ios --config-only --release --no-codesign --no-pub --flavor driver --target lib/main_driver_mvp.dart
+          git diff --exit-code -- ios/Podfile.lock
+
+      - name: Install locked Pods
+        working-directory: src/aplicativo-motorista/ios
+        run: |
+          test "$(pod --version)" = "1.16.2"
+          pod install --deployment
+          git diff --exit-code -- Podfile.lock
+
+      - name: Build generic iPhoneOS driver without signing
+        run: |
+          test "$(pod --version)" = "1.16.2"
+          git diff --exit-code -- ios/Podfile.lock
+          flutter build ios --release --no-codesign --no-pub --flavor driver --target lib/main_driver_mvp.dart
+          git diff --exit-code -- ios/Podfile.lock
+
+      - name: Inspect unsigned app with source provenance
+        run: |
+          mkdir -p output/ci110
+          git rev-parse HEAD > output/ci110/source-sha.txt
+          flutter --version > output/ci110/flutter-version.txt
+          xcodebuild -version > output/ci110/xcode-version.txt
+          pod --version > output/ci110/cocoapods-version.txt
+          python3 integration_test/driver_run/artifact_isolation.py --ios-app build/ios/iphoneos/Runner.app --expect mvp | tee output/ci110/ios-mvp-isolation.json
+          git diff --exit-code
+
+      - name: Summarize iOS preparation
+        run: |
+          printf 'Unsigned iOS driver checked at %s. Build, host tests and artifact isolation passed. Physical iPhone validation is paused.\n' "$GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"

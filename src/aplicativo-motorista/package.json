@@ -1,0 +1,22 @@
+{
+  "name": "vanrides-app",
+  "version": "1.0.0",
+  "description": "Tooling local para QA web do portal admin do VanRides.",
+  "scripts": {
+    "qa:admin-portal-web-e2e": "bash ./scripts/qa_admin_portal_web_e2e.sh"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mathwidu/Vanrides-Projeto-Inovacao.git",
+    "directory": "src/aplicativo-motorista"
+  },
+  "keywords": [
+    "flutter",
+    "playwright",
+    "qa"
+  ],
+  "license": "ISC",
+  "devDependencies": {
+    "playwright": "^1.58.2"
+  }
+}

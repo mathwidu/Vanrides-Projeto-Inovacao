@@ -1,0 +1,2666 @@
+{
+  "schemaVersion": 1,
+  "asOf": "2026-11-02",
+  "reviewStatus": "Proposta para revisão da equipe; não altera critérios canônicos nem autoriza publicação, mudança de estado ou piloto.",
+  "completionBoundary": "Critérios delimitam o objetivo da tarefa para revisão. Implementação, prova local, integração no canal real e aceite de piloto são níveis distintos. Resultados existentes podem ser conferidos contra os critérios; nada aqui afirma que novos testes foram executados.",
+  "sourceDigests": {
+    "backlogData": "af73a759aeae70bc9ba1b7dd9eecc3feda956137d7322436260e39aa5c1a528d",
+    "taskProgress": "830e86ebabbc2bab9e916d219bcee84439ef942cebfa0a88388607d28df4575c"
+  },
+  "sourceRevisions": {
+    "coordination": "96130bc84b27c3468c4129c3810c4417e7eb8b9a",
+    "backend": "e25ed4e0131bc253b7ccea2fa4ab793e69a89af9",
+    "app": "b9fcedbbf949ad9f1684efcc1a2b0f2176cf7877"
+  },
+  "tasks": [
+    {
+      "taskId": "T01",
+      "title": "Preparar a API Java Spring Boot e o banco de dados para os cadastros pelo WhatsApp, preservando a configuração anterior.",
+      "shortTitle": "Preparar API e banco",
+      "feature": "F09",
+      "problem": "Os cadastros precisam de um serviço e banco configurados de forma reproduzível.",
+      "outcome": "A API Java e o banco ficam prontos para receber os cadastros do atendimento.",
+      "inScope": [
+        "Configuração da API Spring Boot, banco e ambiente de cadastro, preservando a configuração anterior."
+      ],
+      "outOfScope": [
+        "Publicar o serviço ou refazer os cadastros nesta tarefa."
+      ],
+      "acceptanceCriteria": [
+        "A API inicia com a configuração de teste documentada.",
+        "O banco aceita a estrutura prevista para os cadastros e uma operação de teste.",
+        "A configuração anterior fica identificada e recuperável, sem credenciais no repositório."
+      ],
+      "proofType": "Laboratório",
+      "verification": [
+        "Iniciar API e banco separados, realizar uma operação de teste e conferir o procedimento de recuperação.",
+        "Registro da jornada em ambiente separado, com componentes e versão usados e limite do canal simulado explícito."
+      ],
+      "prerequisites": [
+        "Versões do serviço e banco identificadas e acesso a um ambiente de teste."
+      ],
+      "decisionPending": null,
+      "nextRequiredOutcome": "Manter a configuração compatível na versão de teste.",
+      "sourcePaths": [
+        "src/backend/pom.xml",
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/config/WaSettings.java"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-010-TOOLCHAINS.md",
+        "program/evidence/VR-WA-040-DOMAIN-AUTH.md",
+        "program/cards/VR-WA-000-PREFLIGHT.md",
+        "program/cards/VR-WA-040-DOMAIN-AUTH.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-000-PREFLIGHT.md",
+        "program/cards/VR-WA-040-DOMAIN-AUTH.md"
+      ]
+    },
+    {
+      "taskId": "T02",
+      "title": "Cadastrar o motorista pelo WhatsApp, validando os dados e a permissão de acesso.",
+      "shortTitle": "Cadastrar motorista",
+      "feature": "F09",
+      "problem": "Sem identificar o motorista, o atendimento não pode associar rotinas e passageiros ao responsável correto.",
+      "outcome": "O motorista consegue se cadastrar pelo WhatsApp com seus dados validados.",
+      "inScope": [
+        "Receber os dados previstos, validar e registrar o motorista autorizado."
+      ],
+      "outOfScope": [
+        "Criar cadastro de empresa ou acrescentar novos campos ao perfil."
+      ],
+      "acceptanceCriteria": [
+        "Uma conversa válida registra o motorista e confirma o resultado.",
+        "Dados inválidos ou acesso não autorizado são recusados sem criar cadastro válido.",
+        "Repetir a mesma entrada não cria outro motorista."
+      ],
+      "proofType": "Laboratório",
+      "verification": [
+        "Executar cadastro válido, entrada inválida e repetição da mesma mensagem em ambiente de teste.",
+        "Registro da jornada em ambiente separado, com componentes e versão usados e limite do canal simulado explícito."
+      ],
+      "prerequisites": [
+        "Identidade da conversa autenticada e operações de cadastro disponíveis."
+      ],
+      "decisionPending": null,
+      "nextRequiredOutcome": "Repetir a conversa com o número dedicado.",
+      "sourcePaths": [
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaDriverSetup.java",
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaDriverMutations.java"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-080-DRIVER-ROUTINES.md",
+        "program/cards/VR-WA-080-DRIVER-ROUTINES.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-080-DRIVER-ROUTINES.md"
+      ]
+    },
+    {
+      "taskId": "T03",
+      "title": "Permitir que cada pessoa execute apenas as ações autorizadas para seu perfil e separar as ações automáticas do sistema.",
+      "shortTitle": "Restringir ações por perfil",
+      "feature": "F09",
+      "problem": "Uma pessoa ou automação não pode executar operações em nome de outra.",
+      "outcome": "Cada ação usa a identidade e a permissão corretas.",
+      "inScope": [
+        "Autorização de motorista, passageiro, aparelho e automações nos comandos existentes."
+      ],
+      "outOfScope": [
+        "Adicionar novos papéis ou trocar toda a autenticação do produto."
+      ],
+      "acceptanceCriteria": [
+        "Ações permitidas ao perfil autenticado são aceitas.",
+        "Trocar o alvo para outro motorista ou passageiro é recusado sem alteração de dados.",
+        "Uma credencial de automação não é aceita como ação de pessoa, e o inverso também é recusado."
+      ],
+      "proofType": "Teste automatizado",
+      "verification": [
+        "Executar a matriz de acesso com identidades próprias, alvos de outra pessoa e tipos de credencial incompatíveis.",
+        "Relatório dos cenários automatizados, com versão avaliada, resultado e falhas preservadas."
+      ],
+      "prerequisites": [
+        "Perfis e operações permitidas definidos no contrato atual."
+      ],
+      "decisionPending": null,
+      "nextRequiredOutcome": "Preservar a autorização ao conectar o canal real.",
+      "sourcePaths": [
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/auth/WaIngressFilter.java",
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/auth/WaProofFilter.java"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-040-DOMAIN-AUTH.md",
+        "program/cards/VR-WA-040-DOMAIN-AUTH.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-040-DOMAIN-AUTH.md"
+      ]
+    },
+    {
+      "taskId": "T04",
+      "title": "Cadastrar o passageiro pelo WhatsApp com dados essenciais, dias da rotina e ponto de embarque validado.",
+      "shortTitle": "Cadastrar passageiro e ponto",
+      "feature": "F10",
+      "problem": "O motorista precisa saber quem será transportado, em quais dias e onde deverá buscar a pessoa.",
+      "outcome": "O passageiro informa os dados necessários e tem seu ponto conferido pelo motorista.",
+      "inScope": [
+        "Dados essenciais, dias da rotina e ponto de embarque do passageiro."
+      ],
+      "outOfScope": [
+        "Exigir aplicativo do passageiro ou localização contínua da pessoa."
+      ],
+      "acceptanceCriteria": [
+        "A conversa coleta os campos necessários e os dias sem confundir ida e volta.",
+        "Um ponto inválido pede correção e não é aprovado silenciosamente.",
+        "O vínculo e o ponto passam pela confirmação do motorista correto."
+      ],
+      "proofType": "Laboratório",
+      "verification": [
+        "Percorrer cadastro, envio de ponto, correção e aprovação, incluindo tentativa de outro motorista.",
+        "Registro da jornada em ambiente separado, com componentes e versão usados e limite do canal simulado explícito."
+      ],
+      "prerequisites": [
+        "Convite ou rotina válida e motorista habilitado para aprovar o pedido."
+      ],
+      "decisionPending": null,
+      "nextRequiredOutcome": "Conferir o cadastro no WhatsApp real.",
+      "sourcePaths": [
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaPassengerSetup.java",
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaPassengerMutations.java"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-090-PASSENGERS.md",
+        "program/cards/VR-WA-090-PASSENGERS.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-090-PASSENGERS.md"
+      ]
+    },
+    {
+      "taskId": "T05",
+      "title": "Gerar convite com prazo de validade e vincular o passageiro após aprovação do motorista, impedindo uso duplicado.",
+      "shortTitle": "Convidar e vincular passageiro",
+      "feature": "F10",
+      "problem": "O passageiro precisa entrar na rotina certa sem reutilizar convites vencidos ou criar vínculos repetidos.",
+      "outcome": "O convite permite uma solicitação válida e o motorista decide o vínculo.",
+      "inScope": [
+        "Emissão, validade, consumo e aprovação do convite existente."
+      ],
+      "outOfScope": [
+        "Compartilhar convites sem prazo ou vincular alguém sem aprovação."
+      ],
+      "acceptanceCriteria": [
+        "O convite válido identifica a rotina e permite a solicitação prevista.",
+        "Convite vencido ou revogado é recusado sem criar vínculo.",
+        "Repetição ou disputa pelo mesmo uso não cria solicitações aceitas além do permitido."
+      ],
+      "proofType": "Laboratório",
+      "verification": [
+        "Testar convite válido, vencido, revogado, repetido e uso concorrente em dados fictícios.",
+        "Registro da jornada em ambiente separado, com componentes e versão usados e limite do canal simulado explícito."
+      ],
+      "prerequisites": [
+        "Motorista, rotina e regras de uso do convite disponíveis."
+      ],
+      "decisionPending": null,
+      "nextRequiredOutcome": "Verificar convite com participantes autorizados no número dedicado.",
+      "sourcePaths": [
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/transport/WaPrivateInviteDelivery.java",
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaPassengerSetup.java"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-080-DRIVER-ROUTINES.md",
+        "program/evidence/VR-WA-090-PASSENGERS.md",
+        "program/cards/VR-WA-080-DRIVER-ROUTINES.md",
+        "program/cards/VR-WA-090-PASSENGERS.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-080-DRIVER-ROUTINES.md",
+        "program/cards/VR-WA-090-PASSENGERS.md"
+      ]
+    },
+    {
+      "taskId": "T6",
+      "title": "Registrar confirmação ou ausência para a data e o sentido corretos, mantendo pendente quem não respondeu.",
+      "shortTitle": "Responder presença na viagem certa",
+      "feature": "F02",
+      "problem": "Uma resposta sem data e sentido claros pode alterar a viagem errada.",
+      "outcome": "Cada passageiro confirma ou informa ausência para a viagem indicada.",
+      "inScope": [
+        "Registrar e corrigir a resposta da ocorrência selecionada."
+      ],
+      "outOfScope": [
+        "Tratar falta de resposta como confirmação automática."
+      ],
+      "acceptanceCriteria": [
+        "A resposta modifica somente a data, sentido e passageiro indicados.",
+        "Quem não respondeu continua pendente e previsto.",
+        "Uma correção válida substitui a resposta anterior sem alterar outra viagem."
+      ],
+      "proofType": "Laboratório",
+      "verification": [
+        "Confirmar ida, deixar volta pendente e corrigir a resposta; conferir a lista resultante.",
+        "Registro da jornada em ambiente separado, com componentes e versão usados e limite do canal simulado explícito."
+      ],
+      "prerequisites": [
+        "Ocorrências de ida e volta e vínculo do passageiro existentes."
+      ],
+      "decisionPending": null,
+      "nextRequiredOutcome": "Repetir respostas e lembrete no canal real.",
+      "sourcePaths": [
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaAttendanceMutation.java",
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaAttendanceConversation.java"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-100-ATTENDANCE.md",
+        "program/cards/VR-WA-100-ATTENDANCE.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-100-ATTENDANCE.md"
+      ]
+    },
+    {
+      "taskId": "T7",
+      "title": "Receber posições GPS do aparelho vinculado e rejeitar posições antigas, repetidas ou de outra viagem.",
+      "shortTitle": "Receber GPS do aparelho vinculado",
+      "feature": "F05",
+      "problem": "Posições sem origem ou horário confiáveis podem apresentar uma van no lugar errado.",
+      "outcome": "A API recebe somente as posições válidas da sessão e do aparelho autorizados.",
+      "inScope": [
+        "Recepção de posições e validação de identidade, sequência e atualização."
+      ],
+      "outOfScope": [
+        "Calcular aproximação ou prometer continuidade física apenas por receber uma posição."
+      ],
+      "acceptanceCriteria": [
+        "Posição válida do aparelho vinculado é registrada na sessão correta.",
+        "Posição de outro aparelho ou viagem é recusada.",
+        "Amostra antiga ou repetida não substitui uma posição mais atual nem renova sua validade indevidamente."
+      ],
+      "proofType": "Teste automatizado",
+      "verification": [
+        "Enviar amostras válidas, antigas, repetidas e de outra sessão e conferir os resultados persistidos.",
+        "Relatório dos cenários automatizados, com versão avaliada, resultado e falhas preservadas."
+      ],
+      "prerequisites": [
+        "Sessão de localização e regras de validade da versão avaliada configuradas."
+      ],
+      "decisionPending": null,
+      "nextRequiredOutcome": "Validar continuidade durante os percursos nos dois aparelhos.",
+      "sourcePaths": [
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/tracking/WaTrackingSamples.java",
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/tracking/WaTrackingService.java"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-110-RUN-TRACKING.md",
+        "program/cards/VR-WA-110-RUN-TRACKING.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-110-RUN-TRACKING.md"
+      ]
+    },
+    {
+      "taskId": "T9a",
+      "title": "Permitir a consulta da localização apenas ao motorista e aos passageiros autorizados para aquela viagem.",
+      "shortTitle": "Autorizar consulta da posição",
+      "feature": "F05",
+      "problem": "A posição da van não deve ser exposta a quem não participa da viagem.",
+      "outcome": "Somente o motorista e os passageiros autorizados consultam a posição daquela viagem.",
+      "inScope": [
+        "Autorizar a operação de consulta e conferir vínculo e viagem."
+      ],
+      "outOfScope": [
+        "Criar a mensagem de localização ou divulgar mapa público."
+      ],
+      "acceptanceCriteria": [
+        "Um participante elegível consulta a própria viagem.",
+        "Outro motorista ou passageiro sem vínculo não recebe a posição.",
+        "A perda de autorização impede uma nova consulta, mesmo após uma consulta anterior válida."
+      ],
+      "proofType": "Teste automatizado",
+      "verification": [
+        "Executar consulta com participante válido, pessoa externa e vínculo removido.",
+        "Relatório dos cenários automatizados, com versão avaliada, resultado e falhas preservadas."
+      ],
+      "prerequisites": [
+        "Operação de consulta prevista e regra de elegibilidade da viagem disponíveis."
+      ],
+      "decisionPending": null,
+      "nextRequiredOutcome": "Implementar a consulta com escopo dos participantes e seus testes.",
+      "sourcePaths": [
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/auth/WaIngressFilter.java",
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/auth/WaProofFilter.java",
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaCommandService.java"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-040-DOMAIN-AUTH.md",
+        "program/evidence/VR-WA-110-RUN-TRACKING.md",
+        "program/cards/VR-WA-040-DOMAIN-AUTH.md",
+        "program/cards/VR-WA-110-RUN-TRACKING.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-040-DOMAIN-AUTH.md",
+        "program/cards/VR-WA-110-RUN-TRACKING.md"
+      ]
+    },
+    {
+      "taskId": "T9b",
+      "title": "Responder à consulta de localização com a última posição válida e seu horário, indicando quando estiver desatualizada.",
+      "shortTitle": "Responder consulta de localização",
+      "feature": "F05",
+      "problem": "Receber um ponto sem horário pode fazer o passageiro acreditar que uma posição antiga é atual.",
+      "outcome": "A resposta informa a última posição válida e quando ela foi obtida.",
+      "inScope": [
+        "Compor a resposta da consulta e indicar posição desatualizada ou indisponível."
+      ],
+      "outOfScope": [
+        "Enviar trajeto completo ou previsão de chegada em minutos."
+      ],
+      "acceptanceCriteria": [
+        "A consulta com posição válida devolve o ponto e seu horário de referência.",
+        "Posição vencida ou ausente é apresentada como desatualizada ou indisponível.",
+        "Uma resposta atrasada é revalidada antes do envio e não apresenta GPS vencido como atual."
+      ],
+      "proofType": "Laboratório",
+      "verification": [
+        "Consultar com posição recente, vencida, ausente e envio atrasado usando relógio controlado.",
+        "Registro da jornada em ambiente separado, com componentes e versão usados e limite do canal simulado explícito."
+      ],
+      "prerequisites": [
+        "Consulta autorizada e acesso à última posição com seu horário."
+      ],
+      "decisionPending": null,
+      "nextRequiredOutcome": "Implementar a resposta com horário e indicação de posição antiga.",
+      "sourcePaths": [
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaCommandService.java"
+      ],
+      "evidencePaths": [
+        "program/cards/VR-WA-110-RUN-TRACKING.md",
+        "program/cards/VR-WA-130-APPROACH.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-110-RUN-TRACKING.md",
+        "program/cards/VR-WA-130-APPROACH.md"
+      ]
+    },
+    {
+      "taskId": "T10",
+      "title": "Guardar a última posição válida da van e disponibilizar sua consulta com o horário de atualização.",
+      "shortTitle": "Guardar a última posição válida",
+      "feature": "F05",
+      "problem": "A consulta precisa recuperar a posição mais recente sem voltar para uma amostra antiga.",
+      "outcome": "O armazenamento fornece a última posição válida e o horário para a consulta autorizada.",
+      "inScope": [
+        "Persistência da última posição e disponibilização para consulta."
+      ],
+      "outOfScope": [
+        "Histórico integral do trajeto ou produtor de aproximação."
+      ],
+      "acceptanceCriteria": [
+        "Uma nova amostra válida atualiza posição e horário.",
+        "Repetição ou amostra anterior não faz a posição recuar.",
+        "A consulta autorizada recupera esses dados e distingue ausência ou desatualização."
+      ],
+      "proofType": "Teste automatizado",
+      "verification": [
+        "Gravar posições em ordem, fora de ordem e repetidas; consultar antes e depois da atualização.",
+        "Relatório dos cenários automatizados, com versão avaliada, resultado e falhas preservadas."
+      ],
+      "prerequisites": [
+        "Recepção de GPS validada e operação de consulta autorizada."
+      ],
+      "decisionPending": null,
+      "nextRequiredOutcome": "Concluir a consulta autorizada e testar posição desatualizada.",
+      "sourcePaths": [
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/tracking/WaTrackingSamples.java",
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/tracking/WaTrackingService.java",
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaCommandService.java"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-110-RUN-TRACKING.md",
+        "program/cards/VR-WA-110-RUN-TRACKING.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-110-RUN-TRACKING.md"
+      ]
+    },
+    {
+      "taskId": "T11",
+      "title": "Preparar o aviso de aproximação para o passageiro correto, uma única vez por viagem, ponto e regra de aviso.",
+      "shortTitle": "Preparar aviso de aproximação",
+      "feature": "F11",
+      "problem": "O passageiro precisa ser avisado da aproximação sem receber avisos de outra pessoa ou repetições.",
+      "outcome": "Uma aproximação válida gera um aviso para o passageiro correto.",
+      "inScope": [
+        "Criar a intenção de aviso por viagem, ponto e passageiro, segundo a regra configurada."
+      ],
+      "outOfScope": [
+        "Escolher novos limiares de distância ou prometer horário de chegada nesta tarefa."
+      ],
+      "acceptanceCriteria": [
+        "Uma aproximação elegível gera aviso para o destinatário e ponto corretos.",
+        "Repetir a avaliação ou reiniciar o processamento não gera outro aviso para o mesmo caso.",
+        "Mudar a versão da regra não autoriza repetir o aviso na mesma viagem e ponto."
+      ],
+      "proofType": "Teste automatizado",
+      "verification": [
+        "Avaliar o mesmo caso mais de uma vez, com reinício e versão de regra diferente; conferir avisos e destinatários.",
+        "Relatório dos cenários automatizados, com versão avaliada, resultado e falhas preservadas."
+      ],
+      "prerequisites": [
+        "Regra de aproximação configurada e base de envio e recuperação disponíveis."
+      ],
+      "decisionPending": null,
+      "nextRequiredOutcome": "Implementar a regra e o aviso por passageiro antes do teste de utilidade.",
+      "sourcePaths": [
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaCommandService.java"
+      ],
+      "evidencePaths": [
+        "program/cards/VR-WA-130-APPROACH.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-130-APPROACH.md"
+      ],
+      "specificationSources": [
+        {
+          "path": "docs/plans/2026-10-28-whatsapp-mvp/08-contratos-configuracao-e-workflows.md",
+          "section": "7 — Entrega, retries e configuração: identidade da mensagem e versão da política como metadado."
+        }
+      ]
+    },
+    {
+      "taskId": "T23",
+      "title": "Definir as mensagens de cadastro, envio da localização fixa e correção ou aprovação do ponto de embarque.",
+      "shortTitle": "Explicar cadastro e correção do ponto",
+      "feature": "F10",
+      "problem": "Mensagens ambíguas dificultam saber o que informar e quem precisa aprovar.",
+      "outcome": "A conversa orienta cadastro, envio do ponto e correção de forma compreensível.",
+      "inScope": [
+        "Textos e sequência das mensagens do cadastro do passageiro."
+      ],
+      "outOfScope": [
+        "Adicionar novos canais, formulários ou dados de cadastro."
+      ],
+      "acceptanceCriteria": [
+        "Cada etapa informa a ação esperada do passageiro ou motorista.",
+        "A solicitação de correção indica que o ponto ainda precisa ser confirmado.",
+        "A aprovação ou recusa mostra o resultado sem apresentar um pedido pendente como aprovado."
+      ],
+      "proofType": "Laboratório",
+      "verification": [
+        "Percorrer os textos com uma pessoa da equipe, incluindo ponto recusado e nova aprovação.",
+        "Registro da jornada em ambiente separado, com componentes e versão usados e limite do canal simulado explícito."
+      ],
+      "prerequisites": [
+        "Fluxo de cadastro e papéis de passageiro e motorista definidos."
+      ],
+      "decisionPending": null,
+      "nextRequiredOutcome": "Revisar a compreensão das mensagens com a equipe no canal real.",
+      "sourcePaths": [
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaPassengerTexts.java",
+        "src/whatsapp/agent/passenger-setup.mjs"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-090-PASSENGERS.md",
+        "program/cards/VR-WA-090-PASSENGERS.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-090-PASSENGERS.md"
+      ]
+    },
+    {
+      "taskId": "T24",
+      "title": "Criar as viagens de ida e volta no calendário da rotina, respeitando o fuso horário de São Paulo.",
+      "shortTitle": "Criar calendário de ida e volta",
+      "feature": "F02",
+      "problem": "Uma rotina recorrente precisa gerar a viagem certa para cada dia e sentido.",
+      "outcome": "As ocorrências seguem os dias e horários da rotina no fuso configurado.",
+      "inScope": [
+        "Criação de ocorrências independentes de ida e volta usando São Paulo no cenário do backlog."
+      ],
+      "outOfScope": [
+        "Inventar feriados ou alterar o calendário sem configuração."
+      ],
+      "acceptanceCriteria": [
+        "Os dias selecionados geram as ocorrências previstas e os demais não.",
+        "Ida e volta mantêm identidades e horários independentes.",
+        "Executar novamente a criação não duplica ocorrências para a mesma rotina, data e sentido."
+      ],
+      "proofType": "Teste automatizado",
+      "verification": [
+        "Usar um calendário fictício em São Paulo, comparar dias/sentidos e repetir a criação das viagens.",
+        "Relatório dos cenários automatizados, com versão avaliada, resultado e falhas preservadas."
+      ],
+      "prerequisites": [
+        "Rotina com dias, horários e fuso identificados."
+      ],
+      "decisionPending": null,
+      "nextRequiredOutcome": "Conferir a configuração de São Paulo no ensaio real.",
+      "sourcePaths": [
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/attendance/WaAttendanceCalendar.java",
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/attendance/WaAttendanceMaterializer.java"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-100-ATTENDANCE.md",
+        "program/cards/VR-WA-100-ATTENDANCE.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-100-ATTENDANCE.md"
+      ]
+    },
+    {
+      "taskId": "T25",
+      "title": "Enviar o lembrete de presença às 20h do dia anterior, uma única vez por viagem.",
+      "shortTitle": "Enviar lembrete de presença",
+      "feature": "F02",
+      "problem": "Sem uma pergunta no momento combinado, a confirmação depende de cobranças manuais.",
+      "outcome": "O passageiro recebe a pergunta da viagem correta às 20h do dia anterior.",
+      "inScope": [
+        "Agendamento do lembrete por ocorrência, sem repetição indevida."
+      ],
+      "outOfScope": [
+        "Garantir entrega real apenas com confirmação técnica de envio."
+      ],
+      "acceptanceCriteria": [
+        "No fuso configurado, o lembrete fica elegível às 20h do dia anterior.",
+        "A pergunta identifica a ocorrência correta e respeita a preferência de recebimento.",
+        "Reexecução ou reinício não cria outra pergunta para a mesma ocorrência."
+      ],
+      "proofType": "Laboratório",
+      "verification": [
+        "Controlar o relógio em torno da janela do lembrete, repetir o acionamento e conferir o destinatário e a viagem.",
+        "Registro da jornada em ambiente separado, com componentes e versão usados e limite do canal simulado explícito."
+      ],
+      "prerequisites": [
+        "Calendário de viagens criado e passageiro elegível para receber lembrete."
+      ],
+      "decisionPending": null,
+      "nextRequiredOutcome": "Executar o agendamento com São Paulo no ambiente autorizado.",
+      "sourcePaths": [
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/attendance/WaAttendanceCalendar.java",
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/attendance/WaAttendanceMaterializer.java",
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/attendance/WaAttendanceReminders.java",
+        "src/whatsapp/worker/attendance-jobs.mjs"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-100-ATTENDANCE.md",
+        "program/cards/VR-WA-100-ATTENDANCE.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-100-ATTENDANCE.md"
+      ]
+    },
+    {
+      "taskId": "T26",
+      "title": "Testar respostas antigas, falta de resposta e repetição do lembrete sem alterar outra viagem.",
+      "shortTitle": "Testar respostas antigas e repetidas",
+      "feature": "F02",
+      "problem": "Falhas de tempo ou repetição podem alterar presença sem intenção do passageiro.",
+      "outcome": "Os testes demonstram que o contexto de cada resposta é preservado.",
+      "inScope": [
+        "Cenários de resposta antiga, silêncio e repetição do lembrete."
+      ],
+      "outOfScope": [
+        "Reexecutar toda a jornada física para testar regras de calendário."
+      ],
+      "acceptanceCriteria": [
+        "Resposta de uma pergunta antiga não altera outra ocorrência atual.",
+        "Sem resposta, a presença permanece pendente.",
+        "O mesmo lembrete ou resposta repetido não duplica perguntas nem efeitos."
+      ],
+      "proofType": "Teste automatizado",
+      "verification": [
+        "Executar os cenários com relógio controlado e comparar os registros antes e depois.",
+        "Relatório dos cenários automatizados, com versão avaliada, resultado e falhas preservadas."
+      ],
+      "prerequisites": [
+        "Dados de teste com duas ocorrências e perguntas identificadas."
+      ],
+      "decisionPending": null,
+      "nextRequiredOutcome": "Manter regressões e repetir os casos essenciais no WhatsApp real.",
+      "sourcePaths": [
+        "src/backend/src/test/java/com/vanrides/vanrides/whatsapp/transport/WaAttendanceCutoffIntegrationTest.java",
+        "src/backend/src/test/java/com/vanrides/vanrides/whatsapp/transport/WaAttendanceJobsIntegrationTest.java"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-100-ATTENDANCE.md",
+        "program/cards/VR-WA-100-ATTENDANCE.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-100-ATTENDANCE.md"
+      ]
+    },
+    {
+      "taskId": "T27",
+      "title": "Registrar as versões e alterações dos três repositórios e preparar a recuperação da configuração anterior.",
+      "shortTitle": "Preservar versões e recuperação",
+      "feature": "F09",
+      "problem": "Sem registrar o ponto de partida, uma mudança pode apagar trabalho anterior ou ficar impossível de desfazer.",
+      "outcome": "O grupo identifica as versões e consegue recuperar a configuração anterior.",
+      "inScope": [
+        "Inventário dos três repositórios e recuperação das alterações existentes."
+      ],
+      "outOfScope": [
+        "Enviar cópias com segredos ou publicar os repositórios."
+      ],
+      "acceptanceCriteria": [
+        "A versão e as alterações existentes de cada repositório ficam registradas.",
+        "A cópia ou procedimento de recuperação identifica o que pode ser restaurado.",
+        "A conferência não remove mudanças de outra pessoa nem inclui credenciais na publicação."
+      ],
+      "proofType": "Revisão documental ou reprodução",
+      "verification": [
+        "Conferir o inventário com os arquivos e simular a recuperação em destino separado.",
+        "Lista dos arquivos ou procedimentos conferidos, versão correspondente e registro da revisão ou reprodução."
+      ],
+      "prerequisites": [
+        "Acesso de leitura aos três repositórios e local separado para a cópia."
+      ],
+      "decisionPending": null,
+      "nextRequiredOutcome": "Preservar a cópia recuperável nas próximas entregas.",
+      "sourcePaths": [],
+      "evidencePaths": [
+        "program/evidence/VR-WA-000-PREFLIGHT.md",
+        "docs/workspace/preflight-2026-10-30.md",
+        "program/cards/VR-WA-000-PREFLIGHT.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-000-PREFLIGHT.md"
+      ]
+    },
+    {
+      "taskId": "T28",
+      "title": "Preparar as ferramentas Android e gerar um aplicativo mínimo de teste com versão identificada.",
+      "shortTitle": "Preparar aplicativo mínimo Android",
+      "feature": "F09",
+      "problem": "O desenvolvimento precisa de um aplicativo Android que compile, instale e abra.",
+      "outcome": "Uma versão mínima identificada funciona no aparelho de teste.",
+      "inScope": [
+        "Ferramentas necessárias e geração do aplicativo mínimo Android."
+      ],
+      "outOfScope": [
+        "Validar GPS em percurso ou todas as funções do MVP."
+      ],
+      "acceptanceCriteria": [
+        "A versão mínima é gerada com as ferramentas documentadas.",
+        "A instalação e a abertura funcionam no aparelho indicado.",
+        "A identificação da versão e os passos de reprodução ficam registrados."
+      ],
+      "proofType": "Teste físico delimitado",
+      "verification": [
+        "Instalar e abrir a versão mínima, desconectar o Mac e verificar a reabertura.",
+        "Registro por aparelho e cenário, com tela/rede consideradas e resultado sanitizado, sem GPS bruto ou credenciais."
+      ],
+      "prerequisites": [
+        "Aparelho Android disponibilizado e permissões de instalação concedidas pelo proprietário."
+      ],
+      "decisionPending": null,
+      "nextRequiredOutcome": "Usar a versão integrada nos próximos testes físicos.",
+      "sourcePaths": [
+        "src/aplicativo-motorista/android/app/build.gradle.kts"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-010-TOOLCHAINS.md",
+        "program/cards/VR-WA-010-TOOLCHAINS.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-010-TOOLCHAINS.md"
+      ]
+    },
+    {
+      "taskId": "T29",
+      "title": "Gerar um aplicativo mínimo para iPhone e documentar a assinatura de desenvolvimento e sua renovação.",
+      "shortTitle": "Preparar aplicativo mínimo iPhone",
+      "feature": "F09",
+      "problem": "O grupo precisa distinguir um arquivo gerado de um aplicativo que realmente abre no iPhone.",
+      "outcome": "Uma versão mínima instalada tem assinatura e renovação documentadas.",
+      "inScope": [
+        "Geração, instalação inicial e instruções da assinatura de desenvolvimento."
+      ],
+      "outOfScope": [
+        "Publicação em loja ou prova física do coletor de GPS."
+      ],
+      "acceptanceCriteria": [
+        "O aplicativo mínimo instala e abre no iPhone de teste.",
+        "A assinatura e a validade efetiva estão identificadas sem expor dados privados.",
+        "O procedimento de renovação permite repetir a instalação quando necessário."
+      ],
+      "proofType": "Teste físico delimitado",
+      "verification": [
+        "Instalar, abrir e reabrir sem o Mac; conferir a validade da assinatura e os passos de renovação.",
+        "Registro por aparelho e cenário, com tela/rede consideradas e resultado sanitizado, sem GPS bruto ou credenciais."
+      ],
+      "prerequisites": [
+        "iPhone e conta de desenvolvimento fornecidos pelo proprietário, com autorizações no fluxo nativo."
+      ],
+      "decisionPending": null,
+      "nextRequiredOutcome": "Renovar a instalação e retomar os testes do coletor quando autorizado.",
+      "sourcePaths": [
+        "src/aplicativo-motorista/ios/Runner.xcodeproj/project.pbxproj"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-010-TOOLCHAINS.md",
+        "docs/runbooks/whatsapp-mvp/010-builds-e-instalacao.md",
+        "program/cards/VR-WA-010-TOOLCHAINS.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-010-TOOLCHAINS.md"
+      ]
+    },
+    {
+      "taskId": "T30",
+      "title": "Coletar a localização no Android em segundo plano, mostrando o estado da coleta e limitando posições ainda não enviadas.",
+      "shortTitle": "Coletar GPS no Android",
+      "feature": "F05",
+      "problem": "A posição não pode depender de manter uma tela do aplicativo aberta.",
+      "outcome": "O Android coleta posições em serviço nativo e mostra seu estado.",
+      "inScope": [
+        "Coleta em segundo plano, estado visível e fila limitada de posições não enviadas."
+      ],
+      "outOfScope": [
+        "Declarar autonomia de bateria ou percurso aprovado a partir de ensaio controlado ou emulador; essas provas pertencem a T33, T35 e T67."
+      ],
+      "acceptanceCriteria": [
+        "Com permissão concedida e serviço nativo ativo, bloquear a tela não encerra indevidamente a coleta; posições disponíveis continuam sendo encaminhadas no ensaio do componente.",
+        "O aplicativo distingue coleta ativa, falta de permissão e falha.",
+        "Sem rede, a quantidade de posições pendentes respeita o limite configurado."
+      ],
+      "proofType": "Laboratório",
+      "verification": [
+        "Executar o serviço nativo com tela bloqueada, permissão negada e perda de rede; observar estado e fila. Registrar se a prova usa emulador ou aparelho e não atribuir a ela o percurso ainda pendente.",
+        "Registro da jornada em ambiente separado, com componentes e versão usados e limite do canal simulado explícito."
+      ],
+      "prerequisites": [
+        "Permissões de localização e receptor de teste compatível disponíveis."
+      ],
+      "decisionPending": null,
+      "nextRequiredOutcome": "Concluir os ensaios de percurso e energia no Android.",
+      "sourcePaths": [
+        "src/aplicativo-motorista/android/app/src/driver/kotlin/com/example/vanrides_frontend_dev/driver/DriverTrackingRuntime.kt",
+        "src/aplicativo-motorista/android/app/src/driver/kotlin/com/example/vanrides_frontend_dev/driver/DriverTrackingService.kt"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-020-GPS-SPIKE.md",
+        "program/cards/VR-WA-020-GPS-SPIKE.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-020-GPS-SPIKE.md"
+      ]
+    },
+    {
+      "taskId": "T31",
+      "title": "Coletar a localização no iPhone com as permissões necessárias, mantendo a coleta independente da tela aberta.",
+      "shortTitle": "Coletar GPS no iPhone",
+      "feature": "F05",
+      "problem": "O ciclo da tela não pode ser o responsável pela coleta no iPhone.",
+      "outcome": "O coletor nativo mantém o estado de localização independentemente da tela.",
+      "inScope": [
+        "Permissões e coleta nativa iOS no contrato atual."
+      ],
+      "outOfScope": [
+        "Prometer continuidade após encerramento forçado ou substituir teste físico por simulador."
+      ],
+      "acceptanceCriteria": [
+        "A coleta usa o componente nativo com as permissões exigidas.",
+        "Abrir e fechar a tela de apresentação não inicia outro coletor indevido.",
+        "Permissão negada ou coleta interrompida produz estado compreensível."
+      ],
+      "proofType": "Laboratório",
+      "verification": [
+        "Executar cenários nativos e em simulador, separando seus resultados da prova em aparelho.",
+        "Registro da jornada em ambiente separado, com componentes e versão usados e limite do canal simulado explícito."
+      ],
+      "prerequisites": [
+        "Aplicativo iOS mínimo, configuração de localização e receptor compatível."
+      ],
+      "decisionPending": null,
+      "nextRequiredOutcome": "Executar o coletor no iPhone físico após a retomada.",
+      "sourcePaths": [
+        "src/aplicativo-motorista/ios/Runner/DriverTrackingCoordinator.swift",
+        "src/aplicativo-motorista/ios/Runner/DriverTrackingCore.swift"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-020-GPS-SPIKE.md",
+        "program/cards/VR-WA-020-GPS-SPIKE.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-020-GPS-SPIKE.md"
+      ]
+    },
+    {
+      "taskId": "T32",
+      "title": "Receber posições de teste em um serviço separado, com autenticação e dados fictícios.",
+      "shortTitle": "Receber GPS em ambiente de prova",
+      "feature": "F05",
+      "problem": "Testar o coletor sem isolamento pode atingir dados ou serviços reais.",
+      "outcome": "As posições fictícias chegam a um receptor separado e autenticado.",
+      "inScope": [
+        "Receptor de teste, autenticação e recibo das posições."
+      ],
+      "outOfScope": [
+        "Usar o receptor de prova como API final do produto."
+      ],
+      "acceptanceCriteria": [
+        "Uma sessão de teste autorizada envia posições e obtém resultado identificável.",
+        "Pedido sem autorização é recusado sem registrar posição válida.",
+        "Dados e configurações de prova ficam separados dos dados reais."
+      ],
+      "proofType": "Laboratório",
+      "verification": [
+        "Enviar uma posição autorizada e outra sem credencial e conferir o armazenamento isolado.",
+        "Registro da jornada em ambiente separado, com componentes e versão usados e limite do canal simulado explícito."
+      ],
+      "prerequisites": [
+        "Contrato do coletor de prova e ambiente separado disponíveis."
+      ],
+      "decisionPending": null,
+      "nextRequiredOutcome": "Manter separado do receptor integrado e dos dados reais.",
+      "sourcePaths": [
+        "src/whatsapp/gps-spike/receiver/service.py",
+        "src/whatsapp/gps-spike/receiver/store.py"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-020-GPS-SPIKE.md",
+        "program/cards/VR-WA-020-GPS-SPIKE.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-020-GPS-SPIKE.md"
+      ]
+    },
+    {
+      "taskId": "T33",
+      "title": "Testar a localização durante um percurso Android com tela bloqueada e interrupção de rede, medindo atrasos nas posições.",
+      "shortTitle": "Verificar localização em percurso Android",
+      "feature": "F05",
+      "problem": "Um teste parado não mostra se o GPS continua útil durante o trajeto.",
+      "outcome": "O percurso Android produz evidência de continuidade e recuperação da rede.",
+      "inScope": [
+        "Percurso, tela bloqueada, interrupção de rede e atraso das posições no Android."
+      ],
+      "outOfScope": [
+        "Compensar falha de campo com resultado de emulador."
+      ],
+      "acceptanceCriteria": [
+        "O registro distingue os períodos de movimento, tela bloqueada e interrupção de rede.",
+        "As posições e seus horários permitem medir atrasos e lacunas no cenário combinado.",
+        "A recuperação após a rede voltar e as falhas observadas ficam registradas contra os critérios do roteiro vigente."
+      ],
+      "proofType": "Teste físico delimitado",
+      "verification": [
+        "Realizar o roteiro Android com observação, coletando somente métricas sanitizadas e comparando com o roteiro vigente.",
+        "Registro por aparelho e cenário, com tela/rede consideradas e resultado sanitizado, sem GPS bruto ou credenciais."
+      ],
+      "prerequisites": [
+        "Aparelho instalado, ambiente alcançável pela rede móvel e percurso privado combinado com o proprietário."
+      ],
+      "decisionPending": null,
+      "nextRequiredOutcome": "Realizar o percurso Android e registrar atrasos e recuperação da rede.",
+      "sourcePaths": [
+        "src/aplicativo-motorista/android/app/src/driver/kotlin/com/example/vanrides_frontend_dev/driver/DriverTrackingRuntime.kt",
+        "src/aplicativo-motorista/android/app/src/driver/kotlin/com/example/vanrides_frontend_dev/driver/DriverTrackingService.kt"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-030-GPS-PROOF.md",
+        "program/evidence/VR-WA-110-RUN-TRACKING.md",
+        "program/cards/VR-WA-030-GPS-PROOF.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-030-GPS-PROOF.md"
+      ]
+    },
+    {
+      "taskId": "T34",
+      "title": "Testar a localização durante um percurso no iPhone com tela bloqueada e interrupção de rede, medindo atrasos nas posições.",
+      "shortTitle": "Verificar localização em percurso iPhone",
+      "feature": "F05",
+      "problem": "A implementação iOS precisa de prova própria nas condições de uso.",
+      "outcome": "O percurso no iPhone demonstra continuidade ou expõe precisamente suas limitações.",
+      "inScope": [
+        "Percurso, tela bloqueada, interrupção de rede e atraso das posições no iPhone."
+      ],
+      "outOfScope": [
+        "Usar o resultado Android como comprovação do iPhone."
+      ],
+      "acceptanceCriteria": [
+        "O cenário é executado no iPhone físico com a versão identificada.",
+        "São registrados continuidade, lacunas e recuperação nas condições do roteiro.",
+        "Resultado e limites são avaliados separadamente do Android, sem ocultar etapas não executadas."
+      ],
+      "proofType": "Teste físico delimitado",
+      "verification": [
+        "Retomar o aparelho e executar o roteiro físico específico do iPhone, com observação e métricas sanitizadas.",
+        "Registro por aparelho e cenário, com tela/rede consideradas e resultado sanitizado, sem GPS bruto ou credenciais."
+      ],
+      "prerequisites": [
+        "Retomada dos testes físicos autorizada pelo proprietário, instalação válida e ambiente alcançável."
+      ],
+      "decisionPending": null,
+      "nextRequiredOutcome": "Retomar o aparelho e executar o percurso completo.",
+      "sourcePaths": [
+        "src/aplicativo-motorista/ios/Runner/DriverTrackingCoordinator.swift",
+        "src/aplicativo-motorista/ios/Runner/DriverTrackingCore.swift"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-030-GPS-PROOF.md",
+        "program/cards/VR-WA-030-GPS-PROOF.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-030-GPS-PROOF.md"
+      ]
+    },
+    {
+      "taskId": "T35",
+      "title": "Medir consumo de bateria e recuperação da localização em cada aparelho, sem conexão USB.",
+      "shortTitle": "Medir bateria e recuperação",
+      "feature": "F05",
+      "problem": "Sem medir os aparelhos fora do USB, não é possível avaliar o custo real da coleta.",
+      "outcome": "Cada aparelho tem resultado de consumo e recuperação no cenário combinado.",
+      "inScope": [
+        "Medição de energia e interrupções por plataforma, sem USB."
+      ],
+      "outOfScope": [
+        "Extrapolar autonomia diária a partir de uma janela limitada."
+      ],
+      "acceptanceCriteria": [
+        "A medição informa aparelho, versão, duração efetiva e condições de tela/rede.",
+        "Consumo e interrupções são registrados separadamente para cada plataforma.",
+        "A recuperação ou a falha de recuperação fica explícita, sem aprovação presumida da plataforma ausente."
+      ],
+      "proofType": "Teste físico delimitado",
+      "verification": [
+        "Executar a janela definida no roteiro, registrar condições e comparar consumo e recuperação por aparelho.",
+        "Registro por aparelho e cenário, com tela/rede consideradas e resultado sanitizado, sem GPS bruto ou credenciais."
+      ],
+      "prerequisites": [
+        "Aparelhos carregados e disponíveis, janela de observação e roteiro de energia definidos."
+      ],
+      "decisionPending": null,
+      "nextRequiredOutcome": "Medir bateria e interrupções em Android e iPhone no cenário previsto.",
+      "sourcePaths": [
+        "src/aplicativo-motorista/android/app/src/driver/kotlin/com/example/vanrides_frontend_dev/driver/DriverTrackingRuntime.kt",
+        "src/aplicativo-motorista/android/app/src/driver/kotlin/com/example/vanrides_frontend_dev/driver/DriverTrackingService.kt"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-030-GPS-PROOF.md",
+        "program/cards/VR-WA-030-GPS-PROOF.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-030-GPS-PROOF.md"
+      ]
+    },
+    {
+      "taskId": "T36",
+      "title": "Guardar as mensagens recebidas do WhatsApp e impedir que o mesmo evento execute uma ação mais de uma vez.",
+      "shortTitle": "Evitar ações duplicadas na entrada",
+      "feature": "F09",
+      "problem": "O mesmo evento de WhatsApp pode chegar novamente e repetir um efeito.",
+      "outcome": "A mensagem é registrada e processada uma única vez para aquela identidade.",
+      "inScope": [
+        "Registro e identificação dos eventos recebidos, sem repetir efeitos."
+      ],
+      "outOfScope": [
+        "Interpretar toda mensagem por IA ou provar entrega de saída."
+      ],
+      "acceptanceCriteria": [
+        "Um evento válido é registrado com a identidade e o contexto corretos.",
+        "Receber novamente o mesmo evento não executa outra ação de negócio.",
+        "Reiniciar o processamento não repete o efeito dos eventos já tratados."
+      ],
+      "proofType": "Laboratório",
+      "verification": [
+        "Reenviar o mesmo evento antes e depois de reiniciar o serviço e conferir os efeitos gravados.",
+        "Registro da jornada em ambiente separado, com componentes e versão usados e limite do canal simulado explícito."
+      ],
+      "prerequisites": [
+        "Entrada autenticada e formato de eventos do serviço de WhatsApp identificado."
+      ],
+      "decisionPending": null,
+      "nextRequiredOutcome": "Validar os eventos do número dedicado.",
+      "sourcePaths": [
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/transport/WaInboxService.java",
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/transport/WaEvolutionNormalizer.java"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-050-WHATSAPP-TRANSPORT.md",
+        "program/evidence/VR-WA-070-AGENT-WORKFLOWS.md",
+        "program/cards/VR-WA-050-WHATSAPP-TRANSPORT.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-050-WHATSAPP-TRANSPORT.md"
+      ]
+    },
+    {
+      "taskId": "T37",
+      "title": "Guardar as respostas a enviar e conectar o envio ao serviço de WhatsApp utilizado.",
+      "shortTitle": "Guardar e enviar respostas",
+      "feature": "F09",
+      "problem": "Sem uma resposta persistida, uma falha pode perder o que o sistema precisava enviar.",
+      "outcome": "Respostas elegíveis ficam registradas e são encaminhadas ao serviço de WhatsApp.",
+      "inScope": [
+        "Fila persistida e integração do envio de respostas."
+      ],
+      "outOfScope": [
+        "Tratar envio aceito pelo serviço como entrega confirmada ao passageiro."
+      ],
+      "acceptanceCriteria": [
+        "Uma resposta a enviar permanece registrada após reinício do processamento.",
+        "O envio usa o destinatário e o conteúdo autorizados daquela resposta.",
+        "O resultado técnico do envio fica registrado sem inventar confirmação de entrega."
+      ],
+      "proofType": "Laboratório",
+      "verification": [
+        "Criar uma resposta, reiniciar o processamento e conferir a submissão ao receptor controlado.",
+        "Registro da jornada em ambiente separado, com componentes e versão usados e limite do canal simulado explícito."
+      ],
+      "prerequisites": [
+        "Adaptador do serviço de WhatsApp e respostas autorizadas disponíveis."
+      ],
+      "decisionPending": null,
+      "nextRequiredOutcome": "Comprovar a entrega e seu retorno pelo WhatsApp real.",
+      "sourcePaths": [
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/transport/WaOutboxService.java",
+        "src/whatsapp/transport/evolution-text.mjs"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-050-WHATSAPP-TRANSPORT.md",
+        "program/evidence/VR-WA-120-DELIVERY-RECOVERY.md",
+        "program/cards/VR-WA-050-WHATSAPP-TRANSPORT.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-050-WHATSAPP-TRANSPORT.md"
+      ]
+    },
+    {
+      "taskId": "T38",
+      "title": "Usar a IA apenas para interpretar a mensagem e validar respostas incompletas, recusas ou demora antes de executar uma ação.",
+      "shortTitle": "Interpretar mensagens com IA de forma limitada",
+      "feature": "F09",
+      "problem": "Uma interpretação ambígua ou falha do modelo não pode executar uma ação incorreta.",
+      "outcome": "A IA sugere intenção, mas validação e permissão continuam controlando a ação.",
+      "inScope": [
+        "Interpretação limitada e tratamento de recusa, demora e saída inválida."
+      ],
+      "outOfScope": [
+        "Permitir que o modelo escolha a identidade ou autorize uma operação."
+      ],
+      "acceptanceCriteria": [
+        "Uma interpretação válida resulta apenas em uma ação permitida pelo contexto.",
+        "Saída inválida, recusa ou falha do modelo não executa ação de negócio.",
+        "A tentativa de mudar identidade ou comando fora do permitido é recusada."
+      ],
+      "proofType": "Teste automatizado",
+      "verification": [
+        "Usar um conjunto fixo de mensagens e respostas simuladas do modelo, incluindo ambiguidades e falhas; conferir os comandos emitidos.",
+        "Relatório dos cenários automatizados, com versão avaliada, resultado e falhas preservadas."
+      ],
+      "prerequisites": [
+        "Intenções permitidas e regras de validação identificadas; chamadas pagas não são necessárias para estes cenários."
+      ],
+      "decisionPending": null,
+      "nextRequiredOutcome": "Revalidar as mensagens do uso real mantendo a autorização na API.",
+      "sourcePaths": [
+        "src/whatsapp/agent/model-policy.mjs",
+        "src/whatsapp/worker/model-client.mjs"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-070-AGENT-WORKFLOWS.md",
+        "program/cards/VR-WA-070-AGENT-WORKFLOWS.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-070-AGENT-WORKFLOWS.md"
+      ]
+    },
+    {
+      "taskId": "T39",
+      "title": "Organizar as oito automações do n8n para importação desativada, sem incluir senhas ou chaves.",
+      "shortTitle": "Preparar automações importáveis",
+      "feature": "F09",
+      "problem": "O grupo precisa transferir as automações sem levar credenciais ou ativá-las por engano.",
+      "outcome": "As oito automações do n8n podem ser importadas e permanecem desativadas.",
+      "inScope": [
+        "Arquivos de automação, referências e importação inativa."
+      ],
+      "outOfScope": [
+        "Ativar agendas ou operar o WhatsApp real nesta tarefa."
+      ],
+      "acceptanceCriteria": [
+        "Os oito arquivos são importados sem perder as conexões e referências previstas.",
+        "Após importar e reiniciar, as automações permanecem desativadas.",
+        "Os arquivos exportados não contêm senhas, chaves ou conversas reais."
+      ],
+      "proofType": "Laboratório",
+      "verification": [
+        "Importar em n8n separado, conferir referências, reiniciar e revisar a exportação resultante.",
+        "Registro da jornada em ambiente separado, com componentes e versão usados e limite do canal simulado explícito."
+      ],
+      "prerequisites": [
+        "Versão do n8n e referências de configuração identificadas."
+      ],
+      "decisionPending": null,
+      "nextRequiredOutcome": "Ativar somente no ambiente autorizado após revisar a operação.",
+      "sourcePaths": [
+        "src/whatsapp/workflows/generate.mjs",
+        "src/whatsapp/workflows/W08.json"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-070-AGENT-WORKFLOWS.md",
+        "program/evidence/VR-WA-120-DELIVERY-RECOVERY.md",
+        "program/cards/VR-WA-070-AGENT-WORKFLOWS.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-070-AGENT-WORKFLOWS.md"
+      ]
+    },
+    {
+      "taskId": "T40",
+      "title": "Permitir ao motorista configurar dias, horários e sentidos da rotina pela conversa.",
+      "shortTitle": "Configurar rotinas do motorista",
+      "feature": "F09",
+      "problem": "Dias, horários e sentidos diferentes não podem ser tratados como uma única rotina implícita.",
+      "outcome": "O motorista configura sua rotina pela conversa e confirma as mudanças.",
+      "inScope": [
+        "Dias, horários e sentidos da rotina nos comandos existentes."
+      ],
+      "outOfScope": [
+        "Otimizar automaticamente o trajeto ou configurar outra pessoa sem permissão."
+      ],
+      "acceptanceCriteria": [
+        "O motorista informa os dados e vê um resumo antes da confirmação.",
+        "Ida e volta mantêm suas próprias configurações.",
+        "Alteração inválida ou confirmação antiga não muda silenciosamente a rotina."
+      ],
+      "proofType": "Laboratório",
+      "verification": [
+        "Criar e editar rotinas de ida e volta e tentar confirmar uma proposta antiga.",
+        "Registro da jornada em ambiente separado, com componentes e versão usados e limite do canal simulado explícito."
+      ],
+      "prerequisites": [
+        "Motorista cadastrado e autorizado para administrar suas rotinas."
+      ],
+      "decisionPending": null,
+      "nextRequiredOutcome": "Validar a configuração da rotina com participantes reais autorizados.",
+      "sourcePaths": [
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaDriverSetup.java",
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaDriverMutations.java"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-080-DRIVER-ROUTINES.md",
+        "program/cards/VR-WA-080-DRIVER-ROUTINES.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-080-DRIVER-ROUTINES.md"
+      ]
+    },
+    {
+      "taskId": "T41",
+      "title": "Mostrar no aplicativo o código de vínculo e as situações de aparelho vinculado, falha e recuperação.",
+      "shortTitle": "Mostrar vínculo e recuperação no aplicativo",
+      "feature": "F09",
+      "problem": "O motorista precisa entender se o aparelho está vinculado ou se alguma ação é necessária.",
+      "outcome": "A tela apresenta código, vínculo, falha e recuperação sem mensagens contraditórias.",
+      "inScope": [
+        "Apresentação dos estados do vínculo do aparelho."
+      ],
+      "outOfScope": [
+        "Implementar novas regras de pareamento ou afirmar que o GPS iniciou ao abrir a tela."
+      ],
+      "acceptanceCriteria": [
+        "O código aparece quando há pedido de vínculo válido.",
+        "Vínculo ativo e aparelho desvinculado são apresentados como estados distintos.",
+        "Uma falha ou recuperação pendente informa a ação necessária sem mostrar sucesso antecipado."
+      ],
+      "proofType": "Laboratório",
+      "verification": [
+        "Abrir os estados controlados do aplicativo e conferir o texto e as ações disponíveis.",
+        "Registro da jornada em ambiente separado, com componentes e versão usados e limite do canal simulado explícito."
+      ],
+      "prerequisites": [
+        "Estados e respostas do vínculo disponíveis para o aplicativo."
+      ],
+      "decisionPending": null,
+      "nextRequiredOutcome": "Conferir a apresentação no iPhone e no percurso.",
+      "sourcePaths": [
+        "src/aplicativo-motorista/lib/features/driver_mvp/presentation/driver_pairing_app.dart",
+        "src/aplicativo-motorista/lib/features/driver_mvp/presentation/driver_tracking_view_state.dart"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-060-DRIVER-APP.md",
+        "program/evidence/VR-WA-110-RUN-TRACKING.md",
+        "program/cards/VR-WA-060-DRIVER-APP.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-060-DRIVER-APP.md"
+      ]
+    },
+    {
+      "taskId": "T42",
+      "title": "Vincular o aparelho ao pedido iniciado no aplicativo somente após confirmação pelo WhatsApp autenticado.",
+      "shortTitle": "Vincular o aparelho correto",
+      "feature": "F09",
+      "problem": "Copiar ou antecipar um link não pode vincular outro aparelho ao motorista.",
+      "outcome": "A confirmação associa a conta à chave do pedido iniciado no aplicativo.",
+      "inScope": [
+        "Pedido do aparelho e confirmação autenticada do vínculo."
+      ],
+      "outOfScope": [
+        "Criar vínculo pela prévia de um link ou por identidade declarada pelo modelo."
+      ],
+      "acceptanceCriteria": [
+        "O pedido iniciado no aplicativo é confirmado para a chave original daquele aparelho.",
+        "Uma chave ou aparelho diferente não consegue obter o mesmo vínculo.",
+        "Prévia do link e repetição da confirmação não criam um novo vínculo indevido."
+      ],
+      "proofType": "Laboratório",
+      "verification": [
+        "Confirmar um pedido válido, tentar outra chave e abrir a prévia do link; conferir o vínculo final.",
+        "Registro da jornada em ambiente separado, com componentes e versão usados e limite do canal simulado explícito."
+      ],
+      "prerequisites": [
+        "Motorista autenticado e aplicativo capaz de criar o pedido de vínculo."
+      ],
+      "decisionPending": null,
+      "nextRequiredOutcome": "Repetir com a conta WhatsApp dedicada e depois no iPhone.",
+      "sourcePaths": [
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/pairing/WaPairingService.java",
+        "src/aplicativo-motorista/lib/features/driver_mvp/presentation/driver_pairing_controller.dart"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-060-DRIVER-APP.md",
+        "program/evidence/VR-WA-110-RUN-TRACKING.md",
+        "program/cards/VR-WA-060-DRIVER-APP.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-060-DRIVER-APP.md"
+      ]
+    },
+    {
+      "taskId": "T43",
+      "title": "Fixar, no início de cada viagem, a lista de passageiros previstos para a rotina e o sentido selecionados.",
+      "shortTitle": "Fixar a lista da partida",
+      "feature": "F05",
+      "problem": "Mudanças posteriores de cadastro ou presença não podem reescrever o que foi considerado na partida.",
+      "outcome": "A viagem inicia com uma lista identificada de passageiros e pontos.",
+      "inScope": [
+        "Captura de participantes, pontos, ordem e presença no início."
+      ],
+      "outOfScope": [
+        "Recalcular retroativamente toda a lista de uma viagem já iniciada."
+      ],
+      "acceptanceCriteria": [
+        "O início captura os participantes elegíveis, incluindo quem está pendente segundo a regra atual.",
+        "Mudanças posteriores de cadastro ou ordem não reescrevem essa lista inicial.",
+        "Tentativas concorrentes não criam duas partidas para a mesma ocorrência."
+      ],
+      "proofType": "Teste automatizado",
+      "verification": [
+        "Iniciar a ocorrência, alterar dados depois e comparar a lista; repetir com inícios concorrentes.",
+        "Relatório dos cenários automatizados, com versão avaliada, resultado e falhas preservadas."
+      ],
+      "prerequisites": [
+        "Ocorrência, participantes e pontos aprovados disponíveis para iniciar a viagem."
+      ],
+      "decisionPending": null,
+      "nextRequiredOutcome": "Conferir o conjunto de passageiros no percurso real.",
+      "sourcePaths": [
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaRunPreparation.java",
+        "src/backend/src/test/java/com/vanrides/vanrides/whatsapp/transport/WaRunPreparationIntegrationTest.java"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-110-RUN-TRACKING.md",
+        "program/cards/VR-WA-110-RUN-TRACKING.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-110-RUN-TRACKING.md"
+      ]
+    },
+    {
+      "taskId": "T44",
+      "title": "Iniciar a localização pelo aplicativo e mostrar a coleta como ativa somente após receber a primeira posição válida.",
+      "shortTitle": "Confirmar início somente com GPS válido",
+      "feature": "F05",
+      "problem": "Abrir o link não significa que a posição já esteja sendo coletada e recebida.",
+      "outcome": "O aplicativo só mostra coleta ativa após uma posição válida aceita pela API.",
+      "inScope": [
+        "Consumo do pedido de início e transição dos estados de coleta."
+      ],
+      "outOfScope": [
+        "Prometer coleta invisível pelo navegador ou contornar permissões do aparelho."
+      ],
+      "acceptanceCriteria": [
+        "Um pedido válido abre a preparação do acompanhamento no aparelho vinculado.",
+        "Sem permissão ou sem posição aceita, não aparece confirmação de coleta ativa.",
+        "A primeira posição válida aceita produz a confirmação correta sem duplicação."
+      ],
+      "proofType": "Laboratório",
+      "verification": [
+        "Abrir um pedido com permissão negada, depois sem posição e depois com primeira posição aceita.",
+        "Registro da jornada em ambiente separado, com componentes e versão usados e limite do canal simulado explícito."
+      ],
+      "prerequisites": [
+        "Aparelho vinculado, pedido de início válido e receptor integrado disponíveis."
+      ],
+      "decisionPending": null,
+      "nextRequiredOutcome": "Repetir no iPhone e durante o percurso.",
+      "sourcePaths": [
+        "src/aplicativo-motorista/lib/features/driver_mvp/presentation/driver_tracking_setup.dart",
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/tracking/WaTrackingService.java",
+        "src/aplicativo-motorista/android/app/src/driver/kotlin/com/example/vanrides_frontend_dev/driver/DriverTrackingRuntime.kt",
+        "src/aplicativo-motorista/android/app/src/driver/kotlin/com/example/vanrides_frontend_dev/driver/DriverTrackingService.kt"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-110-RUN-TRACKING.md",
+        "program/cards/VR-WA-110-RUN-TRACKING.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-110-RUN-TRACKING.md"
+      ]
+    },
+    {
+      "taskId": "T45",
+      "title": "Guardar o pedido de parada sem internet e confirmar sua conclusão após reconectar e reabrir o aplicativo, sem reiniciar a coleta.",
+      "shortTitle": "Recuperar a parada sem internet",
+      "feature": "F05",
+      "problem": "Uma parada feita sem rede não pode se perder nem reiniciar o sensor ao reconectar.",
+      "outcome": "O aparelho para a coleta e confirma o mesmo pedido quando a comunicação volta.",
+      "inScope": [
+        "Parada local, persistência do pedido e reconciliação após reabrir."
+      ],
+      "outOfScope": [
+        "Detectar automaticamente o fim da viagem nesta tarefa."
+      ],
+      "acceptanceCriteria": [
+        "A parada interrompe o sensor mesmo sem conexão.",
+        "Reabrir o aplicativo preserva a parada pendente e não inicia nova coleta.",
+        "Ao reconectar, a confirmação encerra a pendência sem criar outro acompanhamento."
+      ],
+      "proofType": "Teste físico delimitado",
+      "verification": [
+        "Iniciar a coleta, cortar a rede, parar, reabrir e reconectar; conferir sensor e confirmação remota separadamente.",
+        "Registro por aparelho e cenário, com tela/rede consideradas e resultado sanitizado, sem GPS bruto ou credenciais."
+      ],
+      "prerequisites": [
+        "Sessão integrada e aparelho com a versão identificada disponíveis em ensaio controlado."
+      ],
+      "decisionPending": null,
+      "nextRequiredOutcome": "Exercitar a mesma parada no iPhone físico e no percurso.",
+      "sourcePaths": [
+        "src/aplicativo-motorista/android/app/src/driver/kotlin/com/example/vanrides_frontend_dev/driver/DriverTrackingRuntime.kt",
+        "src/aplicativo-motorista/android/app/src/driver/kotlin/com/example/vanrides_frontend_dev/driver/DriverTrackingService.kt",
+        "src/aplicativo-motorista/ios/Runner/DriverTrackingCoordinator.swift",
+        "src/aplicativo-motorista/ios/Runner/DriverTrackingCore.swift"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-110-RUN-TRACKING.md",
+        "program/cards/VR-WA-110-RUN-TRACKING.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-110-RUN-TRACKING.md"
+      ]
+    },
+    {
+      "taskId": "T46",
+      "title": "Reservar cada aviso para um único envio e limitar novas tentativas após falha ou reinício do serviço.",
+      "shortTitle": "Repetir envios somente com segurança",
+      "feature": "F11",
+      "problem": "Uma falha não pode levar vários processos a enviar o mesmo aviso ou repetir um envio incerto.",
+      "outcome": "Cada tentativa tem controle exclusivo e repete apenas quando houver prova de que o envio não ocorreu.",
+      "inScope": [
+        "Reserva da mensagem e novas tentativas limitadas pela política existente."
+      ],
+      "outOfScope": [
+        "Reenviar cegamente uma tentativa com resultado desconhecido."
+      ],
+      "acceptanceCriteria": [
+        "Dois processamentos concorrentes não autorizam o mesmo envio ao mesmo tempo.",
+        "Nova tentativa só ocorre no caso seguro permitido e respeita limite e prazo originais.",
+        "Reinício ou resultado tardio não reabre uma mensagem já encerrada."
+      ],
+      "proofType": "Teste automatizado",
+      "verification": [
+        "Simular disputa pelo envio, falha comprovadamente anterior à submissão, envio incerto e reinício.",
+        "Relatório dos cenários automatizados, com versão avaliada, resultado e falhas preservadas."
+      ],
+      "prerequisites": [
+        "Mensagem persistida e política atual de tentativas identificadas."
+      ],
+      "decisionPending": null,
+      "nextRequiredOutcome": "Comprovar as mesmas regras com o número dedicado.",
+      "sourcePaths": [
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/transport/WaDeliveryAttempts.java",
+        "src/backend/src/test/java/com/vanrides/vanrides/whatsapp/transport/WaDeliveryRetryIntegrationTest.java",
+        "src/whatsapp/worker/dispatch.mjs"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-120-DELIVERY-RECOVERY.md",
+        "program/cards/VR-WA-120-DELIVERY-RECOVERY.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-120-DELIVERY-RECOVERY.md"
+      ]
+    },
+    {
+      "taskId": "T47",
+      "title": "Registrar a entrega de mensagens somente com confirmação do serviço de WhatsApp e identificar envios sem confirmação.",
+      "shortTitle": "Distinguir envio de entrega",
+      "feature": "F11",
+      "problem": "Sem retorno confiável, o sistema pode informar que alguém recebeu uma mensagem que nunca foi confirmada.",
+      "outcome": "O estado de entrega reflete a confirmação disponível e mantém a incerteza quando necessário.",
+      "inScope": [
+        "Conciliação dos resultados e retornos do serviço de WhatsApp."
+      ],
+      "outOfScope": [
+        "Inferir entrega por semelhança de texto, telefone ou horário."
+      ],
+      "acceptanceCriteria": [
+        "Um retorno válido é associado à tentativa correta.",
+        "Sem prova suficiente, a tentativa não é apresentada como entregue.",
+        "Retorno tardio pode melhorar o registro da tentativa sem reabrir uma mensagem encerrada."
+      ],
+      "proofType": "Laboratório",
+      "verification": [
+        "Aplicar retornos válidos, desconhecidos, repetidos e tardios e conferir o estado registrado.",
+        "Registro da jornada em ambiente separado, com componentes e versão usados e limite do canal simulado explícito."
+      ],
+      "prerequisites": [
+        "Tentativas identificadas e formato do retorno do serviço documentado."
+      ],
+      "decisionPending": null,
+      "nextRequiredOutcome": "Verificar envio e confirmação reais com destinatário autorizado.",
+      "sourcePaths": [
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/transport/WaDeliveryReconciler.java",
+        "src/backend/src/test/java/com/vanrides/vanrides/whatsapp/transport/WaDeliveryRecoveryIntegrationTest.java"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-120-DELIVERY-RECOVERY.md",
+        "program/cards/VR-WA-120-DELIVERY-RECOVERY.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-120-DELIVERY-RECOVERY.md"
+      ]
+    },
+    {
+      "taskId": "T48",
+      "title": "Descartar avisos que perderam a utilidade e respeitar a opção de não receber mensagens antes de tentar novo envio.",
+      "shortTitle": "Encerrar avisos sem utilidade",
+      "feature": "F11",
+      "problem": "Um aviso atrasado ou recusado pelo passageiro não deve ser enviado como se ainda fosse útil.",
+      "outcome": "A fila descarta mensagens vencidas ou sem autorização de recebimento.",
+      "inScope": [
+        "Expiração e preferência do destinatário antes de novo envio."
+      ],
+      "outOfScope": [
+        "Escolher novos prazos ou garantir retirada de mensagem já submetida ao serviço."
+      ],
+      "acceptanceCriteria": [
+        "Mensagem fora do prazo é encerrada antes de nova submissão.",
+        "A perda de elegibilidade ou recusa de recebimento impede novas tentativas.",
+        "Um retorno tardio não reativa a mensagem expirada ou cancelada."
+      ],
+      "proofType": "Teste automatizado",
+      "verification": [
+        "Avançar o relógio, mudar a preferência e aplicar retorno tardio; conferir que não há novo envio.",
+        "Relatório dos cenários automatizados, com versão avaliada, resultado e falhas preservadas."
+      ],
+      "prerequisites": [
+        "Prazos e preferências aplicáveis definidos na configuração da mensagem."
+      ],
+      "decisionPending": null,
+      "nextRequiredOutcome": "Repetir expiração e recusa durante o teste real de avisos.",
+      "sourcePaths": [
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/transport/WaDeliveryMaintenance.java",
+        "src/backend/src/test/java/com/vanrides/vanrides/whatsapp/transport/WaDeliveryRecoveryIntegrationTest.java",
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/transport/WaDeliveryAttempts.java",
+        "src/backend/src/test/java/com/vanrides/vanrides/whatsapp/transport/WaDeliveryRetryIntegrationTest.java",
+        "src/whatsapp/worker/dispatch.mjs"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-120-DELIVERY-RECOVERY.md",
+        "program/cards/VR-WA-120-DELIVERY-RECOVERY.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-120-DELIVERY-RECOVERY.md"
+      ]
+    },
+    {
+      "taskId": "T49",
+      "title": "Avaliar a aproximação pela posição atual, ponto e sentido da viagem, sem informar minutos de chegada sem cálculo comprovado.",
+      "shortTitle": "Avaliar aproximação por ponto e sentido",
+      "feature": "F11",
+      "problem": "Distância isolada pode gerar aviso para o ponto ou sentido errado.",
+      "outcome": "A regra usa posição atual, ponto e sentido e recusa situações ambíguas.",
+      "inScope": [
+        "Avaliação da aproximação conforme a política configurada do MVP."
+      ],
+      "outOfScope": [
+        "Inventar limiar de metros ou previsão numérica de chegada neste apoio."
+      ],
+      "acceptanceCriteria": [
+        "A sequência controlada de posições produz o resultado documentado para o ponto e sentido selecionados, considerando tendência de aproximação e proteção contra oscilações.",
+        "GPS desatualizado ou ambiguidade do cenário não gera aviso como se a aproximação estivesse comprovada.",
+        "O texto não informa minutos de chegada sem cálculo validado."
+      ],
+      "proofType": "Teste automatizado",
+      "verification": [
+        "Reproduzir posições e pontos controlados, incluindo sentido incorreto, dado antigo e cenário ambíguo.",
+        "Relatório dos cenários automatizados, com versão avaliada, resultado e falhas preservadas."
+      ],
+      "prerequisites": [
+        "Antes de iniciar, documentar a versão da regra, os parâmetros de ensaio e os resultados esperados para aproximação, sentido incorreto e ambiguidade. Dispor de posições válidas e pontos aprovados."
+      ],
+      "decisionPending": "Confirmar o conjunto versionado de parâmetros e casos usado no ensaio. Os valores iniciais existentes são hipóteses; a calibração e a utilidade em percurso continuam pendentes.",
+      "nextRequiredOutcome": "Implementar a regra com posição atual, sentido e ponto corretos.",
+      "sourcePaths": [],
+      "evidencePaths": [
+        "program/cards/VR-WA-130-APPROACH.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-130-APPROACH.md"
+      ],
+      "specificationSources": [
+        {
+          "path": "docs/plans/2026-10-28-whatsapp-mvp/08-contratos-configuracao-e-workflows.md",
+          "section": "5 — Aproximação e encerramento: base e parâmetros iniciais como hipóteses de ensaio."
+        },
+        {
+          "path": "docs/plans/2026-10-28-whatsapp-mvp/10-registro-de-decisoes.md",
+          "section": "RD12 — Aproximação sem ETA inventado; fim automático exige evidência."
+        }
+      ]
+    },
+    {
+      "taskId": "T50",
+      "title": "Acompanhar a ordem dos pontos e impedir avisos com posição antiga, presença cancelada ou ponto incorreto.",
+      "shortTitle": "Respeitar progressão e cancelamento",
+      "feature": "F11",
+      "problem": "O aviso precisa acompanhar a sequência dos pontos sem incluir quem cancelou.",
+      "outcome": "Somente os próximos pontos e passageiros elegíveis podem gerar aviso.",
+      "inScope": [
+        "Progressão da ordem, atualidade da posição e cancelamento da parada."
+      ],
+      "outOfScope": [
+        "Confirmar embarque apenas por passar perto de um ponto."
+      ],
+      "acceptanceCriteria": [
+        "A progressão não volta para um ponto já superado devido a amostra antiga.",
+        "Cancelamento elimina a elegibilidade para avisos futuros daquele passageiro.",
+        "Ponto ou sentido diferente não é tratado como o próximo embarque correto."
+      ],
+      "proofType": "Teste automatizado",
+      "verification": [
+        "Aplicar progressão, posição antiga e ausência durante a viagem e conferir os avisos elegíveis.",
+        "Relatório dos cenários automatizados, com versão avaliada, resultado e falhas preservadas."
+      ],
+      "prerequisites": [
+        "Lista da partida e regra de aproximação integradas."
+      ],
+      "decisionPending": null,
+      "nextRequiredOutcome": "Integrar a progressão dos pontos ao aviso de aproximação.",
+      "sourcePaths": [
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaDriverMutations.java",
+        "src/backend/src/test/java/com/vanrides/vanrides/whatsapp/transport/WaDriverRoutinesIntegrationTest.java",
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaAttendanceMutation.java",
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaAttendanceConversation.java"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-100-ATTENDANCE.md",
+        "program/evidence/VR-WA-110-RUN-TRACKING.md",
+        "program/cards/VR-WA-130-APPROACH.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-130-APPROACH.md"
+      ]
+    },
+    {
+      "taskId": "T51",
+      "title": "Testar o destinatário do aviso, pontos compartilhados e prevenção de mensagens repetidas com dados fictícios.",
+      "shortTitle": "Testar destinatário e repetição do aviso",
+      "feature": "F11",
+      "problem": "Uma regra sem cenários de erro pode avisar a pessoa errada ou repetir mensagens em pontos comuns.",
+      "outcome": "Os testes demonstram os limites do produtor de aproximação.",
+      "inScope": [
+        "Destinatário, ponto compartilhado e prevenção de avisos repetidos."
+      ],
+      "outOfScope": [
+        "Usar teste sintético como prova de utilidade durante um percurso real."
+      ],
+      "acceptanceCriteria": [
+        "O teste falha quando o aviso aponta para destinatário ou ponto incorreto.",
+        "Ponto compartilhado respeita a elegibilidade de cada pessoa.",
+        "Reavaliação e reinício não produzem avisos duplicados para o mesmo caso."
+      ],
+      "proofType": "Teste automatizado",
+      "verification": [
+        "Executar uma matriz fixa de pessoas e pontos com contagem de avisos e comparação de destinatários.",
+        "Relatório dos cenários automatizados, com versão avaliada, resultado e falhas preservadas."
+      ],
+      "prerequisites": [
+        "Produtor de aproximação disponível e cenários esperados congelados antes da execução."
+      ],
+      "decisionPending": null,
+      "nextRequiredOutcome": "Criar e executar os cenários de destinatário, ponto comum e duplicação.",
+      "sourcePaths": [],
+      "evidencePaths": [
+        "program/cards/VR-WA-130-APPROACH.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-130-APPROACH.md"
+      ]
+    },
+    {
+      "taskId": "T52",
+      "title": "Encerrar a viagem automaticamente ao identificar seu término e manter o encerramento manual como alternativa de emergência.",
+      "shortTitle": "Encerrar a viagem automaticamente",
+      "feature": "F05",
+      "problem": "A coleta não deve continuar sem necessidade, mas também não pode terminar antes da viagem.",
+      "outcome": "O término real da viagem encerra a operação, com alternativa manual identificada.",
+      "inScope": [
+        "Regra final de encerramento e comando manual de contingência."
+      ],
+      "outOfScope": [
+        "Considerar silêncio do GPS ou uma passagem próxima como prova suficiente de fim."
+      ],
+      "acceptanceCriteria": [
+        "Uma sequência de posições válidas compatível com progresso da viagem, destino final, velocidade e permanência da regra documentada encerra a viagem uma única vez.",
+        "Ausência de posição ou passagem próxima isolada não encerra prematuramente a viagem.",
+        "O encerramento manual permanece disponível e é identificado como contingência."
+      ],
+      "proofType": "Laboratório",
+      "verification": [
+        "Executar cenários de fim verdadeiro, passagem próxima, perda de GPS e término manual; conferir estados.",
+        "Registro da jornada em ambiente separado, com componentes e versão usados e limite do canal simulado explícito."
+      ],
+      "prerequisites": [
+        "Antes de iniciar, documentar a versão da regra final, seus parâmetros e os cenários de fim verdadeiro e fim indevido. A regra deve considerar progresso, validade e precisão das posições, velocidade e permanência; a sessão integrada deve estar disponível."
+      ],
+      "decisionPending": "Confirmar os parâmetros de ensaio e seus resultados esperados antes da implementação. As hipóteses existentes precisam de calibração em percurso; terminar manualmente não aprova o encerramento automático.",
+      "nextRequiredOutcome": "Implementar e testar o reconhecimento de fim da viagem.",
+      "sourcePaths": [
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaCommandService.java",
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/tracking/WaTrackingSamples.java",
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/tracking/WaTrackingService.java"
+      ],
+      "evidencePaths": [
+        "program/cards/VR-WA-140-FINISH-SUPPORT.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-140-FINISH-SUPPORT.md"
+      ],
+      "specificationSources": [
+        {
+          "path": "docs/plans/2026-10-28-whatsapp-mvp/08-contratos-configuracao-e-workflows.md",
+          "section": "5 — Aproximação e encerramento: evidência de término e parâmetros iniciais."
+        },
+        {
+          "path": "docs/plans/2026-10-28-whatsapp-mvp/10-registro-de-decisoes.md",
+          "section": "RD12 — Aproximação sem ETA inventado; fim automático exige evidência."
+        }
+      ]
+    },
+    {
+      "taskId": "T53",
+      "title": "Parar a coleta de localização ao encerrar a viagem e mostrar se a parada foi confirmada ou ainda está pendente.",
+      "shortTitle": "Confirmar que a coleta parou",
+      "feature": "F05",
+      "problem": "Encerrar uma viagem no servidor não comprova que o aparelho deixou de coletar.",
+      "outcome": "O aplicativo informa parada confirmada ou pendência até a confirmação ou expiração prevista.",
+      "inScope": [
+        "Aplicação do encerramento no coletor e apresentação do estado de parada."
+      ],
+      "outOfScope": [
+        "Declarar sucesso apenas porque a tela mudou de texto."
+      ],
+      "acceptanceCriteria": [
+        "O encerramento recebido leva o coletor ao estado de parada.",
+        "Se não houver confirmação, a pendência permanece visível até sua resolução prevista.",
+        "Reabrir ou reconectar não reinicia a coleta encerrada."
+      ],
+      "proofType": "Teste físico delimitado",
+      "verification": [
+        "Encerrar com rede disponível e indisponível, conferir o estado nativo e depois reabrir e reconectar.",
+        "Registro por aparelho e cenário, com tela/rede consideradas e resultado sanitizado, sem GPS bruto ou credenciais."
+      ],
+      "prerequisites": [
+        "Encerramento da viagem integrado ao contrato do coletor."
+      ],
+      "decisionPending": null,
+      "nextRequiredOutcome": "Integrar ao encerramento automático e repetir nos dois aparelhos.",
+      "sourcePaths": [
+        "src/aplicativo-motorista/android/app/src/driver/kotlin/com/example/vanrides_frontend_dev/driver/DriverTrackingRuntime.kt",
+        "src/aplicativo-motorista/android/app/src/driver/kotlin/com/example/vanrides_frontend_dev/driver/DriverTrackingService.kt",
+        "src/aplicativo-motorista/ios/Runner/DriverTrackingCoordinator.swift",
+        "src/aplicativo-motorista/ios/Runner/DriverTrackingCore.swift"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-110-RUN-TRACKING.md",
+        "program/cards/VR-WA-140-FINISH-SUPPORT.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-140-FINISH-SUPPORT.md"
+      ]
+    },
+    {
+      "taskId": "T54",
+      "title": "Oferecer AJUDA, retirada de acesso e retomada assistida, pausando as respostas automáticas quando necessário.",
+      "shortTitle": "Oferecer ajuda e recuperação",
+      "feature": "F05",
+      "problem": "Uma falha ou retirada de acesso não pode deixar a pessoa presa em respostas automáticas.",
+      "outcome": "A conversa oferece ajuda, pausa adequada e retomada controlada.",
+      "inScope": [
+        "AJUDA, retirada de acesso e recuperação da conversa no ciclo existente."
+      ],
+      "outOfScope": [
+        "Criar central de atendimento completa ou prometer suporte humano imediato."
+      ],
+      "acceptanceCriteria": [
+        "O pedido de ajuda preserva o contexto necessário e informa a ação disponível.",
+        "A pausa para suporte impede respostas automáticas de negócio naquela conversa.",
+        "Retirada de acesso e retomada deixam estado claro e não restauram permissões indevidas."
+      ],
+      "proofType": "Laboratório",
+      "verification": [
+        "Pedir ajuda em uma etapa incompleta, pausar, retirar acesso e executar a retomada permitida.",
+        "Registro da jornada em ambiente separado, com componentes e versão usados e limite do canal simulado explícito."
+      ],
+      "prerequisites": [
+        "Estados de conversa e procedimentos de suporte e revogação identificados."
+      ],
+      "decisionPending": null,
+      "nextRequiredOutcome": "Concluir retirada de acesso e recuperação do ciclo de viagem.",
+      "sourcePaths": [
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaConversationPolicy.java",
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaOnboardingCommands.java",
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/pairing/WaPairingService.java",
+        "src/aplicativo-motorista/lib/features/driver_mvp/presentation/driver_pairing_controller.dart"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-070-AGENT-WORKFLOWS.md",
+        "program/evidence/VR-WA-060-DRIVER-APP.md",
+        "program/cards/VR-WA-140-FINISH-SUPPORT.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-140-FINISH-SUPPORT.md"
+      ]
+    },
+    {
+      "taskId": "T55",
+      "title": "Executar lembretes com permissão exclusiva da automação e impedir duplicações após falha ou reinício.",
+      "shortTitle": "Autorizar as automações de presença",
+      "feature": "F02",
+      "problem": "Rotinas automáticas não devem fingir ser uma pessoa para alterar o calendário ou enviar lembretes.",
+      "outcome": "A automação opera com permissão própria e não repete efeitos ao reiniciar.",
+      "inScope": [
+        "Credencial da automação e processamento dos lembretes sem repetir efeitos."
+      ],
+      "outOfScope": [
+        "Validar a agenda contínua de todo o ambiente nesta tarefa."
+      ],
+      "acceptanceCriteria": [
+        "A operação automática aceita somente a permissão de serviço prevista.",
+        "Credencial de pessoa não executa o processamento automático.",
+        "Repetir a janela ou reiniciar preserva o resultado sem duplicar lembretes."
+      ],
+      "proofType": "Teste automatizado",
+      "verification": [
+        "Executar a mesma janela com credencial correta, incorreta e após reinício; conferir o resultado persistido.",
+        "Relatório dos cenários automatizados, com versão avaliada, resultado e falhas preservadas."
+      ],
+      "prerequisites": [
+        "Operações de calendário e lembrete implementadas e credencial de teste adequada."
+      ],
+      "decisionPending": null,
+      "nextRequiredOutcome": "Conferir o agendamento no ambiente definitivo de teste.",
+      "sourcePaths": [
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/attendance/WaAttendanceJobs.java",
+        "src/whatsapp/worker/attendance-jobs.mjs"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-100-ATTENDANCE.md",
+        "program/evidence/VR-WA-120-DELIVERY-RECOVERY.md",
+        "program/cards/VR-WA-150-OPERATIONS.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-150-OPERATIONS.md"
+      ]
+    },
+    {
+      "taskId": "T56",
+      "title": "Configurar o n8n para preservar automações e mensagens pendentes após reiniciar o serviço.",
+      "shortTitle": "Preservar automações ao reiniciar n8n",
+      "feature": "F09",
+      "problem": "Uma reinicialização não pode perder as automações ou mensagens ainda pendentes.",
+      "outcome": "O modo de execução escolhido recupera os componentes necessários sem repetir efeitos.",
+      "inScope": [
+        "Persistência, reinício e recuperação das automações e pendências."
+      ],
+      "outOfScope": [
+        "Alterar serviços compartilhados sem plano de ambiente próprio."
+      ],
+      "acceptanceCriteria": [
+        "A configuração persistida é recuperada após reiniciar o modo de execução escolhido.",
+        "Pendências continuam identificadas e não geram efeitos duplicados.",
+        "Uma falha de comunicação deixa resultado recuperável e verificável, sem sucesso presumido."
+      ],
+      "proofType": "Laboratório",
+      "verification": [
+        "Preparar pendências em ambiente separado, reiniciar e repetir o processamento no modo operacional escolhido.",
+        "Registro da jornada em ambiente separado, com componentes e versão usados e limite do canal simulado explícito."
+      ],
+      "prerequisites": [
+        "Modo de execução e armazenamento do n8n definidos para o ambiente avaliado."
+      ],
+      "decisionPending": null,
+      "nextRequiredOutcome": "Validar o modo operacional, a fila e as agendas do ambiente escolhido.",
+      "sourcePaths": [
+        "src/whatsapp/workflows/generate.mjs",
+        "src/whatsapp/workflows/W08.json"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-120-DELIVERY-RECOVERY.md",
+        "program/cards/VR-WA-150-OPERATIONS.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-150-OPERATIONS.md"
+      ]
+    },
+    {
+      "taskId": "T57",
+      "title": "Coletar apenas os dados necessários ao cadastro, registrar consentimento e aplicar os prazos de exclusão definidos.",
+      "shortTitle": "Limitar dados e aplicar exclusão",
+      "feature": "F10",
+      "problem": "Cadastros e credenciais não devem ser guardados além do necessário ou sem aviso coerente.",
+      "outcome": "O cadastro usa dados essenciais e aplica os prazos definidos para seu ciclo de vida.",
+      "inScope": [
+        "Minimização, consentimento e exclusão dos dados e credenciais previstos na tarefa."
+      ],
+      "outOfScope": [
+        "Criar política jurídica nova ou declarar que todos os dados de fornecedores foram apagados sem prova."
+      ],
+      "acceptanceCriteria": [
+        "O cadastro solicita somente os campos necessários ao fluxo definido.",
+        "O aceite referencia o aviso apresentado à pessoa.",
+        "Os prazos configurados produzem exclusão ou expiração verificável nas famílias cobertas, sem apagar registros fora da regra."
+      ],
+      "proofType": "Teste automatizado",
+      "verification": [
+        "Cadastrar dados fictícios, registrar o aceite e simular a passagem dos prazos configurados; conferir os destinos dos dados.",
+        "Relatório dos cenários automatizados, com versão avaliada, resultado e falhas preservadas."
+      ],
+      "prerequisites": [
+        "Finalidades, famílias de dados e prazos aplicáveis documentados para o cenário."
+      ],
+      "decisionPending": null,
+      "nextRequiredOutcome": "Definir e testar retenção e exclusão de todas as famílias necessárias.",
+      "sourcePaths": [
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaOnboardingCommands.java",
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/transport/WaDeliveryMaintenance.java"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-040-DOMAIN-AUTH.md",
+        "program/evidence/VR-WA-070-AGENT-WORKFLOWS.md",
+        "program/evidence/VR-WA-120-DELIVERY-RECOVERY.md",
+        "program/cards/VR-WA-150-OPERATIONS.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-150-OPERATIONS.md"
+      ]
+    },
+    {
+      "taskId": "T58",
+      "title": "Testar cópia de segurança, restauração e exclusão dos dados em ambiente separado, registrando a recuperação realizada.",
+      "shortTitle": "Provar cópia, restauração e exclusão",
+      "feature": "F09",
+      "problem": "Ter um arquivo de cópia não demonstra que o serviço pode ser recuperado sem reintroduzir dados excluídos.",
+      "outcome": "O conjunto coberto é restaurado em ambiente separado e respeita as exclusões previstas.",
+      "inScope": [
+        "Cópia, restauração e reaplicação das regras de exclusão do conjunto do MVP delimitado."
+      ],
+      "outOfScope": [
+        "Restaurar produção ou considerar a prova do receptor isolado suficiente para todo o produto."
+      ],
+      "acceptanceCriteria": [
+        "A cópia identifica o conjunto e a versão cobertos.",
+        "A restauração em destino separado recupera os registros de controle e o funcionamento esperado.",
+        "Dados que deveriam permanecer excluídos não voltam a ficar utilizáveis após a restauração."
+      ],
+      "proofType": "Laboratório",
+      "verification": [
+        "Criar dados fictícios, realizar exclusão prevista, restaurar em outro destino e conferir dados e operação.",
+        "Registro da jornada em ambiente separado, com componentes e versão usados e limite do canal simulado explícito."
+      ],
+      "prerequisites": [
+        "Catálogo do conjunto de cópia e regras de exclusão definidos, com destino de restauração separado."
+      ],
+      "decisionPending": null,
+      "nextRequiredOutcome": "Executar restauração isolada e reaplicação de exclusões do conjunto completo.",
+      "sourcePaths": [
+        "src/whatsapp/gps-spike/deploy/state_backup.py"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-020-GPS-SPIKE.md",
+        "program/cards/VR-WA-150-OPERATIONS.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-150-OPERATIONS.md"
+      ]
+    },
+    {
+      "taskId": "T59",
+      "title": "Preparar alertas e guia de operação com limites de uso e procedimento para pausar novos envios com segurança.",
+      "shortTitle": "Orientar operação e parada segura",
+      "feature": "F09",
+      "problem": "Sem alertas e procedimento claro, uma falha pode continuar produzindo envios incorretos.",
+      "outcome": "O operador identifica falhas e pausa novos envios com segurança.",
+      "inScope": [
+        "Alertas, limites de uso e guia de operação do MVP delimitado."
+      ],
+      "outOfScope": [
+        "Monitorar serviços não relacionados ou criar uma operação de suporte comercial."
+      ],
+      "acceptanceCriteria": [
+        "Uma falha monitorada aparece ao operador com ação recomendada.",
+        "O procedimento pausa novos envios sem impedir parada e recuperação já necessárias.",
+        "O guia identifica configuração, limites e responsável de operação, sem credenciais expostas."
+      ],
+      "proofType": "Laboratório",
+      "verification": [
+        "Simular uma falha e seguir o procedimento de pausa e recuperação no ambiente separado.",
+        "Registro da jornada em ambiente separado, com componentes e versão usados e limite do canal simulado explícito."
+      ],
+      "prerequisites": [
+        "Ambiente de teste, limites configurados e papel do operador definidos."
+      ],
+      "decisionPending": null,
+      "nextRequiredOutcome": "Consolidar alertas, limites e parada segura no ensaio de operação.",
+      "sourcePaths": [],
+      "evidencePaths": [
+        "src/whatsapp/worker/README.md",
+        "docs/runbooks/whatsapp-mvp/120-entrega-e-canal-real.md",
+        "program/cards/VR-WA-150-OPERATIONS.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-150-OPERATIONS.md"
+      ]
+    },
+    {
+      "taskId": "T60",
+      "title": "Registrar as versões e os arquivos aprovados que compõem a versão de teste.",
+      "shortTitle": "Identificar os arquivos da versão de teste",
+      "feature": "F05",
+      "problem": "Sem uma lista única, o aplicativo e o servidor podem pertencer a versões incompatíveis.",
+      "outcome": "A versão de teste tem seus componentes e origem identificados.",
+      "inScope": [
+        "Inventário dos arquivos e versões aprovados que compõem o candidato."
+      ],
+      "outOfScope": [
+        "Publicar ou aprovar a versão apenas por organizar seus arquivos."
+      ],
+      "acceptanceCriteria": [
+        "Aplicativos, servidor, automações e configurações necessárias aparecem no mesmo inventário.",
+        "A origem e a integridade de cada arquivo podem ser conferidas.",
+        "Não há componente essencial sem origem ou arquivo necessário omitido."
+      ],
+      "proofType": "Revisão documental ou reprodução",
+      "verification": [
+        "Comparar o inventário com os arquivos reais do candidato e os resultados de verificação correspondentes.",
+        "Lista dos arquivos ou procedimentos conferidos, versão correspondente e registro da revisão ou reprodução."
+      ],
+      "prerequisites": [
+        "Componentes e verificações do candidato disponíveis para identificação."
+      ],
+      "decisionPending": null,
+      "nextRequiredOutcome": "Fechar dependências e identificar todos os arquivos da versão integrada.",
+      "sourcePaths": [],
+      "evidencePaths": [
+        "program/evidence/VR-WA-110-RUN-TRACKING.md",
+        "program/evidence/VR-WA-120-DELIVERY-RECOVERY.md",
+        "program/cards/VR-WA-160-RELEASE-PREP.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-160-RELEASE-PREP.md"
+      ]
+    },
+    {
+      "taskId": "T61",
+      "title": "Preparar o aplicativo Android para instalação de teste, com assinatura identificada e verificação de integridade.",
+      "shortTitle": "Preparar instalação de teste Android",
+      "feature": "F05",
+      "problem": "O grupo precisa instalar uma versão identificável sem depender de um arquivo de origem desconhecida.",
+      "outcome": "O pacote Android de teste tem assinatura e integridade conferíveis.",
+      "inScope": [
+        "Pacote Android, assinatura de teste e instrução de instalação."
+      ],
+      "outOfScope": [
+        "Publicação em loja ou aceite de todas as funções do MVP."
+      ],
+      "acceptanceCriteria": [
+        "O pacote informa a versão esperada e tem assinatura identificada.",
+        "A integridade do arquivo recebido pode ser conferida.",
+        "A instalação e a abertura seguem as instruções no aparelho de referência."
+      ],
+      "proofType": "Teste físico delimitado",
+      "verification": [
+        "Conferir o pacote, instalar no Android de referência e abrir a versão identificada.",
+        "Registro por aparelho e cenário, com tela/rede consideradas e resultado sanitizado, sem GPS bruto ou credenciais."
+      ],
+      "prerequisites": [
+        "Versão Android candidata e material de assinatura mantido fora da publicação."
+      ],
+      "decisionPending": null,
+      "nextRequiredOutcome": "Gerar nova versão quando os módulos pendentes forem integrados.",
+      "sourcePaths": [
+        "src/aplicativo-motorista/android/app/build.gradle.kts"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-010-TOOLCHAINS.md",
+        "program/evidence/VR-WA-110-RUN-TRACKING.md",
+        "docs/runbooks/whatsapp-mvp/010-builds-e-instalacao.md",
+        "program/cards/VR-WA-160-RELEASE-PREP.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-160-RELEASE-PREP.md"
+      ]
+    },
+    {
+      "taskId": "T62",
+      "title": "Preparar o aplicativo para iPhone com instruções de instalação e renovação da autorização de desenvolvimento.",
+      "shortTitle": "Preparar instalação e renovação no iPhone",
+      "feature": "F05",
+      "problem": "Uma assinatura temporária pode vencer e impedir que a equipe repita o teste.",
+      "outcome": "O iPhone recebe a versão identificada e há instruções de instalação e renovação.",
+      "inScope": [
+        "Versão de desenvolvimento, instalação e renovação da autorização efetiva."
+      ],
+      "outOfScope": [
+        "Exigir publicação em loja ou assinatura paga como requisito criado nesta tarefa."
+      ],
+      "acceptanceCriteria": [
+        "A versão instalada corresponde ao pacote de teste identificado.",
+        "Assinatura e validade efetivas são conferidas sem publicar material privado.",
+        "O procedimento informa como renovar e repetir a instalação quando necessário."
+      ],
+      "proofType": "Teste físico delimitado",
+      "verification": [
+        "Instalar e abrir no aparelho de referência, conferir a validade e reproduzir os passos de renovação possíveis.",
+        "Registro por aparelho e cenário, com tela/rede consideradas e resultado sanitizado, sem GPS bruto ou credenciais."
+      ],
+      "prerequisites": [
+        "iPhone disponibilizado, assinatura válida e ações de conta realizadas pelo proprietário."
+      ],
+      "decisionPending": null,
+      "nextRequiredOutcome": "Instalar e validar a versão integrada no iPhone após retomar os testes.",
+      "sourcePaths": [
+        "src/aplicativo-motorista/ios/Runner.xcodeproj/project.pbxproj"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-010-TOOLCHAINS.md",
+        "program/evidence/VR-WA-110-RUN-TRACKING.md",
+        "docs/runbooks/whatsapp-mvp/010-builds-e-instalacao.md",
+        "program/cards/VR-WA-160-RELEASE-PREP.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-160-RELEASE-PREP.md"
+      ]
+    },
+    {
+      "taskId": "T63",
+      "title": "Planejar instalação no servidor, atualização do banco, teste de funcionamento e retorno à versão anterior.",
+      "shortTitle": "Planejar instalação e retorno no servidor",
+      "feature": "F05",
+      "problem": "Uma atualização sem sequência e reversão pode atingir serviços ou dados indevidos.",
+      "outcome": "Existe um plano concreto da instalação da versão de teste e de retorno à anterior.",
+      "inScope": [
+        "Serviços, atualização do banco, verificação de funcionamento e reversão do candidato."
+      ],
+      "outOfScope": [
+        "Executar a instalação ou mudar DNS nesta tarefa de preparação."
+      ],
+      "acceptanceCriteria": [
+        "O plano identifica ambiente, versão e componentes que serão alterados.",
+        "A ordem da atualização e as verificações esperadas estão descritas.",
+        "O retorno à versão anterior informa condições, dados preservados e passos verificáveis."
+      ],
+      "proofType": "Revisão documental ou reprodução",
+      "verification": [
+        "Revisar o plano contra os arquivos do candidato e a configuração observada do ambiente.",
+        "Lista dos arquivos ou procedimentos conferidos, versão correspondente e registro da revisão ou reprodução."
+      ],
+      "prerequisites": [
+        "Versão candidata identificada e inventário de leitura do ambiente alvo."
+      ],
+      "decisionPending": null,
+      "nextRequiredOutcome": "Consolidar a implantação da versão completa com verificações e retorno.",
+      "sourcePaths": [],
+      "evidencePaths": [
+        "docs/runbooks/whatsapp-mvp/110-laboratorio-temporario.md",
+        "program/cards/VR-WA-160-RELEASE-PREP.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-160-RELEASE-PREP.md"
+      ]
+    },
+    {
+      "taskId": "T64",
+      "title": "Instalar a versão aprovada no ambiente de teste autorizado e conferir o endereço seguro e as versões dos componentes.",
+      "shortTitle": "Instalar no ambiente autorizado de teste",
+      "feature": "F05",
+      "problem": "A equipe precisa testar a versão integrada em um endereço e conjunto de serviços identificados.",
+      "outcome": "O ambiente autorizado executa os componentes corretos e passa nas verificações combinadas.",
+      "inScope": [
+        "Instalação do candidato e conferência de endereço seguro e versões."
+      ],
+      "outOfScope": [
+        "Produção ampla ou alterações extras em serviços compartilhados."
+      ],
+      "acceptanceCriteria": [
+        "A instalação usa a versão e os serviços do plano autorizado.",
+        "O endereço seguro responde e permite as operações previstas no teste de funcionamento.",
+        "Serviços não abrangidos são preservados e o retorno pode ser acionado se a verificação falhar."
+      ],
+      "proofType": "Laboratório",
+      "verification": [
+        "Executar as verificações do plano no ambiente autorizado e comparar versões e serviços antes e depois.",
+        "Registro da jornada em ambiente separado, com componentes e versão usados e limite do canal simulado explícito."
+      ],
+      "prerequisites": [
+        "Plano e candidato conferidos, autorização externa específica e configuração de endereço realizada quando necessária."
+      ],
+      "decisionPending": null,
+      "nextRequiredOutcome": "Preparar ambiente final quando as funções e o número dedicado estiverem disponíveis.",
+      "sourcePaths": [],
+      "evidencePaths": [
+        "program/evidence/VR-WA-120-DELIVERY-RECOVERY.md",
+        "docs/runbooks/whatsapp-mvp/110-laboratorio-temporario.md",
+        "src/whatsapp/worker/README.md",
+        "docs/runbooks/whatsapp-mvp/120-entrega-e-canal-real.md",
+        "program/cards/VR-WA-170-TEST-ENVIRONMENT.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-170-TEST-ENVIRONMENT.md"
+      ]
+    },
+    {
+      "taskId": "T65",
+      "title": "Conectar o número exclusivo do bot e conferir envio e confirmação de entrega com participantes autorizados.",
+      "shortTitle": "Conferir o número dedicado",
+      "feature": "F11",
+      "problem": "Simular o serviço de mensagens não demonstra que o bot conversa com os participantes reais autorizados.",
+      "outcome": "A conta dedicada envia mensagem e tem o retorno de entrega conferido.",
+      "inScope": [
+        "Pareamento do número de teste, envio e retorno correspondente."
+      ],
+      "outOfScope": [
+        "Comprar linha, usar conta alheia ou inferir entrega só por resposta da API."
+      ],
+      "acceptanceCriteria": [
+        "A conta de teste é pareada sob controle do proprietário.",
+        "Uma mensagem é enviada somente ao participante autorizado e identificado para o ensaio.",
+        "O retorno real é associado ao envio correto; ausência de confirmação continua explícita."
+      ],
+      "proofType": "Laboratório",
+      "verification": [
+        "Com o proprietário, parear a conta dedicada, enviar mensagem de teste e conferir o retorno correspondente.",
+        "Registro da jornada em ambiente separado, com componentes e versão usados e limite do canal simulado explícito."
+      ],
+      "prerequisites": [
+        "Nova linha sob controle do proprietário e destinatário distinto e autorizado disponíveis."
+      ],
+      "decisionPending": null,
+      "nextRequiredOutcome": "Disponibilizar a linha e conferir envio e confirmação reais.",
+      "sourcePaths": [],
+      "evidencePaths": [
+        "program/evidence/VR-WA-120-DELIVERY-RECOVERY.md",
+        "src/whatsapp/worker/README.md",
+        "docs/runbooks/whatsapp-mvp/120-entrega-e-canal-real.md",
+        "program/cards/VR-WA-170-TEST-ENVIRONMENT.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-170-TEST-ENVIRONMENT.md"
+      ]
+    },
+    {
+      "taskId": "T66",
+      "title": "Testar os agendamentos e as automações no ambiente autorizado, verificando recuperação após falha ou reinício.",
+      "shortTitle": "Testar agendas no ambiente escolhido",
+      "feature": "F02",
+      "problem": "Uma chamada manual isolada não prova que os lembretes serão executados e recuperados continuamente.",
+      "outcome": "A agenda real e as automações do ambiente de teste resistem à falha e ao reinício.",
+      "inScope": [
+        "Agendamentos e recuperação no modo operacional autorizado."
+      ],
+      "outOfScope": [
+        "Usar importação inativa como prova de agenda em execução."
+      ],
+      "acceptanceCriteria": [
+        "A agenda dispara a operação prevista no ambiente configurado.",
+        "Falha ou reinício preserva a pendência recuperável sem duplicar efeitos.",
+        "A execução usa a permissão própria da automação e registra seu resultado."
+      ],
+      "proofType": "Laboratório",
+      "verification": [
+        "Observar um acionamento agendado, interromper o serviço no cenário combinado e conferir a recuperação.",
+        "Registro da jornada em ambiente separado, com componentes e versão usados e limite do canal simulado explícito."
+      ],
+      "prerequisites": [
+        "Ambiente e modo de execução escolhidos e autorizados, com calendário de teste configurado."
+      ],
+      "decisionPending": null,
+      "nextRequiredOutcome": "Executar agenda real, reinício e recuperação no modo operacional escolhido.",
+      "sourcePaths": [
+        "src/whatsapp/workflows/generate.mjs",
+        "src/whatsapp/workflows/W08.json",
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/attendance/WaAttendanceJobs.java",
+        "src/whatsapp/worker/attendance-jobs.mjs"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-100-ATTENDANCE.md",
+        "program/evidence/VR-WA-120-DELIVERY-RECOVERY.md",
+        "program/cards/VR-WA-170-TEST-ENVIRONMENT.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-170-TEST-ENVIRONMENT.md"
+      ]
+    },
+    {
+      "taskId": "T67",
+      "title": "Testar a jornada completa no Redmi Note 8 com WhatsApp real e registrar resultados e versões utilizadas.",
+      "shortTitle": "Testar a jornada completa no Android",
+      "feature": "F05",
+      "problem": "Cenários parciais não demonstram que o motorista consegue usar o conjunto durante uma viagem.",
+      "outcome": "O Android de referência executa a jornada integrada com WhatsApp real e resultado registrado.",
+      "inScope": [
+        "Ciclo completo no Redmi Note 8 com a versão e o roteiro identificados."
+      ],
+      "outOfScope": [
+        "Aprovar iPhone ou piloto ampliado com base no resultado Android."
+      ],
+      "acceptanceCriteria": [
+        "A jornada inclui os fluxos essenciais do roteiro vigente no canal real.",
+        "Percurso, aviso correto e encerramento são registrados no mesmo conjunto de versões.",
+        "Falhas e etapas não executadas ficam explícitas e impedem declarar o ciclo completo aprovado."
+      ],
+      "proofType": "Teste físico delimitado",
+      "verification": [
+        "Executar o roteiro completo no Redmi Note 8 com participantes autorizados e coletar resultados sanitizados.",
+        "Registro por aparelho e cenário, com tela/rede consideradas e resultado sanitizado, sem GPS bruto ou credenciais."
+      ],
+      "prerequisites": [
+        "Prova de localização Android e ambiente integrado com canal real disponíveis."
+      ],
+      "decisionPending": null,
+      "nextRequiredOutcome": "Executar o ciclo completo no Android com o canal real e percurso.",
+      "sourcePaths": [
+        "src/aplicativo-motorista/android/app/src/driver/kotlin/com/example/vanrides_frontend_dev/driver/DriverTrackingRuntime.kt",
+        "src/aplicativo-motorista/android/app/src/driver/kotlin/com/example/vanrides_frontend_dev/driver/DriverTrackingService.kt"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-110-RUN-TRACKING.md",
+        "docs/runbooks/whatsapp-mvp/110-laboratorio-temporario.md",
+        "program/cards/VR-WA-180-E2E-DEVICES.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-180-E2E-DEVICES.md"
+      ]
+    },
+    {
+      "taskId": "T68",
+      "title": "Testar a jornada completa no iPhone com WhatsApp real e registrar resultados e versões utilizadas.",
+      "shortTitle": "Testar a jornada completa no iPhone",
+      "feature": "F05",
+      "problem": "O funcionamento Android não comprova os limites próprios do iPhone.",
+      "outcome": "O iPhone executa a jornada integrada e tem resultado independente.",
+      "inScope": [
+        "Ciclo completo no iPhone físico com WhatsApp real e versão identificada."
+      ],
+      "outOfScope": [
+        "Substituir percurso físico por simulador ou aprovação de outra plataforma."
+      ],
+      "acceptanceCriteria": [
+        "A jornada é executada no iPhone físico com os fluxos do roteiro vigente.",
+        "Percurso, aviso e encerramento são registrados na versão avaliada.",
+        "Resultado e pendências são avaliados separadamente do Android."
+      ],
+      "proofType": "Teste físico delimitado",
+      "verification": [
+        "Retomar os testes físicos e executar o roteiro completo com participantes autorizados.",
+        "Registro por aparelho e cenário, com tela/rede consideradas e resultado sanitizado, sem GPS bruto ou credenciais."
+      ],
+      "prerequisites": [
+        "Retomada do iPhone autorizada, prova de localização da plataforma e ambiente com canal real disponíveis."
+      ],
+      "decisionPending": null,
+      "nextRequiredOutcome": "Retomar o aparelho depois de fechar as dependências.",
+      "sourcePaths": [
+        "src/aplicativo-motorista/ios/Runner/DriverTrackingCoordinator.swift",
+        "src/aplicativo-motorista/ios/Runner/DriverTrackingCore.swift"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-030-GPS-PROOF.md",
+        "program/cards/VR-WA-180-E2E-DEVICES.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-180-E2E-DEVICES.md"
+      ]
+    },
+    {
+      "taskId": "T69",
+      "title": "Medir se os avisos chegam em tempo útil nos percursos dos dois aparelhos e se o destinatário está correto.",
+      "shortTitle": "Medir se o aviso ajuda no embarque",
+      "feature": "F11",
+      "problem": "Um aviso tecnicamente enviado pode chegar tarde ou para a pessoa errada.",
+      "outcome": "O ensaio mostra se a antecedência é útil e se o destinatário está correto.",
+      "inScope": [
+        "Utilidade e correção dos avisos nos percursos dos dois aparelhos."
+      ],
+      "outOfScope": [
+        "Inventar uma meta numérica de minutos ou declarar satisfação sem observação."
+      ],
+      "acceptanceCriteria": [
+        "O ensaio registra a referência do evento, recebimento do aviso e avaliação de utilidade pelo participante.",
+        "O destinatário corresponde ao passageiro e ponto do cenário.",
+        "O resultado por plataforma é comparado ao critério combinado antes do ensaio, mantendo falhas e perdas visíveis."
+      ],
+      "proofType": "Teste físico delimitado",
+      "verification": [
+        "Combinar a avaliação com o grupo e observar avisos reais durante os percursos, separadamente por plataforma.",
+        "Registro por aparelho e cenário, com tela/rede consideradas e resultado sanitizado, sem GPS bruto ou credenciais."
+      ],
+      "prerequisites": [
+        "Produtor de aproximação, canal real e percursos disponíveis."
+      ],
+      "decisionPending": "Combinar como será reconhecido um aviso útil antes de avaliar os percursos; este apoio não define minutos ou metros.",
+      "nextRequiredOutcome": "Medir antecedência útil e destinatário correto após implementar os avisos.",
+      "sourcePaths": [],
+      "evidencePaths": [
+        "program/cards/VR-WA-180-E2E-DEVICES.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-180-E2E-DEVICES.md"
+      ]
+    },
+    {
+      "taskId": "T70",
+      "title": "Entregar guia de uso e relatório com resultados, versões, limites e pendências do MVP.",
+      "shortTitle": "Consolidar guia e resultados",
+      "feature": "F05",
+      "problem": "Sem um guia e relatório único, a equipe depende de explicações informais para repetir o uso.",
+      "outcome": "A entrega reúne instruções e resultados com seus limites reais.",
+      "inScope": [
+        "Guia de uso e relatório do conjunto do MVP."
+      ],
+      "outOfScope": [
+        "Declarar piloto aprovado ou ocultar pendências para apresentar o pacote como completo."
+      ],
+      "acceptanceCriteria": [
+        "O guia explica instalação, entrada, uso essencial e recuperação.",
+        "O relatório identifica versões, cenários executados e resultados não executados ou reprovados.",
+        "Limites e próximos passos ficam claros para quem não acompanhou o desenvolvimento."
+      ],
+      "proofType": "Revisão documental ou reprodução",
+      "verification": [
+        "Pedir a uma pessoa da equipe que siga o guia e compare cada conclusão do relatório com sua evidência.",
+        "Lista dos arquivos ou procedimentos conferidos, versão correspondente e registro da revisão ou reprodução."
+      ],
+      "prerequisites": [
+        "Arquivos de instalação, roteiros e resultados dos componentes reunidos."
+      ],
+      "decisionPending": null,
+      "nextRequiredOutcome": "Consolidar o guia e os resultados após a validação completa.",
+      "sourcePaths": [],
+      "evidencePaths": [
+        "src/whatsapp/worker/README.md",
+        "docs/runbooks/whatsapp-mvp/120-entrega-e-canal-real.md",
+        "docs/runbooks/whatsapp-mvp/010-builds-e-instalacao.md",
+        "program/cards/VR-WA-190-HANDOFF.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-190-HANDOFF.md"
+      ]
+    },
+    {
+      "taskId": "T71",
+      "title": "Repetir a instalação e a renovação a partir do pacote entregue e conferir se todos os arquivos necessários estão disponíveis.",
+      "shortTitle": "Reproduzir a instalação final",
+      "feature": "F05",
+      "problem": "Arquivos soltos ou passos ocultos podem impedir que outra pessoa instale o que foi entregue.",
+      "outcome": "A equipe repete instalação e renovação a partir do pacote identificado.",
+      "inScope": [
+        "Reprodução do pacote completo e conferência de arquivos necessários."
+      ],
+      "outOfScope": [
+        "Reutilizar uma instalação antiga como prova do pacote novo."
+      ],
+      "acceptanceCriteria": [
+        "A instalação usa somente os arquivos e referências de configuração indicados.",
+        "A versão aberta no aparelho corresponde à entrega avaliada.",
+        "A renovação aplicável pode ser seguida sem credencial em chat ou arquivo privado esquecido no computador de quem preparou."
+      ],
+      "proofType": "Teste físico delimitado",
+      "verification": [
+        "Repetir a instalação a partir do pacote separado e conferir a renovação e a versão executada.",
+        "Registro por aparelho e cenário, com tela/rede consideradas e resultado sanitizado, sem GPS bruto ou credenciais."
+      ],
+      "prerequisites": [
+        "Pacote final e instruções completos, aparelhos e ações de conta do proprietário disponíveis."
+      ],
+      "decisionPending": null,
+      "nextRequiredOutcome": "Reproduzir instalação e renovação do pacote final nos dois aparelhos.",
+      "sourcePaths": [],
+      "evidencePaths": [
+        "docs/runbooks/whatsapp-mvp/010-builds-e-instalacao.md",
+        "program/cards/VR-WA-190-HANDOFF.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-190-HANDOFF.md"
+      ]
+    },
+    {
+      "taskId": "T72",
+      "title": "Registrar cancelamento ou correção de presença para a viagem indicada na conversa.",
+      "shortTitle": "Proposta: cancelar ou corrigir presença",
+      "feature": "F06",
+      "problem": "O passageiro pode mudar sua participação e precisa saber qual viagem será afetada.",
+      "outcome": "Se a inclusão for aprovada, cancelamento e correção têm um resultado claro para a ocorrência certa.",
+      "inScope": [
+        "Proposta de uso do cancelamento e correção já identificados no código no recorte da Onda 2."
+      ],
+      "outOfScope": [
+        "Aprovar a mudança no planejamento de funcionalidades ou avisar o motorista como parte desta definição."
+      ],
+      "acceptanceCriteria": [
+        "A resposta altera somente a ocorrência selecionada pelo passageiro autorizado.",
+        "A correção mantém o histórico mínimo previsto e não altera outra data ou sentido.",
+        "O retorno explica o resultado e a eventual limitação após o início da viagem."
+      ],
+      "proofType": "Laboratório",
+      "verification": [
+        "Revisar os cenários existentes de correção e ausência e demonstrar seus resultados à equipe.",
+        "Registro da jornada em ambiente separado, com componentes e versão usados e limite do canal simulado explícito."
+      ],
+      "prerequisites": [
+        "Decisão do grupo sobre a inclusão na Onda 2 e regra de presença vigente identificadas."
+      ],
+      "decisionPending": "Confirmar a inclusão de cancelamento e correção no recorte acadêmico e registrar a mudança do planejamento.",
+      "nextRequiredOutcome": "Confirmar o enquadramento da funcionalidade com a equipe.",
+      "sourcePaths": [
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaAttendanceMutation.java",
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaAttendanceConversation.java",
+        "src/backend/src/test/java/com/vanrides/vanrides/whatsapp/transport/WaAttendanceCutoffIntegrationTest.java",
+        "src/backend/src/test/java/com/vanrides/vanrides/whatsapp/transport/WaAttendanceJobsIntegrationTest.java"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-100-ATTENDANCE.md",
+        "program/cards/VR-WA-100-ATTENDANCE.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-100-ATTENDANCE.md"
+      ]
+    },
+    {
+      "taskId": "T73",
+      "title": "Aplicar o horário limite para alterar a presença e manter o histórico mínimo dos cancelamentos.",
+      "shortTitle": "Proposta: definir limite da alteração",
+      "feature": "F06",
+      "problem": "O texto de horário limite pode ser entendido como bloqueio total, mas a regra atual permite informar ausência depois da partida.",
+      "outcome": "Se a proposta for aprovada, equipe e implementação usam a mesma regra de alteração e histórico.",
+      "inScope": [
+        "Significado do limite e comportamento antes e depois dele, preservando a lista da partida."
+      ],
+      "outOfScope": [
+        "Escolher silenciosamente bloquear toda ausência tardia."
+      ],
+      "acceptanceCriteria": [
+        "A regra acordada descreve quais alterações são permitidas antes e depois do limite.",
+        "Os cenários dos dois lados do limite produzem exatamente o comportamento acordado.",
+        "A alteração não reescreve a lista inicial e deixa o histórico mínimo previsto."
+      ],
+      "proofType": "Teste automatizado",
+      "verification": [
+        "Comparar os testes de corte atuais com a regra que a equipe escolher e registrar as diferenças antes de mudar código.",
+        "Relatório dos cenários automatizados, com versão avaliada, resultado e falhas preservadas."
+      ],
+      "prerequisites": [
+        "Acordo explícito sobre a semântica de horário limite e sobre a proposta de escopo."
+      ],
+      "decisionPending": "Resolver a divergência entre o texto do backlog e a regra atual que permite ausência após a partida; não há bloqueio total aprovado por esta especificação.",
+      "nextRequiredOutcome": "Alinhar o significado de horário limite antes de declarar a tarefa pronta.",
+      "sourcePaths": [
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaAttendanceMutation.java",
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaAttendanceConversation.java",
+        "src/backend/src/test/java/com/vanrides/vanrides/whatsapp/transport/WaAttendanceCutoffIntegrationTest.java",
+        "src/backend/src/test/java/com/vanrides/vanrides/whatsapp/transport/WaAttendanceJobsIntegrationTest.java"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-100-ATTENDANCE.md",
+        "program/cards/VR-WA-100-ATTENDANCE.md",
+        "program/cards/VR-WA-120-DELIVERY-RECOVERY.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-100-ATTENDANCE.md",
+        "program/cards/VR-WA-120-DELIVERY-RECOVERY.md"
+      ]
+    },
+    {
+      "taskId": "T74",
+      "title": "Informar ao motorista a mudança de presença pelo WhatsApp, evitando aviso repetido ou atrasado.",
+      "shortTitle": "Proposta: avisar cancelamento ao motorista",
+      "feature": "F12",
+      "problem": "Alterar a presença sem informar o motorista pode manter a expectativa de um embarque que foi cancelado.",
+      "outcome": "Se aprovada, a mudança gera aviso adequado ao motorista correto.",
+      "inScope": [
+        "Aviso de alteração de presença ao motorista pelo WhatsApp."
+      ],
+      "outOfScope": [
+        "Tratar a resposta ao passageiro como prova de que o motorista foi avisado."
+      ],
+      "acceptanceCriteria": [
+        "Uma alteração elegível gera aviso para o motorista responsável pela viagem.",
+        "Repetir a alteração ou o processamento não cria avisos repetidos para a mesma mudança.",
+        "A mensagem identifica a mudança e não é enviada como atual depois de perder a utilidade."
+      ],
+      "proofType": "Laboratório",
+      "verification": [
+        "Simular alteração de presença, conferir a mensagem destinada ao motorista e repetir o evento.",
+        "Registro da jornada em ambiente separado, com componentes e versão usados e limite do canal simulado explícito."
+      ],
+      "prerequisites": [
+        "Proposta de escopo aprovada e cancelamento da ocorrência identificado."
+      ],
+      "decisionPending": "Confirmar a inclusão e a regra de quando o motorista deve receber o aviso; a entrega ao motorista ainda não foi comprovada.",
+      "nextRequiredOutcome": "Aprovar o ajuste e implementar ou localizar o aviso ao motorista.",
+      "sourcePaths": [
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaAttendanceMutation.java",
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaAttendanceConversation.java"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-100-ATTENDANCE.md",
+        "program/cards/VR-WA-120-DELIVERY-RECOVERY.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-120-DELIVERY-RECOVERY.md"
+      ]
+    },
+    {
+      "taskId": "T75",
+      "title": "Mostrar ao motorista a lista da viagem, distinguindo passageiros confirmados, pendentes e ausentes.",
+      "shortTitle": "Mostrar lista de presença ao motorista",
+      "feature": "F02",
+      "problem": "O motorista precisa distinguir confirmação, ausência e falta de resposta para organizar a viagem.",
+      "outcome": "A lista apresenta a ocorrência correta e a situação de cada passageiro autorizado.",
+      "inScope": [
+        "Consulta da lista por data e sentido no atendimento do motorista."
+      ],
+      "outOfScope": [
+        "Expor listas de outro motorista ou converter pendência em confirmação."
+      ],
+      "acceptanceCriteria": [
+        "A consulta identifica data e sentido da lista apresentada.",
+        "Confirmados, ausentes e pendentes aparecem como situações distintas.",
+        "Outro motorista não acessa a mesma lista sem autorização."
+      ],
+      "proofType": "Laboratório",
+      "verification": [
+        "Consultar duas ocorrências com situações diferentes e tentar acesso com outra identidade.",
+        "Registro da jornada em ambiente separado, com componentes e versão usados e limite do canal simulado explícito."
+      ],
+      "prerequisites": [
+        "Motorista autorizado e ocorrências com respostas de teste existentes."
+      ],
+      "decisionPending": null,
+      "nextRequiredOutcome": "Verificar a mesma consulta pelo número dedicado.",
+      "sourcePaths": [
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaAttendanceSummary.java"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-100-ATTENDANCE.md",
+        "program/cards/VR-WA-100-ATTENDANCE.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-100-ATTENDANCE.md"
+      ]
+    },
+    {
+      "taskId": "T78",
+      "title": "Testar as operações da API, as permissões de acesso e as atualizações do banco PostgreSQL com dados fictícios.",
+      "shortTitle": "Conferir contrato, permissões e banco",
+      "feature": "F09",
+      "problem": "Mudanças nas operações ou estrutura dos dados podem quebrar cadastros e consumidores sem ficar visíveis.",
+      "outcome": "Os testes verificam as operações previstas, suas permissões e as atualizações do banco.",
+      "inScope": [
+        "Testes de contrato, autorização e migrações do domínio do MVP."
+      ],
+      "outOfScope": [
+        "Executar implantação em produção ou considerar testes ignorados como aprovação."
+      ],
+      "acceptanceCriteria": [
+        "As operações aceitam e recusam os exemplos previstos no contrato avaliado.",
+        "A matriz de permissões cobre identidade correta, outra pessoa e credencial incompatível.",
+        "As atualizações do banco e invariantes passam no PostgreSQL de teste, com falhas e casos não executados visíveis."
+      ],
+      "proofType": "Teste automatizado",
+      "verification": [
+        "Executar as verificações proporcionais do produtor e consumidor e os cenários de banco exigidos para a alteração avaliada.",
+        "Relatório dos cenários automatizados, com versão avaliada, resultado e falhas preservadas."
+      ],
+      "prerequisites": [
+        "Contrato e versões avaliadas identificados e ambiente de banco de teste disponível."
+      ],
+      "decisionPending": null,
+      "nextRequiredOutcome": "Preservar os testes ao concluir os próximos componentes.",
+      "sourcePaths": [
+        "src/backend/contracts/whatsapp-mvp/openapi.yaml",
+        "src/backend/src/test/java/com/vanrides/vanrides/whatsapp/auth/WaFoundationIntegrationTest.java",
+        "src/backend/src/test/java/com/vanrides/vanrides/whatsapp/persistence/WhatsappMigrationIntegrationTest.java"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-040-DOMAIN-AUTH.md",
+        "program/evidence/VR-WA-120-DELIVERY-RECOVERY.md",
+        "program/cards/VR-WA-040-DOMAIN-AUTH.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-040-DOMAIN-AUTH.md"
+      ]
+    }
+  ],
+  "sourceRevisionsContext": "Revisões copiadas do acompanhamento task-progress.json usado como base. A revisão de coordenação identifica a base daquele registro, não o HEAD desta nova especificação. Não constitui nova execução de testes.",
+  "pathContext": "Caminhos adaptados para o repositório acadêmico; sourceRevisions registram a origem histórica, não a aprovação desta migração."
+}
