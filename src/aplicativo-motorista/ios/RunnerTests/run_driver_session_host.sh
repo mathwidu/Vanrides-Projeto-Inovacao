@@ -13,6 +13,8 @@ xcrun --sdk macosx swiftc -swift-version 5 -sdk "$task_sdk" \
   -F "$task_platform/Library/Frameworks" \
   -I "$task_platform/usr/lib" -L "$task_platform/usr/lib" \
   -Xlinker -rpath -Xlinker "$task_platform/Library/Frameworks" \
+  -Xlinker -rpath -Xlinker "$task_platform/Library/PrivateFrameworks" \
+  -Xlinker -rpath -Xlinker "$task_developer/../SharedFrameworks" \
   -Xlinker -rpath -Xlinker "$task_platform/usr/lib" \
   -D DRIVER_SESSION_STANDALONE_TESTS \
   ios/Runner/DriverSessionCore.swift ios/Runner/DriverSessionNative.swift \
