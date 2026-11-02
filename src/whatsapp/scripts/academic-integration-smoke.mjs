@@ -106,7 +106,7 @@ async function run() {
     let ready = false;
     while (Date.now() < readyDeadline && !ready) {
       interruption.assertActive();
-      try { docker('exec', container, 'pg_isready', '-U', 'vanrides_wa070', '-d', 'vanrides_wa070'); ready = true; }
+      try { docker('exec', container, 'pg_isready', '-h', '127.0.0.1', '-U', 'vanrides_wa070', '-d', 'vanrides_wa070'); ready = true; }
       catch { await pause(500); }
     }
     demand(ready, 'SMOKE_DATABASE_START_FAILED');
@@ -211,7 +211,7 @@ async function run() {
       if (!container) {
         try { container = docker('inspect', '--format', '{{.Id}}', containerName); } catch { /* No created container. */ }
       }
-      if (container) { assertContainer(); docker('rm', '--force', container); }
+      if (container) { assertContainer(); docker('rm', '--force', '--volumes', container); }
     } catch { cleanupErrors.push('OWNED_CONTAINER_CLEANUP_FAILED'); }
     interruption.dispose();
     fs.rmSync(work, { recursive: true, force: true });

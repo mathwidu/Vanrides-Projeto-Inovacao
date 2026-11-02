@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 const script = fileURLToPath(new URL('./academic-integration-smoke.mjs', import.meta.url));
@@ -28,4 +29,15 @@ for (const variable of ['GIT_DIR', 'GIT_WORK_TREE', 'GIT_CONFIG_COUNT', 'DOCKER_
 test('a different expected CI SHA is rejected before starting a runtime', () => {
   rejected([], { PATH: process.env.PATH, JAVA_HOME: '/synthetic-java-not-executed',
     VANRIDES_EXPECTED_SOURCE_SHA: '0'.repeat(40) }, 'SMOKE_SOURCE_SHA_MISMATCH');
+});
+
+test('anonymous database volumes are removed only after the owned container check', () => {
+  const source = readFileSync(script, 'utf8');
+  assert.match(source, /if \(container\) \{ assertContainer\(\); docker\('rm', '--force', '--volumes', container\); \}/u);
+  assert.equal((source.match(/docker\('rm'/gu) ?? []).length, 1);
+});
+
+test('database readiness probes TCP instead of the temporary init Unix socket', () => {
+  const source = readFileSync(script, 'utf8');
+  assert.match(source, /'pg_isready', '-h', '127\.0\.0\.1', '-U', 'vanrides_wa070', '-d', 'vanrides_wa070'/u);
 });
