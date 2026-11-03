@@ -140,7 +140,8 @@ class WaPassengerWizardIntegrationTest {
                 fixture.conversation.string(
                         "SELECT notice_version FROM wa.profile WHERE identity_id=?", passenger));
         fixture.transport.time.advance(301);
-        fixture.send(passenger, "ACEITO");
+        var expired = fixture.send(passenger, "ACEITO");
+        assertFalse(expired.text().startsWith("Não entendi"), expired.text());
         assertNull(
                 fixture.conversation.string(
                         "SELECT notice_version FROM wa.profile WHERE identity_id=?", passenger));
@@ -214,6 +215,109 @@ class WaPassengerWizardIntegrationTest {
                                 driver)
                         .contains("passengerDraft"));
         assertEquals("REVIEW", fixture.driverFixture.draft(driver).path("stage").asText());
+    }
+
+    @Test
+    void unclearAnswersExplainTheExpectedReplyAndNeverAdvanceOrSaveAnything() {
+        UUID passenger = fixture.passenger();
+        fixture.open(passenger, code);
+        fixture.send(passenger, "CONTINUAR");
+        fixture.send(passenger, "Passageiro Sintético");
+        fixture.send(passenger, "ACEITO");
+        for (String unclear : new String[] {"talvez", "claro que sim", "sim aceito"}) {
+            var retry = fixture.send(passenger, unclear);
+            assertEquals("PREF_APPROACH", fixture.draft(passenger).path("stage").asText());
+            assertTrue(retry.text().startsWith("Não entendi sua resposta. "), retry.text());
+            assertTrue(retry.text().endsWith("Responda SIM ou NÃO."), retry.text());
+        }
+        assertEquals(
+                "{}",
+                fixture.conversation.string(
+                        "SELECT preferences_json::text FROM wa.profile WHERE identity_id=?",
+                        passenger));
+        var accepted = fixture.send(passenger, "SIM");
+        assertFalse(accepted.text().startsWith("Não entendi"), accepted.text());
+        assertEquals("PREF_REMINDER", fixture.draft(passenger).path("stage").asText());
+        fixture.send(passenger, "NÃO");
+        var routines = fixture.send(passenger, "3");
+        assertTrue(routines.text().startsWith("Não entendi sua resposta. "), routines.text());
+        assertEquals("ROUTINES", fixture.draft(passenger).path("stage").asText());
+        fixture.send(passenger, "1");
+        var days = fixture.send(passenger, "segunda e quarta");
+        assertTrue(days.text().startsWith("Não entendi sua resposta. "), days.text());
+        assertEquals("DAYS", fixture.draft(passenger).path("stage").asText());
+        fixture.send(passenger, "1,3,5");
+        var address = fixture.send(passenger, "Rua das Flores 123, perto da padaria");
+        assertTrue(address.text().startsWith("Não entendi sua resposta. "), address.text());
+        assertTrue(address.text().contains("pin estático"), address.text());
+        assertEquals("POINT", fixture.draft(passenger).path("stage").asText());
+        fixture.pin(passenger);
+        var review = fixture.send(passenger, "PULAR");
+        var wrongMarker = fixture.send(passenger, "CONFIRMAR BCDFGHJK");
+        assertTrue(wrongMarker.text().startsWith("Não entendi sua resposta. "), wrongMarker.text());
+        assertTrue(wrongMarker.text().contains("CONFIRMAR "), wrongMarker.text());
+        assertNotEquals(fixture.marker(review), fixture.marker(wrongMarker));
+        assertEquals(0, fixture.count("driver_passenger_link"));
+    }
+
+    @Test
+    void passengerChoosingTheReturnRoutineNeverReceivesTheOutboundOne() {
+        fixture.driverFixture.confirm(driver, fixture.driverFixture.review(driver, "VOLTA"));
+        UUID passenger = fixture.passenger();
+        fixture.open(passenger, code);
+        fixture.send(passenger, "CONTINUAR");
+        fixture.send(passenger, "Passageiro Sintético");
+        fixture.send(passenger, "ACEITO");
+        fixture.send(passenger, "SIM");
+        var routines = fixture.send(passenger, "NÃO");
+        assertTrue(routines.text().contains("Rotina Sintética (ida)"), routines.text());
+        var returnChoice =
+                java.util.regex.Pattern.compile("(\\d): Rotina Sintética \\(volta\\)")
+                        .matcher(routines.text());
+        assertTrue(returnChoice.find(), routines.text());
+        fixture.send(passenger, returnChoice.group(1));
+        fixture.send(passenger, "1,3,5");
+        fixture.pin(passenger);
+        var review = fixture.send(passenger, "PULAR");
+        assertTrue(review.text().contains("(volta)"), review.text());
+        assertFalse(review.text().contains("(ida)"), review.text());
+        fixture.confirm(passenger, review);
+        assertEquals(
+                "RETURN",
+                fixture.conversation.string(
+                        "SELECT r.direction FROM wa.passenger_link_routine s JOIN wa.routine r ON"
+                                + " r.id=s.routine_id JOIN wa.driver_passenger_link l ON"
+                                + " l.id=s.link_id WHERE l.passenger_id=?",
+                        passenger));
+    }
+
+    @Test
+    void choosingBothRoutinesAsksDaysForEachOneAndNavigationIsNeverFlagged() {
+        fixture.driverFixture.confirm(driver, fixture.driverFixture.review(driver, "VOLTA"));
+        UUID passenger = fixture.passenger();
+        fixture.open(passenger, code);
+        fixture.send(passenger, "CONTINUAR");
+        fixture.send(passenger, "Passageiro Sintético");
+        fixture.send(passenger, "ACEITO");
+        fixture.send(passenger, "SIM");
+        fixture.send(passenger, "NÃO");
+        var firstDays = fixture.send(passenger, "1,2");
+        assertTrue(firstDays.text().contains("Rotina Sintética"), firstDays.text());
+        var secondDays = fixture.send(passenger, "1,3,5");
+        assertFalse(secondDays.text().startsWith("Não entendi"), secondDays.text());
+        assertEquals(1, fixture.draft(passenger).path("dayIndex").asInt());
+        var back = fixture.send(passenger, "VOLTAR");
+        assertFalse(back.text().startsWith("Não entendi"), back.text());
+        assertEquals("ROUTINES", fixture.draft(passenger).path("stage").asText());
+        fixture.send(passenger, "1,2");
+        fixture.send(passenger, "1,3,5");
+        fixture.send(passenger, "2,4");
+        fixture.pin(passenger);
+        var review = fixture.send(passenger, "PULAR");
+        assertTrue(review.text().contains("(ida)"), review.text());
+        assertTrue(review.text().contains("(volta)"), review.text());
+        assertTrue(review.text().contains("[1,3,5]"), review.text());
+        assertTrue(review.text().contains("[2,4]"), review.text());
     }
 
     @Test
