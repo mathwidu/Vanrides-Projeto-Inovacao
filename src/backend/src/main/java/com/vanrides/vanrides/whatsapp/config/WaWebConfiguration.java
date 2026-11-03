@@ -17,7 +17,7 @@ public class WaWebConfiguration {
         var bean = new FilterRegistrationBean<>(new WaIngressFilter(settings, credentials, limiter, addresses));
         bean.setName("waIngress"); bean.setOrder(Ordered.HIGHEST_PRECEDENCE);
         bean.setDispatcherTypes(DispatcherType.REQUEST, DispatcherType.FORWARD);
-        if(settings.teamApiOnly()) bean.setDispatcherTypes(DispatcherType.REQUEST,DispatcherType.FORWARD,DispatcherType.ERROR,DispatcherType.ASYNC);
+        if(settings.publishedMvp()) bean.setDispatcherTypes(DispatcherType.REQUEST,DispatcherType.FORWARD,DispatcherType.ERROR,DispatcherType.ASYNC);
         return bean;
     }
     @Bean

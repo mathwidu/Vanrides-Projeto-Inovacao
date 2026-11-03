@@ -1,6 +1,7 @@
 package com.vanrides.vanrides.whatsapp.auth;
 
 import com.vanrides.vanrides.config.TeamApiMode;
+import com.vanrides.vanrides.config.MvpOnlineMode;
 import com.vanrides.vanrides.whatsapp.api.WaHttp;
 import com.vanrides.vanrides.whatsapp.api.WaProblem;
 import jakarta.servlet.DispatcherType;
@@ -12,7 +13,10 @@ import java.io.IOException;
 final class WaTeamApiBoundary {
     private WaTeamApiBoundary() { }
     static boolean admit(HttpServletRequest request,HttpServletResponse response) throws IOException {
-        response.setHeader("X-VanRides-Environment",TeamApiMode.ENVIRONMENT);
+        return admit(request,response,false);
+    }
+    static boolean admit(HttpServletRequest request,HttpServletResponse response,boolean online) throws IOException {
+        response.setHeader("X-VanRides-Environment",online ? MvpOnlineMode.ENVIRONMENT : TeamApiMode.ENVIRONMENT);
         response.setHeader("Cache-Control","no-store");
         String path=WaIngressFilter.path(request),raw=request.getRequestURI();
         boolean canonical=raw!=null && raw.equals(request.getContextPath()+path) && !raw.matches(".*[%;\\\\].*")
@@ -22,7 +26,8 @@ final class WaTeamApiBoundary {
         boolean worker=route!=null && route.kind()==WaPrincipal.Kind.CONVERSATION_WORKER && route.mode()==WaRoutes.Mode.SERVICE
             && (path.equals("/integrations/whatsapp/v1/context") || path.equals("/integrations/whatsapp/v1/commands")
                 || path.equals("/integrations/whatsapp/v1/inbox/claim") || path.matches("/integrations/whatsapp/v1/inbox/[0-9a-f-]{36}/result"));
-        if(canonical && request.getDispatcherType()==DispatcherType.REQUEST && request.getHeader("Origin")==null && (health || worker)) return true;
+        boolean admitted=online ? route!=null && route.available() : worker;
+        if(canonical && request.getDispatcherType()==DispatcherType.REQUEST && request.getHeader("Origin")==null && (health || admitted)) return true;
         WaHttp.writeError(request,response,WaProblem.missing());return false;
     }
 }

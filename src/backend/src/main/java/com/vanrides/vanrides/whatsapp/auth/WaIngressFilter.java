@@ -46,7 +46,7 @@ public final class WaIngressFilter extends GenericFilterBean {
         if (!(incoming instanceof HttpServletRequest request) || !(outgoing instanceof HttpServletResponse response)) {
             chain.doFilter(incoming, outgoing); return;
         }
-        if (settings.teamApiOnly() && !WaTeamApiBoundary.admit(request,response)) return;
+        if (settings.publishedMvp() && !WaTeamApiBoundary.admit(request,response,settings.mvpOnline())) return;
         if (!WaRoutes.scoped(path(request))) { chain.doFilter(request, response); return; }
         try {
             String path = path(request);

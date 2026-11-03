@@ -23,6 +23,7 @@ final class PublicRuntimeConfiguration {
     private final boolean rateLimitEnabled;
     private final boolean http2Enabled;
     private final boolean teamApiOnly;
+    private final boolean mvpOnline;
 
     private PublicRuntimeConfiguration(Builder builder) {
         this.activeProfiles = List.copyOf(builder.activeProfiles);
@@ -40,6 +41,7 @@ final class PublicRuntimeConfiguration {
         this.rateLimitEnabled = builder.rateLimitEnabled;
         this.http2Enabled = builder.http2Enabled;
         this.teamApiOnly = builder.teamApiOnly;
+        this.mvpOnline = builder.mvpOnline;
     }
 
     static PublicRuntimeConfiguration from(Environment environment) {
@@ -62,6 +64,7 @@ final class PublicRuntimeConfiguration {
                 .rateLimitEnabled(environment.getProperty("vanrides.rate-limit.enabled", Boolean.class, true))
                 .http2Enabled(environment.getProperty("server.http2.enabled", Boolean.class, false))
                 .teamApiOnly(TeamApiMode.enabled(environment))
+                .mvpOnline(MvpOnlineMode.enabled(environment))
                 .build();
     }
 
@@ -133,6 +136,7 @@ final class PublicRuntimeConfiguration {
         return http2Enabled;
     }
     boolean teamApiOnly() { return teamApiOnly; }
+    boolean mvpOnline() { return mvpOnline; }
     boolean exclusiveHomolog() { return activeProfiles.equals(List.of("homolog")); }
 
     private static boolean isBlank(String value) {
@@ -162,6 +166,7 @@ final class PublicRuntimeConfiguration {
         private boolean rateLimitEnabled = true;
         private boolean http2Enabled = false;
         private boolean teamApiOnly = false;
+        private boolean mvpOnline = false;
 
         Builder activeProfiles(List<String> activeProfiles) {
             this.activeProfiles = activeProfiles == null ? List.of() : activeProfiles;
@@ -237,5 +242,6 @@ final class PublicRuntimeConfiguration {
             return new PublicRuntimeConfiguration(this);
         }
         Builder teamApiOnly(boolean value) { teamApiOnly=value;return this; }
+        Builder mvpOnline(boolean value) { mvpOnline=value;return this; }
     }
 }

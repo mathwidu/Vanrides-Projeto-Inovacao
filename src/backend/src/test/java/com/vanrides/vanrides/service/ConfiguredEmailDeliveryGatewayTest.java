@@ -19,9 +19,11 @@ class ConfiguredEmailDeliveryGatewayTest {
         ReflectionTestUtils.setField(gateway,"resendEmailDeliveryGateway",resend);return gateway;
     }
     @Test void disabledNeverSendsOrLogsAnyEmailContent(CapturedOutput output) {
-        var gateway=gateway("disabled",TeamApiTestEnvironment.valid());gateway.validateConfiguration();
-        assertThatThrownBy(()->gateway.sendEmail("PRIVATE_RECIPIENT","PRIVATE_SUBJECT","PRIVATE_BODY","PRIVATE_TOKEN"))
-            .isInstanceOf(IllegalStateException.class).hasMessage("EMAIL_DELIVERY_DISABLED");
+        for(var env:new org.springframework.mock.env.MockEnvironment[]{TeamApiTestEnvironment.valid(),TeamApiTestEnvironment.validOnline()}) {
+            var gateway=gateway("disabled",env);gateway.validateConfiguration();
+            assertThatThrownBy(()->gateway.sendEmail("PRIVATE_RECIPIENT","PRIVATE_SUBJECT","PRIVATE_BODY","PRIVATE_TOKEN"))
+                .isInstanceOf(IllegalStateException.class).hasMessage("EMAIL_DELIVERY_DISABLED");
+        }
         verifyNoInteractions(logging,resend);assertThat(output.getAll()).doesNotContain("PRIVATE_RECIPIENT","PRIVATE_SUBJECT","PRIVATE_BODY","PRIVATE_TOKEN");
     }
     @Test void disabledAndUnknownProvidersFailOutsideTheOnlyAuthorizedMode() {

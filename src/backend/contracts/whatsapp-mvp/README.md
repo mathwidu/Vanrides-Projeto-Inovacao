@@ -1,5 +1,34 @@
 # Contrato WhatsApp MVP v1
 
+## Modos publicados de homologação
+
+`WA_MVP_ONLINE=true` habilita o MVP funcional implementado, com perfil
+`homolog` exclusivo, `WA_TEAM_API_ONLY=false`, `WA_ENVIRONMENT=vanrides-mvp-hml`,
+`WA_MVP_ENABLED=true`, `WA_NEW_STARTS_ENABLED=true`, `WA_TEST_COHORT_ONLY=true`
+e `VANRIDES_EMAIL_PROVIDER=disabled`. `WA_PUBLIC_BASE_URL` e
+`WA_START_LINK_BASE_URL` devem conter a mesma origem HTTPS pública, sem barra
+final. A publicação atual mantém `WA_APPROACH_ENABLED=false` e
+`WA_APPROACH_REVIEWED_ROUTINE_IDS` vazio; maps/Google/push/e-mail externos e
+auto-verificação QA ficam desativados. JWT forte, Basic desativado e rate limits
+continuam obrigatórios.
+
+Nesse modo, o filtro admite GET `/actuator/health` e somente os métodos/rotas
+marcados `available` em `WaRoutes`. Autenticação, coorte, vínculo, consentimento,
+leases e autorização de negócio são os mesmos do produto: CHANNEL,
+CONVERSATION_WORKER, DELIVERY_WORKER, SYSTEM_JOB e DPoP do aparelho. Não se aplica
+a limitação sintética/de comandos do sandbox. Rotas legadas, operator/admin,
+actuator adicional e funcionalidades futuras continuam bloqueados. Disponibilizar
+a API não conecta uma conta WhatsApp nem inicia o sensor do aparelho.
+
+`WA_TEAM_API_ONLY=true` continua sendo um sandbox separado de quatro rotas
+CONVERSATION_WORKER, origem SYNTHETIC e comandos de onboarding/ajuda, com
+`WA_ENVIRONMENT=vanrides-team-hml` e novos starts desligados. Os dois modos são
+mutuamente exclusivos e recusam perfis locais, produção ou mistos. `disabled`
+fora de um desses modos válidos é erro de configuração; nunca envia e-mail nem
+registra seu conteúdo. Respostas, inclusive health, incluem
+`X-VanRides-Environment` com o ambiente fixo do modo; não há revisão fornecida
+pelo cliente. Sem modo explícito, esse marcador não é emitido.
+
 Card130: `GET_DRIVER_LOCATION` está materializado com payload vazio, seleção
 pela API e `STATIC_PIN` somente no `authorize-submit`. Claim não fornece GPS;
 payload da outbox e recibos também não o retêm. Veja

@@ -33,8 +33,9 @@ public class ConfiguredEmailDeliveryGateway implements EmailDeliveryGateway {
         if(!java.util.Set.of("log","resend","disabled").contains(normalizedProvider()))
             throw new IllegalStateException("EMAIL_PROVIDER_INVALID");
         if(normalizedProvider().equals("disabled")) {
-            if(!com.vanrides.vanrides.config.TeamApiMode.enabled(environment)) throw new IllegalStateException("EMAIL_DISABLED_OUTSIDE_TEAM_API");
-            com.vanrides.vanrides.config.TeamApiMode.validate(environment);
+            if(com.vanrides.vanrides.config.TeamApiMode.enabled(environment)) com.vanrides.vanrides.config.TeamApiMode.validate(environment);
+            else if(com.vanrides.vanrides.config.MvpOnlineMode.enabled(environment)) com.vanrides.vanrides.config.MvpOnlineMode.validate(environment);
+            else throw new IllegalStateException("EMAIL_DISABLED_OUTSIDE_EXPLICIT_MVP_MODE");
         }
         if (usesResend() && !resendEmailDeliveryGateway.isConfigured()) {
             if (isLocalProfileActive()) {

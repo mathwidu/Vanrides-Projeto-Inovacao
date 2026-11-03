@@ -10,6 +10,27 @@ import static org.assertj.core.api.Assertions.*;
 
 class WaTeamApiBoundaryTest {
     private MockHttpServletRequest request(String method,String path) { return new MockHttpServletRequest(method,path); }
+    @Test void onlineAdmitsAvailableProductActorsAndMethodsWithoutTheSandboxRestriction() throws Exception {
+        String id="00000000-0000-4000-8000-000000000001",wa="/integrations/whatsapp/v1",app="/driver-app/v1";
+        for(String[] route:new String[][]{{"GET","/actuator/health"},{"GET",wa+"/context"},{"POST",wa+"/commands"},{"POST",wa+"/events"},
+            {"POST",wa+"/inbox/claim"},{"POST",wa+"/inbox/"+id+"/result"},{"POST",wa+"/jobs/tick"},{"POST",wa+"/outbox/claim"},
+            {"POST",wa+"/outbox/"+id+"/authorize-submit"},{"POST",wa+"/outbox/"+id+"/result"},{"POST",app+"/pairings/begin"},
+            {"GET",app+"/pairings/"+id+"/status"},{"POST",app+"/pairings/redeem"},{"POST",app+"/session/refresh"},
+            {"POST",app+"/session/revoke"},{"GET",app+"/status"},{"GET",app+"/tracking-status"},{"POST",app+"/start-intents/"+id+"/activate"},
+            {"POST",app+"/runs/"+id+"/resume"},{"POST",app+"/tracking-sessions/"+id+"/samples"},{"POST",app+"/tracking-sessions/"+id+"/state"}}) {
+            var response=new MockHttpServletResponse();assertThat(WaTeamApiBoundary.admit(request(route[0],route[1]),response,true)).as(route[1]).isTrue();
+            assertThat(response.getHeader("X-VanRides-Environment")).isEqualTo("vanrides-mvp-hml");
+        }
+    }
+    @Test void onlineStillBlocksLegacyOperatorUnavailableRoutesAndWrongMethods() throws Exception {
+        var filter=new WaIngressFilter(new WaSettings(TeamApiTestEnvironment.validOnline()),null,null,null);
+        for(String[] route:new String[][]{{"GET","/motoristas"},{"POST","/login"},{"GET","/actuator/env"},{"POST","/operator"},
+            {"HEAD","/actuator/health"},{"OPTIONS","/driver-app/v1/status"},{"POST","/driver-app/v1/runs/00000000-0000-4000-8000-000000000001/finish"},
+            {"GET","/integrations/whatsapp/v1/events"},{"POST","/driver-app/v1/hidden-admin"}}) {
+            var response=new MockHttpServletResponse();filter.doFilter(request(route[0],route[1]),response,(a,b)->{throw new AssertionError("Unexpected handler");});
+            assertThat(response.getStatus()).as(route[1]).isEqualTo(404);assertThat(response.getHeader("X-VanRides-Environment")).isEqualTo("vanrides-mvp-hml");
+        }
+    }
     @Test void healthAndOnlyTheFourExactWorkerRoutesReachExistingAdmission() throws Exception {
         for(String[] route:new String[][]{{"GET","/actuator/health"},{"GET","/integrations/whatsapp/v1/context"},{"POST","/integrations/whatsapp/v1/commands"},
             {"POST","/integrations/whatsapp/v1/inbox/claim"},{"POST","/integrations/whatsapp/v1/inbox/00000000-0000-4000-8000-000000000001/result"}}) {

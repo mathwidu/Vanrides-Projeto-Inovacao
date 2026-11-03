@@ -5,6 +5,11 @@ import org.springframework.mock.env.MockEnvironment;
 /** Synthetic public configuration, never a source of runtime credentials. */
 public final class TeamApiTestEnvironment {
     private TeamApiTestEnvironment() { }
+    public static MockEnvironment validOnline() {
+        return valid().withProperty("vanrides.wa.team-api-only","false").withProperty("vanrides.wa.mvp-online","true")
+            .withProperty("vanrides.wa.environment",MvpOnlineMode.ENVIRONMENT).withProperty("vanrides.wa.new-starts-enabled","true")
+            .withProperty("vanrides.wa.start-link-base-url","https://vanrides-inovacao-api.matheusduarte.dev.br");
+    }
     public static MockEnvironment valid() {
         var env=new MockEnvironment().withProperty("vanrides.wa.team-api-only","true")
             .withProperty("vanrides.email.provider","disabled").withProperty("vanrides.wa.environment",TeamApiMode.ENVIRONMENT)
