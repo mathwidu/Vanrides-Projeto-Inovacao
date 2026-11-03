@@ -39,8 +39,8 @@ CI aprovada comprova os testes declarados, não WhatsApp real ou percurso.
 | Bot e automações | [WhatsApp](src/whatsapp/) | [Guia](docs/desenvolvimento/whatsapp.md) |
 | Estado e dependências | [Programa](program/) | [Guia](docs/desenvolvimento/programa.md) |
 
-As novas contribuições serão concentradas aqui após a validação e integração da
-migração. O corte e os testes da nova estrutura ficam no [registro da migração](docs/desenvolvimento/migracao.md).
+As novas contribuições ficam concentradas neste repositório. As origens
+anteriores permanecem como histórico. O corte e os testes da nova estrutura ficam no [registro da migração](docs/desenvolvimento/migracao.md).
 A implantação na VPS é independente; estes workflows não publicam imagens nem fazem deploy.
 
 ## Equipe e histórico

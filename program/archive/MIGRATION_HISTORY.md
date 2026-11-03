@@ -1,8 +1,8 @@
 # Histórico importado em 2026-11-02
 
 A migração para `mathwidu/Vanrides-Projeto-Inovacao` preserva o estado do programa,
-os contratos dos cards, os gates G0–G7 e as decisões. O card de migração permanece
-`in_progress` até o principal conferir o candidato e registrar a conclusão.
+os contratos dos cards, os gates G0–G7 e as decisões. A conclusão e as novas provas estão em
+`program/evidence/VR-PGM-002-ACADEMIC-MIGRATION-001.md` e no registro de migração.
 
 ## Evidências e acervo
 
