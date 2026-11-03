@@ -191,10 +191,10 @@ def source_snapshot(expected_sha, expected_tree):
                                 env={**os.environ, 'GIT_OPTIONAL_LOCKS': '0', 'GIT_NO_REPLACE_OBJECTS': '1'})
         require(result.returncode == 0, 'SOURCE_GIT_FAILED')
         return result.stdout
-    require(git('rev-parse', 'HEAD').decode().strip() == expected_sha
-            and git('rev-parse', 'HEAD^{tree}').decode().strip() == expected_tree, 'SOURCE_HEAD_CHANGED')
+    require(git('rev-parse', expected_sha + '^{commit}').decode().strip() == expected_sha
+            and git('rev-parse', expected_sha + '^{tree}').decode().strip() == expected_tree, 'SOURCE_HEAD_CHANGED')
     status = git('status', '--porcelain', '--untracked-files=all')
-    diff = git('diff', '--binary', 'HEAD', '--', 'src/backend', 'deploy/homologacao')
+    diff = git('diff', '--binary', expected_sha, '--', 'src/backend', 'deploy/homologacao')
     return {'gitSha': expected_sha, 'gitTree': expected_tree, 'workingTreeDirty': bool(status),
             'trackedBackendAndRecipeDiffSha256': digest(diff),
             'binaryBuildAttestation': 'OPERATOR_DECLARATION_AND_IMAGE_LABELS_NOT_CI'}
@@ -255,6 +255,10 @@ def render(args):
     api, db = stack['services']['api'], stack['services']['db']
     api['image'], db['image'] = args.api_image_ref, args.postgres_image
     api['entrypoint'] = ['/bin/sh', '/run/online/entrypoint.sh']
+    # stack deploy drops the Compose tmpfs shorthand on this Swarm. A typed
+    # mount is required for embedded Tomcat on the read-only root filesystem.
+    api.pop('tmpfs')
+    api['volumes'] = [{'type': 'tmpfs', 'target': '/tmp', 'tmpfs': {'size': 64 * 1024**2}}]
     api['environment'].update({
         'WA_MVP_ONLINE': 'true', 'WA_TEAM_API_ONLY': 'false', 'WA_MVP_ENABLED': 'true',
         'WA_NEW_STARTS_ENABLED': 'true', 'WA_APPROACH_ENABLED': 'false', 'WA_TEST_COHORT_ONLY': 'true',
