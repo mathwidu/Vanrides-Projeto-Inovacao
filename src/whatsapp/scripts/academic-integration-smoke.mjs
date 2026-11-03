@@ -15,6 +15,7 @@ import { runTrackingScenarios } from './110-run-scenarios.mjs';
 import { startProvider, createWorkerProcess } from './070-worker-runtime.mjs';
 import { createInterruption } from './070-worker-lifecycle.mjs';
 import { expectedApiExit } from './academic-process-exit.mjs';
+import { createPacedDispatch } from './academic-dispatch-pacing.mjs';
 import { SmokeFailure, demand, digest, quote, privateWrite, localJson, safeCode } from './070-worker-common.mjs';
 
 const root = fs.realpathSync(fileURLToPath(new URL('../../../', import.meta.url)));
@@ -169,12 +170,42 @@ async function run() {
         worker = createWorkerProcess({ input, frozen, tools, work: scenarioWork, instance, provider,
           conversation: credentials[1], delivery: credentials[2], job: credentials[3], apiKey,
           assertActive: interruption.assertActive });
+        const byAddress = new Map([{ actor, address }, ...peers].map(person => [person.address, person.actor]));
+        const paced = createPacedDispatch({ worker, provider,
+          scopeFor: item => ({ outboxId: item.outboxId, recipient: byAddress.get(item.address ?? address) }),
+          // Read the next actual authorization slot, using the same 30/12 per 60s delivery-v1 policy.
+          // The target must be this cohort's expected response for its expected recipient.
+          inspect: target => JSON.parse(tools.sql(`WITH target AS (
+              SELECT o.state::text AS state,o.not_before,o.expires_at,o.recipient_identity_id FROM wa.message_outbox o
+              JOIN wa.identity i ON i.id=o.recipient_identity_id JOIN wa.test_cohort c ON c.id=i.test_cohort_id
+              WHERE o.id=${quote(target.outboxId)} AND o.recipient_identity_id=${quote(target.recipient)}
+                AND c.id=${quote(batch)} AND c.synthetic AND c.environment='wa070-local'
+            ), recent AS (
+              SELECT a.id,a.started_at,o.recipient_identity_id FROM wa.message_attempt a
+              JOIN wa.service_credential c ON c.id=a.credential_id JOIN wa.message_outbox o ON o.id=a.outbox_id
+              WHERE a.instance_id=${quote(instance)} AND c.environment='wa070-local'
+                AND a.started_at>CURRENT_TIMESTAMP-interval '60 seconds'
+            ), slots AS (SELECT
+              coalesce((SELECT started_at+interval '60 seconds' FROM recent
+                ORDER BY started_at DESC,id DESC OFFSET 29 LIMIT 1),CURRENT_TIMESTAMP) AS instance_slot,
+              coalesce((SELECT started_at+interval '60 seconds' FROM recent
+                WHERE recipient_identity_id=(SELECT recipient_identity_id FROM target)
+                ORDER BY started_at DESC,id DESC OFFSET 11 LIMIT 1),CURRENT_TIMESTAMP) AS recipient_slot)
+            SELECT json_build_object('scopeValid',EXISTS(SELECT 1 FROM target),
+              'state',coalesce((SELECT state FROM target),'MISSING'),
+              'expiresInMs',coalesce((SELECT floor(greatest(0,extract(epoch FROM expires_at-CURRENT_TIMESTAMP))*1000)::bigint FROM target),0),
+              'delayMs',ceil(greatest(0,extract(epoch FROM greatest(instance_slot,recipient_slot,coalesce((SELECT not_before FROM target),CURRENT_TIMESTAMP))-CURRENT_TIMESTAMP))*1000)::bigint)
+            FROM slots;`, { recordOutput: false })),
+          wait: ms => interruption.wait(() => pause(ms)), assertActive: interruption.assertActive,
+          onWait: detail => console.log(JSON.stringify({ scope: 'SYNTHETIC_QUOTA_PACING', scenario, ...detail })),
+        });
+        worker = paced.worker; provider = paced.provider;
         await worker.start();
         const result = await execute({ input, tools, work: scenarioWork, actor, instance, address, peers,
           credentials, worker, provider, apiKey, interruption,
           passed: check => { checks.push({ scenario, check, status: 'PASS' });
             console.log(JSON.stringify({ scenario, check, status: 'PASS' })); } });
-        totals.push({ scenario, ...result });
+        totals.push({ scenario, ...result, pacing: paced.stats() });
       } catch (error) { scenarioFailure = error; }
       finally {
         for (const resource of [worker, provider]) if (resource) {

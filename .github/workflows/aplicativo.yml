@@ -105,7 +105,7 @@ jobs:
 
       - name: Run production native unit tests
         working-directory: src/aplicativo-motorista/android
-        run: ./gradlew :app:testDriverDebugUnitTest -Ptarget=lib/main_driver_mvp.dart --no-daemon --max-workers=2
+        run: ./gradlew :app:testDriverDebugUnitTest -Ptarget=lib/main_driver_mvp.dart -Ptarget-platform=android-arm64 --no-daemon --max-workers=2
 
       - name: Preserve production native test results
         run: cp -R build/app/test-results/testDriverDebugUnitTest output/ci110/native-tests-mvp
@@ -118,7 +118,7 @@ jobs:
 
       - name: Run spike native unit tests separately
         working-directory: src/aplicativo-motorista/android
-        run: ./gradlew :app:testDriverDebugUnitTest -Ptarget=lib/main_driver_gps_spike.dart --no-daemon --max-workers=2 --rerun-tasks
+        run: ./gradlew :app:testDriverDebugUnitTest -Ptarget=lib/main_driver_gps_spike.dart -Ptarget-platform=android-arm64 --no-daemon --max-workers=2 --rerun-tasks
 
       - name: Preserve spike native test results
         run: cp -R build/app/test-results/testDriverDebugUnitTest output/ci110/native-tests-spike
