@@ -1,6 +1,6 @@
 # Testes e resultados
 
-Situação conferida em 02/11/2026 a partir dos registros de desenvolvimento.
+Situação atualizada em 03/11/2026 a partir dos registros de desenvolvimento.
 
 | Área | O que foi verificado | O que falta |
 |---|---|---|
@@ -10,8 +10,11 @@ Situação conferida em 02/11/2026 a partir dos registros de desenvolvimento.
 | Envio de mensagens | Repetições, expiração e recuperação com um receptor de teste | Confirmar envio e recebimento pelo WhatsApp |
 | Localização Android | Vínculo do aparelho, primeira posição e parada com recuperação de conexão | Percurso, tela bloqueada e bateria sem USB |
 | Localização iPhone | Instalação e ensaios iniciais de localização | Retomar os testes físicos e validar o fluxo completo |
-| Consulta de localização | Recepção e armazenamento de posições na API | Concluir a consulta autorizada pelo passageiro e a indicação de posição antiga |
-| Aproximação e encerramento | Planejamento e critérios definidos | Implementar e validar as duas funcionalidades |
+| Consulta de localização | Motorista e passageiro elegível recebem pin recente no canal simulado. A API revalida respostas atrasadas | Conferir o pin no WhatsApp real |
+| Aproximação | Política, elegibilidade, pontos compartilhados e deduplicação passaram nos testes de PostgreSQL | Medir utilidade em percurso antes de ativar avisos |
+| Encerramento | Critérios definidos para chegada, parada do GPS e contingência | Implementar a conclusão automática e comprovar a parada do coletor |
+
+A revisão dd12cf0 passou em 1.683 testes do backend e seis jornadas com provedor simulado. O [registro de localização e aproximação](../program/evidence/VR-WA-130-APPROACH.md) identifica a versão e os limites do ensaio.
 
 Os testes automatizados e os ensaios em aparelho estão registrados por versão
 no desenvolvimento. Uma simulação do canal permite avaliar regras, mas não

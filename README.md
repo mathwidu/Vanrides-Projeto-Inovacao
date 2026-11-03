@@ -17,6 +17,7 @@ Universidade Feevale, 2026/2.
 | Conferir o que foi testado | [Testes e resultados](docs/03-testes-e-resultados.md) |
 | Entender uma tarefa e o que falta | [Backlog](docs/07-como-ler-o-backlog.md) e [issues do MVP](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues?q=is%3Aissue+is%3Aopen+label%3Amvp) |
 | Preparar o computador e contribuir | [Guia de contribuição](CONTRIBUTING.md) |
+| Testar uma versão com o grupo | [Homologação da equipe](docs/desenvolvimento/homologacao-da-equipe.md) |
 | Consultar a entrega da disciplina | [STACK](STACK.docx), [BACKLOG](BACKLOG.xlsx) e [Canvas](docs/06-canvas-mvp.md) |
 
 ## Situação do MVP
@@ -25,8 +26,7 @@ Cadastros, vínculos, rotinas e presença possuem implementação e ensaios de
 laboratório. O aplicativo de localização está implementado para Android/iPhone;
 a integração recente foi ensaiada no Android, com o aparelho parado.
 
-Faltam confirmação do canal real com a linha dedicada do bot, conclusão dos
-avisos e do encerramento automático, percurso completo e aceite de uso.
+A consulta da van passou no ensaio integrado com canal simulado. A regra de aproximação passou nos testes de banco e aguarda avaliação em percurso. Faltam a troca de mensagens no WhatsApp real, o encerramento automático e a publicação da API de homologação.
 Os testes físicos do iPhone estão pausados. **O piloto ainda não está liberado.**
 CI aprovada comprova os testes declarados, não WhatsApp real ou percurso.
 

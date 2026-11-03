@@ -6,7 +6,7 @@ API avisa corretamente cada passageiro elegível usando posição atual e progre
 
 ## Estado
 
-`in_progress`. Pacote P10, épico `VR-WA-MVP`. Responsável de integração: executor principal; módulos mantêm commits e gates separados. Estado canônico em [program.json](../program.json).
+`validating`. Pacote P10, épico `VR-WA-MVP`. Responsável de integração: executor principal; módulos mantêm commits e gates separados. Estado canônico em [program.json](../program.json).
 
 ## Impact Analysis
 
@@ -38,7 +38,7 @@ registrados na [evidência 120](../evidence/VR-WA-120-DELIVERY-RECOVERY.md).
 Revalidar contratos produtores/consumidores, fontes e dirty paths no DoR; os
 pins descrevem a base comprovada, não dispensam gate/smoke do novo código.
 
-O fechamento real do 120 aguarda número/pareamento e continua obrigatório no
+O fechamento real do 120 aguarda pareamento e confirmação de entrega do número já ativo e continua obrigatório no
 160, antes do candidato e dos cards 170/180. Esta separação permite preparar
 e implementar módulos independentes; não marca o 120 como done. O 130 entrou
 em execução após completar seu DoR e conserva todos os critérios de utilidade
@@ -61,9 +61,9 @@ Recursos humanos/externos são solicitados no momento indicado pelo plano, após
 
 ## Critérios de aceite
 
-- [ ] Zero destinatário/ponto incorreto nos testes e sem aviso duplicado por policy version.
+- [x] Zero destinatário/ponto incorreto nos testes e sem aviso duplicado por policy version.
 - [ ] Critério de utilidade aprovado por plataforma ou bloqueio técnico exposto.
-- [ ] Cancelamento/opt-out/ponto compartilhado/progresso atrasado corretamente tratados.
+- [x] Cancelamento/opt-out/ponto compartilhado/progresso atrasado corretamente tratados.
 
 ## Riscos
 
@@ -113,3 +113,5 @@ nenhuma migration destrutiva e aviso desligado por padrão.
 Preparação paralela da issue #91: corrigir somente a portabilidade do pacote
 de ensaio preservado em `src/whatsapp/lab/live-runtime/`, com extração/import
 e mounts comprovados. Isso não executa o canal real nem encerra o card 120.
+
+Validação técnica da revisão `dd12cf0b233e2c16fba334d84fc2ec50f1e7458d`: [resultados e limites](../evidence/VR-WA-130-APPROACH.md). Aguarda avaliação da utilidade em percurso por plataforma. O preparo da homologação compartilhada está relacionado às issues #89–91.

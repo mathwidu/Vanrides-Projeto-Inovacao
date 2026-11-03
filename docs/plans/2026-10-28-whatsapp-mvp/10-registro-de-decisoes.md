@@ -1407,3 +1407,13 @@ históricos não são convertidos para parecer atuais. A execução manual prepa
 confere a suíte completa, seis jornadas e o mesmo JAR, preservando somente o
 binário e recibos permitidos. Ela não conecta WhatsApp, publica imagens ou faz
 deploy. A aprovação do ensaio externo exige versão concreta e sua prova real.
+
+## RD47 — Homologação compartilhada para os integrantes (03/11/2026)
+
+A equipe escolheu `vanrides-inovacao-api.matheusduarte.dev.br` para testar as versões do MVP. O registro A foi criado e conferido em dois resolvedores públicos e na VPS. O endereço respondeu com o certificado padrão do Traefik antes da implantação. O DNS só reserva o nome.
+
+As APIs anteriores de desenvolvimento e produção já estão ativas com versões próprias. A proposta é publicar a API do monorepo e seu PostgreSQL em uma stack separada, com versão reproduzível e roteiro para um colega conferir uma operação. O worker do n8n executa fluxos da plataforma. O worker do VanRides executa os comandos do atendimento e requer configuração, credenciais e uma rota privada a partir do n8n.
+
+A primeira comprovação de transporte com o número do Redmi segue RD41. Contatos e etiquetas continuam habilitados na persistência da Evolution compartilhada. O ensaio usa Evolution própria e não altera as configurações globais de outros projetos. A janela de transporte tem até 30 minutos e dois contatos. Uma homologação permanente para toda a equipe requer seu próprio controle de participantes, validade e recuperação.
+
+As issues #89, #90 e #91 distinguem preparação e retorno, publicação HTTPS e prova de entrega real. Os critérios de percurso, utilidade, iPhone e aceite do piloto continuam vinculados às etapas próprias. Esta decisão registra o destino e o caminho técnico. A implantação precisa de manifest, versão, revisão e ensaio dos procedimentos. Leia o [guia de homologação da equipe](../../desenvolvimento/homologacao-da-equipe.md).

@@ -22,9 +22,9 @@ As issues são o espaço de discussão e revisão. A planilha mantém o formato 
 
 | Implementação | Quantidade | O que falta para encerrar |
 |---|---:|---|
-| Implementado | 34 | Conferir escopo e provas específicas; não significa aceite real |
-| Parcial | 18 | Completar a lacuna descrita e testar |
-| Planejado | 10 | Definir execução, implementar e validar |
+| Implementado | 41 | Conferir escopo e provas específicas; não significa aceite real |
+| Parcial | 15 | Completar a lacuna descrita e testar |
+| Planejado | 6 | Definir execução, implementar e validar |
 | Proposta de escopo | 3 | Decidir com o grupo antes de implementar |
 
 Essas contagens não medem percentual concluído. Teste automatizado, laboratório, aparelho parado e percurso são provas diferentes.
@@ -73,10 +73,10 @@ Referências antigas ficam identificadas como histórico e fora da lista atual. 
 | ID / issue | Resultado da tarefa | Implementação | Validação | Próxima ação |
 |---|---|---|---|---|
 | [T7 · #31](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/31) | A API recebe somente as posições válidas da sessão e do aparelho autorizados. | Implementado | Físico parado | Validar continuidade durante os percursos nos dois aparelhos. |
-| [T9a · #33](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/33) | Somente o motorista e os passageiros autorizados consultam a posição daquela viagem. | Parcial | Teste automatizado | Implementar a consulta com escopo dos participantes e seus testes. |
-| [T9b · #34](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/34) | A resposta informa a última posição válida e quando ela foi obtida. | Planejado | Pendente | Implementar a resposta com horário e indicação de posição antiga. |
-| [T10 · #35](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/35) | O armazenamento fornece a última posição válida e o horário para a consulta autorizada. | Parcial | Teste automatizado | Concluir a consulta autorizada e testar posição desatualizada. |
-| [T11 · #36](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/36) | Uma aproximação válida gera um aviso para o passageiro correto. | Planejado | Pendente | Implementar a regra e o aviso por passageiro antes do teste de utilidade. |
+| [T9a · #33](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/33) | Somente o motorista e os passageiros autorizados consultam a posição daquela viagem. | Implementado | Laboratório | Validar consulta e recebimento do pin no WhatsApp de teste, após publicar a homologação. |
+| [T9b · #34](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/34) | A resposta informa a última posição válida e quando ela foi obtida. | Implementado | Laboratório | Validar consulta e recebimento do pin no WhatsApp de teste, após publicar a homologação. |
+| [T10 · #35](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/35) | O armazenamento fornece a última posição válida e o horário para a consulta autorizada. | Implementado | Laboratório | Validar consulta e recebimento do pin no WhatsApp de teste, após publicar a homologação. |
+| [T11 · #36](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/36) | Uma aproximação válida gera um aviso para o passageiro correto. | Implementado | Teste automatizado | Validar o aviso com passageiros consentidos e rotina revisada em percurso. |
 | [T30 · #56](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/56) | O Android coleta posições em serviço nativo e mostra seu estado. | Implementado | Laboratório | Concluir os ensaios de percurso e energia no Android. |
 | [T31 · #57](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/57) | O coletor nativo mantém o estado de localização independentemente da tela. | Implementado | Laboratório | Executar o coletor no iPhone físico após a retomada. |
 | [T32 · #58](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/58) | As posições fictícias chegam a um receptor separado e autenticado. | Implementado | Laboratório | Manter separado do receptor integrado e dos dados reais. |
@@ -89,9 +89,9 @@ Referências antigas ficam identificadas como histórico e fora da lista atual. 
 | [T46 · #72](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/72) | Cada tentativa tem controle exclusivo e repete apenas quando houver prova de que o envio não ocorreu. | Implementado | Laboratório | Comprovar as mesmas regras com o número dedicado. |
 | [T47 · #73](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/73) | O estado de entrega reflete a confirmação disponível e mantém a incerteza quando necessário. | Implementado | Laboratório | Verificar envio e confirmação reais com destinatário autorizado. |
 | [T48 · #74](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/74) | A fila descarta mensagens vencidas ou sem autorização de recebimento. | Implementado | Laboratório | Repetir expiração e recusa durante o teste real de avisos. |
-| [T49 · #75](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/75) | A regra usa posição atual, ponto e sentido e recusa situações ambíguas. | Planejado | Pendente | Implementar a regra com posição atual, sentido e ponto corretos. |
-| [T50 · #76](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/76) | Somente os próximos pontos e passageiros elegíveis podem gerar aviso. | Parcial | Teste automatizado | Integrar a progressão dos pontos ao aviso de aproximação. |
-| [T51 · #77](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/77) | Os testes demonstram os limites do produtor de aproximação. | Planejado | Pendente | Criar e executar os cenários de destinatário, ponto comum e duplicação. |
+| [T49 · #75](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/75) | A regra usa posição atual, ponto e sentido e recusa situações ambíguas. | Implementado | Teste automatizado | Validar o aviso com passageiros consentidos e rotina revisada em percurso. |
+| [T50 · #76](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/76) | Somente os próximos pontos e passageiros elegíveis podem gerar aviso. | Implementado | Teste automatizado | Validar o aviso com passageiros consentidos e rotina revisada em percurso. |
+| [T51 · #77](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/77) | Os testes demonstram os limites do produtor de aproximação. | Implementado | Teste automatizado | Validar o aviso com passageiros consentidos e rotina revisada em percurso. |
 | [T52 · #78](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/78) | O término real da viagem encerra a operação, com alternativa manual identificada. | Planejado | Pendente | Implementar e testar o reconhecimento de fim da viagem. |
 | [T53 · #79](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/79) | O aplicativo informa parada confirmada ou pendência até a confirmação ou expiração prevista. | Parcial | Físico parado | Integrar ao encerramento automático e repetir nos dois aparelhos. |
 | [T54 · #80](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/80) | A conversa oferece ajuda, pausa adequada e retomada controlada. | Parcial | Laboratório | Concluir retirada de acesso e recuperação do ciclo de viagem. |
@@ -99,8 +99,8 @@ Referências antigas ficam identificadas como histórico e fora da lista atual. 
 | [T61 · #87](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/87) | O pacote Android de teste tem assinatura e integridade conferíveis. | Implementado | Físico parado | Gerar nova versão quando os módulos pendentes forem integrados. |
 | [T62 · #88](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/88) | O iPhone recebe a versão identificada e há instruções de instalação e renovação. | Parcial | Físico parado | Instalar e validar a versão integrada no iPhone após retomar os testes. |
 | [T63 · #89](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/89) | Existe um plano concreto da instalação da versão de teste e de retorno à anterior. | Parcial | Pendente | Consolidar a implantação da versão completa com verificações e retorno. |
-| [T64 · #90](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/90) | O ambiente autorizado executa os componentes corretos e passa nas verificações combinadas. | Parcial | Laboratório | Preparar ambiente final quando as funções e o número dedicado estiverem disponíveis. |
-| [T65 · #91](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/91) | A conta dedicada envia mensagem e tem o retorno de entrega conferido. | Planejado | Pendente | Preparar o ambiente da versão centralizada, parear a conta e conferir envio e confirmação reais. |
+| [T64 · #90](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/90) | O ambiente autorizado executa os componentes corretos e passa nas verificações combinadas. | Parcial | Laboratório | Publicar a revisão aprovada no endereço reservado, conferir certificado, versão e executar uma operação autenticada. |
+| [T65 · #91](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/91) | A conta dedicada envia mensagem e tem o retorno de entrega conferido. | Planejado | Pendente | Executar a primeira prova delimitada com Evolution exclusiva e o WhatsApp Business do Redmi; conferir envio e callback. |
 | [T67 · #93](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/93) | O Android de referência executa a jornada integrada com WhatsApp real e resultado registrado. | Parcial | Físico parado | Executar o ciclo completo no Android com o canal real e percurso. |
 | [T68 · #94](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/94) | O iPhone executa a jornada integrada e tem resultado independente. | Planejado | Pendente | Retomar o aparelho depois de fechar as dependências. |
 | [T69 · #95](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/95) | O ensaio mostra se a antecedência é útil e se o destinatário está correto. | Planejado | Pendente | Medir antecedência útil e destinatário correto após implementar os avisos. |

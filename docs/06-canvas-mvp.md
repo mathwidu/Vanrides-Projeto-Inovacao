@@ -77,12 +77,12 @@ a aprovação técnica do rastreamento antecede o piloto de produto.
 
 A equipe já possui VPS, n8n e Evolution configurados. Custos incrementais
 incluem linha dedicada, consumo da API de IA e eventual serviço de rotas.
-Está prevista uma linha dedicada para o bot. A ativação ainda está pendente.
+A linha dedicada já está ativa no WhatsApp Business do Redmi. O pareamento e a entrega real aguardam ensaio.
 O custo da linha não representa o custo total do projeto.
 Limites mensais, custos existentes e horas por integrante precisam ser fechados.
 
 Em 03/11: revisar este pacote e o recorte com o professor. Em seguida, confirmar
-capacidade da equipe, atualizar os artefatos acadêmicos e ativar a linha.
+capacidade da equipe, atualizar os artefatos acadêmicos e preparar o ensaio do bot.
 Depois: concluir canal real, aproximação/fim, percurso/bateria nas duas
 plataformas, ambiente integrado e piloto. Datas de entrega serão acordadas após
 esses recursos e estimativas; não há uma data final publicada no cronograma

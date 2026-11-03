@@ -31,8 +31,7 @@ de uma posição válida. A função de aproximação deverá avisar o passageir
 correto usando seu ponto de embarque e a localização recente da van.
 
 O sistema deverá encerrar o compartilhamento ao terminar o trajeto. O comando
-manual ficará disponível como alternativa em caso de necessidade. Os avisos e
-o encerramento automático ainda estão em implementação.
+manual ficará disponível como alternativa em caso de necessidade. A regra de aviso já foi testada com posições sintéticas e aguarda avaliação em percurso. O encerramento automático ainda precisa ser implementado.
 
 ## Funcionalidades do MVP
 

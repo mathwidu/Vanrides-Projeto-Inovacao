@@ -39,8 +39,13 @@ o futuro ensaio real; não publica serviço nem conecta contas.
   entre produtor e exportador conferida com XML sintético. GitHub real ainda
   não foi consultado para uma execução deste workflow.
 
-O gate completo e as seis jornadas serão executados após fixar o commit limpo.
-Resultados de testes focados não substituem essa comprovação integrada.
+## Gate e jornadas integradas — PASS
+
+Comando: `bash scripts/check_backend.sh` no Mac, com Java 17, PostgreSQL em Docker e checkout limpo na revisão `dd12cf0b233e2c16fba334d84fc2ec50f1e7458d`. Duas expectativas da migração foram ajustadas de 37 para 38 após a primeira rodada encontrar três falhas. O gate completo concluiu com 1.683 testes, incluindo os 566 da matriz obrigatória PostgreSQL, sem falhas, erros ou skips.
+
+As seis jornadas 070/080/100/110/120/130 terminaram com 48 verificações no mesmo JAR (`bd7bc7075b20a08e7a5ed4d1d6d47b05a473d170dbe08f93f2b7d49e3a89c3cf`). O recibo registrou a limpeza do banco e dos processos temporários. O provedor era simulado. As consultas autorizadas e o pin fresco foram exercitados por HTTP. Os cenários de aproximação foram exercitados em PostgreSQL e não constituem um teste de utilidade em percurso.
+
+Reversão local por commit. Em ambiente de teste, manter a flag de aproximação desligada até revisão da rotina. O banco de homologação proposto é dedicado. A migração não deve ser aplicada aos bancos anteriores como parte deste trabalho.
 
 ## Limites e próximos passos
 
