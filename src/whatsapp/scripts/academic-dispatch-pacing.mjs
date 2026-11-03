@@ -33,13 +33,19 @@ export function createPacedDispatch({ worker, provider, scopeFor, inspect, wait,
     provider: { ...provider, enqueue(item) {
       const target = scopeFor(item);
       demand(target && uuid(target.outboxId) && uuid(target.recipient), 'EXPECTED_RESPONSE_SCOPE_INVALID');
+      demand(item.beforeDispatch === undefined || typeof item.beforeDispatch === 'function', 'EXPECTED_RESPONSE_PREPARATION_INVALID');
       provider.enqueue(item);
-      pending.push(Object.freeze({ outboxId: target.outboxId, recipient: target.recipient }));
+      pending.push(Object.freeze({ target: Object.freeze({ outboxId: target.outboxId, recipient: target.recipient }),
+        beforeDispatch: item.beforeDispatch }));
     } },
     worker: { ...worker, async request(route, authenticated = true) {
       if (route !== '/v1/dispatch-one' || !authenticated || pending.length === 0)
         return worker.request(route, authenticated);
-      await ready(pending[0]);
+      await ready(pending[0].target);
+      // Synthetic app telemetry is refreshed only after quota admission; the API
+      // still authorizes the acquisition and the provider verifies its freshness.
+      await pending[0].beforeDispatch?.();
+      assertActive();
       const response = await worker.request(route, authenticated);
       demand(response.status === 200, 'EXPECTED_RESPONSE_CONTROL_HTTP_FAILED');
       // No IDLE retry, uncertain-attempt retry or lenient success classification.

@@ -11,12 +11,13 @@ import tarfile
 
 sys.dont_write_bytecode = True
 import canonical110
+import evidence
 import plan
 import private_files as private
 import receipt
 import stage
 
-RUNTIME_FILES = ('plan.py', 'receipt.py', 'canonical110.py', 'private_files.py', 'control.py',
+RUNTIME_FILES = ('plan.py', 'receipt.py', 'evidence.py', 'monorepo_receipt.py', 'canonical110.py', 'private_files.py', 'control.py',
                  'stage.py', 'canonical110-pins.json')
 PROFILE = 'WA120_LIVE_DELIVERY_ONLY_V1'
 
@@ -26,9 +27,17 @@ def package(destination, jar, verified_receipt, contract_file=plan.HERE / 'contr
     contract, _ = plan.load_contract(contract_file)
     # No output directory or archive exists before all mandatory evidence passes.
     plan.require(verified_receipt.is_file() and not verified_receipt.is_symlink()
-                 and verified_receipt.stat().st_size <= 262144, 'VERIFIED_RECEIPT_FILE_INVALID')
+                 and verified_receipt.stat().st_size <= (1000000 if evidence.is_monorepo(contract) else 262144), 'VERIFIED_RECEIPT_FILE_INVALID')
     raw_receipt = verified_receipt.read_bytes()
-    binding = receipt.validate_envelope(contract, raw_receipt, jar)
+    binding = evidence.validate_envelope(contract, raw_receipt, jar)
+    if evidence.is_monorepo(contract):
+        import export as exporter
+        plan.require(exporter.source_snapshot(plan.ROOT) == contract['source'], 'MONOREPO_CHECKOUT_SOURCE_CHANGED')
+        for name, expected in contract['source']['files'].items():
+            path = plan.ROOT / name
+            plan.require(path.is_file() and not path.is_symlink() and path.resolve().is_relative_to(plan.ROOT)
+                         and plan.hash_file(path) == expected['sha256'] and path.stat().st_size == expected['bytes'],
+                         'MONOREPO_CHECKOUT_SOURCE_CHANGED')
     private.directory(destination.parent)
     plan.require(destination.is_absolute() and destination.parent.resolve() == destination.parent
                  and not destination.exists() and not destination.is_symlink(), 'PACKAGE_DESTINATION_INVALID')
@@ -65,10 +74,12 @@ def package(destination, jar, verified_receipt, contract_file=plan.HERE / 'contr
                 shutil.copyfileobj(source, target, 262144)
                 target.flush(); os.fsync(target.fileno())
             plan.require(plan.hash_file(destination / name) == expected[name] == plan.hash_file(path), 'PACKAGE_SOURCE_CHANGED')
-        manifest = {'schemaVersion': 1, 'profile': PROFILE, 'backendSha': binding['sourceSha'], 'files': expected}
+        manifest = {'schemaVersion': 1, 'profile': evidence.package_profile(contract), 'backendSha': binding['sourceSha'], 'files': expected}
         files['source-manifest.json'] = private.write_new(destination, 'source-manifest.json', plan.receipt_bytes(manifest))
         seal = {**expected, 'source-manifest.json': plan.hash_file(destination / 'source-manifest.json')}
         files['SHA256SUMS.json'] = private.write_new(destination, 'SHA256SUMS.json', plan.receipt_bytes(seal))
+        if evidence.is_monorepo(contract):
+            plan.require(exporter.source_snapshot(plan.ROOT) == contract['source'], 'MONOREPO_CHECKOUT_SOURCE_CHANGED')
         archive_output, archive_identity = private.R.create_private_file(destination.parent, archive_path.name,
             {'': private.directory(destination.parent)})
         with archive_output:
@@ -108,9 +119,10 @@ if __name__ == '__main__':
     parser.add_argument('--destination', type=Path, required=True)
     parser.add_argument('--jar', type=Path, required=True)
     parser.add_argument('--verified-receipt', type=Path, required=True)
+    parser.add_argument('--contract', type=Path, default=plan.HERE / 'contract.json')
     args = parser.parse_args()
     try:
-        print(json.dumps(package(args.destination, args.jar, args.verified_receipt), sort_keys=True))
+        print(json.dumps(package(args.destination, args.jar, args.verified_receipt, args.contract), sort_keys=True))
     except Exception as error:
         code = str(error) if isinstance(error, plan.Blocked) else 'PACKAGE_INPUT_INVALID'
         print(json.dumps({'status': 'PREPARADO_NAO_EXECUTAVEL', 'code': code}))

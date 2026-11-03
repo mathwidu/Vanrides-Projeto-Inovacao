@@ -73,6 +73,8 @@ EXPECTED_TEST_CLASSES=(
   "com.vanrides.vanrides.whatsapp.transport.WaRunPreparationIntegrationTest=8"
   "com.vanrides.vanrides.whatsapp.transport.WaTrackingActivationIntegrationTest=6"
   "com.vanrides.vanrides.whatsapp.transport.WaTrackingSamplesIntegrationTest=7"
+  "com.vanrides.vanrides.whatsapp.transport.WaDriverLocationIntegrationTest=17"
+  "com.vanrides.vanrides.whatsapp.transport.WaApproachIntegrationTest=18"
   "com.vanrides.vanrides.whatsapp.transport.WaTrackingLifecycleIntegrationTest=6"
   "com.vanrides.vanrides.whatsapp.transport.WaTrackingEnvironmentIntegrationTest=1"
 )

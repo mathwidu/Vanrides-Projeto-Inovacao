@@ -92,6 +92,8 @@ function assetHashes({ includeRunLab, includePairingLab, includePassengerLab, in
   add(path.join(root, 'src/whatsapp/worker'));
   add(path.join(root, 'src/whatsapp/agent'));
   files.push(path.join(root, 'src/whatsapp/transport/evolution-text.mjs'));
+  files.push(path.join(root, 'src/whatsapp/transport/evolution-message.mjs'));
+  files.push(path.join(root, 'src/whatsapp/transport/evolution-location.mjs'));
   files.push(path.join(root, 'src/whatsapp/transport/evolution-connection.mjs'));
   for (const name of fs.readdirSync(path.join(root, 'src/whatsapp/scripts')))
     if (/^(?:070-worker-|080-driver-).*\.mjs$/.test(name)

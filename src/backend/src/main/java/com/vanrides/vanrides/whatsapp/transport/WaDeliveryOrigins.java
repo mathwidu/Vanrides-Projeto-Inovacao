@@ -6,12 +6,14 @@ final class WaDeliveryOrigins {
             " CROSS JOIN (SELECT ?::text AS instance_id, ?::text AS environment) delivery_scope ";
     static final String ELIGIBLE = """
         o.payload_kind='TEXT' AND (
-          (o.purpose='RESPONSE' AND EXISTS (
+          (o.purpose IN ('RESPONSE','PIN') AND EXISTS (
             SELECT 1 FROM wa.command_receipt r JOIN wa.integration_inbox e
               ON e.id=r.inbox_event_id AND e.identity_id=r.identity_id
             WHERE r.command_id=o.command_id AND e.provider='EVOLUTION'
               AND e.instance_id=delivery_scope.instance_id AND
         (""" + WaFoundationResponses.ELIGIBLE + """
+        OR (r.identity_id=o.recipient_identity_id AND o.policy_version='driver-location-v1'
+          AND o.response_part='driver-location' AND r.command_type='GET_DRIVER_LOCATION')
         OR (r.identity_id=o.recipient_identity_id AND o.policy_version='run-gps-v1'
           AND o.response_part IN ('run-gps-confirmed','run-gps-unavailable')
           AND r.command_type IN ('REQUEST_START','REQUEST_RESUME','ADVANCE_RUN_SETUP')
@@ -22,6 +24,9 @@ final class WaDeliveryOrigins {
                 SELECT 1 FROM wa.passenger_response_route pr WHERE pr.outbox_id=o.id
                   AND pr.environment=delivery_scope.environment))
           )) OR
+          (o.purpose='APPROACH' AND o.command_id IS NULL AND EXISTS (
+            SELECT 1 FROM wa.approach_delivery_route route WHERE route.outbox_id=o.id
+              AND route.instance_id=delivery_scope.instance_id AND route.environment=delivery_scope.environment)) OR
           (o.purpose='REMINDER' AND o.policy_version='attendance-reminder-v1' AND o.command_id IS NULL
             AND EXISTS (SELECT 1 FROM wa.attendance_question q JOIN wa.service_credential job
               ON job.id=q.job_credential_id AND job.principal='SYSTEM_JOB'

@@ -1,4 +1,4 @@
-import { submitEvolutionText } from '../transport/evolution-text.mjs';
+import { submitEvolutionMessage } from '../transport/evolution-message.mjs';
 import { readEvolutionConnection } from '../transport/evolution-connection.mjs';
 import { isToken } from './config.mjs';
 import { WorkerError } from './errors.mjs';
@@ -16,7 +16,7 @@ function summary(status, claimed = 0) {
 
 function item(value, now) {
   return exact(value, ['outboxId', 'purpose', 'leaseToken', 'leaseExpiresAt', 'expiresAt'])
-    && UUID.test(value.outboxId) && ['COMMAND_RESPONSE', 'ATTENDANCE_REMINDER'].includes(value.purpose) && isToken(value.leaseToken)
+    && UUID.test(value.outboxId) && ['COMMAND_RESPONSE', 'ATTENDANCE_REMINDER', 'DRIVER_LOCATION', 'APPROACH'].includes(value.purpose) && isToken(value.leaseToken)
     && Date.parse(value.leaseExpiresAt) > now && Date.parse(value.expiresAt) > now;
 }
 
@@ -62,7 +62,7 @@ async function connectionReady(readConnection, config, now, deadline) {
 }
 
 /** One local dispatcher; cross-process reservation and uncertain-attempt fencing remain in the API. */
-export function createDispatcher({ api, config, submit = submitEvolutionText, readConnection = readEvolutionConnection, now = Date.now }) {
+export function createDispatcher({ api, config, submit = submitEvolutionMessage, readConnection = readEvolutionConnection, now = Date.now }) {
   if (typeof api?.request !== 'function' || typeof submit !== 'function' || typeof now !== 'function'
       || typeof readConnection !== 'function'
       || typeof config?.evolutionBaseUrl !== 'string' || typeof config.instance !== 'string'

@@ -6,7 +6,7 @@ API avisa corretamente cada passageiro elegível usando posição atual e progre
 
 ## Estado
 
-`analyzed`. Pacote P10, épico `VR-WA-MVP`. Responsável de integração: executor principal; módulos mantêm commits e gates separados. Estado canônico em [program.json](../program.json).
+`waiting_human`. Pacote P10, épico `VR-WA-MVP`. Responsável de integração: executor principal; módulos mantêm commits e gates separados. Estado canônico em [program.json](../program.json).
 
 ## Impact Analysis
 
@@ -38,10 +38,10 @@ registrados na [evidência 120](../evidence/VR-WA-120-DELIVERY-RECOVERY.md).
 Revalidar contratos produtores/consumidores, fontes e dirty paths no DoR; os
 pins descrevem a base comprovada, não dispensam gate/smoke do novo código.
 
-O fechamento real do 120 aguarda número/pareamento e continua obrigatório no
+O fechamento real do 120 aguarda pareamento e confirmação de entrega do número já ativo e continua obrigatório no
 160, antes do candidato e dos cards 170/180. Esta separação permite preparar
-e implementar módulos independentes; não marca o 120 como done. O 130 permanece
-analyzed até completar seu DoR e conserva todos os critérios de utilidade
+e implementar módulos independentes; não marca o 120 como done. O 130 entrou
+em execução após completar seu DoR e conserva todos os critérios de utilidade
 por plataforma. Replay sintético não substitui percurso/aceite físico. Ver RD44.
 
 Recursos humanos/externos são solicitados no momento indicado pelo plano, após preparação concreta. Ausência de recurso necessário à execução deve virar blocker explícito; não marcar dependência futura como concluída.
@@ -49,8 +49,8 @@ Recursos humanos/externos são solicitados no momento indicado pelo plano, após
 ## Definition of Ready
 
 - [x] Resultado, Impact Analysis, escopo, contratos, riscos e rollback definidos neste card e documentos vinculados.
-- [ ] Dependências concluídas; versões/dirty paths conferidos e recursos necessários disponíveis para esta etapa.
-- [ ] Gates, smoke, evidência e sequência confirmados para a revisão que será executada.
+- [x] Dependências 050/110 concluídas; monorepo limpo em 187b3ad, contratos e CI da centralização conferidos. Canal real continua no 120.
+- [x] Gates backend/WhatsApp, replay sintético e revisão independente definidos; testes físicos de utilidade continuam pendentes.
 
 ## Plano sequencial
 
@@ -61,9 +61,9 @@ Recursos humanos/externos são solicitados no momento indicado pelo plano, após
 
 ## Critérios de aceite
 
-- [ ] Zero destinatário/ponto incorreto nos testes e sem aviso duplicado por policy version.
+- [x] Zero destinatário/ponto incorreto nos testes e sem aviso duplicado por policy version.
 - [ ] Critério de utilidade aprovado por plataforma ou bloqueio técnico exposto.
-- [ ] Cancelamento/opt-out/ponto compartilhado/progresso atrasado corretamente tratados.
+- [x] Cancelamento/opt-out/ponto compartilhado/progresso atrasado corretamente tratados.
 
 ## Riscos
 
@@ -86,3 +86,32 @@ Desligar flag de aviso mantendo acompanhamento e parada; voltar política anteri
 ## Encerramento
 
 Commits próprios por repositório, QA Log, evidência canônica e sucessor elegível atualizados juntos. Não declarar entrega/piloto/produção por um gate parcial.
+
+## Execução no repositório centralizado — 03/11/2026
+
+Issues existentes: T9a/T9b/T10 (#33–35), T11 (#36), T49–51 (#75–77).
+Base: `187b3adbd65ed57783720fb3e16dce4ab6898bdc`; branch
+`codex/mvp-localizacao-aproximacao`. Sem alterações preexistentes.
+
+Backend implementa consulta autorizada, decisão de aproximação, progressão e
+revalidação do envio. Bot implementa a consulta e transporte do pin estático,
+sem enviar coordenadas ao modelo. Contratos canônicos são do backend; produtor
+e consumidor precisam de verificação conjunta. O principal integra programa,
+backlog, evidência e smoke. O trabalho usa as issues existentes, sem duplicá-las.
+
+Parâmetros de ensaio: documento 08, seção 5; hipóteses de calibração, não prova
+de utilidade. Falta de contexto de corredor em cenário ambíguo suprime aviso.
+O novo número já está ativo no WhatsApp Business. O 120 ainda exige conexão e
+recibo reais; nenhuma operação externa ou física é inferida deste card.
+
+Validação: testes comportamentais/PostgreSQL, contratos do worker, smoke HTTP
+com Evolution simulado, gate completo em execução serial/CI conforme memória.
+Revisão independente antes do commit de entrega. Não encerrar issues que
+ainda dependam de percurso, canal real ou revisão humana. Reversão por commit;
+nenhuma migration destrutiva e aviso desligado por padrão.
+
+Preparação paralela da issue #91: corrigir somente a portabilidade do pacote
+de ensaio preservado em `src/whatsapp/lab/live-runtime/`, com extração/import
+e mounts comprovados. Isso não executa o canal real nem encerra o card 120.
+
+Validação técnica da revisão `dd12cf0b233e2c16fba334d84fc2ec50f1e7458d`: [resultados e limites](../evidence/VR-WA-130-APPROACH.md). Aguarda avaliação da utilidade em percurso por plataforma. O preparo da homologação compartilhada está relacionado às issues #89–91.

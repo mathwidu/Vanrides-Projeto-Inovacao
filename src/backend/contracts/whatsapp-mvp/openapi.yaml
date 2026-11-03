@@ -2,7 +2,7 @@
   "openapi": "3.0.3",
   "info": {
     "title": "VanRides WhatsApp MVP — contrato v1",
-    "version": "1.9.0",
+    "version": "1.10.0",
     "description": "Contrato normativo do catálogo completo dos documentos02/08. Disponibilidade é explícita por operação/schema. O card040 implementa somente fundação; exemplos sintéticos e parser não provam execução de endpoints futuros, integração Evolution,n8n ou dispositivos. Preserva os endpoints/auth legados."
   },
   "servers": [
@@ -27,7 +27,7 @@
     }
   ],
   "x-vanrides-schema-version": "1.5.0",
-  "x-vanrides-current-card": "VR-WA-120-DELIVERY-RECOVERY",
+  "x-vanrides-current-card": "VR-WA-130-APPROACH",
   "x-vanrides-service-principals": [
     "CHANNEL",
     "CONVERSATION_WORKER",
@@ -3587,15 +3587,8 @@
       "GetDriverLocationPayload": {
         "type": "object",
         "additionalProperties": false,
-        "properties": {
-          "occurrenceRef": {
-            "$ref": "#/components/schemas/ContextReference"
-          }
-        },
-        "required": [
-          "occurrenceRef"
-        ],
-        "description": "Nenhum campo seleciona ator/papel. Referências devem pertencer às opções autorizadas do contexto."
+        "properties": {},
+        "description": "Alvo resolvido pela API a partir do vínculo e run ativos. Quando ambíguo, seleção persistida em menu; números só valem no menu emitido para a mesma inbox/identidade. Nunca aceita ator, run ou coordenadas do modelo."
       },
       "GetDriverLocationCommand": {
         "type": "object",
@@ -3623,9 +3616,9 @@
           "expectedVersion",
           "payload"
         ],
-        "description": "Ator derivado da inbox autenticada e do lease; nunca do texto ou do payload. A versão zero representa identidade sem perfil.",
+        "description": "Consulta explícita do motorista dono ou passageiro com vínculo/run aprovados; responseIds sem GPS. Pin STATIC_PIN somente ao worker em authorize-submit, adquirido novamente na fila e limitado a capturedAt+20s. TTL da resposta300s; sem GPS atual retorna TEXT indisponível.",
         "x-vanrides-implementation-card": "VR-WA-130-APPROACH",
-        "x-vanrides-availability": "FUTURE"
+        "x-vanrides-availability": "CARD_130_APPROACH"
       },
       "ConfirmPairingPayload": {
         "oneOf": [
@@ -5335,7 +5328,7 @@
           "capturedAt",
           "label"
         ],
-        "description": "Pin efêmero do veículo autorizado; nunca pin de outro passageiro. Deadline=min(TTLresposta,capturedAt+20s). Remover coordenadas depois de submissão/expiração; nunca enviar ao LLM/log/execução persistida."
+        "description": "Pin efêmero do veículo autorizado; nunca pin de outro passageiro. Deadline=min(TTLresposta,capturedAt+20s). Remover coordenadas depois de submissão/expiração; nunca enviar ao LLM/log/execução persistida. Coordenadas não são persistidas na outbox: última posição é consultada sob autorização e liberada somente na memória do worker. Label fixo: Localização atual do veículo."
       },
       "OutboxContent": {
         "oneOf": [
@@ -6170,9 +6163,7 @@
           "commandType": "GET_DRIVER_LOCATION",
           "inboxEventId": "00000000-0000-4000-8000-000000000001",
           "expectedVersion": 0,
-          "payload": {
-            "occurrenceRef": "example_occurrence_ref"
-          }
+          "payload": {}
         }
       },
       "ConfirmPairing": {
@@ -6740,7 +6731,7 @@
           "latitude": 0.0,
           "longitude": 0.0,
           "capturedAt": "2026-10-31T12:00:00Z",
-          "label": "Veículo sintético"
+          "label": "Localização atual do veículo"
         }
       },
       "OutboxResult": {

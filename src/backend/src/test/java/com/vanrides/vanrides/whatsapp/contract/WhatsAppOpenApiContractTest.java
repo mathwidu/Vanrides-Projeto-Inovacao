@@ -337,6 +337,7 @@ class WhatsAppOpenApiContractTest {
                     case "VR-WA-090-PASSENGERS" -> "CARD_090_PASSENGER_SETUP";
                     case "VR-WA-100-ATTENDANCE" -> "CARD_100_ATTENDANCE";
                     case "VR-WA-110-RUN-TRACKING" -> "CARD_110_RUN_TRACKING"; case "VR-WA-120-DELIVERY-RECOVERY" -> "CARD_120_DELIVERY_RECOVERY";
+                    case "VR-WA-130-APPROACH" -> "CARD_130_APPROACH";
                     default -> "FUTURE";
                 };
                 assertEquals(expected, entry.path("availability").asText());

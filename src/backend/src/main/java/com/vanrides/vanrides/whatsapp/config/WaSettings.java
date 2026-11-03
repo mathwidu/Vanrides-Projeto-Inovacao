@@ -4,6 +4,8 @@ import java.net.URI;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
@@ -13,6 +15,8 @@ public final class WaSettings {
     private final boolean enabled;
     private final boolean newStartsEnabled;
     private final boolean cohortOnly;
+    private final boolean approachEnabled;
+    private final Set<UUID> approachReviewedRoutines;
     private final String environment;
     private final String baseUrl;
     private final String startLinkBaseUrl;
@@ -25,6 +29,12 @@ public final class WaSettings {
         enabled = flag(env, "enabled", false);
         newStartsEnabled = flag(env, "new-starts-enabled", true);
         cohortOnly = flag(env, "test-cohort-only", true);
+        approachEnabled = flag(env, "approach-enabled", false);
+        try {
+            String reviewed = env.getProperty("vanrides.wa.approach-reviewed-routine-ids", "");
+            approachReviewedRoutines = reviewed.isBlank() ? Set.of() : java.util.Arrays.stream(reviewed.split(",", -1))
+                .map(String::trim).map(UUID::fromString).collect(Collectors.toUnmodifiableSet());
+        } catch (RuntimeException invalid) { throw new IllegalStateException("WA_CONFIGURATION_INVALID"); }
         environment = env.getProperty("vanrides.wa.environment", "disabled");
         baseUrl = env.getProperty("vanrides.wa.public-base-url", "");
         startLinkBaseUrl = env.getProperty("vanrides.wa.start-link-base-url", "");
@@ -73,6 +83,8 @@ public final class WaSettings {
     public boolean enabled() { return enabled; }
     public boolean newStartsEnabled() { return enabled && newStartsEnabled; }
     public boolean cohortOnly() { return cohortOnly; }
+    public boolean approachEnabled() { return enabled && approachEnabled; }
+    public boolean approachReviewed(UUID routine) { return approachReviewedRoutines.contains(routine); }
     public boolean configured() { return hashKey.length == 32 && responseKey.length == 32; }
     public String environment() { return environment; }
     public String baseUrl() { return baseUrl; }

@@ -126,4 +126,6 @@ Isso confirma acesso e revisão. A escolha da área depende do grupo, não do
 sistema operacional de cada pessoa.
 
 Deploy e testes com usuários são etapas separadas. Testes físicos do iPhone
-continuam pausados e a linha dedicada do bot ainda depende de ativação.
+continuam pausados e a conta dedicada já está ativa no WhatsApp Business; conexão com a Evolution e entrega real permanecem pendentes.
+
+O [guia de homologação da equipe](docs/desenvolvimento/homologacao-da-equipe.md) apresenta o ambiente escolhido, a integração com n8n e os critérios para testar pela VPS.

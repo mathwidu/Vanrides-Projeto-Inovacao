@@ -17,6 +17,9 @@ function rejected(args, extra, code) {
 test('extra input is rejected before Git, Java or Docker discovery and without reflecting it', () => {
   rejected([sentinel], {}, 'SMOKE_ARGUMENTS_INVALID');
 });
+test('invalid opt-in receipt destination is rejected before runtime discovery', () => {
+  rejected([], { VANRIDES_ACADEMIC_RECEIPT_PATH: 'relative-' + sentinel }, 'ACADEMIC_RECEIPT_PATH_INVALID');
+});
 for (const variable of ['GIT_DIR', 'GIT_WORK_TREE', 'GIT_CONFIG_COUNT', 'DOCKER_HOST', 'DOCKER_CONTEXT',
   'DOCKER_TLS_VERIFY', 'DOCKER_CERT_PATH']) {
   test('inherited override ' + variable + ' is rejected without running a command', () => {

@@ -117,7 +117,7 @@ public class WaTrackingService {
     }
     @Transactional public ObjectNode samples(WaPrincipal actor,UUID id,ObjectNode body) {
         access.device(actor,false); Session session=owned(actor,id); lifecycle.reconcile(session,clock.now()); access.device(actor,false);
-        return new WaTrackingSamples(store).ingest(store.session(id,actor.driverId()),store.run(session.run(),actor.driverId()),body,clock.now(),settings.enabled());
+        return new WaTrackingSamples(store,settings).ingest(store.session(id,actor.driverId()),store.run(session.run(),actor.driverId()),body,clock.now(),settings.enabled());
     }
     @Transactional public ObjectNode state(WaPrincipal actor,UUID id,ObjectNode body,String key) {
         return new WaTrackingState(store,access,settings,clock,lifecycle).record(actor,id,body,key);

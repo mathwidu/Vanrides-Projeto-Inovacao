@@ -46,7 +46,7 @@ A integração com aplicativos de navegação foi retirada do recorte em 02/11/2
 | Rotina e presença | O motorista organiza dias e horários; o passageiro responde por data e sentido. O silêncio mantém a presença pendente. | Implementado e ensaiado em laboratório |
 | Início | A API prepara o link enviado pelo WhatsApp. Ele abre o aplicativo já vinculado; o motorista confirma a coleta. | Implementado e ensaiado em laboratório |
 | GPS | O aplicativo coleta a localização com Google FLP no Android ou Core Location no iPhone e a envia à API. A confirmação de início depende de posição válida recebida, não apenas da abertura do link. | Integração ensaiada no Android; percurso completo pendente |
-| Aproximação | A API deverá usar posição recente, ponto e sentido para avisar o passageiro correto. | Planejado; ainda sem aceite de utilidade em percurso |
+| Aproximação | A API avalia posição recente, ponto, ordem e sentido para avisar o passageiro elegível. | Regra testada em PostgreSQL; aceite de utilidade em percurso pendente |
 | Encerramento | A API deverá reconhecer o fim e coordenar a parada do aplicativo; a finalização manual será contingência. | Fim automático planejado; parada técnica tem ensaio próprio |
 
 ## Dúvidas e indisponibilidade
@@ -58,7 +58,7 @@ nem concede permissão para alterar seus dados.
 Se o serviço estiver indisponível, o estado já registrado é preservado para
 retomada. Um envio cujo resultado é incerto não deve ser repetido sem verificar
 o que aconteceu. GPS ausente ou antigo não autoriza a confirmação de início;
-os avisos planejados também precisarão de posição recente.
+a API revalida a posição e a elegibilidade antes de enviar o aviso.
 
 ## Decisões principais
 
