@@ -85,7 +85,7 @@ def render():
            "Essas contagens não medem percentual concluído. Teste automatizado, laboratório, aparelho parado e percurso são provas diferentes.",
            "Uma tarefa só termina quando seus critérios são atendidos, o PR foi revisado e a prova registra a versão avaliada.", "",
            "## Lista por onda", "",
-           "Todas as tarefas atuais terão uma issue. A segunda onda fica no backlog, sem ser iniciada por sua publicação.",
+           "Todas as tarefas atuais têm uma issue. Já há implementação de cadastro e presença na Onda 1 e de coleta de localização na Onda 2. As issues das duas ondas registram esse andamento e o trabalho restante; publicar uma tarefa não inicia sua execução.",
            "Referências antigas ficam identificadas como histórico e fora da lista atual. T76/T77 foram retiradas junto da navegação externa.", ""]
     for wave in (1, 2):
         out += [f"### Onda {wave}", "", "| ID / issue | Resultado da tarefa | Implementação | Validação | Próxima ação |", "|---|---|---|---|---|"]

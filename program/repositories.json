@@ -27,10 +27,11 @@
         "importedFromCommit": "c1e0546f0c84e428bdb00c636593dc64cc67e3f8"
       },
       "baseline": {
-        "branch": "codex/centralizacao-mvp-equipe",
-        "sha": "b8f9120d0680d444e40979e856a4ce80bada5835",
-        "remoteEvidence": false,
-        "scope": "Base acadêmica antes da importação; não é validação do código migrado. CI e recibos da migração devem identificar o novo SHA."
+        "branch": "main",
+        "sha": "b6ff35904ea832bbf6f4bdc208372bdf52ce92cc",
+        "remoteEvidence": true,
+        "scope": "Commit integrado testado na CI do monorepo; não aprova mudanças posteriores, aparelhos físicos, piloto ou produção.",
+        "evidence": "program/evidence/VR-PGM-002-ACADEMIC-MIGRATION-001.md"
       }
     },
     {
@@ -60,10 +61,11 @@
         "importedFromCommit": "e25ed4e0131bc253b7ccea2fa4ab793e69a89af9"
       },
       "baseline": {
-        "branch": "codex/centralizacao-mvp-equipe",
-        "sha": "b8f9120d0680d444e40979e856a4ce80bada5835",
-        "remoteEvidence": false,
-        "scope": "Base acadêmica antes da importação; não é validação do código migrado. CI e recibos da migração devem identificar o novo SHA."
+        "branch": "main",
+        "sha": "b6ff35904ea832bbf6f4bdc208372bdf52ce92cc",
+        "remoteEvidence": true,
+        "scope": "Commit integrado testado na CI do monorepo; não aprova mudanças posteriores, aparelhos físicos, piloto ou produção.",
+        "evidence": "program/evidence/VR-PGM-002-ACADEMIC-MIGRATION-001.md"
       }
     },
     {
@@ -99,10 +101,11 @@
         "importedFromCommit": "b9fcedbbf949ad9f1684efcc1a2b0f2176cf7877"
       },
       "baseline": {
-        "branch": "codex/centralizacao-mvp-equipe",
-        "sha": "b8f9120d0680d444e40979e856a4ce80bada5835",
-        "remoteEvidence": false,
-        "scope": "Base acadêmica antes da importação; não é validação do código migrado. CI e recibos da migração devem identificar o novo SHA."
+        "branch": "main",
+        "sha": "b6ff35904ea832bbf6f4bdc208372bdf52ce92cc",
+        "remoteEvidence": true,
+        "scope": "Commit integrado testado na CI do monorepo; não aprova mudanças posteriores, aparelhos físicos, piloto ou produção.",
+        "evidence": "program/evidence/VR-PGM-002-ACADEMIC-MIGRATION-001.md"
       }
     },
     {

@@ -16,8 +16,8 @@ as regras de promoção. No monorepo acadêmico, a entrada para contribuir é
 A migração não conclui o roadmap legado, não aceita cards parcialmente
 implementados e não reclassifica evidências históricas como teste do monorepo.
 Piloto e produção permanecem **HOLD**. Testes físicos de iOS estão pausados pelo
-proprietário. O estado do card de migração só muda após a verificação final do
-principal.
+proprietário. A centralização foi verificada e concluída no seu escopo; o recibo específico
+identifica a publicação e os testes da nova árvore.
 
 ## Operação diária
 

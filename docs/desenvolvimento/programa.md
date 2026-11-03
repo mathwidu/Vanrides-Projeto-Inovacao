@@ -52,10 +52,10 @@ dois módulos que transfere.
 
 As baselines anteriores permanecem em `origin.baseline`; não se comparam os
 SHAs privados de cada repositório diretamente ao Git compartilhado. A baseline
-atual é a base acadêmica antes da importação, com `remoteEvidence=false`.
-`BRANCH_DRIFT`, `HEAD_DRIFT` e `NO_REMOTE_EVIDENCE` continuam explícitos; concluir
-a migração exige nova evidência do SHA candidato, sem reaproveitar os testes de
-origem como aprovação atual.
+atual aponta para o commit integrado e testado no repositório acadêmico, com
+`remoteEvidence=true`. Alterações posteriores ainda produzem `BRANCH_DRIFT` e
+`HEAD_DRIFT`: a prova vale para a revisão indicada, não para mudanças futuras.
+Os resultados das origens não substituem a CI atual.
 
 ## CI e limites
 

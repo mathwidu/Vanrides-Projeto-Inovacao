@@ -36,9 +36,9 @@
     "O MVP do sequenciador termina na Onda 2: cadastros e presença na Onda 1; localização da van e aproximação na Onda 2. Ondas 3 e 4 permanecem no planejamento anterior preservado no histórico Git e no acervo.",
     "P significa até 2 horas e M de 2 a 6 horas. As estimativas e novas responsabilidades devem ser confirmadas pela equipe; tarefas maiores devem ser divididas antes de entrar no Kanban.",
     "Responsáveis anteriores foram preservados como referência de distribuição do trabalho. As tarefas novas estão com A definir pela equipe.",
-    "A coluna Issue # da Onda 1 aponta para #25–#30 nas seis tarefas originais. As 22 novas tarefas da Onda 1 ainda precisam de issues. Na Onda 2, -- segue a orientação da O4; issues existentes são conciliadas no plano de atualização, sem inventar novos números.",
+    "A coluna Issue # usa o número real de cada tarefa nas duas ondas. As 65 issues atuais ficam vinculadas às especificações; itens antigos mantêm sua identificação histórica.",
     "As 23 linhas publicadas anteriormente permanecem preservadas no histórico Git e no acervo. T8 é um agrupamento antigo; T9a e T9b têm descrições próprias. Nenhum ID foi renumerado.",
-    "As issues #1–#24 foram encerradas sem previsão de execução. Esse encerramento não comprova conclusão; as issues #25–#47 permanecem abertas na consulta de 02/11/2026.",
+    "As 24 issues anteriormente encerradas foram preservadas. O backlog atual usa 65 issues abertas com a label mvp; outras 12 abertas são referências históricas, fora da lista executável.",
     "Implementado significa que o objetivo está presente no código ou no artefato indicado, sem presumir aceite de uso. Parcial indica uma parte existente e outra pendente. Planejado ainda não foi entregue; Proposta de escopo precisa de decisão da equipe. A validação é mostrada separadamente.",
     "Navegação externa por Maps/Waze não integra este MVP. T76 e T77 foram retirados sem renumerar os demais IDs; seus registros anteriores completos estão em HISTORICO-NAVEGACAO.md. A ordem dos pontos usada pela aproximação permanece funcionalmente."
   ],
@@ -209,7 +209,7 @@
       "Definir as mensagens de cadastro, envio da localização fixa e correção ou aprovação do ponto de embarque.",
       "P",
       null,
-      null,
+      49,
       [
         "090"
       ],
@@ -223,7 +223,7 @@
       "Criar as viagens de ida e volta no calendário da rotina, respeitando o fuso horário de São Paulo.",
       "M",
       null,
-      null,
+      50,
       [
         "100"
       ],
@@ -237,7 +237,7 @@
       "Enviar o lembrete de presença às 20h do dia anterior, uma única vez por viagem.",
       "M",
       null,
-      null,
+      51,
       [
         "100"
       ],
@@ -251,7 +251,7 @@
       "Testar respostas antigas, falta de resposta e repetição do lembrete sem alterar outra viagem.",
       "P",
       null,
-      null,
+      52,
       [
         "100"
       ],
@@ -262,10 +262,10 @@
       1,
       "F09",
       "DevOps",
-      "Registrar as versões e alterações dos três repositórios e preparar a recuperação da configuração anterior.",
+      "Registrar as versões e alterações dos componentes do projeto e preparar a recuperação da configuração anterior.",
       "P",
       null,
-      null,
+      53,
       [
         "000"
       ],
@@ -279,7 +279,7 @@
       "Preparar as ferramentas Android e gerar um aplicativo mínimo de teste com versão identificada.",
       "M",
       null,
-      null,
+      54,
       [
         "010"
       ],
@@ -293,7 +293,7 @@
       "Gerar um aplicativo mínimo para iPhone e documentar a assinatura de desenvolvimento e sua renovação.",
       "M",
       null,
-      null,
+      55,
       [
         "010"
       ],
@@ -307,7 +307,7 @@
       "Coletar a localização no Android em segundo plano, mostrando o estado da coleta e limitando posições ainda não enviadas.",
       "M",
       null,
-      null,
+      56,
       [
         "020"
       ],
@@ -321,7 +321,7 @@
       "Coletar a localização no iPhone com as permissões necessárias, mantendo a coleta independente da tela aberta.",
       "M",
       null,
-      null,
+      57,
       [
         "020"
       ],
@@ -335,7 +335,7 @@
       "Receber posições de teste em um serviço separado, com autenticação e dados fictícios.",
       "M",
       null,
-      null,
+      58,
       [
         "020"
       ],
@@ -349,7 +349,7 @@
       "Testar a localização durante um percurso Android com tela bloqueada e interrupção de rede, medindo atrasos nas posições.",
       "M",
       null,
-      null,
+      59,
       [
         "030"
       ],
@@ -363,7 +363,7 @@
       "Testar a localização durante um percurso no iPhone com tela bloqueada e interrupção de rede, medindo atrasos nas posições.",
       "M",
       null,
-      null,
+      60,
       [
         "030"
       ],
@@ -377,7 +377,7 @@
       "Medir consumo de bateria e recuperação da localização em cada aparelho, sem conexão USB.",
       "M",
       null,
-      null,
+      61,
       [
         "030"
       ],
@@ -391,7 +391,7 @@
       "Guardar as mensagens recebidas do WhatsApp e impedir que o mesmo evento execute uma ação mais de uma vez.",
       "M",
       null,
-      null,
+      62,
       [
         "050"
       ],
@@ -405,7 +405,7 @@
       "Guardar as respostas a enviar e conectar o envio ao serviço de WhatsApp utilizado.",
       "M",
       null,
-      null,
+      63,
       [
         "050"
       ],
@@ -419,7 +419,7 @@
       "Usar a IA apenas para interpretar a mensagem e validar respostas incompletas, recusas ou demora antes de executar uma ação.",
       "M",
       null,
-      null,
+      64,
       [
         "070"
       ],
@@ -433,7 +433,7 @@
       "Organizar as oito automações do n8n para importação desativada, sem incluir senhas ou chaves.",
       "M",
       null,
-      null,
+      65,
       [
         "070"
       ],
@@ -447,7 +447,7 @@
       "Permitir ao motorista configurar dias, horários e sentidos da rotina pela conversa.",
       "M",
       null,
-      null,
+      66,
       [
         "080"
       ],
@@ -461,7 +461,7 @@
       "Mostrar no aplicativo o código de vínculo e as situações de aparelho vinculado, falha e recuperação.",
       "M",
       null,
-      null,
+      67,
       [
         "060"
       ],
@@ -475,7 +475,7 @@
       "Vincular o aparelho ao pedido iniciado no aplicativo somente após confirmação pelo WhatsApp autenticado.",
       "M",
       null,
-      null,
+      68,
       [
         "060"
       ],
@@ -489,7 +489,7 @@
       "Fixar, no início de cada viagem, a lista de passageiros previstos para a rotina e o sentido selecionados.",
       "M",
       null,
-      null,
+      69,
       [
         "110"
       ],
@@ -503,7 +503,7 @@
       "Iniciar a localização pelo aplicativo e mostrar a coleta como ativa somente após receber a primeira posição válida.",
       "M",
       null,
-      null,
+      70,
       [
         "110"
       ],
@@ -517,7 +517,7 @@
       "Guardar o pedido de parada sem internet e confirmar sua conclusão após reconectar e reabrir o aplicativo, sem reiniciar a coleta.",
       "M",
       null,
-      null,
+      71,
       [
         "110"
       ],
@@ -531,7 +531,7 @@
       "Reservar cada aviso para um único envio e limitar novas tentativas após falha ou reinício do serviço.",
       "M",
       null,
-      null,
+      72,
       [
         "120"
       ],
@@ -545,7 +545,7 @@
       "Registrar a entrega de mensagens somente com confirmação do serviço de WhatsApp e identificar envios sem confirmação.",
       "M",
       null,
-      null,
+      73,
       [
         "120"
       ],
@@ -559,7 +559,7 @@
       "Descartar avisos que perderam a utilidade e respeitar a opção de não receber mensagens antes de tentar novo envio.",
       "M",
       null,
-      null,
+      74,
       [
         "120"
       ],
@@ -573,7 +573,7 @@
       "Avaliar a aproximação pela posição atual, ponto e sentido da viagem, sem informar minutos de chegada sem cálculo comprovado.",
       "M",
       null,
-      null,
+      75,
       [
         "130"
       ],
@@ -587,7 +587,7 @@
       "Acompanhar a ordem dos pontos e impedir avisos com posição antiga, presença cancelada ou ponto incorreto.",
       "M",
       null,
-      null,
+      76,
       [
         "130"
       ],
@@ -601,7 +601,7 @@
       "Testar o destinatário do aviso, pontos compartilhados e prevenção de mensagens repetidas com dados fictícios.",
       "P",
       null,
-      null,
+      77,
       [
         "130"
       ],
@@ -615,7 +615,7 @@
       "Encerrar a viagem automaticamente ao identificar seu término e manter o encerramento manual como alternativa de emergência.",
       "M",
       null,
-      null,
+      78,
       [
         "140"
       ],
@@ -629,7 +629,7 @@
       "Parar a coleta de localização ao encerrar a viagem e mostrar se a parada foi confirmada ou ainda está pendente.",
       "M",
       null,
-      null,
+      79,
       [
         "140"
       ],
@@ -643,7 +643,7 @@
       "Oferecer AJUDA, retirada de acesso e retomada assistida, pausando as respostas automáticas quando necessário.",
       "M",
       null,
-      null,
+      80,
       [
         "140"
       ],
@@ -657,7 +657,7 @@
       "Executar lembretes com permissão exclusiva da automação e impedir duplicações após falha ou reinício.",
       "M",
       null,
-      null,
+      81,
       [
         "150"
       ],
@@ -671,7 +671,7 @@
       "Configurar o n8n para preservar automações e mensagens pendentes após reiniciar o serviço.",
       "M",
       null,
-      null,
+      82,
       [
         "150"
       ],
@@ -685,7 +685,7 @@
       "Coletar apenas os dados necessários ao cadastro, registrar consentimento e aplicar os prazos de exclusão definidos.",
       "M",
       null,
-      null,
+      83,
       [
         "150"
       ],
@@ -699,7 +699,7 @@
       "Testar cópia de segurança, restauração e exclusão dos dados em ambiente separado, registrando a recuperação realizada.",
       "M",
       null,
-      null,
+      84,
       [
         "150"
       ],
@@ -713,7 +713,7 @@
       "Preparar alertas e guia de operação com limites de uso e procedimento para pausar novos envios com segurança.",
       "M",
       null,
-      null,
+      85,
       [
         "150"
       ],
@@ -727,7 +727,7 @@
       "Registrar as versões e os arquivos aprovados que compõem a versão de teste.",
       "P",
       null,
-      null,
+      86,
       [
         "160"
       ],
@@ -741,7 +741,7 @@
       "Preparar o aplicativo Android para instalação de teste, com assinatura identificada e verificação de integridade.",
       "M",
       null,
-      null,
+      87,
       [
         "160"
       ],
@@ -755,7 +755,7 @@
       "Preparar o aplicativo para iPhone com instruções de instalação e renovação da autorização de desenvolvimento.",
       "M",
       null,
-      null,
+      88,
       [
         "160"
       ],
@@ -769,7 +769,7 @@
       "Planejar instalação no servidor, atualização do banco, teste de funcionamento e retorno à versão anterior.",
       "P",
       null,
-      null,
+      89,
       [
         "160"
       ],
@@ -783,7 +783,7 @@
       "Instalar a versão aprovada no ambiente de teste autorizado e conferir o endereço seguro e as versões dos componentes.",
       "M",
       null,
-      null,
+      90,
       [
         "170"
       ],
@@ -797,7 +797,7 @@
       "Conectar o número exclusivo do bot e conferir envio e confirmação de entrega com participantes autorizados.",
       "M",
       null,
-      null,
+      91,
       [
         "170"
       ],
@@ -811,7 +811,7 @@
       "Testar os agendamentos e as automações no ambiente autorizado, verificando recuperação após falha ou reinício.",
       "M",
       null,
-      null,
+      92,
       [
         "170"
       ],
@@ -825,7 +825,7 @@
       "Testar a jornada completa no Redmi Note 8 com WhatsApp real e registrar resultados e versões utilizadas.",
       "M",
       null,
-      null,
+      93,
       [
         "180"
       ],
@@ -839,7 +839,7 @@
       "Testar a jornada completa no iPhone com WhatsApp real e registrar resultados e versões utilizadas.",
       "M",
       null,
-      null,
+      94,
       [
         "180"
       ],
@@ -853,7 +853,7 @@
       "Medir se os avisos chegam em tempo útil nos percursos dos dois aparelhos e se o destinatário está correto.",
       "M",
       null,
-      null,
+      95,
       [
         "180"
       ],
@@ -867,7 +867,7 @@
       "Entregar guia de uso e relatório com resultados, versões, limites e pendências do MVP.",
       "M",
       null,
-      null,
+      96,
       [
         "190"
       ],
@@ -881,7 +881,7 @@
       "Repetir a instalação e a renovação a partir do pacote entregue e conferir se todos os arquivos necessários estão disponíveis.",
       "M",
       null,
-      null,
+      97,
       [
         "190"
       ],
@@ -895,7 +895,7 @@
       "Registrar cancelamento ou correção de presença para a viagem indicada na conversa.",
       "M",
       null,
-      null,
+      98,
       [
         "100"
       ],
@@ -909,7 +909,7 @@
       "Aplicar o horário limite para alterar a presença e manter o histórico mínimo dos cancelamentos.",
       "P",
       null,
-      null,
+      99,
       [
         "100",
         "120"
@@ -924,7 +924,7 @@
       "Informar ao motorista a mudança de presença pelo WhatsApp, evitando aviso repetido ou atrasado.",
       "M",
       null,
-      null,
+      100,
       [
         "120"
       ],
@@ -938,7 +938,7 @@
       "Mostrar ao motorista a lista da viagem, distinguindo passageiros confirmados, pendentes e ausentes.",
       "M",
       null,
-      null,
+      101,
       [
         "100"
       ],
@@ -952,7 +952,7 @@
       "Testar as operações da API, as permissões de acesso e as atualizações do banco PostgreSQL com dados fictícios.",
       "M",
       null,
-      null,
+      102,
       [
         "040"
       ],
@@ -982,7 +982,7 @@
     "090": "Cadastro/aprovação de passageiro e pin estático no laboratório; canal simulado."
   },
   "scopeDecision": "F06 (cancelamento) e F12 (aviso de cancelamento) permanecem ajustes propostos na Onda 2, sujeitos à confirmação da equipe e comunicação ao professor quando aplicável. F01 (navegação externa) foi retirado do MVP por decisão do usuário; T76 e T77 estão preservados no histórico separado. A ordem dos pontos necessária à aproximação permanece no recorte atual.",
-  "progressFile": "task-progress.json",
+  "progressFile": "acompanhamento.json",
   "summary": [
     {
       "area": "F09 — Cadastro do motorista",
@@ -1047,7 +1047,7 @@
       "implemented": "Envio e recuperação de mensagens têm base implementada. A regra de aproximação por passageiro ainda falta.",
       "implementation": "Planejado",
       "validation": "Regra e utilidade em percurso pendentes. A base de envio foi testada em laboratório.",
-      "where": "Serviço de atendimento — envio e recuperação de mensagens; regra de aproximação pendente.",
+      "where": "Bot VanRides — envio e recuperação de mensagens; regra de aproximação pendente.",
       "next": "Implementar a regra e medir se o aviso chega em tempo útil.",
       "taskIds": [
         "T11",
@@ -1065,7 +1065,7 @@
       "implemented": "Ambiente, permissões, IA, automações e aplicativo mínimo existem. Retenção, restauração completa e operação contínua faltam.",
       "implementation": "Parcial",
       "validation": "Testes por componente e laboratório. Operação completa pendente.",
-      "where": "API, aplicativo e automações de atendimento. Caminhos por tarefa em ACOMPANHAMENTO.",
+      "where": "API, aplicativo e automações de atendimento. Caminhos por tarefa em acompanhamento.json.",
       "next": "Concluir e testar a operação completa, sem atribuir essas pendências ao cadastro.",
       "taskIds": [
         "T01",
@@ -1090,11 +1090,11 @@
     },
     {
       "area": "Instalação, entrega e acesso aos fontes",
-      "implemented": "Android instalado e iPhone mínimo verificado. A entrega completa e a publicação acadêmica dos fontes ainda faltam.",
+      "implemented": "Android instalado e iPhone mínimo verificado. Fontes e guia de contribuição publicados no repositório acadêmico; entrega operacional completa ainda pendente.",
       "implementation": "Parcial",
       "validation": "Instalação inicial nos aparelhos. Jornada completa com canal real pendente.",
-      "where": "Aplicativos e serviços nos repositórios privados atuais. Instalações de teste documentadas.",
-      "next": "Concluir as funções e o canal dedicado, testar os dois aparelhos e preparar a publicação autorizada.",
+      "where": "Fontes em src/aplicativo-motorista, src/backend e src/whatsapp. Instalações iniciais registradas separadamente.",
+      "next": "Concluir as funções e o canal dedicado, testar os dois aparelhos e preparar a entrega operacional.",
       "taskIds": [
         "T60",
         "T61",

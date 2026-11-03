@@ -7,7 +7,7 @@
     "backend": "e25ed4e0131bc253b7ccea2fa4ab793e69a89af9",
     "app": "b9fcedbbf949ad9f1684efcc1a2b0f2176cf7877"
   },
-  "publicationStatus": "Código atual em repositórios privados. Publicação acadêmica dos fontes ainda pendente.",
+  "publicationStatus": "Fontes centralizados em mathwidu/Vanrides-Projeto-Inovacao. Novas contribuições entram neste repositório; resultados de produto abaixo continuam ligados às provas indicadas.",
   "implementationValues": [
     "Implementado",
     "Parcial",
@@ -672,12 +672,12 @@
     },
     {
       "taskId": "T27",
-      "title": "Registrar as versões e alterações dos três repositórios e preparar a recuperação da configuração anterior.",
+      "title": "Registrar as versões e alterações dos componentes do projeto e preparar a recuperação da configuração anterior.",
       "feature": "F09",
       "component": "Organização e recuperação dos fontes",
       "implementationStatus": "Implementado",
       "codeStatus": "Implementado",
-      "implementationNote": "Versões, alterações anteriores e recuperação foram documentadas.",
+      "implementationNote": "Versões e alterações das três origens foram preservadas; novas contribuições usam o repositório acadêmico centralizado.",
       "validationStatus": "Teste automatizado",
       "validationNote": "Inventário e controle do workspace validados; arquivos anteriores preservados.",
       "sourcePaths": [],
@@ -698,7 +698,8 @@
         "program/evidence/VR-WA-000-PREFLIGHT.md"
       ],
       "documentationPaths": [
-        "docs/workspace/preflight-2026-10-30.md"
+        "docs/desenvolvimento/origem-e-autoria.md",
+        "docs/desenvolvimento/migracao.md"
       ],
       "evidenceRefs": [
         {

@@ -37,18 +37,24 @@ python scripts/quality_metrics.py --root . --baseline quality/ratchet-baseline.j
 flutter build apk --debug --flavor driver --target lib/main_driver_mvp.dart --target-platform android-arm64
 ```
 
-Esses comandos funcionam no PowerShell. O gate completo também valida contratos
-de scripts Bash: execute-o no **Git Bash**, com `flutter`, `python3` e `node`
-acessíveis nessa sessão:
+Esses são os comandos da frente Android no Windows nativo. A execução nos
+computadores da equipe ainda precisa ser conferida. O gate completo também
+executa scripts e fixtures POSIX; não presuma que Git Bash com Python do Windows
+seja equivalente ao Ubuntu da CI.
+
+Para começar, rode análise, testes Flutter e build no PowerShell e confira o
+gate completo no pull request. Se quiser executar também esse gate localmente,
+use WSL2 com as versões Linux de Git, Flutter, Python e Node instaladas dentro
+da distribuição. Não reutilize o SDK Flutter do Windows nessa sessão:
 
 ```bash
+# Na raiz do clone dentro do WSL2:
 bash scripts/check_app.sh
 ```
 
-O último comando é executado na raiz do repositório. No Windows, se o Python
-só estiver disponível como `python`/`py`, ajuste o PATH da sessão para expor
-`python3` antes de usar os scripts Bash. O CI Ubuntu é a execução canônica
-desse gate; não há simulação de iOS no Windows.
+A compilação/instalação Android por USB pode continuar no Windows; acesso USB
+no WSL2 é uma preparação separada. O CI Ubuntu é a execução canônica do gate
+completo. Não há build nem simulação de iOS no Windows.
 
 ## Preparação macOS
 

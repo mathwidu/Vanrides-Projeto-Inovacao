@@ -5815,7 +5815,7 @@
       "id": "VR-PGM-002-ACADEMIC-MIGRATION-001",
       "epic": "VR-PGM-002",
       "title": "Centralizar código e contribuição no repositório acadêmico",
-      "status": "in_progress",
+      "status": "done",
       "priority": 0,
       "repositories": [
         "coordination",
@@ -5856,18 +5856,25 @@
         ]
       },
       "blockers": [],
-      "commits": [],
-      "evidence": []
+      "commits": [
+        "coordination:b6ff35904ea832bbf6f4bdc208372bdf52ce92cc",
+        "backend:b6ff35904ea832bbf6f4bdc208372bdf52ce92cc",
+        "app:b6ff35904ea832bbf6f4bdc208372bdf52ce92cc"
+      ],
+      "evidence": [
+        "program/evidence/VR-PGM-002-ACADEMIC-MIGRATION-001.md"
+      ]
     }
   ],
-  "activeCardId": "VR-PGM-002-ACADEMIC-MIGRATION-001",
-  "nextCardId": "VR-PGM-002-ACADEMIC-MIGRATION-001",
+  "activeCardId": null,
+  "nextCardId": null,
   "migration": {
     "card": "VR-PGM-002-ACADEMIC-MIGRATION-001",
-    "status": "in_progress",
+    "status": "done",
     "targetRepository": "mathwidu/Vanrides-Projeto-Inovacao",
-    "sourceCutover": "PENDING_PRINCIPAL_VERIFICATION",
+    "sourceCutover": "COMPLETED",
     "history": "Estados e commits anteriores são históricos; recibos importados não validam o SHA do monorepo.",
-    "physicalIOS": "paused_by_owner"
+    "physicalIOS": "paused_by_owner",
+    "integratedCommit": "b6ff35904ea832bbf6f4bdc208372bdf52ce92cc"
   }
 }

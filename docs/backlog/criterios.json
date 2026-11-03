@@ -632,19 +632,19 @@
     },
     {
       "taskId": "T27",
-      "title": "Registrar as versões e alterações dos três repositórios e preparar a recuperação da configuração anterior.",
+      "title": "Registrar as versões e alterações dos componentes do projeto e preparar a recuperação da configuração anterior.",
       "shortTitle": "Preservar versões e recuperação",
       "feature": "F09",
       "problem": "Sem registrar o ponto de partida, uma mudança pode apagar trabalho anterior ou ficar impossível de desfazer.",
       "outcome": "O grupo identifica as versões e consegue recuperar a configuração anterior.",
       "inScope": [
-        "Inventário dos três repositórios e recuperação das alterações existentes."
+        "Inventário das versões dos componentes e recuperação das alterações existentes, preservando a identificação das origens anteriores."
       ],
       "outOfScope": [
-        "Enviar cópias com segredos ou publicar os repositórios."
+        "Enviar cópias com segredos ou alterar ambientes externos."
       ],
       "acceptanceCriteria": [
-        "A versão e as alterações existentes de cada repositório ficam registradas.",
+        "A versão e as alterações existentes de cada componente ficam registradas.",
         "A cópia ou procedimento de recuperação identifica o que pode ser restaurado.",
         "A conferência não remove mudanças de outra pessoa nem inclui credenciais na publicação."
       ],
@@ -654,7 +654,7 @@
         "Lista dos arquivos ou procedimentos conferidos, versão correspondente e registro da revisão ou reprodução."
       ],
       "prerequisites": [
-        "Acesso de leitura aos três repositórios e local separado para a cópia."
+        "Acesso de leitura ao repositório centralizado e local separado para a cópia."
       ],
       "decisionPending": null,
       "nextRequiredOutcome": "Preservar a cópia recuperável nas próximas entregas.",
@@ -2662,5 +2662,6 @@
     }
   ],
   "sourceRevisionsContext": "Revisões copiadas do acompanhamento task-progress.json usado como base. A revisão de coordenação identifica a base daquele registro, não o HEAD desta nova especificação. Não constitui nova execução de testes.",
-  "pathContext": "Caminhos adaptados para o repositório acadêmico; sourceRevisions registram a origem histórica, não a aprovação desta migração."
+  "pathContext": "Caminhos adaptados para o repositório acadêmico; sourceRevisions registram a origem histórica, não a aprovação desta migração.",
+  "sourceDigestsContext": "Hashes dos documentos de origem anteriores à centralização e à sincronização das issues; não são hashes dos JSONs atuais."
 }

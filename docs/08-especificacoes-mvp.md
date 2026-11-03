@@ -484,7 +484,7 @@ F11 · Onda 2 · [Issue #36](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 <a id="t23"></a>
 ## T23 — Explicar cadastro e correção do ponto
 
-F10 · Onda 1 · Issue a criar
+F10 · Onda 1 · [Issue #49](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/49)
 
 **Problema:** Mensagens ambíguas dificultam saber o que informar e quem precisa aprovar.
 
@@ -527,7 +527,7 @@ F10 · Onda 1 · Issue a criar
 <a id="t24"></a>
 ## T24 — Criar calendário de ida e volta
 
-F02 · Onda 1 · Issue a criar
+F02 · Onda 1 · [Issue #50](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/50)
 
 **Problema:** Uma rotina recorrente precisa gerar a viagem certa para cada dia e sentido.
 
@@ -570,7 +570,7 @@ F02 · Onda 1 · Issue a criar
 <a id="t25"></a>
 ## T25 — Enviar lembrete de presença
 
-F02 · Onda 1 · Issue a criar
+F02 · Onda 1 · [Issue #51](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/51)
 
 **Problema:** Sem uma pergunta no momento combinado, a confirmação depende de cobranças manuais.
 
@@ -615,7 +615,7 @@ F02 · Onda 1 · Issue a criar
 <a id="t26"></a>
 ## T26 — Testar respostas antigas e repetidas
 
-F02 · Onda 1 · Issue a criar
+F02 · Onda 1 · [Issue #52](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/52)
 
 **Problema:** Falhas de tempo ou repetição podem alterar presença sem intenção do passageiro.
 
@@ -658,7 +658,7 @@ F02 · Onda 1 · Issue a criar
 <a id="t27"></a>
 ## T27 — Preservar versões e recuperação
 
-F09 · Onda 1 · Issue a criar
+F09 · Onda 1 · [Issue #53](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/53)
 
 **Problema:** Sem registrar o ponto de partida, uma mudança pode apagar trabalho anterior ou ficar impossível de desfazer.
 
@@ -668,15 +668,15 @@ F09 · Onda 1 · Issue a criar
 
 **Inclui:**
 
-- Inventário dos três repositórios e recuperação das alterações existentes.
+- Inventário das versões dos componentes e recuperação das alterações existentes, preservando a identificação das origens anteriores.
 
 **Fora desta tarefa:**
 
-- Enviar cópias com segredos ou publicar os repositórios.
+- Enviar cópias com segredos ou alterar ambientes externos.
 
 **Critérios de conclusão:**
 
-- [ ] A versão e as alterações existentes de cada repositório ficam registradas.
+- [ ] A versão e as alterações existentes de cada componente ficam registradas.
 - [ ] A cópia ou procedimento de recuperação identifica o que pode ser restaurado.
 - [ ] A conferência não remove mudanças de outra pessoa nem inclui credenciais na publicação.
 
@@ -687,7 +687,7 @@ F09 · Onda 1 · Issue a criar
 
 **Dependências:**
 
-- Acesso de leitura aos três repositórios e local separado para a cópia.
+- Acesso de leitura ao repositório centralizado e local separado para a cópia.
 
 **Decisão pendente:** Nenhuma adicional identificada.
 
@@ -695,12 +695,13 @@ F09 · Onda 1 · Issue a criar
 
 **Onde conferir:**
 
-- `docs/workspace/preflight-2026-10-30.md`
+- `docs/desenvolvimento/origem-e-autoria.md`
+- `docs/desenvolvimento/migracao.md`
 
 <a id="t28"></a>
 ## T28 — Preparar aplicativo mínimo Android
 
-F09 · Onda 1 · Issue a criar
+F09 · Onda 1 · [Issue #54](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/54)
 
 **Problema:** O desenvolvimento precisa de um aplicativo Android que compile, instale e abra.
 
@@ -742,7 +743,7 @@ F09 · Onda 1 · Issue a criar
 <a id="t29"></a>
 ## T29 — Preparar aplicativo mínimo iPhone
 
-F09 · Onda 1 · Issue a criar
+F09 · Onda 1 · [Issue #55](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/55)
 
 **Problema:** O grupo precisa distinguir um arquivo gerado de um aplicativo que realmente abre no iPhone.
 
@@ -785,7 +786,7 @@ F09 · Onda 1 · Issue a criar
 <a id="t30"></a>
 ## T30 — Coletar GPS no Android
 
-F05 · Onda 2 · Issue a criar
+F05 · Onda 2 · [Issue #56](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/56)
 
 **Problema:** A posição não pode depender de manter uma tela do aplicativo aberta.
 
@@ -828,7 +829,7 @@ F05 · Onda 2 · Issue a criar
 <a id="t31"></a>
 ## T31 — Coletar GPS no iPhone
 
-F05 · Onda 2 · Issue a criar
+F05 · Onda 2 · [Issue #57](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/57)
 
 **Problema:** O ciclo da tela não pode ser o responsável pela coleta no iPhone.
 
@@ -871,7 +872,7 @@ F05 · Onda 2 · Issue a criar
 <a id="t32"></a>
 ## T32 — Receber GPS em ambiente de prova
 
-F05 · Onda 2 · Issue a criar
+F05 · Onda 2 · [Issue #58](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/58)
 
 **Problema:** Testar o coletor sem isolamento pode atingir dados ou serviços reais.
 
@@ -914,7 +915,7 @@ F05 · Onda 2 · Issue a criar
 <a id="t33"></a>
 ## T33 — Verificar localização em percurso Android
 
-F05 · Onda 2 · Issue a criar
+F05 · Onda 2 · [Issue #59](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/59)
 
 **Problema:** Um teste parado não mostra se o GPS continua útil durante o trajeto.
 
@@ -957,7 +958,7 @@ F05 · Onda 2 · Issue a criar
 <a id="t34"></a>
 ## T34 — Verificar localização em percurso iPhone
 
-F05 · Onda 2 · Issue a criar
+F05 · Onda 2 · [Issue #60](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/60)
 
 **Problema:** A implementação iOS precisa de prova própria nas condições de uso.
 
@@ -1000,7 +1001,7 @@ F05 · Onda 2 · Issue a criar
 <a id="t35"></a>
 ## T35 — Medir bateria e recuperação
 
-F05 · Onda 2 · Issue a criar
+F05 · Onda 2 · [Issue #61](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/61)
 
 **Problema:** Sem medir os aparelhos fora do USB, não é possível avaliar o custo real da coleta.
 
@@ -1043,7 +1044,7 @@ F05 · Onda 2 · Issue a criar
 <a id="t36"></a>
 ## T36 — Evitar ações duplicadas na entrada
 
-F09 · Onda 1 · Issue a criar
+F09 · Onda 1 · [Issue #62](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/62)
 
 **Problema:** O mesmo evento de WhatsApp pode chegar novamente e repetir um efeito.
 
@@ -1086,7 +1087,7 @@ F09 · Onda 1 · Issue a criar
 <a id="t37"></a>
 ## T37 — Guardar e enviar respostas
 
-F09 · Onda 1 · Issue a criar
+F09 · Onda 1 · [Issue #63](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/63)
 
 **Problema:** Sem uma resposta persistida, uma falha pode perder o que o sistema precisava enviar.
 
@@ -1129,7 +1130,7 @@ F09 · Onda 1 · Issue a criar
 <a id="t38"></a>
 ## T38 — Interpretar mensagens com IA de forma limitada
 
-F09 · Onda 1 · Issue a criar
+F09 · Onda 1 · [Issue #64](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/64)
 
 **Problema:** Uma interpretação ambígua ou falha do modelo não pode executar uma ação incorreta.
 
@@ -1172,7 +1173,7 @@ F09 · Onda 1 · Issue a criar
 <a id="t39"></a>
 ## T39 — Preparar automações importáveis
 
-F09 · Onda 1 · Issue a criar
+F09 · Onda 1 · [Issue #65](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/65)
 
 **Problema:** O grupo precisa transferir as automações sem levar credenciais ou ativá-las por engano.
 
@@ -1215,7 +1216,7 @@ F09 · Onda 1 · Issue a criar
 <a id="t40"></a>
 ## T40 — Configurar rotinas do motorista
 
-F09 · Onda 1 · Issue a criar
+F09 · Onda 1 · [Issue #66](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/66)
 
 **Problema:** Dias, horários e sentidos diferentes não podem ser tratados como uma única rotina implícita.
 
@@ -1258,7 +1259,7 @@ F09 · Onda 1 · Issue a criar
 <a id="t41"></a>
 ## T41 — Mostrar vínculo e recuperação no aplicativo
 
-F09 · Onda 1 · Issue a criar
+F09 · Onda 1 · [Issue #67](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/67)
 
 **Problema:** O motorista precisa entender se o aparelho está vinculado ou se alguma ação é necessária.
 
@@ -1301,7 +1302,7 @@ F09 · Onda 1 · Issue a criar
 <a id="t42"></a>
 ## T42 — Vincular o aparelho correto
 
-F09 · Onda 1 · Issue a criar
+F09 · Onda 1 · [Issue #68](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/68)
 
 **Problema:** Copiar ou antecipar um link não pode vincular outro aparelho ao motorista.
 
@@ -1344,7 +1345,7 @@ F09 · Onda 1 · Issue a criar
 <a id="t43"></a>
 ## T43 — Fixar a lista da partida
 
-F05 · Onda 2 · Issue a criar
+F05 · Onda 2 · [Issue #69](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/69)
 
 **Problema:** Mudanças posteriores de cadastro ou presença não podem reescrever o que foi considerado na partida.
 
@@ -1387,7 +1388,7 @@ F05 · Onda 2 · Issue a criar
 <a id="t44"></a>
 ## T44 — Confirmar início somente com GPS válido
 
-F05 · Onda 2 · Issue a criar
+F05 · Onda 2 · [Issue #70](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/70)
 
 **Problema:** Abrir o link não significa que a posição já esteja sendo coletada e recebida.
 
@@ -1432,7 +1433,7 @@ F05 · Onda 2 · Issue a criar
 <a id="t45"></a>
 ## T45 — Recuperar a parada sem internet
 
-F05 · Onda 2 · Issue a criar
+F05 · Onda 2 · [Issue #71](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/71)
 
 **Problema:** Uma parada feita sem rede não pode se perder nem reiniciar o sensor ao reconectar.
 
@@ -1477,7 +1478,7 @@ F05 · Onda 2 · Issue a criar
 <a id="t46"></a>
 ## T46 — Repetir envios somente com segurança
 
-F11 · Onda 2 · Issue a criar
+F11 · Onda 2 · [Issue #72](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/72)
 
 **Problema:** Uma falha não pode levar vários processos a enviar o mesmo aviso ou repetir um envio incerto.
 
@@ -1521,7 +1522,7 @@ F11 · Onda 2 · Issue a criar
 <a id="t47"></a>
 ## T47 — Distinguir envio de entrega
 
-F11 · Onda 2 · Issue a criar
+F11 · Onda 2 · [Issue #73](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/73)
 
 **Problema:** Sem retorno confiável, o sistema pode informar que alguém recebeu uma mensagem que nunca foi confirmada.
 
@@ -1564,7 +1565,7 @@ F11 · Onda 2 · Issue a criar
 <a id="t48"></a>
 ## T48 — Encerrar avisos sem utilidade
 
-F11 · Onda 2 · Issue a criar
+F11 · Onda 2 · [Issue #74](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/74)
 
 **Problema:** Um aviso atrasado ou recusado pelo passageiro não deve ser enviado como se ainda fosse útil.
 
@@ -1609,7 +1610,7 @@ F11 · Onda 2 · Issue a criar
 <a id="t49"></a>
 ## T49 — Avaliar aproximação por ponto e sentido
 
-F11 · Onda 2 · Issue a criar
+F11 · Onda 2 · [Issue #75](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/75)
 
 **Problema:** Distância isolada pode gerar aviso para o ponto ou sentido errado.
 
@@ -1647,7 +1648,7 @@ F11 · Onda 2 · Issue a criar
 <a id="t50"></a>
 ## T50 — Respeitar progressão e cancelamento
 
-F11 · Onda 2 · Issue a criar
+F11 · Onda 2 · [Issue #76](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/76)
 
 **Problema:** O aviso precisa acompanhar a sequência dos pontos sem incluir quem cancelou.
 
@@ -1692,7 +1693,7 @@ F11 · Onda 2 · Issue a criar
 <a id="t51"></a>
 ## T51 — Testar destinatário e repetição do aviso
 
-F11 · Onda 2 · Issue a criar
+F11 · Onda 2 · [Issue #77](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/77)
 
 **Problema:** Uma regra sem cenários de erro pode avisar a pessoa errada ou repetir mensagens em pontos comuns.
 
@@ -1730,7 +1731,7 @@ F11 · Onda 2 · Issue a criar
 <a id="t52"></a>
 ## T52 — Encerrar a viagem automaticamente
 
-F05 · Onda 2 · Issue a criar
+F05 · Onda 2 · [Issue #78](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/78)
 
 **Problema:** A coleta não deve continuar sem necessidade, mas também não pode terminar antes da viagem.
 
@@ -1774,7 +1775,7 @@ F05 · Onda 2 · Issue a criar
 <a id="t53"></a>
 ## T53 — Confirmar que a coleta parou
 
-F05 · Onda 2 · Issue a criar
+F05 · Onda 2 · [Issue #79](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/79)
 
 **Problema:** Encerrar uma viagem no servidor não comprova que o aparelho deixou de coletar.
 
@@ -1819,7 +1820,7 @@ F05 · Onda 2 · Issue a criar
 <a id="t54"></a>
 ## T54 — Oferecer ajuda e recuperação
 
-F05 · Onda 2 · Issue a criar
+F05 · Onda 2 · [Issue #80](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/80)
 
 **Problema:** Uma falha ou retirada de acesso não pode deixar a pessoa presa em respostas automáticas.
 
@@ -1864,7 +1865,7 @@ F05 · Onda 2 · Issue a criar
 <a id="t55"></a>
 ## T55 — Autorizar as automações de presença
 
-F02 · Onda 1 · Issue a criar
+F02 · Onda 1 · [Issue #81](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/81)
 
 **Problema:** Rotinas automáticas não devem fingir ser uma pessoa para alterar o calendário ou enviar lembretes.
 
@@ -1907,7 +1908,7 @@ F02 · Onda 1 · Issue a criar
 <a id="t56"></a>
 ## T56 — Preservar automações ao reiniciar n8n
 
-F09 · Onda 1 · Issue a criar
+F09 · Onda 1 · [Issue #82](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/82)
 
 **Problema:** Uma reinicialização não pode perder as automações ou mensagens ainda pendentes.
 
@@ -1950,7 +1951,7 @@ F09 · Onda 1 · Issue a criar
 <a id="t57"></a>
 ## T57 — Limitar dados e aplicar exclusão
 
-F10 · Onda 1 · Issue a criar
+F10 · Onda 1 · [Issue #83](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/83)
 
 **Problema:** Cadastros e credenciais não devem ser guardados além do necessário ou sem aviso coerente.
 
@@ -1993,7 +1994,7 @@ F10 · Onda 1 · Issue a criar
 <a id="t58"></a>
 ## T58 — Provar cópia, restauração e exclusão
 
-F09 · Onda 1 · Issue a criar
+F09 · Onda 1 · [Issue #84](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/84)
 
 **Problema:** Ter um arquivo de cópia não demonstra que o serviço pode ser recuperado sem reintroduzir dados excluídos.
 
@@ -2035,7 +2036,7 @@ F09 · Onda 1 · Issue a criar
 <a id="t59"></a>
 ## T59 — Orientar operação e parada segura
 
-F09 · Onda 1 · Issue a criar
+F09 · Onda 1 · [Issue #85](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/85)
 
 **Problema:** Sem alertas e procedimento claro, uma falha pode continuar produzindo envios incorretos.
 
@@ -2078,7 +2079,7 @@ F09 · Onda 1 · Issue a criar
 <a id="t60"></a>
 ## T60 — Identificar os arquivos da versão de teste
 
-F05 · Onda 2 · Issue a criar
+F05 · Onda 2 · [Issue #86](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/86)
 
 **Problema:** Sem uma lista única, o aplicativo e o servidor podem pertencer a versões incompatíveis.
 
@@ -2121,7 +2122,7 @@ F05 · Onda 2 · Issue a criar
 <a id="t61"></a>
 ## T61 — Preparar instalação de teste Android
 
-F05 · Onda 2 · Issue a criar
+F05 · Onda 2 · [Issue #87](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/87)
 
 **Problema:** O grupo precisa instalar uma versão identificável sem depender de um arquivo de origem desconhecida.
 
@@ -2164,7 +2165,7 @@ F05 · Onda 2 · Issue a criar
 <a id="t62"></a>
 ## T62 — Preparar instalação e renovação no iPhone
 
-F05 · Onda 2 · Issue a criar
+F05 · Onda 2 · [Issue #88](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/88)
 
 **Problema:** Uma assinatura temporária pode vencer e impedir que a equipe repita o teste.
 
@@ -2207,7 +2208,7 @@ F05 · Onda 2 · Issue a criar
 <a id="t63"></a>
 ## T63 — Planejar instalação e retorno no servidor
 
-F05 · Onda 2 · Issue a criar
+F05 · Onda 2 · [Issue #89](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/89)
 
 **Problema:** Uma atualização sem sequência e reversão pode atingir serviços ou dados indevidos.
 
@@ -2249,7 +2250,7 @@ F05 · Onda 2 · Issue a criar
 <a id="t64"></a>
 ## T64 — Instalar no ambiente autorizado de teste
 
-F05 · Onda 2 · Issue a criar
+F05 · Onda 2 · [Issue #90](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/90)
 
 **Problema:** A equipe precisa testar a versão integrada em um endereço e conjunto de serviços identificados.
 
@@ -2293,7 +2294,7 @@ F05 · Onda 2 · Issue a criar
 <a id="t65"></a>
 ## T65 — Conferir o número dedicado
 
-F11 · Onda 2 · Issue a criar
+F11 · Onda 2 · [Issue #91](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/91)
 
 **Problema:** Simular o serviço de mensagens não demonstra que o bot conversa com os participantes reais autorizados.
 
@@ -2336,7 +2337,7 @@ F11 · Onda 2 · Issue a criar
 <a id="t66"></a>
 ## T66 — Testar agendas no ambiente escolhido
 
-F02 · Onda 1 · Issue a criar
+F02 · Onda 1 · [Issue #92](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/92)
 
 **Problema:** Uma chamada manual isolada não prova que os lembretes serão executados e recuperados continuamente.
 
@@ -2381,7 +2382,7 @@ F02 · Onda 1 · Issue a criar
 <a id="t67"></a>
 ## T67 — Testar a jornada completa no Android
 
-F05 · Onda 2 · Issue a criar
+F05 · Onda 2 · [Issue #93](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/93)
 
 **Problema:** Cenários parciais não demonstram que o motorista consegue usar o conjunto durante uma viagem.
 
@@ -2425,7 +2426,7 @@ F05 · Onda 2 · Issue a criar
 <a id="t68"></a>
 ## T68 — Testar a jornada completa no iPhone
 
-F05 · Onda 2 · Issue a criar
+F05 · Onda 2 · [Issue #94](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/94)
 
 **Problema:** O funcionamento Android não comprova os limites próprios do iPhone.
 
@@ -2468,7 +2469,7 @@ F05 · Onda 2 · Issue a criar
 <a id="t69"></a>
 ## T69 — Medir se o aviso ajuda no embarque
 
-F11 · Onda 2 · Issue a criar
+F11 · Onda 2 · [Issue #95](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/95)
 
 **Problema:** Um aviso tecnicamente enviado pode chegar tarde ou para a pessoa errada.
 
@@ -2506,7 +2507,7 @@ F11 · Onda 2 · Issue a criar
 <a id="t70"></a>
 ## T70 — Consolidar guia e resultados
 
-F05 · Onda 2 · Issue a criar
+F05 · Onda 2 · [Issue #96](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/96)
 
 **Problema:** Sem um guia e relatório único, a equipe depende de explicações informais para repetir o uso.
 
@@ -2550,7 +2551,7 @@ F05 · Onda 2 · Issue a criar
 <a id="t71"></a>
 ## T71 — Reproduzir a instalação final
 
-F05 · Onda 2 · Issue a criar
+F05 · Onda 2 · [Issue #97](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/97)
 
 **Problema:** Arquivos soltos ou passos ocultos podem impedir que outra pessoa instale o que foi entregue.
 
@@ -2592,7 +2593,7 @@ F05 · Onda 2 · Issue a criar
 <a id="t72"></a>
 ## T72 — Proposta: cancelar ou corrigir presença
 
-F06 · Onda 2 · Issue a criar
+F06 · Onda 2 · [Issue #98](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/98)
 
 **Problema:** O passageiro pode mudar sua participação e precisa saber qual viagem será afetada.
 
@@ -2637,7 +2638,7 @@ F06 · Onda 2 · Issue a criar
 <a id="t73"></a>
 ## T73 — Proposta: definir limite da alteração
 
-F06 · Onda 2 · Issue a criar
+F06 · Onda 2 · [Issue #99](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/99)
 
 **Problema:** O texto de horário limite pode ser entendido como bloqueio total, mas a regra atual permite informar ausência depois da partida.
 
@@ -2682,7 +2683,7 @@ F06 · Onda 2 · Issue a criar
 <a id="t74"></a>
 ## T74 — Proposta: avisar cancelamento ao motorista
 
-F12 · Onda 2 · Issue a criar
+F12 · Onda 2 · [Issue #100](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/100)
 
 **Problema:** Alterar a presença sem informar o motorista pode manter a expectativa de um embarque que foi cancelado.
 
@@ -2725,7 +2726,7 @@ F12 · Onda 2 · Issue a criar
 <a id="t75"></a>
 ## T75 — Mostrar lista de presença ao motorista
 
-F02 · Onda 1 · Issue a criar
+F02 · Onda 1 · [Issue #101](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/101)
 
 **Problema:** O motorista precisa distinguir confirmação, ausência e falta de resposta para organizar a viagem.
 
@@ -2767,7 +2768,7 @@ F02 · Onda 1 · Issue a criar
 <a id="t78"></a>
 ## T78 — Conferir contrato, permissões e banco
 
-F09 · Onda 1 · Issue a criar
+F09 · Onda 1 · [Issue #102](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/102)
 
 **Problema:** Mudanças nas operações ou estrutura dos dados podem quebrar cadastros e consumidores sem ficar visíveis.
 

@@ -6,7 +6,7 @@ O grupo encontra código, documentação, backlog com critérios e comandos de t
 
 ## Estado
 
-`in_progress`. Autorizado pelo proprietário em 02/11/2026: organizar e subir tudo no repositório acadêmico, atualizar issues e preparar contribuição. Há uma única frente vertical; frentes delegadas são partes desta migração.
+`done`. Autorizado pelo proprietário em 02/11/2026: organizar e subir tudo no repositório acadêmico, atualizar issues e preparar contribuição. Há uma única frente vertical; frentes delegadas são partes desta migração.
 
 ## Impact Analysis
 
@@ -61,11 +61,11 @@ Nenhuma dependência de produto impede esta migração. Acesso pessoal de escrit
 
 ## Critérios de aceite
 
-- [ ] Fontes necessárias presentes e manifest identifica origem e adaptações, sem segredos ou submódulos privados.
-- [ ] CI do mesmo SHA aprovada para backend/PostgreSQL, bot/contratos, app e builds de preparação.
-- [ ] Guia permite começar sem chave privada, com limites Windows/macOS e físicos explícitos.
-- [ ] Issues atualizadas com escopo, critérios e prova; histórico, responsáveis e labels preservados.
-- [ ] Docs/backlog coerentes, um destino de desenvolvimento explícito e publicação conferida.
+- [x] Fontes necessárias presentes e manifest identifica origem e adaptações, sem segredos ou submódulos privados.
+- [x] CI do mesmo SHA aprovada para backend/PostgreSQL, bot/contratos, app e builds de preparação.
+- [x] Guia permite começar sem chave privada, com limites Windows/macOS e físicos explícitos.
+- [x] Issues atualizadas com escopo, critérios e prova; histórico, responsáveis e labels preservados.
+- [x] Docs/backlog coerentes, um destino de desenvolvimento explícito e publicação conferida.
 
 ## Validação
 
@@ -77,4 +77,4 @@ Antes de publicar, abandonar branch e manter origens. Após publicação, revert
 
 ## Encerramento
 
-Somente após resultados e URLs reais. Limitações de acesso ou máquinas dos colegas serão explícitas e não convertidas em aprovação humana.
+Concluído após publicação, CI e conferência das issues. Recibo: program/evidence/VR-PGM-002-ACADEMIC-MIGRATION-001.md. Preparação das máquinas e revisão humana do grupo permanecem pendentes.

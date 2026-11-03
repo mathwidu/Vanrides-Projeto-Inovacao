@@ -16,7 +16,10 @@ preparação Windows/macOS, escolha da tarefa, testes, PR e revisão.
 
 Cada tarefa atual recebe uma issue com problema, resultado, limites, critérios,
 forma de teste, dependências e próxima ação. O mesmo ID Txx aparece no documento
-e na planilha. As tarefas da segunda onda ficam no backlog até sua ativação.
+e na planilha. A Onda 1 já tem cadastro/presença e a Onda 2 já tem coleta de
+localização implementados. Por isso, ambas têm issues vinculadas, conforme o
+andamento real. Os itens planejados continuam aguardando seleção e execução;
+publicar a issue não os torna ativos nem concluídos.
 
 Filtros no GitHub:
 
