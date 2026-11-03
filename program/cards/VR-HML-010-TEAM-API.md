@@ -2,11 +2,15 @@
 
 ## Resultado esperado
 
-Um integrante executa um cadastro sintético na API publicada, repete o comando sem duplicar dados e confere a versão aprovada. Issues existentes: [#89](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/89) e [#90](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/90).
+Todos os integrantes podem usar a API implementada do MVP no mesmo endereço HTTPS, inclusive rotas de atendimento e do app do motorista. Issues existentes: [#89](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/89) e [#90](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/90).
 
 ## Estado
 
 `in_progress`. O controlador mantém um único card ativo. A decisão RD47 registra a finalidade desse ambiente.
+
+## Ajuste de prioridade (RD48)
+
+Publicar a API completa do MVP primeiro. O cenário de cadastro restrito abaixo é uma prova opcional da etapa anterior. A publicação usará o modo online da API com autenticação normal dos atores e acesso para toda a equipe. Worker, n8n/Evolution e APK do domínio entram após a API. A pedido do proprietário, limitar as verificações operacionais a artefato, destino, startup/HTTPS e fronteira de acesso.
 
 ## Impact Analysis
 
@@ -26,7 +30,7 @@ Dados de passageiros reais, disparos de WhatsApp, GPS de aparelhos, serviços pa
 
 ## Contratos
 
-Usar o perfil Spring homolog e um modo explícito da API para o time. Preservar os controles públicos e negar configuração ambígua, e-mail, cadastros legados e rotas fora da lista. Permitir saúde e quatro operações existentes de CONVERSATION_WORKER: claim, contexto, comando e confirmação. Credencial nominal por integrante e instância sintética distinta. Restringir os comandos a operações sintéticas do cenário, tanto no contexto quanto na execução. Não persistir conteúdo de conversas ou tokens em evidência.
+Usar o perfil Spring homolog e um modo explícito da API para o time. Preservar os controles públicos e negar configuração ambígua, e-mail, cadastros legados e rotas fora da lista. No perfil restrito, permitir saúde e quatro operações de conversa. No perfil online, permitir as rotas disponíveis de WaRoutes com a autenticação original e bloquear administração/legado. Credencial nominal por integrante e instância sintética distinta. Restringir os comandos a operações sintéticas do cenário, tanto no contexto quanto na execução. Não persistir conteúdo de conversas ou tokens em evidência.
 
 ## Riscos
 

@@ -1417,3 +1417,11 @@ As APIs anteriores de desenvolvimento e produção já estão ativas com versõe
 A primeira comprovação de transporte com o número do Redmi segue RD41. Contatos e etiquetas continuam habilitados na persistência da Evolution compartilhada. O ensaio usa Evolution própria e não altera as configurações globais de outros projetos. A janela de transporte tem até 30 minutos e dois contatos. Uma homologação permanente para toda a equipe requer seu próprio controle de participantes, validade e recuperação.
 
 As issues #89, #90 e #91 distinguem preparação e retorno, publicação HTTPS e prova de entrega real. Os critérios de percurso, utilidade, iPhone e aceite do piloto continuam vinculados às etapas próprias. Esta decisão registra o destino e o caminho técnico. A implantação precisa de manifest, versão, revisão e ensaio dos procedimentos. Leia o [guia de homologação da equipe](../../desenvolvimento/homologacao-da-equipe.md).
+
+## RD48 — Publicar primeiro a API do MVP para todo o grupo
+
+O proprietário priorizou o uso online das funcionalidades já implementadas e a demonstração do motorista enviando informações. O destino passa a ser a API do produto, com suas rotas de aplicativo e de atendimento. O perfil de quatro rotas de cadastro continua como exercício técnico separado. O novo modo online conserva as credenciais e o vínculo exigidos em cada rota. A liberação é para o grupo inteiro; uma primeira chamada é apenas a conferência da instalação.
+
+Sequência: API e PostgreSQL exclusivos, depois worker, fluxos n8n, instância Evolution e número do bot, e APK integrado com origem/links do ambiente. O coletor GPS 0.1.0+8 possui um receptor já publicado e pode demonstrar GPS de forma independente; o APK integrado do ensaio anterior aponta a localhost e não passa automaticamente a usar o novo domínio.
+
+A publicação de homologação pode transferir uma imagem imutável diretamente à VPS de nó único, com arquivo e digest conferidos, a partir da revisão empacotada. Essa entrega rápida é identificada como compilação local. O operador registra o que efetivamente foi publicado, a saúde HTTPS e o retorno, sem atribuir ao pacote comprovação de CI da mesma revisão que não tenha sido obtida. O PR #104 permanece uma entrega separada.

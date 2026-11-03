@@ -5891,7 +5891,7 @@
     {
       "id": "VR-HML-010-TEAM-API",
       "epic": "VR-WA-MVP",
-      "title": "Publicar API de homologação para o grupo",
+      "title": "Publicar a API do MVP para todo o grupo",
       "status": "in_progress",
       "priority": 15,
       "repositories": [
@@ -5915,7 +5915,8 @@
           "docs/08-especificacoes-mvp.md",
           "deploy/homologacao/",
           "scripts/homologacao/",
-          ".github/workflows/homologacao-api.yml"
+          ".github/workflows/homologacao-api.yml",
+          "docs/plans/2026-10-28-whatsapp-mvp/10-registro-de-decisoes.md"
         ],
         "backend": [
           "src/main/",
