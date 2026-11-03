@@ -44,3 +44,14 @@ flowchart LR
 O pacote de publicação precisa fixar revisão/imagens, serviços e redes afetados, migração, verificação após o deploy, responsáveis e retorno testado. Uma versão compartilhada para desenvolvimento e a liberação do piloto para passageiros têm critérios próprios.
 
 Os critérios da primeira publicação e do teste com um colega estão no [roteiro de implantação](../runbooks/whatsapp-mvp/homologacao-api.md).
+
+## Exercício do colega
+
+O roteiro abaixo usa uma fixture individual e o perfil restrito da API. Execute depois da confirmação de implantação pelo operador.
+
+1. Combine uma rodada e receba em privado a credencial e o identificador da sua fixture. Cada integrante tem um evento e uma instância de teste próprios.
+2. Abra um terminal na raiz do repositório. No macOS/Linux, execute `python3 scripts/homologacao/testar_api.py --evento UUID_DA_FIXTURE`. No Windows, use `py -3 scripts/homologacao/testar_api.py --evento UUID_DA_FIXTURE`. Substitua o identificador pelo recebido do operador.
+3. O programa confere HTTPS, saúde, identificação do ambiente e recusa de uma chamada anônima antes de pedir a credencial. Cole-a na entrada oculta. Ele executa o cadastro sintético, repete o comando e confere o recibo.
+4. Registre a revisão testada, o horário e o resultado na issue. Se a reserva expirar ou a conexão cair após uma operação, peça ao operador para conferir o estado e preparar outra rodada.
+
+Para conferir o runner sem acessar o servidor, execute `python3 -B -m unittest discover -s scripts/homologacao -p '*_test.py'`. A prova local com Spring e PostgreSQL usa o mesmo runner em `scripts/homologacao/ensaio_local.py`. A prova no domínio público será registrada separadamente.

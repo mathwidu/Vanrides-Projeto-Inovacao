@@ -1,0 +1,56 @@
+name: Homologação técnica da API
+'on':
+  pull_request:
+    paths: ['src/backend/**', 'scripts/homologacao/**', 'deploy/homologacao/**', '.github/workflows/homologacao-api.yml']
+  push:
+    branches: [main]
+    paths: ['src/backend/**', 'scripts/homologacao/**', 'deploy/homologacao/**', '.github/workflows/homologacao-api.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: hml-api-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  colega:
+    name: Runner do colega (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: '3.12'
+      - name: Conferir limites e replay do cenário
+        run: python -B -m unittest discover -s scripts/homologacao -p '*_test.py'
+  api:
+    name: Cadastro e isolamento no perfil homolog
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Testar receitas da stack e da restauração
+        run: python3 -B -m unittest discover -s deploy/homologacao -p '*_test.py'
+      - name: Empacotar o checkout da CI
+        working-directory: src/backend
+        run: ./mvnw -B -DskipTests package
+      - name: Exercitar o JAR com duas credenciais sintéticas em loopback
+        run: |
+          shopt -s nullglob
+          jars=(src/backend/target/*.jar)
+          [[ "${#jars[@]}" -eq 1 ]]
+          read -r digest _ < <(sha256sum "${jars[0]}")
+          python3 -B scripts/homologacao/ensaio_local.py --jar "${jars[0]}" --sha-fonte "$GITHUB_SHA" --sha256-jar "$digest"
