@@ -7,6 +7,8 @@ import inspect
 import json
 import os
 from pathlib import Path
+import subprocess
+import sys
 import tarfile
 import tempfile
 import unittest
@@ -165,6 +167,57 @@ class PackagingTests(unittest.TestCase):
             self.assertFalse((destination / 'offline-a1').exists())
             self.assertIn('wa120-live', stage.receiver_program(files, captured))
 
+    def test_extracted_package_imports_and_mounts_its_own_sources_without_checkout(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            output, report = self.make_package(root)
+            archive = output.with_suffix('.tar')
+            files, captured = stage.inspect_archive(archive, report['archiveSha256'])
+            receiver = stage.configured_receiver(files, captured['contract.json'], captured['source-manifest.json'])
+            destination = root / 'remote'; destination.mkdir(mode=0o700)
+            with archive.open('rb') as source:
+                receiver.stage(destination, 'offline-import', report['archiveSha256'], report['sourceManifestSha256'],
+                               archive.stat().st_size, files, source)
+            extracted = destination / 'offline-import'
+            # A fresh isolated interpreter cannot satisfy imports from this checkout
+            # or cached modules. Import/inspection must not start any live operation.
+            script = '''import json,sys
+from pathlib import Path
+sys.path.insert(0,str(Path.cwd()))
+import control,plan,stage
+base=Path.cwd()
+assert plan.ROOT == base/'inputs/source'
+contract,files=control.verify_package(base)
+captured={name:(base/name).read_bytes() for name in ('contract.json','source-manifest.json','SHA256SUMS.json')}
+assert 'wa120-live' in stage.receiver_program(files,captured)
+value=plan.build_plan('offline-import','cc33af32-89c7-45bd-bab8-8d7fb42f94d7',1000,1000)
+for service,entry in (('worker','worker/main.mjs'),('ingress','lab/live-ingress/main.mjs')):
+    mount=next(item for item in value['containers'][service]['mounts'] if item['target']=='/opt/whatsapp')
+    source=base/Path(mount['source']).relative_to(value['root'])
+    assert source.is_dir() and (source/entry).is_file()
+print(json.dumps({'status':'EXTRACTED_IMPORT_AND_MOUNTS_PASS','runtimeStarted':False}))
+'''
+            result = subprocess.run([sys.executable, '-I', '-B', '-c', script], cwd=extracted,
+                                    env={'PATH': os.defpath, 'HOME': str(root / 'unused-home')},
+                                    capture_output=True, text=True, timeout=10)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(json.loads(result.stdout),
+                             {'status': 'EXTRACTED_IMPORT_AND_MOUNTS_PASS', 'runtimeStarted': False})
+            self.assertFalse((extracted / 'private').exists())
+            self.assertFalse(list(extracted.rglob('__pycache__')))
+
+    def test_archive_sha_mismatch_is_rejected_before_reading_members(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            output, report = self.make_package(root)
+            archive = output.with_suffix('.tar')
+            self.assertNotEqual(report['archiveSha256'], '0' * 64)
+            with self.assertRaisesRegex(plan.Blocked, '^ARCHIVE_DIGEST_CHANGED$'):
+                stage.inspect_archive(archive, '0' * 64)
+            link = root / 'linked.tar'; link.symlink_to(archive)
+            with self.assertRaisesRegex(plan.Blocked, '^ARCHIVE_DIGEST_CHANGED$'):
+                stage.inspect_archive(link, report['archiveSha256'])
+
     def test_corrupted_transfer_rolls_back_owned_files_only(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory).resolve()
@@ -181,7 +234,8 @@ class PackagingTests(unittest.TestCase):
             self.assertEqual((remote / 'foreign').read_text(), 'preserve')
 
     def test_links_traversal_and_duplicate_tar_members_fail_before_staging(self):
-        for name, kind in (('../escape', 'file'), ('same', 'link'), ('duplicate', 'duplicate')):
+        for name, kind in (('../escape', 'file'), ('inside/../escape', 'file'), ('/absolute', 'file'),
+                           ('./noncanonical', 'file'), ('same', 'link'), ('duplicate', 'duplicate')):
             with tempfile.TemporaryDirectory() as directory:
                 archive = Path(directory) / 'bad.tar'
                 with tarfile.open(archive, 'w') as target:

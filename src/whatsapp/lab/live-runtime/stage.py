@@ -81,7 +81,7 @@ def receiver_program(files, captured):
     """Single self-contained public program, pinned before principal transports it."""
     verify_bindings(files, captured, files.get('source-manifest.json'))
     relative = 'src/whatsapp/scripts/vps110/physical/stage_physical_remote.py'
-    source = (plan.ROOT / relative).read_bytes()
+    source = plan.resolve_source(relative).read_bytes()
     canonical110.stage_receiver()  # Enforce the canonical source digest first.
     # Reuse original stage/unstage, inode, limits and rollback functions unchanged.
     # The generated bootstrap imports no workspace code and executes no archive.
