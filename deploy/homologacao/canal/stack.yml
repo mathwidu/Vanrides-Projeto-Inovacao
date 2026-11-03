@@ -5,6 +5,8 @@ x-service: &isolado
     placement:
       constraints: ["node.hostname == srv1397065"]
     labels: { traefik.enable: 'false' }
+    resources:
+      limits: { memory: 768M, cpus: '1.0' }
   logging: { driver: json-file, options: { max-size: 1m, max-file: '2' } }
 services:
   db:
