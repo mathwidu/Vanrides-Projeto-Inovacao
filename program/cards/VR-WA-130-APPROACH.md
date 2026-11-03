@@ -6,7 +6,7 @@ API avisa corretamente cada passageiro elegível usando posição atual e progre
 
 ## Estado
 
-`validating`. Pacote P10, épico `VR-WA-MVP`. Responsável de integração: executor principal; módulos mantêm commits e gates separados. Estado canônico em [program.json](../program.json).
+`waiting_human`. Pacote P10, épico `VR-WA-MVP`. Responsável de integração: executor principal; módulos mantêm commits e gates separados. Estado canônico em [program.json](../program.json).
 
 ## Impact Analysis
 

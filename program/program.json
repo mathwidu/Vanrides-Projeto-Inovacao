@@ -1370,7 +1370,7 @@
       "id": "VR-WA-130-APPROACH",
       "epic": "VR-WA-MVP",
       "title": "Entregar aproximação útil por passageiro",
-      "status": "validating",
+      "status": "waiting_human",
       "priority": 14,
       "repositories": [
         "coordination",
@@ -1418,7 +1418,9 @@
           "scripts/"
         ]
       },
-      "blockers": [],
+      "blockers": [
+        "Validar antecedência, cobertura e destinatário em percurso com rotina revisada e participantes consentidos. A prova física do iPhone está pausada."
+      ],
       "commits": [
         "backend:dd12cf0b233e2c16fba334d84fc2ec50f1e7458d",
         "coordination:cd45d7404d22c426b202584b20e5e80d1e8f2f93"
@@ -5887,8 +5889,8 @@
       ]
     }
   ],
-  "activeCardId": "VR-WA-130-APPROACH",
-  "nextCardId": "VR-WA-130-APPROACH",
+  "activeCardId": null,
+  "nextCardId": null,
   "migration": {
     "card": "VR-PGM-002-ACADEMIC-MIGRATION-001",
     "status": "done",
