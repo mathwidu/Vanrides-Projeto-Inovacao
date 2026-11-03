@@ -112,7 +112,7 @@ services:
       - {source: conversation, uid: '1000', gid: '1000', mode: 0600}
       - {source: delivery, uid: '1000', gid: '1000', mode: 0600}
       - {source: control, uid: '1000', gid: '1000', mode: 0600}
-      - {source: evo_key, uid: '1000', gid: '1000', mode: 0600}
+      - {source: evo_instance, target: evo_key, uid: '1000', gid: '1000', mode: 0600}
       - {source: job, uid: '1000', gid: '1000', mode: 0600}
 networks:
   canal: {driver: overlay, driver_opts: {encrypted: ''}}
@@ -134,3 +134,4 @@ secrets:
   delivery: {external: true, name: vanrides-hml-canal-delivery-v1}
   control: {external: true, name: vanrides-hml-canal-control-v1}
   job: {external: true, name: vanrides-hml-canal-job-v1}
+  evo_instance: {external: true, name: vanrides-hml-canal-evo_instance-v1}
