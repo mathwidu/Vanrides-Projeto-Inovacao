@@ -126,4 +126,4 @@ Isso confirma acesso e revisão. A escolha da área depende do grupo, não do
 sistema operacional de cada pessoa.
 
 Deploy e testes com usuários são etapas separadas. Testes físicos do iPhone
-continuam pausados e a linha dedicada do bot ainda depende de ativação.
+continuam pausados e a conta dedicada já está ativa no WhatsApp Business; conexão com a Evolution e entrega real permanecem pendentes.

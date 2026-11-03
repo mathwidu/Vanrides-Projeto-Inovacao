@@ -115,6 +115,11 @@ def validate_private(value, issued=True):
 
 def load_contract(file=HERE / 'contract.json'):
     value = json.loads(Path(file).read_bytes(), object_pairs_hook=strict_object)
+    if value.get('schemaVersion') == 2:
+        import monorepo_receipt
+        monorepo_receipt.ready_pins(value)
+        return value, value['images']
+    require('evidenceProfile' not in value, 'EVIDENCE_PROFILE_INVALID')
     require(value['schemaVersion'] == 1 and value['cardId'] == CARD
             and value['policy'] == {'maximumWindowSeconds': 1800, 'minimumHostAvailableMiB': 2048,
                                    'publicPorts': [], 'testCohortOnly': False, 'modelMode': 'disabled',

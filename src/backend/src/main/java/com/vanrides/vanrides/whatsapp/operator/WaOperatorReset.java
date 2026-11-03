@@ -86,6 +86,8 @@ public final class WaOperatorReset {
         String sessions = "(SELECT id FROM wa.tracking_session WHERE driver_id IN " + people + ")";
         String devices = "(SELECT id FROM wa.driver_device WHERE driver_id IN " + people + ")";
         String outbox = "(SELECT id FROM wa.message_outbox WHERE recipient_identity_id IN " + people + ")";
+        jdbc.update("DELETE FROM wa.approach_delivery_route WHERE session_id IN " + sessions, batch);
+        jdbc.update("DELETE FROM wa.approach_progress WHERE run_id IN " + runs, batch);
         jdbc.update("DELETE FROM wa.tracking_sample_receipt WHERE session_id IN " + sessions, batch);
         jdbc.update("DELETE FROM wa.tracking_batch_receipt WHERE session_id IN " + sessions, batch);
         jdbc.update("DELETE FROM wa.tracking_session WHERE driver_id IN " + people, batch);

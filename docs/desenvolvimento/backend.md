@@ -34,7 +34,7 @@ obrigatórios, Ubuntu padrão e permissão `contents: read`:
 - **Suíte canônica PostgreSQL**: executa o gate completo, toda a matriz e os
   contratos, sem reduzir testes nem aceitar skips.
 - **Integração HTTP e imagem**: empacota o mesmo checkout com testes pulados
-  somente nesse empacotamento, executa as quatro jornadas reais sintéticas e
+  somente nesse empacotamento, executa as seis jornadas reais sintéticas e
   constrói a imagem local. A aprovação da suíte canônica continua obrigatória.
 
 Os dois checkouts usam explicitamente o mesmo `github.sha` (merge de teste em

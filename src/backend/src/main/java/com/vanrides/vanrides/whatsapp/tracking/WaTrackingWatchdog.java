@@ -19,6 +19,7 @@ public class WaTrackingWatchdog {
     }
     @Scheduled(fixedDelay=5000,initialDelay=5000) @Transactional public int tick() {
         if(!settings.configured()) return 0;
+        jdbc.update("DELETE FROM wa.approach_fix fix USING wa.tracking_session s,wa.driver_device d WHERE s.id=fix.session_id AND d.id=s.device_id AND d.environment=? AND (fix.expires_at<=? OR s.state<>'ACTIVE' OR ?=false)",settings.environment(),ts(clock.now()),settings.approachEnabled());
         int processed=0;
         for(int batch=0;batch<10;batch++) {
             var drivers=jdbc.query("""

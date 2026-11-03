@@ -1373,3 +1373,37 @@ registra o alcance e a revisão futura. Não houve mudança de código ou servi�
 nem redução dos critérios de GPS, segundo plano, bateria, retomada ou percurso.
 A apresentação acadêmica também passa a tons neutros e títulos centralizados,
 preservando as seções e colunas do professor.
+
+## RD46 — Retomada pelas issues e aproximação condicionada ao percurso (2026-11-03)
+
+O proprietário confirmou o número dedicado ativo no WhatsApp Business do Redmi
+e autorizou continuar a implementação pelas issues existentes do repositório
+centralizado. A aquisição da linha deixou de ser impedimento; pareamento e
+entrega correlacionada continuam pendentes na issue #91 e no card 120.
+O card 130 reúne #33–36 e #75–77. As atribuições anteriores das issues foram
+preservadas. Código implementado, revisão e validação em percurso têm registros
+separados; os testes físicos do aplicativo iPhone permanecem pausados.
+
+A consulta inclui o motorista dono e passageiros elegíveis. As coordenadas
+saem apenas na autorização final do pin estático; fila atrasada exige nova
+aquisição válida ou texto de indisponibilidade. O prazo de fila é de cinco
+minutos para a resposta e 60 segundos para aproximação. A submissão de posição
+continua limitada ao frescor de 20 segundos, sem confundir esses dois prazos.
+
+Avisos ficam desligados por padrão e exigem uma lista explícita de rotinas com
+percurso revisado para o ensaio. Essa lista não detecta pisos de viaduto nem
+substitui validação geográfica. Sem contexto suficiente, o sistema suprime o
+aviso e registra a razão. Os parâmetros permanecem hipóteses de calibração;
+nenhuma integração paga de rotas foi introduzida.
+
+A evidência de chegada a um ponto é progresso da operação, não uma posição
+atual: uma parada normal não pode apagá-la apenas por durar mais de 20 segundos.
+Continuidade, lacuna de GPS e troca de sessão são tratadas separadamente.
+Pessoas no mesmo ponto físico compartilham a progressão, mesmo quando aparecem
+separadas na lista; cada destinatário mantém autorização e aviso próprios.
+
+O preparo de ensaio do monorepo recebe um perfil de evidência próprio. Recibos
+históricos não são convertidos para parecer atuais. A execução manual preparada
+confere a suíte completa, seis jornadas e o mesmo JAR, preservando somente o
+binário e recibos permitidos. Ela não conecta WhatsApp, publica imagens ou faz
+deploy. A aprovação do ensaio externo exige versão concreta e sua prova real.

@@ -1,5 +1,11 @@
 # Contrato WhatsApp MVP v1
 
+Card130: `GET_DRIVER_LOCATION` está materializado com payload vazio, seleção
+pela API e `STATIC_PIN` somente no `authorize-submit`. Claim não fornece GPS;
+payload da outbox e recibos também não o retêm. Veja
+[política e limites de ensaio](../../docs/whatsapp-approach.md). Os parâmetros
+de aproximação são hipóteses versionadas, flag off e allowlist de rotinas revisadas.
+
 `openapi.yaml` usa OpenAPI 3.0.3 e serialização JSON, que também é YAML válido.
 A fonte funcional são os documentos 02/08 do coordenador. `fixtures/catalog.json`
 contém somente dados sintéticos e não é evidência de execução.

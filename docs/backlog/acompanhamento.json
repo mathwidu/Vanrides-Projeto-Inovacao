@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "asOf": "2026-11-02",
+  "asOf": "2026-11-03",
   "method": "Leitura de código, cenários e evidências diretas. Não é inferência automática pelo status dos cards e não executa testes do produto.",
   "sourceRevisions": {
     "coordination": "96130bc84b27c3468c4129c3810c4417e7eb8b9a",
@@ -341,7 +341,7 @@
       "component": "Consulta de localização",
       "implementationStatus": "Parcial",
       "codeStatus": "Parcial",
-      "implementationNote": "Há autorização do aparelho e da viagem, mas a consulta do passageiro permanece futura.",
+      "implementationNote": "Há autorização do aparelho e da viagem, mas a consulta do passageiro permanece futura. Implementação em andamento na branch codex/mvp-localizacao-aproximacao; ainda sem nova evidência de conclusão.",
       "validationStatus": "Teste automatizado",
       "validationNote": "GET_DRIVER_LOCATION ainda é recusado como dependência indisponível no código.",
       "sourcePaths": [
@@ -396,7 +396,7 @@
       "component": "Resposta de localização no WhatsApp",
       "implementationStatus": "Planejado",
       "codeStatus": "Planejado",
-      "implementationNote": "A resposta de última posição ao passageiro ainda não está implementada.",
+      "implementationNote": "A resposta de última posição ao passageiro ainda não está implementada. Implementação em andamento na branch codex/mvp-localizacao-aproximacao; ainda sem nova evidência de conclusão.",
       "validationStatus": "Pendente",
       "validationNote": "O comando GET_DRIVER_LOCATION está explicitamente na lista de ações futuras.",
       "sourcePaths": [
@@ -436,7 +436,7 @@
       "component": "Armazenamento e consulta de GPS",
       "implementationStatus": "Parcial",
       "codeStatus": "Parcial",
-      "implementationNote": "Última posição e horário são gravados; falta a consulta prevista para o passageiro.",
+      "implementationNote": "Última posição e horário são gravados; falta a consulta prevista para o passageiro. Implementação em andamento na branch codex/mvp-localizacao-aproximacao; ainda sem nova evidência de conclusão.",
       "validationStatus": "Teste automatizado",
       "validationNote": "WaTrackingSamples atualiza a última posição; GET_DRIVER_LOCATION continua futuro.",
       "sourcePaths": [
@@ -478,7 +478,7 @@
       "component": "Aviso de aproximação",
       "implementationStatus": "Planejado",
       "codeStatus": "Planejado",
-      "implementationNote": "Ainda não há produtor de aproximação integrado ao MVP.",
+      "implementationNote": "Ainda não há produtor de aproximação integrado ao MVP. Implementação em andamento na branch codex/mvp-localizacao-aproximacao; ainda sem nova evidência de conclusão.",
       "validationStatus": "Pendente",
       "validationNote": "A prova isolada do receptor não comprova este aviso no produto.",
       "sourcePaths": [
@@ -1633,7 +1633,7 @@
       "component": "Cálculo de aproximação",
       "implementationStatus": "Planejado",
       "codeStatus": "Planejado",
-      "implementationNote": "Regra de aproximação do MVP não está concluída.",
+      "implementationNote": "Regra de aproximação do MVP não está concluída. Implementação em andamento na branch codex/mvp-localizacao-aproximacao; ainda sem nova evidência de conclusão.",
       "validationStatus": "Pendente",
       "validationNote": "A regra do receptor isolado não é a entrega do aviso por pessoa.",
       "sourcePaths": [],
@@ -1664,7 +1664,7 @@
       "component": "Ordem dos pontos e avisos",
       "implementationStatus": "Parcial",
       "codeStatus": "Parcial",
-      "implementationNote": "Ordem e cancelamento da parada existem; falta o produtor de aproximação.",
+      "implementationNote": "Ordem e cancelamento da parada existem; falta o produtor de aproximação. Implementação em andamento na branch codex/mvp-localizacao-aproximacao; ainda sem nova evidência de conclusão.",
       "validationStatus": "Teste automatizado",
       "validationNote": "Lista congelada e ausência tardia testadas; regra de passagem e aproximação ainda pendente.",
       "sourcePaths": [
@@ -1713,7 +1713,7 @@
       "component": "Testes do aviso de aproximação",
       "implementationStatus": "Planejado",
       "codeStatus": "Planejado",
-      "implementationNote": "Não foi identificada a matriz final deste aviso no MVP.",
+      "implementationNote": "Não foi identificada a matriz final deste aviso no MVP. Implementação em andamento na branch codex/mvp-localizacao-aproximacao; ainda sem nova evidência de conclusão.",
       "validationStatus": "Pendente",
       "validationNote": "Testes do GPS isolado não fecham os cenários do produtor futuro.",
       "sourcePaths": [],
@@ -2354,7 +2354,7 @@
       "codeStatus": "Planejado",
       "implementationNote": "A conta dedicada não foi pareada no checkpoint atual.",
       "validationStatus": "Pendente",
-      "validationNote": "Proprietário precisa de outra linha; nenhuma entrega real foi comprovada.",
+      "validationNote": "Número dedicado ativo no WhatsApp Business, confirmado pelo proprietário em 03/11/2026. Pareamento Evolution e entrega/retorno reais ainda pendentes.",
       "sourcePaths": [],
       "evidencePaths": [
         "program/evidence/VR-WA-120-DELIVERY-RECOVERY.md",
@@ -2365,7 +2365,7 @@
       "planningPaths": [
         "program/cards/VR-WA-170-TEST-ENVIRONMENT.md"
       ],
-      "nextAction": "Disponibilizar a linha e conferir envio e confirmação reais.",
+      "nextAction": "Preparar o ambiente da versão centralizada, parear a conta e conferir envio e confirmação reais.",
       "refs": [
         "VR-WA-170-TEST-ENVIRONMENT"
       ],

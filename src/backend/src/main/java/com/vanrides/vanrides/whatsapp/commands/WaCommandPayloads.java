@@ -12,7 +12,7 @@ final class WaCommandPayloads {
     private WaCommandPayloads() { }
     static void validate(String type, ObjectNode payload) {
         switch (type) {
-            case "ADVANCE_DRIVER_SETUP", "ADVANCE_PASSENGER_SETUP", "ADVANCE_ATTENDANCE", "ADVANCE_RUN_SETUP" -> WaJson.fields(payload);
+            case "ADVANCE_DRIVER_SETUP", "ADVANCE_PASSENGER_SETUP", "ADVANCE_ATTENDANCE", "ADVANCE_RUN_SETUP", "GET_DRIVER_LOCATION" -> WaJson.fields(payload);
             case "REQUEST_START", "REQUEST_RESUME" -> refs(payload, "occurrenceRef", "confirmationRef");
             case "SET_OPERATIONAL_ATTENDANCE" -> refs(payload, "occurrenceRef", "passengerRef", "confirmationRef");
             case "SET_ATTENDANCE" -> {

@@ -79,10 +79,10 @@ test('resumes after a new OPEN observation while preserving the total 25-second 
   assert.ok(h.calls.every(call => call.options.deadline <= started + 25_000));
 });
 
-test('authorizes a scheduled reminder before a single submission and rejects future purposes before authorization', async () => {
-  for (const purpose of ['ATTENDANCE_REMINDER','APPROACH','SUPPORT','PRIVATE']) {
+test('authorizes reminders and approach notices before submission and rejects future purposes before authorization', async () => {
+  for (const purpose of ['ATTENDANCE_REMINDER','DRIVER_LOCATION','APPROACH','SUPPORT','PRIVATE']) {
     const h = harness({ purpose });
-    const supported = purpose === 'ATTENDANCE_REMINDER';
+    const supported = ['ATTENDANCE_REMINDER', 'DRIVER_LOCATION', 'APPROACH'].includes(purpose);
     assert.deepEqual(await h.dispatch(), counts(supported ? 'SUBMITTED' : 'UNAVAILABLE', 1));
     assert.equal(h.calls.length, supported ? 3 : 1);
   }

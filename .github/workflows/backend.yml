@@ -59,7 +59,7 @@ jobs:
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '22.23.2'
-      - name: Empacotar e executar quatro jornadas HTTP no mesmo checkout
+      - name: Empacotar e executar seis jornadas HTTP no mesmo checkout
         run: bash scripts/check_backend.sh --integration-only
       - name: Construir imagem local sem publicação
         run: docker build -t vanrides-backend:ci src/backend

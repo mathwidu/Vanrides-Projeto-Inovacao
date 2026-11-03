@@ -2300,7 +2300,7 @@ F11 · Onda 2 · [Issue #91](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Resultado esperado:** A conta dedicada envia mensagem e tem o retorno de entrega conferido.
 
-**Situação:** Planejado · Pendente. Proprietário precisa de outra linha; nenhuma entrega real foi comprovada.
+**Situação:** Planejado · Pendente. Número dedicado ativo no WhatsApp Business, confirmado pelo proprietário em 03/11/2026. Pareamento Evolution e entrega/retorno reais ainda pendentes.
 
 **Inclui:**
 
@@ -2327,7 +2327,7 @@ F11 · Onda 2 · [Issue #91](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Decisão pendente:** Nenhuma adicional identificada.
 
-**Próxima ação:** Disponibilizar a linha e conferir envio e confirmação reais.
+**Próxima ação:** Preparar o ambiente da versão centralizada, parear a conta e conferir envio e confirmação reais.
 
 **Onde conferir:**
 

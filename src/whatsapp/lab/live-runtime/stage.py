@@ -10,6 +10,7 @@ import tarfile
 
 sys.dont_write_bytecode = True
 import canonical110
+import evidence
 import plan
 import receipt
 
@@ -46,10 +47,10 @@ def verify_bindings(files, captured, module):
                   'inputs/verified-ci-receipt.json', 'control.py', 'plan.py', 'canonical110.py',
                   'canonical110-pins.json', 'private_files.py', 'receipt.py', 'stage.py'} <= set(files), 'PACKAGE_FILES_MISSING')
     contract = receipt.object_json(captured['contract.json'])
-    backend, _ = receipt.ready_pins(contract)
+    backend, _ = evidence.ready_pins(contract)
     manifest = receipt.object_json(captured['source-manifest.json'])
     seal = receipt.object_json(captured['SHA256SUMS.json'])
-    plan.require(manifest.get('schemaVersion') == 1 and manifest.get('profile') == PROFILE
+    plan.require(manifest.get('schemaVersion') == 1 and manifest.get('profile') == evidence.package_profile(contract)
                  and manifest.get('backendSha') == backend['sourceSha']
                  and isinstance(manifest.get('files'), dict)
                  and set(manifest['files']) == set(files) - {'source-manifest.json', 'SHA256SUMS.json'}
@@ -59,6 +60,8 @@ def verify_bindings(files, captured, module):
                  and files['source-manifest.json'] == module
                  and files['inputs/backend.jar'] == backend['jarSha256']
                  and files['inputs/verified-ci-receipt.json'] == backend['verifiedCiReceiptSha256'], 'PACKAGE_BINDING_CHANGED')
+    if evidence.is_monorepo(contract):
+        evidence.monorepo.verify_package_sources(contract, files)
     # The frozen package matrix is the authority; receiver generation embeds it
     # verbatim. A future transfer cannot expand the whitelist from its own tar.
     return contract
