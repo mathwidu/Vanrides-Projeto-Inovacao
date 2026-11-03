@@ -1,9 +1,19 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import { resolve, sep } from 'node:path';
 
-const root = new URL('./', import.meta.url);
-const ids = Object.fromEntries(Array.from({ length: 8 }, (_, i) => [`W0${i + 1}`, `vrWa070Flow0000${i + 1}`]));
+// The checked-in exports describe the lab. Each team import uses a separate
+// directory, workflow namespace and the actual credential ID created in n8n.
+const args = process.argv.slice(2);
+const team = args[0] === '--homologacao';
+if (args.length && (!team || args.length !== 3 || !/^[a-zA-Z0-9_-]{1,64}$/.test(args[2])))
+  throw new Error('Uso: node generate.mjs [--homologacao NOVO_DIRETORIO ID_DA_CREDENCIAL]');
+const root = team ? pathToFileURL(resolve(args[1]) + sep) : new URL('./', import.meta.url);
+const idPrefix = team ? 'vrHml' : 'vrWa070';
+const credential = { id: team ? args[2] : 'vrWa070Control01', name: team ? 'VanRides HML Controle' : 'VanRides Controle070' };
+const worker = team ? 'vanrides-hml-worker' : 'vanrides-wa070-worker';
+const ids = Object.fromEntries(Array.from({ length: 8 }, (_, i) => [`W0${i + 1}`, `${idPrefix}Flow0000${i + 1}`]));
 const versions = { scheduleTrigger: 1.4, httpRequest: 4.5, executeWorkflowTrigger: 1.3, errorTrigger: 1, set: 3.5 };
 const names = { W01: 'Conversa', W02: 'Motorista', W03: 'Passageiro', W04: 'Presença', W05: 'Início', W06: 'Envio', W07: 'Suporte', W08: 'Operação' };
 const node = (flow, type, name, parameters, index = 0) => ({ id: `${flow}-${index}-${type}`, name,
@@ -13,11 +23,11 @@ const schedule = (flow, seconds) => node(flow, 'scheduleTrigger', 'Agendar', {
 });
 const trigger = flow => node(flow, 'executeWorkflowTrigger', 'Subfluxo', { inputSource: 'passthrough' });
 const http = (flow, path, method = 'POST') => ({ ...node(flow, 'httpRequest', 'Executar operação privada', {
-  method, url: `http://vanrides-wa070-worker:7080${path}`, authentication: 'genericCredentialType', genericAuthType: 'httpHeaderAuth',
+  method, url: `http://${worker}:7080${path}`, authentication: 'genericCredentialType', genericAuthType: 'httpHeaderAuth',
   ...(method === 'POST' ? { sendBody: true, specifyBody: 'json', jsonBody: '{}' } : {}),
   options: { timeout: flow === 'W05' ? 10000 : 29000, redirect: { redirect: { followRedirects: false } },
     response: { response: { responseFormat: 'json', neverError: false } } },
-}, 1), credentials: { httpHeaderAuth: { id: 'vrWa070Control01', name: 'VanRides Controle070' } }, retryOnFail: false });
+}, 1), credentials: { httpHeaderAuth: credential }, retryOnFail: false });
 const fixed = (flow, value, index = 1) => node(flow, 'set', 'Estado sanitizado', {
   mode: 'manual', assignments: { assignments: [{ id: `${flow}-status`, name: 'status', type: 'string', value }] },
   includeOtherFields: false, options: {},
@@ -27,7 +37,7 @@ const manifest = { schemaVersion: 1, card: 'VR-WA-120-DELIVERY-RECOVERY', n8nVer
   n8nLocalImage: 'docker.n8n.io/n8nio/n8n@sha256:80e23ced901f0e22597d4f3464e3aaf9d835372262ea6f08ef760d8ca35df25c',
   imagePlatform: 'linux/amd64', activation: 'ALL_INACTIVE_REQUIRES_ENVIRONMENT_VALIDATION',
   importOrder: ['W07', 'W02', 'W03', 'W04', 'W05', 'W08', 'W06', 'W01'],
-  credentials: [{ id: 'vrWa070Control01', name: 'VanRides Controle070', type: 'httpHeaderAuth',
+  credentials: [{ ...credential, type: 'httpHeaderAuth',
     headerName: 'Authorization', valueSource: 'PRIVATE_CONTROL_TOKEN', containsNoExportedSecret: true }],
   nodeVersions: versions, workflows: [],
   privacy: { conversationPayloadInN8n: false, deliveryPayloadInN8n: false, executionSaveFlagsDisabled: true,
@@ -36,7 +46,8 @@ const manifest = { schemaVersion: 1, card: 'VR-WA-120-DELIVERY-RECOVERY', n8nVer
     'W02, W03 and W05 invoke the common inbox worker; actor authorization and private draft state remain in the API', 'W04 advances bounded attendance jobs; only the device API receives GPS and proves departure',
     'W08 delegates bounded HEALTH_RECONCILE ticks to the private worker; job cursors remain private and retention remains150', 'No real WhatsApp or physical-device proof'] };
 
-mkdirSync(root, { recursive: true });
+if (team) mkdirSync(root, { mode: 0o700 });
+else mkdirSync(root, { recursive: true });
 for (const flow of Object.keys(ids)) {
   let nodes;
   if (flow === 'W01') nodes = [schedule(flow, 5), http(flow, '/v1/process-inbox')];
@@ -53,7 +64,7 @@ for (const flow of Object.keys(ids)) {
     nodes.push({ ...trigger(flow), position: [0, 220] });
   const connections = { [nodes[0].name]: { main: [[{ node: nodes[1].name, type: 'main', index: 0 }]] } };
   if (nodes.length === 3) connections[nodes[2].name] = { main: [[{ node: nodes[1].name, type: 'main', index: 0 }]] };
-  const workflow = { id: ids[flow], name: `VanRides070 · ${flow} ${names[flow]}`, active: false,
+  const workflow = { id: ids[flow], name: `${team ? 'VanRides HML' : 'VanRides070'} · ${flow} ${names[flow]}`, active: false,
     nodes, connections, settings: { executionOrder: 'v1', saveDataErrorExecution: 'none',
       saveDataSuccessExecution: 'none', saveManualExecutions: false, saveExecutionProgress: false,
       executionTimeout: 40, timezone: 'America/Sao_Paulo', callerPolicy: 'workflowsFromAList',
