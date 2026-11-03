@@ -57,10 +57,16 @@ public class PublicRuntimeConfigurationGuard implements BeanFactoryPostProcessor
 
     @Override
     public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {
+        TeamApiMode.validate(environment);
         validate(PublicRuntimeConfiguration.from(environment));
     }
 
     static void validate(PublicRuntimeConfiguration configuration) {
+        String email=normalize(configuration.emailProvider(),"log");
+        if(!Set.of("log","resend","disabled").contains(email)
+            || email.equals("disabled") && !configuration.teamApiOnly()
+            || configuration.teamApiOnly() && (!configuration.exclusiveHomolog() || !email.equals("disabled")))
+            throw new IllegalStateException("Configuracao publica invalida: VANRIDES_EMAIL_PROVIDER / WA_TEAM_API_ONLY.");
         if (configuration.http2Enabled()) {
             throw new IllegalStateException(
                     "Configuracao publica invalida: SERVER_HTTP2_ENABLED deve permanecer false "

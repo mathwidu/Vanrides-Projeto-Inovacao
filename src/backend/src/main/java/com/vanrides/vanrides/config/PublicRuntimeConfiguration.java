@@ -22,6 +22,7 @@ final class PublicRuntimeConfiguration {
     private final String mapsPlatformBaseUrl;
     private final boolean rateLimitEnabled;
     private final boolean http2Enabled;
+    private final boolean teamApiOnly;
 
     private PublicRuntimeConfiguration(Builder builder) {
         this.activeProfiles = List.copyOf(builder.activeProfiles);
@@ -38,12 +39,12 @@ final class PublicRuntimeConfiguration {
         this.mapsPlatformBaseUrl = builder.mapsPlatformBaseUrl;
         this.rateLimitEnabled = builder.rateLimitEnabled;
         this.http2Enabled = builder.http2Enabled;
+        this.teamApiOnly = builder.teamApiOnly;
     }
 
     static PublicRuntimeConfiguration from(Environment environment) {
         LinkedHashSet<String> profiles = new LinkedHashSet<>();
-        profiles.addAll(Arrays.asList(environment.getActiveProfiles()));
-        profiles.addAll(Arrays.asList(environment.getDefaultProfiles()));
+        profiles.addAll(Arrays.asList(environment.getActiveProfiles().length>0 ? environment.getActiveProfiles() : environment.getDefaultProfiles()));
 
         return builder()
                 .activeProfiles(profiles.stream().filter(profile -> !isBlank(profile)).toList())
@@ -60,6 +61,7 @@ final class PublicRuntimeConfiguration {
                 .mapsPlatformBaseUrl(environment.getProperty("vanrides.maps-platform.base-url", ""))
                 .rateLimitEnabled(environment.getProperty("vanrides.rate-limit.enabled", Boolean.class, true))
                 .http2Enabled(environment.getProperty("server.http2.enabled", Boolean.class, false))
+                .teamApiOnly(TeamApiMode.enabled(environment))
                 .build();
     }
 
@@ -130,6 +132,8 @@ final class PublicRuntimeConfiguration {
     boolean http2Enabled() {
         return http2Enabled;
     }
+    boolean teamApiOnly() { return teamApiOnly; }
+    boolean exclusiveHomolog() { return activeProfiles.equals(List.of("homolog")); }
 
     private static boolean isBlank(String value) {
         return value == null || value.trim().isEmpty();
@@ -157,6 +161,7 @@ final class PublicRuntimeConfiguration {
         private String mapsPlatformBaseUrl = "";
         private boolean rateLimitEnabled = true;
         private boolean http2Enabled = false;
+        private boolean teamApiOnly = false;
 
         Builder activeProfiles(List<String> activeProfiles) {
             this.activeProfiles = activeProfiles == null ? List.of() : activeProfiles;
@@ -231,5 +236,6 @@ final class PublicRuntimeConfiguration {
         PublicRuntimeConfiguration build() {
             return new PublicRuntimeConfiguration(this);
         }
+        Builder teamApiOnly(boolean value) { teamApiOnly=value;return this; }
     }
 }

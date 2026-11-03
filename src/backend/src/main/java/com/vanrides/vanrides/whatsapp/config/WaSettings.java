@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component;
 @Component
 public final class WaSettings {
     private final boolean enabled;
+    private final boolean teamApiOnly;
     private final boolean newStartsEnabled;
     private final boolean cohortOnly;
     private final boolean approachEnabled;
@@ -27,6 +28,7 @@ public final class WaSettings {
 
     public WaSettings(Environment env) {
         enabled = flag(env, "enabled", false);
+        teamApiOnly = com.vanrides.vanrides.config.TeamApiMode.enabled(env);
         newStartsEnabled = flag(env, "new-starts-enabled", true);
         cohortOnly = flag(env, "test-cohort-only", true);
         approachEnabled = flag(env, "approach-enabled", false);
@@ -81,6 +83,7 @@ public final class WaSettings {
         return bytes;
     }
     public boolean enabled() { return enabled; }
+    public boolean teamApiOnly() { return teamApiOnly; }
     public boolean newStartsEnabled() { return enabled && newStartsEnabled; }
     public boolean cohortOnly() { return cohortOnly; }
     public boolean approachEnabled() { return enabled && approachEnabled; }
