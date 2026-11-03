@@ -38,6 +38,27 @@ def main():
         assert [e.attrib['name'] for e in workbook.findall('s:sheets/s:sheet', ns)] == ['BACKLOG','INSTRUÇÕES']
     data=json.loads((ROOT/'docs/backlog/tarefas.json').read_text(encoding="utf-8"))
     assert len(data['tasks']) == 65 and not {'T76','T77'} & {r[0] for r in data['tasks']}
+    with zipfile.ZipFile(ROOT/'BACKLOG.xlsx') as z:
+        strings = []
+        if 'xl/sharedStrings.xml' in z.namelist():
+            strings = [''.join(e.itertext()) for e in ET.fromstring(z.read('xl/sharedStrings.xml'))]
+        sheet = ET.fromstring(z.read('xl/worksheets/sheet1.xml'))
+        cells = {}
+        for cell in sheet.findall('.//s:sheetData/s:row/s:c', ns):
+            value = cell.find('s:v', ns)
+            text = value.text if value is not None else ''
+            if cell.get('t') == 's': text = strings[int(text)]
+            if cell.get('t') == 'inlineStr': text = ''.join(cell.find('s:is', ns).itertext())
+            cells[cell.get('r')] = text
+        tasks = {task[0]: task for task in data['tasks']}
+        rows = {cells.get(f'A{row}'): row for row in range(5, 70)}
+        assert set(rows) == set(tasks), 'IDs da planilha divergem do backlog'
+        for task_id, row in rows.items():
+            task = tasks[task_id]
+            expected = [task[0], f'Onda {task[1]}', *task[2:6],
+                        task[6] or 'A definir pela equipe',
+                        f'#{task[7]}' if isinstance(task[7], int) else '--']
+            assert [cells.get(f'{column}{row}') for column in 'ABCDEFGH'] == expected, f'{task_id}: planilha diverge dos dados'
     references = 0
     for name in ('acompanhamento.json', 'criterios.json'):
         records=json.loads((ROOT/'docs/backlog'/name).read_text(encoding='utf-8'))
@@ -50,7 +71,7 @@ def main():
     required=['src/backend/pom.xml','src/aplicativo-motorista/pubspec.yaml',
               'src/whatsapp/worker/dispatch.mjs','program/program.json']
     for path in required: assert (ROOT/path).is_file(), path
-    print(f'Repositório: {checked} links locais, {references} referências de tarefas, arquivos de entrada, 65 tarefas e pacotes Office válidos')
+    print(f'Repositório: {checked} links locais, {references} referências de tarefas, 520 células do backlog e pacotes Office válidos')
 
 
 if __name__ == '__main__':

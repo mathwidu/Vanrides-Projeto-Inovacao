@@ -54,6 +54,11 @@ Registre na issue quem implementa, quem revisa e quais arquivos pretende alterar
 Nomes existentes na planilha não geram atribuição automática. Propostas de escopo
 precisam de decisão antes de código. Um critério incompleto pode ser o primeiro PR.
 
+Se o programa ainda não indicar uma entrega executável, combine a próxima
+com a equipe e complete seu escopo, dependências e critérios antes de iniciar
+código de produto. Reproduzir o ambiente e revisar as instruções são os
+primeiros passos; isso não inicia uma funcionalidade nem aprova o piloto.
+
 ```text
 git switch main
 git pull --ff-only
@@ -101,6 +106,13 @@ Atualize a issue e os textos afetados no mesmo trabalho. A planilha mantém
 somente BACKLOG/INSTRUÇÕES e oito colunas, com a legenda original. Use números
 reais de issue; confira as células contra `tarefas.json` e revise o arquivo
 no Excel/LibreOffice quando editá-lo.
+
+O relatório de acompanhamento mantém o texto editável em
+`docs/apresentacoes/retorno-2026-11-03.md`. Para gerar seu PDF, use Python com
+ReportLab 4.4.9 em ambiente virtual (`python -m pip install reportlab==4.4.9`)
+e execute `python scripts/build_academic_report.py`
+na raiz. Confira visualmente todas as páginas depois de gerar; o PDF não deve
+ficar desatualizado em relação ao texto. Esse gerador é opcional para desenvolver o produto.
 
 **Concluído** exige escopo atendido, critérios verificados e revisão registrada.
 “Implementado” é inventário de código; laboratório não comprova WhatsApp real.
