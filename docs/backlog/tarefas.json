@@ -1,0 +1,1126 @@
+{
+  "schemaVersion": 1,
+  "asOf": "2026-11-02",
+  "reviewDate": "2026-11-03",
+  "product": "VanRides: transporte com acompanhamento pelo WhatsApp",
+  "team": [
+    "Alex Steffens Fenner",
+    "Gustavo Cornalewski",
+    "Matheus Winck Maisonette Duarte",
+    "Rafael Augusto Scherer"
+  ],
+  "status": "Plano para revisão da equipe em 03/11/2026.",
+  "featureOrder": [
+    "F09",
+    "F10",
+    "F02",
+    "F05",
+    "F11",
+    "F06",
+    "F12"
+  ],
+  "features": {
+    "F09": "Cadastro do motorista",
+    "F10": "Cadastro do passageiro",
+    "F02": "Confirmação de presença",
+    "F05": "Localização da van",
+    "F11": "Aviso de aproximação",
+    "F01": "Rotas e navegação",
+    "F06": "Cancelamento de presença",
+    "F12": "Aviso de cancelamento",
+    "F04": "Localização do passageiro",
+    "F03": "Verificação de e-mail"
+  },
+  "rules": [
+    "BACKLOG segue as oito colunas da O4. INSTRUÇÕES preserva as orientações do modelo. Resumo e acompanhamento por tarefa ficam nos documentos de apoio, fora das duas abas oficiais.",
+    "O MVP do sequenciador termina na Onda 2: cadastros e presença na Onda 1; localização da van e aproximação na Onda 2. Ondas 3 e 4 permanecem no planejamento anterior preservado no histórico Git e no acervo.",
+    "P significa até 2 horas e M de 2 a 6 horas. As estimativas e novas responsabilidades devem ser confirmadas pela equipe; tarefas maiores devem ser divididas antes de entrar no Kanban.",
+    "Responsáveis anteriores foram preservados como referência de distribuição do trabalho. As tarefas novas estão com A definir pela equipe.",
+    "A coluna Issue # da Onda 1 aponta para #25–#30 nas seis tarefas originais. As 22 novas tarefas da Onda 1 ainda precisam de issues. Na Onda 2, -- segue a orientação da O4; issues existentes são conciliadas no plano de atualização, sem inventar novos números.",
+    "As 23 linhas publicadas anteriormente permanecem preservadas no histórico Git e no acervo. T8 é um agrupamento antigo; T9a e T9b têm descrições próprias. Nenhum ID foi renumerado.",
+    "As issues #1–#24 foram encerradas sem previsão de execução. Esse encerramento não comprova conclusão; as issues #25–#47 permanecem abertas na consulta de 02/11/2026.",
+    "Implementado significa que o objetivo está presente no código ou no artefato indicado, sem presumir aceite de uso. Parcial indica uma parte existente e outra pendente. Planejado ainda não foi entregue; Proposta de escopo precisa de decisão da equipe. A validação é mostrada separadamente.",
+    "Navegação externa por Maps/Waze não integra este MVP. T76 e T77 foram retirados sem renumerar os demais IDs; seus registros anteriores completos estão em HISTORICO-NAVEGACAO.md. A ordem dos pontos usada pela aproximação permanece funcionalmente."
+  ],
+  "tasks": [
+    [
+      "T01",
+      1,
+      "F09",
+      "DevOps",
+      "Preparar a API Java Spring Boot e o banco de dados para os cadastros pelo WhatsApp, preservando a configuração anterior.",
+      "M",
+      "Matheus",
+      25,
+      [
+        "000",
+        "040"
+      ],
+      "Revisão: substitui a referência antiga a Python/N8N por API Spring Boot; n8n permanece como orquestração."
+    ],
+    [
+      "T02",
+      1,
+      "F09",
+      "Backend",
+      "Cadastrar o motorista pelo WhatsApp, validando os dados e a permissão de acesso.",
+      "M",
+      "Matheus",
+      26,
+      [
+        "080"
+      ],
+      "Mantém o objetivo de cadastro, com identidade e escopo do recorte atual."
+    ],
+    [
+      "T03",
+      1,
+      "F09",
+      "Backend",
+      "Permitir que cada pessoa execute apenas as ações autorizadas para seu perfil e separar as ações automáticas do sistema.",
+      "M",
+      "Alex",
+      27,
+      [
+        "040"
+      ],
+      "Revisão: login por WhatsApp não é senha legada nem identidade escolhida pelo modelo."
+    ],
+    [
+      "T04",
+      1,
+      "F10",
+      "Backend",
+      "Cadastrar o passageiro pelo WhatsApp com dados essenciais, dias da rotina e ponto de embarque validado.",
+      "M",
+      "Rafael",
+      28,
+      [
+        "090"
+      ],
+      "Cadastro da API consumido pela conversa; passageiro não precisa instalar app."
+    ],
+    [
+      "T05",
+      1,
+      "F10",
+      "Backend",
+      "Gerar convite com prazo de validade e vincular o passageiro após aprovação do motorista, impedindo uso duplicado.",
+      "M",
+      "Alex",
+      29,
+      [
+        "080",
+        "090"
+      ],
+      "Mantém a finalidade do convite, detalhando validação no modelo atual."
+    ],
+    [
+      "T6",
+      1,
+      "F02",
+      "Backend",
+      "Registrar confirmação ou ausência para a data e o sentido corretos, mantendo pendente quem não respondeu.",
+      "M",
+      "Gustavo",
+      30,
+      [
+        "100"
+      ],
+      "ID T6 preservado literalmente; não normalizar para T06."
+    ],
+    [
+      "T7",
+      2,
+      "F05",
+      "Backend",
+      "Receber posições GPS do aparelho vinculado e rejeitar posições antigas, repetidas ou de outra viagem.",
+      "M",
+      "Matheus",
+      31,
+      [
+        "110"
+      ],
+      "ID T7 preservado. Receber GPS é diferente de comprovar percurso físico."
+    ],
+    [
+      "T9a",
+      2,
+      "F05",
+      "Backend",
+      "Permitir a consulta da localização apenas ao motorista e aos passageiros autorizados para aquela viagem.",
+      "M",
+      "Alex",
+      33,
+      [
+        "040",
+        "110"
+      ],
+      "Revisão de escopo: salas WebSocket históricas substituídas pela autorização da consulta no domínio WhatsApp."
+    ],
+    [
+      "T9b",
+      2,
+      "F05",
+      "Backend",
+      "Responder à consulta de localização com a última posição válida e seu horário, indicando quando estiver desatualizada.",
+      "P",
+      "Matheus",
+      34,
+      [
+        "110",
+        "130"
+      ],
+      "Revisão de escopo: transmissão contínua ao passageiro substituída por consulta de pin recente no WhatsApp."
+    ],
+    [
+      "T10",
+      2,
+      "F05",
+      "Backend",
+      "Guardar a última posição válida da van e disponibilizar sua consulta com o horário de atualização.",
+      "P",
+      "Gustavo",
+      35,
+      [
+        "110"
+      ],
+      "Mantém a finalidade de última posição conhecida; não implica mapa obrigatório."
+    ],
+    [
+      "T11",
+      2,
+      "F11",
+      "Backend",
+      "Preparar o aviso de aproximação para o passageiro correto, uma única vez por viagem, ponto e regra de aviso.",
+      "M",
+      "Gustavo",
+      36,
+      [
+        "130"
+      ],
+      "O objetivo permanece; utilidade em campo e entrega real ainda dependem dos gates atuais."
+    ],
+    [
+      "T23",
+      1,
+      "F10",
+      "Design",
+      "Definir as mensagens de cadastro, envio da localização fixa e correção ou aprovação do ponto de embarque.",
+      "P",
+      null,
+      null,
+      [
+        "090"
+      ],
+      "Completa a terceira tarefa distinta de F10 da Onda 1."
+    ],
+    [
+      "T24",
+      1,
+      "F02",
+      "Backend",
+      "Criar as viagens de ida e volta no calendário da rotina, respeitando o fuso horário de São Paulo.",
+      "M",
+      null,
+      null,
+      [
+        "100"
+      ],
+      "Complementa a decomposição de presença, sem fundir os dois sentidos."
+    ],
+    [
+      "T25",
+      1,
+      "F02",
+      "Backend",
+      "Enviar o lembrete de presença às 20h do dia anterior, uma única vez por viagem.",
+      "M",
+      null,
+      null,
+      [
+        "100"
+      ],
+      "Configurações reais do ensaio ficam fora da planilha."
+    ],
+    [
+      "T26",
+      1,
+      "F02",
+      "Outro",
+      "Testar respostas antigas, falta de resposta e repetição do lembrete sem alterar outra viagem.",
+      "P",
+      null,
+      null,
+      [
+        "100"
+      ],
+      "Teste distinto de calendário e endpoint, com dados sintéticos."
+    ],
+    [
+      "T27",
+      1,
+      "F09",
+      "DevOps",
+      "Registrar as versões e alterações dos três repositórios e preparar a recuperação da configuração anterior.",
+      "P",
+      null,
+      null,
+      [
+        "000"
+      ],
+      "Habilitador transversal associado ao cadastro inicial; não é nova funcionalidade do Canvas."
+    ],
+    [
+      "T28",
+      1,
+      "F09",
+      "DevOps",
+      "Preparar as ferramentas Android e gerar um aplicativo mínimo de teste com versão identificada.",
+      "M",
+      null,
+      null,
+      [
+        "010"
+      ],
+      "Instalação/SDK não comprova coleta contínua de GPS."
+    ],
+    [
+      "T29",
+      1,
+      "F09",
+      "DevOps",
+      "Gerar um aplicativo mínimo para iPhone e documentar a assinatura de desenvolvimento e sua renovação.",
+      "M",
+      null,
+      null,
+      [
+        "010"
+      ],
+      "Build genérico não substitui execução física; situação real está no programa."
+    ],
+    [
+      "T30",
+      2,
+      "F05",
+      "Frontend",
+      "Coletar a localização no Android em segundo plano, mostrando o estado da coleta e limitando posições ainda não enviadas.",
+      "M",
+      null,
+      null,
+      [
+        "020"
+      ],
+      "Parte Android da antiga tarefa ampla de GPS; executável individualmente com contrato de prova."
+    ],
+    [
+      "T31",
+      2,
+      "F05",
+      "Frontend",
+      "Coletar a localização no iPhone com as permissões necessárias, mantendo a coleta independente da tela aberta.",
+      "M",
+      null,
+      null,
+      [
+        "020"
+      ],
+      "Parte iOS independente; não herda PASS do Android."
+    ],
+    [
+      "T32",
+      2,
+      "F05",
+      "Backend",
+      "Receber posições de teste em um serviço separado, com autenticação e dados fictícios.",
+      "M",
+      null,
+      null,
+      [
+        "020"
+      ],
+      "Contrato do receptor permite desenvolver sem cadastro completo."
+    ],
+    [
+      "T33",
+      2,
+      "F05",
+      "Outro",
+      "Testar a localização durante um percurso Android com tela bloqueada e interrupção de rede, medindo atrasos nas posições.",
+      "M",
+      null,
+      null,
+      [
+        "030"
+      ],
+      "Gate físico M1; resultado estacionado do 110 não fecha este percurso."
+    ],
+    [
+      "T34",
+      2,
+      "F05",
+      "Outro",
+      "Testar a localização durante um percurso no iPhone com tela bloqueada e interrupção de rede, medindo atrasos nas posições.",
+      "M",
+      null,
+      null,
+      [
+        "030"
+      ],
+      "Aparelho físico pausado pelo proprietário; execução depende de retomada autorizada."
+    ],
+    [
+      "T35",
+      2,
+      "F05",
+      "Outro",
+      "Medir consumo de bateria e recuperação da localização em cada aparelho, sem conexão USB.",
+      "M",
+      null,
+      null,
+      [
+        "030"
+      ],
+      "Ensaio de janela limitada; repetir por plataforma, sem extrapolar autonomia."
+    ],
+    [
+      "T36",
+      1,
+      "F09",
+      "Backend",
+      "Guardar as mensagens recebidas do WhatsApp e impedir que o mesmo evento execute uma ação mais de uma vez.",
+      "M",
+      null,
+      null,
+      [
+        "050"
+      ],
+      "Habilitador de conversa; fixtures sanitizadas e contrato do provedor são obrigatórios."
+    ],
+    [
+      "T37",
+      1,
+      "F09",
+      "Backend",
+      "Guardar as respostas a enviar e conectar o envio ao serviço de WhatsApp utilizado.",
+      "M",
+      null,
+      null,
+      [
+        "050"
+      ],
+      "Aceite da API do provedor não é confirmação de entrega ao destinatário."
+    ],
+    [
+      "T38",
+      1,
+      "F09",
+      "Outro",
+      "Usar a IA apenas para interpretar a mensagem e validar respostas incompletas, recusas ou demora antes de executar uma ação.",
+      "M",
+      null,
+      null,
+      [
+        "070"
+      ],
+      "Modelo não escolhe identidade nem executa comandos por conta própria."
+    ],
+    [
+      "T39",
+      1,
+      "F09",
+      "DevOps",
+      "Organizar as oito automações do n8n para importação desativada, sem incluir senhas ou chaves.",
+      "M",
+      null,
+      null,
+      [
+        "070"
+      ],
+      "Importação inativa não comprova cron, fila ou operação do canal real."
+    ],
+    [
+      "T40",
+      1,
+      "F09",
+      "Backend",
+      "Permitir ao motorista configurar dias, horários e sentidos da rotina pela conversa.",
+      "M",
+      null,
+      null,
+      [
+        "080"
+      ],
+      "Mantém ida e volta independentes; a ordem dos pontos permanece como apoio à lista da partida e à aproximação."
+    ],
+    [
+      "T41",
+      1,
+      "F09",
+      "Frontend",
+      "Mostrar no aplicativo o código de vínculo e as situações de aparelho vinculado, falha e recuperação.",
+      "M",
+      null,
+      null,
+      [
+        "060"
+      ],
+      "Aplicativo apenas do motorista; não recria o app do passageiro."
+    ],
+    [
+      "T42",
+      1,
+      "F09",
+      "Backend",
+      "Vincular o aparelho ao pedido iniciado no aplicativo somente após confirmação pelo WhatsApp autenticado.",
+      "M",
+      null,
+      null,
+      [
+        "060"
+      ],
+      "GET e prévia de link não criam vínculo; chave de outro aparelho deve ser recusada."
+    ],
+    [
+      "T43",
+      2,
+      "F05",
+      "Backend",
+      "Fixar, no início de cada viagem, a lista de passageiros previstos para a rotina e o sentido selecionados.",
+      "M",
+      null,
+      null,
+      [
+        "110"
+      ],
+      "Snapshot não altera retroativamente respostas de presença."
+    ],
+    [
+      "T44",
+      2,
+      "F05",
+      "Frontend",
+      "Iniciar a localização pelo aplicativo e mostrar a coleta como ativa somente após receber a primeira posição válida.",
+      "M",
+      null,
+      null,
+      [
+        "110"
+      ],
+      "Abrir link não comprova que o GPS começou."
+    ],
+    [
+      "T45",
+      2,
+      "F05",
+      "Frontend",
+      "Guardar o pedido de parada sem internet e confirmar sua conclusão após reconectar e reabrir o aplicativo, sem reiniciar a coleta.",
+      "M",
+      null,
+      null,
+      [
+        "110"
+      ],
+      "Cobre estado durável; distinguir ausência nativa de GPS e ACK do servidor."
+    ],
+    [
+      "T46",
+      2,
+      "F11",
+      "Backend",
+      "Reservar cada aviso para um único envio e limitar novas tentativas após falha ou reinício do serviço.",
+      "M",
+      null,
+      null,
+      [
+        "120"
+      ],
+      "Base técnica pode existir; card continua waiting_human até fechar seu aceite."
+    ],
+    [
+      "T47",
+      2,
+      "F11",
+      "Backend",
+      "Registrar a entrega de mensagens somente com confirmação do serviço de WhatsApp e identificar envios sem confirmação.",
+      "M",
+      null,
+      null,
+      [
+        "120"
+      ],
+      "Prova real depende de linha dedicada sob controle do proprietário."
+    ],
+    [
+      "T48",
+      2,
+      "F11",
+      "Backend",
+      "Descartar avisos que perderam a utilidade e respeitar a opção de não receber mensagens antes de tentar novo envio.",
+      "M",
+      null,
+      null,
+      [
+        "120"
+      ],
+      "Impedir aviso atrasado tratado como válido."
+    ],
+    [
+      "T49",
+      2,
+      "F11",
+      "Backend",
+      "Avaliar a aproximação pela posição atual, ponto e sentido da viagem, sem informar minutos de chegada sem cálculo comprovado.",
+      "M",
+      null,
+      null,
+      [
+        "130"
+      ],
+      "Política deve ser versionada; cálculo em regra fixa não comprova ETA real."
+    ],
+    [
+      "T50",
+      2,
+      "F11",
+      "Backend",
+      "Acompanhar a ordem dos pontos e impedir avisos com posição antiga, presença cancelada ou ponto incorreto.",
+      "M",
+      null,
+      null,
+      [
+        "130"
+      ],
+      "Considerar pontos compartilhados e progresso atrasado."
+    ],
+    [
+      "T51",
+      2,
+      "F11",
+      "Outro",
+      "Testar o destinatário do aviso, pontos compartilhados e prevenção de mensagens repetidas com dados fictícios.",
+      "P",
+      null,
+      null,
+      [
+        "130"
+      ],
+      "Teste de regra não substitui utilidade física do aviso."
+    ],
+    [
+      "T52",
+      2,
+      "F05",
+      "Backend",
+      "Encerrar a viagem automaticamente ao identificar seu término e manter o encerramento manual como alternativa de emergência.",
+      "M",
+      null,
+      null,
+      [
+        "140"
+      ],
+      "Fim manual habitual não satisfaz a experiência planejada."
+    ],
+    [
+      "T53",
+      2,
+      "F05",
+      "Frontend",
+      "Parar a coleta de localização ao encerrar a viagem e mostrar se a parada foi confirmada ou ainda está pendente.",
+      "M",
+      null,
+      null,
+      [
+        "140"
+      ],
+      "Não apresentar coleta desligada sem prova do estado nativo."
+    ],
+    [
+      "T54",
+      2,
+      "F05",
+      "Backend",
+      "Oferecer AJUDA, retirada de acesso e retomada assistida, pausando as respostas automáticas quando necessário.",
+      "M",
+      null,
+      null,
+      [
+        "140"
+      ],
+      "Contingência transversal da execução; suporte não pode perder o estado persistido."
+    ],
+    [
+      "T55",
+      1,
+      "F02",
+      "Backend",
+      "Executar lembretes com permissão exclusiva da automação e impedir duplicações após falha ou reinício.",
+      "M",
+      null,
+      null,
+      [
+        "150"
+      ],
+      "Conclusão depende do modo operacional real, não do CLI regular do 070."
+    ],
+    [
+      "T56",
+      1,
+      "F09",
+      "DevOps",
+      "Configurar o n8n para preservar automações e mensagens pendentes após reiniciar o serviço.",
+      "M",
+      null,
+      null,
+      [
+        "150"
+      ],
+      "Etapa de operação; não alterar ambiente remoto a partir deste documento."
+    ],
+    [
+      "T57",
+      1,
+      "F10",
+      "Backend",
+      "Coletar apenas os dados necessários ao cadastro, registrar consentimento e aplicar os prazos de exclusão definidos.",
+      "M",
+      null,
+      null,
+      [
+        "150"
+      ],
+      "Revisar retenção por finalidade; não incluir dados pessoais ou segredos nesta planilha."
+    ],
+    [
+      "T58",
+      1,
+      "F09",
+      "DevOps",
+      "Testar cópia de segurança, restauração e exclusão dos dados em ambiente separado, registrando a recuperação realizada.",
+      "M",
+      null,
+      null,
+      [
+        "150"
+      ],
+      "Um plano de rollback sem restore executado não é evidência de recuperação."
+    ],
+    [
+      "T59",
+      1,
+      "F09",
+      "DevOps",
+      "Preparar alertas e guia de operação com limites de uso e procedimento para pausar novos envios com segurança.",
+      "M",
+      null,
+      null,
+      [
+        "150"
+      ],
+      "Parada/finish devem continuar disponíveis com novos starts desabilitados."
+    ],
+    [
+      "T60",
+      2,
+      "F05",
+      "DevOps",
+      "Registrar as versões e os arquivos aprovados que compõem a versão de teste.",
+      "P",
+      null,
+      null,
+      [
+        "160"
+      ],
+      "Requer gates 030 e 120, além da operação; nenhuma promoção implícita."
+    ],
+    [
+      "T61",
+      2,
+      "F05",
+      "DevOps",
+      "Preparar o aplicativo Android para instalação de teste, com assinatura identificada e verificação de integridade.",
+      "M",
+      null,
+      null,
+      [
+        "160"
+      ],
+      "Assinatura privada fora do Git; preparar não equivale a publicar."
+    ],
+    [
+      "T62",
+      2,
+      "F05",
+      "DevOps",
+      "Preparar o aplicativo para iPhone com instruções de instalação e renovação da autorização de desenvolvimento.",
+      "M",
+      null,
+      null,
+      [
+        "160"
+      ],
+      "Renovação conforme a assinatura efetiva; prova de instalação separada."
+    ],
+    [
+      "T63",
+      2,
+      "F05",
+      "DevOps",
+      "Planejar instalação no servidor, atualização do banco, teste de funcionamento e retorno à versão anterior.",
+      "P",
+      null,
+      null,
+      [
+        "160"
+      ],
+      "Publicação exige autorização externa específica do proprietário."
+    ],
+    [
+      "T64",
+      2,
+      "F05",
+      "DevOps",
+      "Instalar a versão aprovada no ambiente de teste autorizado e conferir o endereço seguro e as versões dos componentes.",
+      "M",
+      null,
+      null,
+      [
+        "170"
+      ],
+      "Tarefa futura condicionada; nenhuma implantação foi feita nesta revisão."
+    ],
+    [
+      "T65",
+      2,
+      "F11",
+      "Outro",
+      "Conectar o número exclusivo do bot e conferir envio e confirmação de entrega com participantes autorizados.",
+      "M",
+      null,
+      null,
+      [
+        "170"
+      ],
+      "Linha dedicada ainda indisponível no checkpoint; contatos e QR ficam fora do Git."
+    ],
+    [
+      "T66",
+      1,
+      "F02",
+      "DevOps",
+      "Testar os agendamentos e as automações no ambiente autorizado, verificando recuperação após falha ou reinício.",
+      "M",
+      null,
+      null,
+      [
+        "170"
+      ],
+      "Operação real não herda PASS da importação inativa nem da simulação do canal."
+    ],
+    [
+      "T67",
+      2,
+      "F05",
+      "Outro",
+      "Testar a jornada completa no Redmi Note 8 com WhatsApp real e registrar resultados e versões utilizadas.",
+      "M",
+      null,
+      null,
+      [
+        "180"
+      ],
+      "Ensaio bilateral e ambiente final de teste continuam pendentes."
+    ],
+    [
+      "T68",
+      2,
+      "F05",
+      "Outro",
+      "Testar a jornada completa no iPhone com WhatsApp real e registrar resultados e versões utilizadas.",
+      "M",
+      null,
+      null,
+      [
+        "180"
+      ],
+      "Depende da retomada do aparelho e dos gates 030/170."
+    ],
+    [
+      "T69",
+      2,
+      "F11",
+      "Outro",
+      "Medir se os avisos chegam em tempo útil nos percursos dos dois aparelhos e se o destinatário está correto.",
+      "M",
+      null,
+      null,
+      [
+        "180"
+      ],
+      "Separar ensaio físico e aceite humano; nenhuma plataforma compensa falha da outra."
+    ],
+    [
+      "T70",
+      2,
+      "F05",
+      "Outro",
+      "Entregar guia de uso e relatório com resultados, versões, limites e pendências do MVP.",
+      "M",
+      null,
+      null,
+      [
+        "190"
+      ],
+      "Handoff só após concluir dependências; proposta não é entrega operacional pronta."
+    ],
+    [
+      "T71",
+      2,
+      "F05",
+      "Outro",
+      "Repetir a instalação e a renovação a partir do pacote entregue e conferir se todos os arquivos necessários estão disponíveis.",
+      "M",
+      null,
+      null,
+      [
+        "190"
+      ],
+      "Segredos continuam no cofre e no fluxo próprio; pacote contém apenas referências seguras."
+    ],
+    [
+      "T72",
+      2,
+      "F06",
+      "Backend",
+      "Registrar cancelamento ou correção de presença para a viagem indicada na conversa.",
+      "M",
+      null,
+      null,
+      [
+        "100"
+      ],
+      "AJUSTE PROPOSTO: F06 era Onda 3; não altera o ID T14 histórico nem prova aprovação do Canvas."
+    ],
+    [
+      "T73",
+      2,
+      "F06",
+      "Backend",
+      "Aplicar o horário limite para alterar a presença e manter o histórico mínimo dos cancelamentos.",
+      "P",
+      null,
+      null,
+      [
+        "100",
+        "120"
+      ],
+      "AJUSTE PROPOSTO: refinar regra com a equipe e evitar suposição de aceite acadêmico."
+    ],
+    [
+      "T74",
+      2,
+      "F12",
+      "Backend",
+      "Informar ao motorista a mudança de presença pelo WhatsApp, evitando aviso repetido ou atrasado.",
+      "M",
+      null,
+      null,
+      [
+        "120"
+      ],
+      "AJUSTE PROPOSTO: F12 era Onda 3 e push legado não descreve o canal atual; T16 histórico é preservado."
+    ],
+    [
+      "T75",
+      1,
+      "F02",
+      "Backend",
+      "Mostrar ao motorista a lista da viagem, distinguindo passageiros confirmados, pendentes e ausentes.",
+      "M",
+      null,
+      null,
+      [
+        "100"
+      ],
+      "Decomposição complementar da presença; sem confirmação automática por silêncio."
+    ],
+    [
+      "T78",
+      1,
+      "F09",
+      "Outro",
+      "Testar as operações da API, as permissões de acesso e as atualizações do banco PostgreSQL com dados fictícios.",
+      "M",
+      null,
+      null,
+      [
+        "040"
+      ],
+      "Prova de contrato/domínio não equivale a produção, canal real ou aceite de piloto."
+    ]
+  ],
+  "cardLimits": {
+    "100": "Presença/calendário no laboratório; conversa no número dedicado fica no 170.",
+    "110": "Integração e A8 estacionada no Redmi aprovadas no laboratório temporário; não fecha percurso 030 nem iPhone/canal real/piloto.",
+    "120": "waiting_human: linha dedicada indisponível; envio autorizado e callback real ainda necessários.",
+    "130": "analyzed: aproximação e sua utilidade não concluídas; dependências/DoR continuam canônicos.",
+    "140": "analyzed: encerramento automático e contingências ainda não concluídos.",
+    "150": "analyzed: operação, retenção, restore e jobs reais pendentes.",
+    "160": "analyzed: candidato imutável depende também de 030/120; sem promoção implícita.",
+    "170": "analyzed: ambiente/canal integrado e agenda reais ainda pendentes.",
+    "180": "analyzed: ciclo E2E físico em ambos os aparelhos ainda pendente.",
+    "190": "analyzed: pacote operacional/handoff ainda pendente.",
+    "000": "Baseline preservado e governança; não é funcionalidade de usuário.",
+    "010": "Toolchains/builds mínimos e instalação de referência; não prova percurso contínuo.",
+    "020": "Prova isolada de coletor/receptor; não substitui GPS em campo.",
+    "030": "waiting_human: percurso/janela de energia e iPhone físico pausado; M1 bilateral pendente.",
+    "040": "Domínio, contratos e autorização; conclusão no escopo do card.",
+    "050": "Adaptador e inbox/outbox base; canal real integrado não comprovado aqui.",
+    "060": "Vínculo no Redmi/laboratório com canal simulado; não comprova canal WhatsApp publicado.",
+    "070": "Modelo e workflows importados inativos; jobs/filas reais nos aceites 150/170.",
+    "080": "Cadastro de motorista, rotinas e convites no laboratório; sem aceite de piloto.",
+    "090": "Cadastro/aprovação de passageiro e pin estático no laboratório; canal simulado."
+  },
+  "scopeDecision": "F06 (cancelamento) e F12 (aviso de cancelamento) permanecem ajustes propostos na Onda 2, sujeitos à confirmação da equipe e comunicação ao professor quando aplicável. F01 (navegação externa) foi retirado do MVP por decisão do usuário; T76 e T77 estão preservados no histórico separado. A ordem dos pontos necessária à aproximação permanece no recorte atual.",
+  "progressFile": "task-progress.json",
+  "summary": [
+    {
+      "area": "F09 — Cadastro do motorista",
+      "implemented": "Cadastro, confirmação de identidade, rotinas e convites existem.",
+      "implementation": "Implementado",
+      "validation": "Laboratório. Canal WhatsApp simulado.",
+      "where": "API — cadastro e rotinas do motorista.",
+      "next": "Repetir a conversa no número dedicado.",
+      "taskIds": [
+        "T02",
+        "T03",
+        "T40"
+      ]
+    },
+    {
+      "area": "F10 — Cadastro do passageiro",
+      "implemented": "Cadastro, vínculo e aprovação do ponto de embarque existem.",
+      "implementation": "Implementado",
+      "validation": "Laboratório. Canal WhatsApp simulado.",
+      "where": "API — cadastro, vínculo e ponto de embarque.",
+      "next": "Conferir a conversa no número dedicado.",
+      "taskIds": [
+        "T04",
+        "T05",
+        "T23"
+      ]
+    },
+    {
+      "area": "F02 — Confirmação de presença",
+      "implemented": "Calendário, lembrete, resposta por data/sentido e lista do motorista existem.",
+      "implementation": "Implementado",
+      "validation": "Laboratório e testes automatizados. Canal real pendente.",
+      "where": "API — calendário, respostas e lista de presença.",
+      "next": "Executar o agendamento configurado e as respostas pelo WhatsApp real.",
+      "taskIds": [
+        "T6",
+        "T24",
+        "T25",
+        "T26",
+        "T75"
+      ]
+    },
+    {
+      "area": "F05 — Localização da van",
+      "implemented": "Coleta no aplicativo e recepção de GPS existem. Consulta da posição pelo passageiro ainda falta.",
+      "implementation": "Parcial",
+      "validation": "Android parado aprovado. Percurso e GPS físico do iPhone pendentes.",
+      "where": "Aplicativo — coleta de GPS. API — recepção e armazenamento de posições; consulta do passageiro ainda pendente.",
+      "next": "Concluir a consulta e validar percurso, perda de rede e bateria nos dois aparelhos.",
+      "taskIds": [
+        "T7",
+        "T9a",
+        "T9b",
+        "T10",
+        "T33",
+        "T34",
+        "T35"
+      ]
+    },
+    {
+      "area": "F11 — Aviso de aproximação",
+      "implemented": "Envio e recuperação de mensagens têm base implementada. A regra de aproximação por passageiro ainda falta.",
+      "implementation": "Planejado",
+      "validation": "Regra e utilidade em percurso pendentes. A base de envio foi testada em laboratório.",
+      "where": "Serviço de atendimento — envio e recuperação de mensagens; regra de aproximação pendente.",
+      "next": "Implementar a regra e medir se o aviso chega em tempo útil.",
+      "taskIds": [
+        "T11",
+        "T46",
+        "T47",
+        "T48",
+        "T49",
+        "T50",
+        "T51",
+        "T69"
+      ]
+    },
+    {
+      "area": "Preparação do ambiente e operação",
+      "implemented": "Ambiente, permissões, IA, automações e aplicativo mínimo existem. Retenção, restauração completa e operação contínua faltam.",
+      "implementation": "Parcial",
+      "validation": "Testes por componente e laboratório. Operação completa pendente.",
+      "where": "API, aplicativo e automações de atendimento. Caminhos por tarefa em ACOMPANHAMENTO.",
+      "next": "Concluir e testar a operação completa, sem atribuir essas pendências ao cadastro.",
+      "taskIds": [
+        "T01",
+        "T27",
+        "T28",
+        "T29",
+        "T36",
+        "T37",
+        "T38",
+        "T39",
+        "T41",
+        "T42",
+        "T54",
+        "T55",
+        "T56",
+        "T57",
+        "T58",
+        "T59",
+        "T66",
+        "T78"
+      ]
+    },
+    {
+      "area": "Instalação, entrega e acesso aos fontes",
+      "implemented": "Android instalado e iPhone mínimo verificado. A entrega completa e a publicação acadêmica dos fontes ainda faltam.",
+      "implementation": "Parcial",
+      "validation": "Instalação inicial nos aparelhos. Jornada completa com canal real pendente.",
+      "where": "Aplicativos e serviços nos repositórios privados atuais. Instalações de teste documentadas.",
+      "next": "Concluir as funções e o canal dedicado, testar os dois aparelhos e preparar a publicação autorizada.",
+      "taskIds": [
+        "T60",
+        "T61",
+        "T62",
+        "T63",
+        "T64",
+        "T65",
+        "T67",
+        "T68",
+        "T70",
+        "T71"
+      ]
+    },
+    {
+      "area": "Ajustes de escopo em discussão",
+      "implemented": "Cancelamento tem código parcial ou completo, conforme a regra. Aviso ao motorista ainda precisa ser concluído.",
+      "implementation": "Proposta de escopo",
+      "validation": "Há testes de ausência; falta aprovar a mudança no planejamento.",
+      "where": "API — presença e aviso de mudança ao motorista em discussão.",
+      "next": "Confirmar regras e inclusão no MVP antes de declarar essas tarefas prontas.",
+      "taskIds": [
+        "T72",
+        "T73",
+        "T74"
+      ]
+    }
+  ],
+  "pathContext": "Caminhos adaptados para o repositório acadêmico; sourceRevisions registram a origem histórica, não a aprovação desta migração."
+}

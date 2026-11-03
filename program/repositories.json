@@ -1,0 +1,146 @@
+{
+  "schemaVersion": 1,
+  "updatedAt": "2026-11-02",
+  "repositories": [
+    {
+      "id": "coordination",
+      "name": "VanRides workspace",
+      "path": ".",
+      "type": "coordination",
+      "cardGate": "python3 scripts/program_control.py check --workspace core",
+      "ciGate": "python3 scripts/program_control_test.py",
+      "qaLog": null,
+      "backlogs": [
+        "program/program.json"
+      ],
+      "knownDirtyPaths": [],
+      "moduleRoot": ".",
+      "repositoryRoot": ".",
+      "origin": {
+        "repository": "mathwidu/vanrides-program",
+        "moduleRoot": ".",
+        "baseline": {
+          "branch": "codex/organizacao-m5",
+          "sha": "ed0482e1f8c7d6fc05c24ec15c5f67ac3024d0ea",
+          "remoteEvidence": false
+        },
+        "importedFromCommit": "c1e0546f0c84e428bdb00c636593dc64cc67e3f8"
+      },
+      "baseline": {
+        "branch": "codex/centralizacao-mvp-equipe",
+        "sha": "b8f9120d0680d444e40979e856a4ce80bada5835",
+        "remoteEvidence": false,
+        "scope": "Base acadêmica antes da importação; não é validação do código migrado. CI e recibos da migração devem identificar o novo SHA."
+      }
+    },
+    {
+      "id": "backend",
+      "name": "VanRides Backend",
+      "path": "src/backend",
+      "type": "spring-boot",
+      "cardGate": "./scripts/qa_gate_card.sh",
+      "ciGate": "./scripts/ci_quality_gate.sh",
+      "qualityGate": "./scripts/quality_gate.sh",
+      "qaLog": "backlog/QA-Execution-Log.md",
+      "backlogs": [
+        "backlog/SpringBoot-Cards.md",
+        "backlog/Panel-Cards.md"
+      ],
+      "knownDirtyPaths": [],
+      "moduleRoot": "src/backend",
+      "repositoryRoot": ".",
+      "origin": {
+        "repository": "mathwidu/vanrides-backend",
+        "moduleRoot": "vanrides-backend",
+        "baseline": {
+          "branch": "codex/organizacao-m5",
+          "sha": "a262154fdee8c811563dc70b223ddea1b9aa1f2a",
+          "remoteEvidence": false
+        },
+        "importedFromCommit": "e25ed4e0131bc253b7ccea2fa4ab793e69a89af9"
+      },
+      "baseline": {
+        "branch": "codex/centralizacao-mvp-equipe",
+        "sha": "b8f9120d0680d444e40979e856a4ce80bada5835",
+        "remoteEvidence": false,
+        "scope": "Base acadêmica antes da importação; não é validação do código migrado. CI e recibos da migração devem identificar o novo SHA."
+      }
+    },
+    {
+      "id": "app",
+      "name": "VanRides App",
+      "path": "src/aplicativo-motorista",
+      "type": "flutter",
+      "cardGate": "./scripts/qa_gate_card.sh --no-e2e",
+      "ciGate": "./scripts/ci_quality_gate.sh",
+      "qualityGate": "./scripts/quality_gate.sh",
+      "qaLog": "backlog/QA-Execution-Log.md",
+      "backlogs": [
+        "backlog/Flutter-Cards.md"
+      ],
+      "knownDirtyPaths": [
+        "integration_test/recording_first/",
+        "marketing/vanrides-product-video-remotion/",
+        "scripts/capture_recording_first_mobile_takes.sh",
+        "tool/recording_first_admin_takes.mjs",
+        "docs/superpowers/plans/2026-06-23-recording-master-v4-audio-led-edit.md",
+        "docs/superpowers/specs/2026-06-23-recording-master-v4-audio-led-edit-design.md"
+      ],
+      "moduleRoot": "src/aplicativo-motorista",
+      "repositoryRoot": ".",
+      "origin": {
+        "repository": "mathwidu/vanrides-app",
+        "moduleRoot": "vanrides-app",
+        "baseline": {
+          "branch": "codex/organizacao-m5",
+          "sha": "91ea136693bc727eac4ba87dd1469fe71dd616fb",
+          "remoteEvidence": false
+        },
+        "importedFromCommit": "b9fcedbbf949ad9f1684efcc1a2b0f2176cf7877"
+      },
+      "baseline": {
+        "branch": "codex/centralizacao-mvp-equipe",
+        "sha": "b8f9120d0680d444e40979e856a4ce80bada5835",
+        "remoteEvidence": false,
+        "scope": "Base acadêmica antes da importação; não é validação do código migrado. CI e recibos da migração devem identificar o novo SHA."
+      }
+    },
+    {
+      "id": "maps",
+      "name": "VanRides Maps Platform",
+      "path": "vanrides-maps-platform",
+      "type": "node-maps-platform",
+      "cardGate": "./scripts/qa_gate_card.sh",
+      "ciGate": "npm test",
+      "qualityGate": "npm run smoke",
+      "qaLog": "backlog/QA-Execution-Log.md",
+      "backlogs": [
+        "backlog/MapsPlatform-Cards.md"
+      ],
+      "knownDirtyPaths": [],
+      "moduleRoot": "vanrides-maps-platform",
+      "repositoryRoot": "vanrides-maps-platform",
+      "origin": {
+        "repository": "mathwidu/vanrides-maps-platform",
+        "moduleRoot": "vanrides-maps-platform",
+        "baseline": {
+          "branch": "main",
+          "sha": "a0c2a659eee262758191dff83300ef5b1045ef08",
+          "remoteEvidence": false,
+          "hasUpstream": false,
+          "promotionReady": false
+        },
+        "importedFromCommit": null
+      },
+      "baseline": {
+        "branch": "main",
+        "sha": "a0c2a659eee262758191dff83300ef5b1045ef08",
+        "remoteEvidence": false,
+        "hasUpstream": false,
+        "promotionReady": false
+      }
+    }
+  ],
+  "topology": "monorepo",
+  "repository": "mathwidu/Vanrides-Projeto-Inovacao"
+}

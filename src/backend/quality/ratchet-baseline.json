@@ -1,0 +1,512 @@
+{
+  "details": {
+    "largest_files": [
+      {
+        "lines": 853,
+        "path": "src/test/java/com/vanrides/vanrides/service/ViagemProvisioningServiceTest.java"
+      },
+      {
+        "lines": 638,
+        "path": "src/main/java/com/vanrides/vanrides/service/ViagemProvisioningService.java"
+      },
+      {
+        "lines": 452,
+        "path": "src/test/java/com/vanrides/vanrides/service/CompanyAdminViagemServiceTest.java"
+      },
+      {
+        "lines": 433,
+        "path": "src/test/java/com/vanrides/vanrides/controller/ViagemControllerWebMvcTest.java"
+      },
+      {
+        "lines": 426,
+        "path": "src/test/java/com/vanrides/vanrides/controller/PresencaRbacWebMvcTest.java"
+      },
+      {
+        "lines": 416,
+        "path": "src/main/java/com/vanrides/vanrides/service/CompanyAdminPassageiroService.java"
+      },
+      {
+        "lines": 410,
+        "path": "src/test/java/com/vanrides/vanrides/service/CompanyAdminPassageiroServiceTest.java"
+      },
+      {
+        "lines": 401,
+        "path": "src/main/java/com/vanrides/vanrides/service/ViagemRotaGeograficaService.java"
+      },
+      {
+        "lines": 393,
+        "path": "src/main/java/com/vanrides/vanrides/service/ViagemOperacionalService.java"
+      },
+      {
+        "lines": 392,
+        "path": "src/test/java/com/vanrides/vanrides/controller/CompanyAdminViagemControllerWebMvcTest.java"
+      },
+      {
+        "lines": 387,
+        "path": "src/test/java/com/vanrides/vanrides/service/ViagemOperacionalServiceTest.java"
+      },
+      {
+        "lines": 370,
+        "path": "src/test/java/com/vanrides/vanrides/repository/LegacyCompanyMigrationIntegrationTest.java"
+      }
+    ],
+    "migrations": [
+      "src/main/resources/db/migration/V10__email_verification_foundation.sql",
+      "src/main/resources/db/migration/V11__passenger_company_link_onboarding.sql",
+      "src/main/resources/db/migration/V12__allow_null_company_id_on_refresh_token.sql",
+      "src/main/resources/db/migration/V13__horario_partida_rota_viagem.sql",
+      "src/main/resources/db/migration/V14__rota_base_destino_final.sql",
+      "src/main/resources/db/migration/V15__rota_base_ativa.sql",
+      "src/main/resources/db/migration/V16__servico_recorrente_foundation.sql",
+      "src/main/resources/db/migration/V17__viagem_operacional_servico_snapshot.sql",
+      "src/main/resources/db/migration/V18__viagem_rota_geografica_snapshot.sql",
+      "src/main/resources/db/migration/V1__initial_schema.sql",
+      "src/main/resources/db/migration/V2__company_base.sql",
+      "src/main/resources/db/migration/V3__refresh_token_company_context.sql",
+      "src/main/resources/db/migration/V4__guardian_domain_foundation.sql",
+      "src/main/resources/db/migration/V5__company_admin_auth.sql",
+      "src/main/resources/db/migration/V6__guardian_auth_core.sql",
+      "src/main/resources/db/migration/V7__trip_domain_foundation.sql",
+      "src/main/resources/db/migration/V8__trip_dynamic_route_eta_v1.sql",
+      "src/main/resources/db/migration/V9__route_base_recurrence_auto_trip.sql"
+    ],
+    "mockbean_files": [
+      {
+        "count": 7,
+        "path": "src/test/java/com/vanrides/vanrides/controller/AuthControllerWebMvcTest.java"
+      },
+      {
+        "count": 5,
+        "path": "src/test/java/com/vanrides/vanrides/controller/CompanyAdminControllerWebMvcTest.java"
+      },
+      {
+        "count": 6,
+        "path": "src/test/java/com/vanrides/vanrides/controller/CompanyAdminGuardianControllerWebMvcTest.java"
+      },
+      {
+        "count": 6,
+        "path": "src/test/java/com/vanrides/vanrides/controller/CompanyAdminMotoristaControllerWebMvcTest.java"
+      },
+      {
+        "count": 5,
+        "path": "src/test/java/com/vanrides/vanrides/controller/CompanyAdminPassageiroControllerWebMvcTest.java"
+      },
+      {
+        "count": 6,
+        "path": "src/test/java/com/vanrides/vanrides/controller/CompanyAdminRotaControllerWebMvcTest.java"
+      },
+      {
+        "count": 6,
+        "path": "src/test/java/com/vanrides/vanrides/controller/CompanyAdminServicoRecorrenteControllerWebMvcTest.java"
+      },
+      {
+        "count": 6,
+        "path": "src/test/java/com/vanrides/vanrides/controller/CompanyAdminViagemControllerWebMvcTest.java"
+      },
+      {
+        "count": 7,
+        "path": "src/test/java/com/vanrides/vanrides/controller/CompanyAdminVinculoControllerWebMvcTest.java"
+      },
+      {
+        "count": 5,
+        "path": "src/test/java/com/vanrides/vanrides/controller/CorsPreflightWebMvcTest.java"
+      },
+      {
+        "count": 6,
+        "path": "src/test/java/com/vanrides/vanrides/controller/GuardianAccountControllerWebMvcTest.java"
+      },
+      {
+        "count": 7,
+        "path": "src/test/java/com/vanrides/vanrides/controller/GuardianPassageiroAccessWebMvcTest.java"
+      },
+      {
+        "count": 8,
+        "path": "src/test/java/com/vanrides/vanrides/controller/LocalizacaoMotoristaControllerWebMvcTest.java"
+      },
+      {
+        "count": 8,
+        "path": "src/test/java/com/vanrides/vanrides/controller/LoginControllerWebMvcTest.java"
+      },
+      {
+        "count": 5,
+        "path": "src/test/java/com/vanrides/vanrides/controller/MotoristaControllerWebMvcTest.java"
+      },
+      {
+        "count": 7,
+        "path": "src/test/java/com/vanrides/vanrides/controller/PassageiroControllerWebMvcTest.java"
+      },
+      {
+        "count": 3,
+        "path": "src/test/java/com/vanrides/vanrides/controller/PassageiroServicoControllerWebMvcTest.java"
+      },
+      {
+        "count": 6,
+        "path": "src/test/java/com/vanrides/vanrides/controller/PassengerOnboardingControllerWebMvcTest.java"
+      },
+      {
+        "count": 6,
+        "path": "src/test/java/com/vanrides/vanrides/controller/PresencaRbacWebMvcTest.java"
+      },
+      {
+        "count": 3,
+        "path": "src/test/java/com/vanrides/vanrides/controller/PresencaServicoControllerWebMvcTest.java"
+      },
+      {
+        "count": 12,
+        "path": "src/test/java/com/vanrides/vanrides/controller/RbacWebMvcTest.java"
+      },
+      {
+        "count": 12,
+        "path": "src/test/java/com/vanrides/vanrides/controller/SecurityFilterWebMvcTest.java"
+      },
+      {
+        "count": 11,
+        "path": "src/test/java/com/vanrides/vanrides/controller/TenantIsolationWebMvcTest.java"
+      },
+      {
+        "count": 3,
+        "path": "src/test/java/com/vanrides/vanrides/controller/ViagemControllerWebMvcTest.java"
+      }
+    ],
+    "productive_java_files_over_limit": [
+      {
+        "lines": 416,
+        "path": "src/main/java/com/vanrides/vanrides/service/CompanyAdminPassageiroService.java"
+      },
+      {
+        "lines": 367,
+        "path": "src/main/java/com/vanrides/vanrides/service/CompanyAdminServicoRecorrenteService.java"
+      },
+      {
+        "lines": 359,
+        "path": "src/main/java/com/vanrides/vanrides/service/CompanyAdminViagemService.java"
+      },
+      {
+        "lines": 393,
+        "path": "src/main/java/com/vanrides/vanrides/service/ViagemOperacionalService.java"
+      },
+      {
+        "lines": 638,
+        "path": "src/main/java/com/vanrides/vanrides/service/ViagemProvisioningService.java"
+      },
+      {
+        "lines": 401,
+        "path": "src/main/java/com/vanrides/vanrides/service/ViagemRotaGeograficaService.java"
+      }
+    ],
+    "stale_completed_cards": [],
+    "testcontainers_skipped_reports": [
+      {
+        "path": "target/surefire-reports/TEST-com.vanrides.vanrides.repository.LegacyCompanyMigrationIntegrationTest.xml",
+        "skipped": 2
+      },
+      {
+        "path": "target/surefire-reports/TEST-com.vanrides.vanrides.repository.RefreshTokenRepositoryIntegrationTest.xml",
+        "skipped": 1
+      },
+      {
+        "path": "target/surefire-reports/TEST-com.vanrides.vanrides.repository.RepositoryIntegrationTest.xml",
+        "skipped": 7
+      }
+    ]
+  },
+  "files": {
+    "src/main/java/com/vanrides/vanrides/VanridesApplication.java": 14,
+    "src/main/java/com/vanrides/vanrides/auth/AuthorizationGuard.java": 46,
+    "src/main/java/com/vanrides/vanrides/auth/UserRole.java": 64,
+    "src/main/java/com/vanrides/vanrides/config/CorsConfig.java": 43,
+    "src/main/java/com/vanrides/vanrides/config/StompTenantChannelInterceptor.java": 157,
+    "src/main/java/com/vanrides/vanrides/config/WebSocketConfig.java": 37,
+    "src/main/java/com/vanrides/vanrides/controller/AuthController.java": 147,
+    "src/main/java/com/vanrides/vanrides/controller/CompanyAdminController.java": 51,
+    "src/main/java/com/vanrides/vanrides/controller/CompanyAdminDashboardController.java": 44,
+    "src/main/java/com/vanrides/vanrides/controller/CompanyAdminGuardianController.java": 95,
+    "src/main/java/com/vanrides/vanrides/controller/CompanyAdminMotoristaController.java": 96,
+    "src/main/java/com/vanrides/vanrides/controller/CompanyAdminPassageiroController.java": 145,
+    "src/main/java/com/vanrides/vanrides/controller/CompanyAdminPlacesController.java": 40,
+    "src/main/java/com/vanrides/vanrides/controller/CompanyAdminRotaController.java": 73,
+    "src/main/java/com/vanrides/vanrides/controller/CompanyAdminServicoRecorrenteController.java": 96,
+    "src/main/java/com/vanrides/vanrides/controller/CompanyAdminViagemController.java": 115,
+    "src/main/java/com/vanrides/vanrides/controller/CompanyAdminVinculoController.java": 175,
+    "src/main/java/com/vanrides/vanrides/controller/GuardianAccountController.java": 62,
+    "src/main/java/com/vanrides/vanrides/controller/LocalizacaoMotoristaController.java": 121,
+    "src/main/java/com/vanrides/vanrides/controller/LoginController.java": 107,
+    "src/main/java/com/vanrides/vanrides/controller/MotoristaController.java": 70,
+    "src/main/java/com/vanrides/vanrides/controller/PassageiroController.java": 195,
+    "src/main/java/com/vanrides/vanrides/controller/PassageiroServicoController.java": 72,
+    "src/main/java/com/vanrides/vanrides/controller/PassengerOnboardingController.java": 102,
+    "src/main/java/com/vanrides/vanrides/controller/PresencaController.java": 195,
+    "src/main/java/com/vanrides/vanrides/controller/PresencaServicoController.java": 142,
+    "src/main/java/com/vanrides/vanrides/controller/ViagemController.java": 266,
+    "src/main/java/com/vanrides/vanrides/dto/AdminCompanyLinkRequestDecisionRequest.java": 10,
+    "src/main/java/com/vanrides/vanrides/dto/AdminCompanyLinkRequestDetailResponse.java": 18,
+    "src/main/java/com/vanrides/vanrides/dto/AdminCompanyLinkRequestSummaryResponse.java": 15,
+    "src/main/java/com/vanrides/vanrides/dto/AdminDashboardSummaryResponse.java": 76,
+    "src/main/java/com/vanrides/vanrides/dto/AdminGuardianSummaryResponse.java": 32,
+    "src/main/java/com/vanrides/vanrides/dto/AdminInviteCodeCreateRequest.java": 9,
+    "src/main/java/com/vanrides/vanrides/dto/AdminInviteCodeDetailResponse.java": 17,
+    "src/main/java/com/vanrides/vanrides/dto/AdminInviteCodeSummaryResponse.java": 14,
+    "src/main/java/com/vanrides/vanrides/dto/AdminInviteCodeUsageResponse.java": 13,
+    "src/main/java/com/vanrides/vanrides/dto/AdminMotoristaCreateRequest.java": 41,
+    "src/main/java/com/vanrides/vanrides/dto/AdminMotoristaSummaryResponse.java": 42,
+    "src/main/java/com/vanrides/vanrides/dto/AdminMotoristaUpdateRequest.java": 32,
+    "src/main/java/com/vanrides/vanrides/dto/AdminPassageiroCreateRequest.java": 122,
+    "src/main/java/com/vanrides/vanrides/dto/AdminPassageiroDetailResponse.java": 147,
+    "src/main/java/com/vanrides/vanrides/dto/AdminPassageiroLinkedSummaryResponse.java": 42,
+    "src/main/java/com/vanrides/vanrides/dto/AdminPassageiroMotoristaLinkResponse.java": 35,
+    "src/main/java/com/vanrides/vanrides/dto/AdminPassageiroMotoristaUpdateRequest.java": 14,
+    "src/main/java/com/vanrides/vanrides/dto/AdminPassageiroServicoResponse.java": 82,
+    "src/main/java/com/vanrides/vanrides/dto/AdminPassageiroServicosUpdateRequest.java": 16,
+    "src/main/java/com/vanrides/vanrides/dto/AdminPassageiroSummaryResponse.java": 73,
+    "src/main/java/com/vanrides/vanrides/dto/AdminPassageiroUpdateRequest.java": 122,
+    "src/main/java/com/vanrides/vanrides/dto/AdminResponsavelCreateRequest.java": 41,
+    "src/main/java/com/vanrides/vanrides/dto/AdminResponsavelDetailResponse.java": 67,
+    "src/main/java/com/vanrides/vanrides/dto/AdminResponsavelPassageiroLinkCreateRequest.java": 14,
+    "src/main/java/com/vanrides/vanrides/dto/AdminResponsavelPassageiroLinkResponse.java": 21,
+    "src/main/java/com/vanrides/vanrides/dto/AdminResponsavelSummaryResponse.java": 65,
+    "src/main/java/com/vanrides/vanrides/dto/AdminResponsavelUpdateRequest.java": 41,
+    "src/main/java/com/vanrides/vanrides/dto/AdminRotaBaseCreateRequest.java": 98,
+    "src/main/java/com/vanrides/vanrides/dto/AdminRotaBaseSummaryResponse.java": 100,
+    "src/main/java/com/vanrides/vanrides/dto/AdminServicoPassageiroResponse.java": 51,
+    "src/main/java/com/vanrides/vanrides/dto/AdminServicoPassageirosUpdateRequest.java": 16,
+    "src/main/java/com/vanrides/vanrides/dto/AdminServicoRecorrenteRequest.java": 125,
+    "src/main/java/com/vanrides/vanrides/dto/AdminServicoRecorrenteResponse.java": 131,
+    "src/main/java/com/vanrides/vanrides/dto/AdminViagemBulkCreateRequest.java": 16,
+    "src/main/java/com/vanrides/vanrides/dto/AdminViagemBulkCreateResponse.java": 60,
+    "src/main/java/com/vanrides/vanrides/dto/AdminViagemBulkIgnoredResponse.java": 35,
+    "src/main/java/com/vanrides/vanrides/dto/AdminViagemCreateRequest.java": 43,
+    "src/main/java/com/vanrides/vanrides/dto/AdminViagemDestinoFinalResponse.java": 35,
+    "src/main/java/com/vanrides/vanrides/dto/AdminViagemDetailResponse.java": 180,
+    "src/main/java/com/vanrides/vanrides/dto/AdminViagemMotoristaUpdateRequest.java": 14,
+    "src/main/java/com/vanrides/vanrides/dto/AdminViagemParadaResponse.java": 73,
+    "src/main/java/com/vanrides/vanrides/dto/AdminViagemSummaryResponse.java": 101,
+    "src/main/java/com/vanrides/vanrides/dto/ApiErrorResponse.java": 26,
+    "src/main/java/com/vanrides/vanrides/dto/AuthenticatedUser.java": 83,
+    "src/main/java/com/vanrides/vanrides/dto/CompanyAdminBootstrapRequest.java": 59,
+    "src/main/java/com/vanrides/vanrides/dto/CompanyAdminResponse.java": 57,
+    "src/main/java/com/vanrides/vanrides/dto/EmailVerificationConfirmRequest.java": 14,
+    "src/main/java/com/vanrides/vanrides/dto/EmailVerificationResendRequest.java": 14,
+    "src/main/java/com/vanrides/vanrides/dto/EmailVerificationResponse.java": 20,
+    "src/main/java/com/vanrides/vanrides/dto/GuardianPasswordChangeRequest.java": 23,
+    "src/main/java/com/vanrides/vanrides/dto/LocalizacaoDTO.java": 40,
+    "src/main/java/com/vanrides/vanrides/dto/LoginRequest.java": 33,
+    "src/main/java/com/vanrides/vanrides/dto/LoginResponse.java": 105,
+    "src/main/java/com/vanrides/vanrides/dto/PassageiroServicoDisponivelResponse.java": 91,
+    "src/main/java/com/vanrides/vanrides/dto/PassengerCompanyRequestCreateRequest.java": 4,
+    "src/main/java/com/vanrides/vanrides/dto/PassengerCompanySearchResponse.java": 8,
+    "src/main/java/com/vanrides/vanrides/dto/PassengerInviteCodeRedeemRequest.java": 4,
+    "src/main/java/com/vanrides/vanrides/dto/PassengerOnboardingStatusResponse.java": 10,
+    "src/main/java/com/vanrides/vanrides/dto/PendingCompanyLinkRequestResponse.java": 12,
+    "src/main/java/com/vanrides/vanrides/dto/PendingEmailChangeRequest.java": 8,
+    "src/main/java/com/vanrides/vanrides/dto/PendingEmailChangeResponse.java": 7,
+    "src/main/java/com/vanrides/vanrides/dto/PresencaServicoRequest.java": 43,
+    "src/main/java/com/vanrides/vanrides/dto/PresencaServicoResponse.java": 84,
+    "src/main/java/com/vanrides/vanrides/dto/PresencaServicoStatusUpdateRequest.java": 14,
+    "src/main/java/com/vanrides/vanrides/dto/RefreshTokenRequest.java": 14,
+    "src/main/java/com/vanrides/vanrides/dto/TokenResponse.java": 55,
+    "src/main/java/com/vanrides/vanrides/dto/ViagemMotoristaResponse.java": 144,
+    "src/main/java/com/vanrides/vanrides/dto/ViagemNavegacaoResponse.java": 42,
+    "src/main/java/com/vanrides/vanrides/dto/ViagemParadaResponse.java": 58,
+    "src/main/java/com/vanrides/vanrides/dto/ViagemParadaStatusUpdateRequest.java": 16,
+    "src/main/java/com/vanrides/vanrides/dto/ViagemPassageiroAtualResponse.java": 127,
+    "src/main/java/com/vanrides/vanrides/dto/ViagemPassageiroResumoResponse.java": 26,
+    "src/main/java/com/vanrides/vanrides/dto/ViagemRealtimeSnapshotEvent.java": 146,
+    "src/main/java/com/vanrides/vanrides/dto/ViagemRotaAtualizadaEvent.java": 52,
+    "src/main/java/com/vanrides/vanrides/dto/ViagemRotaGeograficaResponse.java": 135,
+    "src/main/java/com/vanrides/vanrides/dto/ViagemRotaLegResponse.java": 42,
+    "src/main/java/com/vanrides/vanrides/dto/ViagemRotaUpdateRequest.java": 16,
+    "src/main/java/com/vanrides/vanrides/dto/ViagemRotaWaypointResponse.java": 70,
+    "src/main/java/com/vanrides/vanrides/dto/ViagemStatusUpdateRequest.java": 16,
+    "src/main/java/com/vanrides/vanrides/filtros/FilterAuthBasic.java": 116,
+    "src/main/java/com/vanrides/vanrides/model/Company.java": 87,
+    "src/main/java/com/vanrides/vanrides/model/CompanyAdmin.java": 148,
+    "src/main/java/com/vanrides/vanrides/model/CompanyInviteCode.java": 161,
+    "src/main/java/com/vanrides/vanrides/model/CompanyInviteCodeStatus.java": 8,
+    "src/main/java/com/vanrides/vanrides/model/CompanyInviteCodeUsage.java": 69,
+    "src/main/java/com/vanrides/vanrides/model/CompanyLinkRequest.java": 141,
+    "src/main/java/com/vanrides/vanrides/model/CompanyLinkRequestSource.java": 6,
+    "src/main/java/com/vanrides/vanrides/model/CompanyLinkRequestStatus.java": 8,
+    "src/main/java/com/vanrides/vanrides/model/EmailVerifiableAccount.java": 18,
+    "src/main/java/com/vanrides/vanrides/model/EmailVerificationToken.java": 109,
+    "src/main/java/com/vanrides/vanrides/model/Guardian.java": 148,
+    "src/main/java/com/vanrides/vanrides/model/GuardianPassageiro.java": 88,
+    "src/main/java/com/vanrides/vanrides/model/LocalizacaoMotorista.java": 70,
+    "src/main/java/com/vanrides/vanrides/model/Motorista.java": 136,
+    "src/main/java/com/vanrides/vanrides/model/Passageiro.java": 242,
+    "src/main/java/com/vanrides/vanrides/model/PoliticaPresencaServico.java": 6,
+    "src/main/java/com/vanrides/vanrides/model/Presenca.java": 67,
+    "src/main/java/com/vanrides/vanrides/model/PresencaServico.java": 148,
+    "src/main/java/com/vanrides/vanrides/model/PresencaServicoOrigem.java": 8,
+    "src/main/java/com/vanrides/vanrides/model/PresencaServicoStatus.java": 8,
+    "src/main/java/com/vanrides/vanrides/model/RefreshToken.java": 135,
+    "src/main/java/com/vanrides/vanrides/model/RotaBase.java": 187,
+    "src/main/java/com/vanrides/vanrides/model/RotaBaseParada.java": 57,
+    "src/main/java/com/vanrides/vanrides/model/ServicoPassageiro.java": 147,
+    "src/main/java/com/vanrides/vanrides/model/ServicoRecorrente.java": 255,
+    "src/main/java/com/vanrides/vanrides/model/TipoOperacaoServico.java": 8,
+    "src/main/java/com/vanrides/vanrides/model/Viagem.java": 270,
+    "src/main/java/com/vanrides/vanrides/model/ViagemParada.java": 80,
+    "src/main/java/com/vanrides/vanrides/model/ViagemParadaStatus.java": 8,
+    "src/main/java/com/vanrides/vanrides/model/ViagemStatus.java": 8,
+    "src/main/java/com/vanrides/vanrides/repository/CompanyAdminRepository.java": 15,
+    "src/main/java/com/vanrides/vanrides/repository/CompanyInviteCodeRepository.java": 20,
+    "src/main/java/com/vanrides/vanrides/repository/CompanyInviteCodeUsageRepository.java": 11,
+    "src/main/java/com/vanrides/vanrides/repository/CompanyLinkRequestRepository.java": 21,
+    "src/main/java/com/vanrides/vanrides/repository/CompanyRepository.java": 30,
+    "src/main/java/com/vanrides/vanrides/repository/EmailVerificationTokenRepository.java": 14,
+    "src/main/java/com/vanrides/vanrides/repository/GuardianPassageiroRepository.java": 59,
+    "src/main/java/com/vanrides/vanrides/repository/GuardianRepository.java": 20,
+    "src/main/java/com/vanrides/vanrides/repository/LocalizacaoMotoristaRepository.java": 25,
+    "src/main/java/com/vanrides/vanrides/repository/MotoristaRepository.java": 21,
+    "src/main/java/com/vanrides/vanrides/repository/PassageiroRepository.java": 24,
+    "src/main/java/com/vanrides/vanrides/repository/PresencaRepository.java": 79,
+    "src/main/java/com/vanrides/vanrides/repository/PresencaServicoRepository.java": 56,
+    "src/main/java/com/vanrides/vanrides/repository/RefreshTokenRepository.java": 22,
+    "src/main/java/com/vanrides/vanrides/repository/RotaBaseParadaRepository.java": 24,
+    "src/main/java/com/vanrides/vanrides/repository/RotaBaseRepository.java": 59,
+    "src/main/java/com/vanrides/vanrides/repository/ServicoPassageiroRepository.java": 73,
+    "src/main/java/com/vanrides/vanrides/repository/ServicoRecorrenteRepository.java": 84,
+    "src/main/java/com/vanrides/vanrides/repository/ViagemParadaRepository.java": 33,
+    "src/main/java/com/vanrides/vanrides/repository/ViagemRepository.java": 191,
+    "src/main/java/com/vanrides/vanrides/service/AuthService.java": 83,
+    "src/main/java/com/vanrides/vanrides/service/AuthorizationService.java": 120,
+    "src/main/java/com/vanrides/vanrides/service/CompanyAdminDashboardService.java": 82,
+    "src/main/java/com/vanrides/vanrides/service/CompanyAdminGuardianPolicy.java": 33,
+    "src/main/java/com/vanrides/vanrides/service/CompanyAdminGuardianService.java": 311,
+    "src/main/java/com/vanrides/vanrides/service/CompanyAdminMotoristaService.java": 206,
+    "src/main/java/com/vanrides/vanrides/service/CompanyAdminPassageiroService.java": 416,
+    "src/main/java/com/vanrides/vanrides/service/CompanyAdminRotaService.java": 236,
+    "src/main/java/com/vanrides/vanrides/service/CompanyAdminService.java": 158,
+    "src/main/java/com/vanrides/vanrides/service/CompanyAdminServicoRecorrenteService.java": 367,
+    "src/main/java/com/vanrides/vanrides/service/CompanyAdminViagemService.java": 359,
+    "src/main/java/com/vanrides/vanrides/service/CompanyAdminVinculoService.java": 135,
+    "src/main/java/com/vanrides/vanrides/service/CompanyInviteCodeGenerator.java": 47,
+    "src/main/java/com/vanrides/vanrides/service/CompanyInviteCodePolicy.java": 43,
+    "src/main/java/com/vanrides/vanrides/service/CompanyService.java": 83,
+    "src/main/java/com/vanrides/vanrides/service/ConfiguredEmailDeliveryGateway.java": 73,
+    "src/main/java/com/vanrides/vanrides/service/EmailDeliveryGateway.java": 6,
+    "src/main/java/com/vanrides/vanrides/service/EmailVerificationException.java": 27,
+    "src/main/java/com/vanrides/vanrides/service/EmailVerificationService.java": 214,
+    "src/main/java/com/vanrides/vanrides/service/EmailVerificationState.java": 26,
+    "src/main/java/com/vanrides/vanrides/service/GeocodingService.java": 81,
+    "src/main/java/com/vanrides/vanrides/service/GoogleDirectionsRoutingService.java": 255,
+    "src/main/java/com/vanrides/vanrides/service/GooglePolylineCodec.java": 100,
+    "src/main/java/com/vanrides/vanrides/service/GuardianAccessService.java": 58,
+    "src/main/java/com/vanrides/vanrides/service/JwtService.java": 98,
+    "src/main/java/com/vanrides/vanrides/service/LocalizacaoMotoristaService.java": 37,
+    "src/main/java/com/vanrides/vanrides/service/LoggingEmailDeliveryGateway.java": 28,
+    "src/main/java/com/vanrides/vanrides/service/LoginUserDirectoryService.java": 215,
+    "src/main/java/com/vanrides/vanrides/service/MotoristaService.java": 127,
+    "src/main/java/com/vanrides/vanrides/service/PassageiroService.java": 190,
+    "src/main/java/com/vanrides/vanrides/service/PassengerCompanyLinker.java": 34,
+    "src/main/java/com/vanrides/vanrides/service/PassengerCompanyRequestService.java": 69,
+    "src/main/java/com/vanrides/vanrides/service/PassengerCompanySearchService.java": 25,
+    "src/main/java/com/vanrides/vanrides/service/PassengerInviteRedemptionService.java": 93,
+    "src/main/java/com/vanrides/vanrides/service/PassengerOnboardingResponseMapper.java": 134,
+    "src/main/java/com/vanrides/vanrides/service/PassengerOnboardingService.java": 264,
+    "src/main/java/com/vanrides/vanrides/service/PassengerOnboardingStatusResolver.java": 60,
+    "src/main/java/com/vanrides/vanrides/service/PassengerServiceEligibilityAssignmentService.java": 69,
+    "src/main/java/com/vanrides/vanrides/service/PendingEmailChangeService.java": 71,
+    "src/main/java/com/vanrides/vanrides/service/PlacesProxyService.java": 131,
+    "src/main/java/com/vanrides/vanrides/service/PresencaService.java": 98,
+    "src/main/java/com/vanrides/vanrides/service/PresencaServicoService.java": 257,
+    "src/main/java/com/vanrides/vanrides/service/QaEmailAutoVerification.java": 31,
+    "src/main/java/com/vanrides/vanrides/service/RefreshTokenService.java": 101,
+    "src/main/java/com/vanrides/vanrides/service/ResendEmailDeliveryGateway.java": 77,
+    "src/main/java/com/vanrides/vanrides/service/ViagemEtaCalculator.java": 50,
+    "src/main/java/com/vanrides/vanrides/service/ViagemLifecyclePolicy.java": 83,
+    "src/main/java/com/vanrides/vanrides/service/ViagemOperacionalService.java": 393,
+    "src/main/java/com/vanrides/vanrides/service/ViagemProvisioningService.java": 638,
+    "src/main/java/com/vanrides/vanrides/service/ViagemRealtimePublisherService.java": 113,
+    "src/main/java/com/vanrides/vanrides/service/ViagemRotaGeograficaService.java": 401,
+    "src/main/java/com/vanrides/vanrides/service/ViagemRotaStopPointResolver.java": 54,
+    "src/main/java/com/vanrides/vanrides/websocket/LocalizacaoSocketController.java": 90,
+    "src/test/java/com/vanrides/vanrides/auth/UserRoleTest.java": 26,
+    "src/test/java/com/vanrides/vanrides/config/StompTenantChannelInterceptorTest.java": 174,
+    "src/test/java/com/vanrides/vanrides/controller/AuthControllerWebMvcTest.java": 216,
+    "src/test/java/com/vanrides/vanrides/controller/CompanyAdminControllerWebMvcTest.java": 70,
+    "src/test/java/com/vanrides/vanrides/controller/CompanyAdminDashboardControllerWebMvcTest.java": 117,
+    "src/test/java/com/vanrides/vanrides/controller/CompanyAdminGuardianControllerWebMvcTest.java": 195,
+    "src/test/java/com/vanrides/vanrides/controller/CompanyAdminMotoristaControllerWebMvcTest.java": 262,
+    "src/test/java/com/vanrides/vanrides/controller/CompanyAdminPassageiroControllerWebMvcTest.java": 357,
+    "src/test/java/com/vanrides/vanrides/controller/CompanyAdminRotaControllerWebMvcTest.java": 281,
+    "src/test/java/com/vanrides/vanrides/controller/CompanyAdminServicoRecorrenteControllerWebMvcTest.java": 287,
+    "src/test/java/com/vanrides/vanrides/controller/CompanyAdminViagemControllerWebMvcTest.java": 392,
+    "src/test/java/com/vanrides/vanrides/controller/CompanyAdminVinculoControllerWebMvcTest.java": 302,
+    "src/test/java/com/vanrides/vanrides/controller/CorsPreflightWebMvcTest.java": 58,
+    "src/test/java/com/vanrides/vanrides/controller/GuardianAccountControllerWebMvcTest.java": 113,
+    "src/test/java/com/vanrides/vanrides/controller/GuardianPassageiroAccessWebMvcTest.java": 217,
+    "src/test/java/com/vanrides/vanrides/controller/LocalizacaoMotoristaControllerWebMvcTest.java": 221,
+    "src/test/java/com/vanrides/vanrides/controller/LoginControllerWebMvcTest.java": 273,
+    "src/test/java/com/vanrides/vanrides/controller/MotoristaControllerWebMvcTest.java": 105,
+    "src/test/java/com/vanrides/vanrides/controller/PassageiroControllerWebMvcTest.java": 132,
+    "src/test/java/com/vanrides/vanrides/controller/PassageiroServicoControllerWebMvcTest.java": 114,
+    "src/test/java/com/vanrides/vanrides/controller/PassengerOnboardingControllerWebMvcTest.java": 187,
+    "src/test/java/com/vanrides/vanrides/controller/PresencaRbacWebMvcTest.java": 426,
+    "src/test/java/com/vanrides/vanrides/controller/PresencaServicoControllerWebMvcTest.java": 209,
+    "src/test/java/com/vanrides/vanrides/controller/RbacWebMvcTest.java": 246,
+    "src/test/java/com/vanrides/vanrides/controller/SecurityFilterWebMvcTest.java": 233,
+    "src/test/java/com/vanrides/vanrides/controller/TenantIsolationWebMvcTest.java": 175,
+    "src/test/java/com/vanrides/vanrides/controller/ViagemControllerWebMvcTest.java": 433,
+    "src/test/java/com/vanrides/vanrides/filtros/FilterAuthBasicTest.java": 302,
+    "src/test/java/com/vanrides/vanrides/model/GuardianDomainModelTest.java": 44,
+    "src/test/java/com/vanrides/vanrides/model/ServicoRecorrenteDomainModelTest.java": 60,
+    "src/test/java/com/vanrides/vanrides/repository/LegacyCompanyMigrationIntegrationTest.java": 370,
+    "src/test/java/com/vanrides/vanrides/repository/RefreshTokenRepositoryIntegrationTest.java": 63,
+    "src/test/java/com/vanrides/vanrides/repository/RepositoryIntegrationTest.java": 316,
+    "src/test/java/com/vanrides/vanrides/service/AuthServiceTest.java": 82,
+    "src/test/java/com/vanrides/vanrides/service/CompanyAdminDashboardServiceTest.java": 108,
+    "src/test/java/com/vanrides/vanrides/service/CompanyAdminGuardianPolicyTest.java": 61,
+    "src/test/java/com/vanrides/vanrides/service/CompanyAdminGuardianServiceTest.java": 316,
+    "src/test/java/com/vanrides/vanrides/service/CompanyAdminMotoristaServiceTest.java": 341,
+    "src/test/java/com/vanrides/vanrides/service/CompanyAdminPassageiroServiceTest.java": 410,
+    "src/test/java/com/vanrides/vanrides/service/CompanyAdminRotaServiceTest.java": 265,
+    "src/test/java/com/vanrides/vanrides/service/CompanyAdminServiceTest.java": 203,
+    "src/test/java/com/vanrides/vanrides/service/CompanyAdminServicoRecorrenteServiceTest.java": 299,
+    "src/test/java/com/vanrides/vanrides/service/CompanyAdminViagemServiceTest.java": 452,
+    "src/test/java/com/vanrides/vanrides/service/CompanyAdminVinculoServiceTest.java": 172,
+    "src/test/java/com/vanrides/vanrides/service/CompanyInviteCodeGeneratorTest.java": 45,
+    "src/test/java/com/vanrides/vanrides/service/CompanyInviteCodePolicyTest.java": 60,
+    "src/test/java/com/vanrides/vanrides/service/EmailVerificationServiceTest.java": 99,
+    "src/test/java/com/vanrides/vanrides/service/GeocodingServiceTest.java": 57,
+    "src/test/java/com/vanrides/vanrides/service/GoogleDirectionsRoutingServiceTest.java": 182,
+    "src/test/java/com/vanrides/vanrides/service/GooglePolylineCodecTest.java": 62,
+    "src/test/java/com/vanrides/vanrides/service/GuardianAccessServiceTest.java": 99,
+    "src/test/java/com/vanrides/vanrides/service/JwtServiceTest.java": 26,
+    "src/test/java/com/vanrides/vanrides/service/MotoristaServiceTest.java": 74,
+    "src/test/java/com/vanrides/vanrides/service/PassageiroServiceTest.java": 121,
+    "src/test/java/com/vanrides/vanrides/service/PassengerCompanyLinkerTest.java": 88,
+    "src/test/java/com/vanrides/vanrides/service/PassengerCompanyRequestServiceTest.java": 111,
+    "src/test/java/com/vanrides/vanrides/service/PassengerCompanySearchServiceTest.java": 53,
+    "src/test/java/com/vanrides/vanrides/service/PassengerInviteRedemptionServiceTest.java": 115,
+    "src/test/java/com/vanrides/vanrides/service/PassengerOnboardingResponseMapperTest.java": 130,
+    "src/test/java/com/vanrides/vanrides/service/PassengerOnboardingServiceTest.java": 205,
+    "src/test/java/com/vanrides/vanrides/service/PassengerOnboardingStatusResolverTest.java": 137,
+    "src/test/java/com/vanrides/vanrides/service/PassengerServiceEligibilityAssignmentServiceTest.java": 78,
+    "src/test/java/com/vanrides/vanrides/service/PlacesProxyServiceTest.java": 103,
+    "src/test/java/com/vanrides/vanrides/service/PresencaServiceTest.java": 65,
+    "src/test/java/com/vanrides/vanrides/service/PresencaServicoServiceTest.java": 233,
+    "src/test/java/com/vanrides/vanrides/service/ViagemLifecyclePolicyTest.java": 85,
+    "src/test/java/com/vanrides/vanrides/service/ViagemOperacionalServiceTest.java": 387,
+    "src/test/java/com/vanrides/vanrides/service/ViagemProvisioningServiceTest.java": 853,
+    "src/test/java/com/vanrides/vanrides/service/ViagemRealtimePublisherServiceTest.java": 138,
+    "src/test/java/com/vanrides/vanrides/service/ViagemRotaGeograficaServiceTest.java": 222,
+    "src/test/java/com/vanrides/vanrides/service/ViagemRotaStopPointResolverTest.java": 63,
+    "src/test/java/com/vanrides/vanrides/websocket/LocalizacaoSocketControllerTest.java": 119
+  },
+  "metrics": {
+    "java_file_count": 282,
+    "line_count": 31860,
+    "main_line_count": 18165,
+    "migration_count": 18,
+    "mockbean_count": 156,
+    "org_json_dependency_count": 0,
+    "productive_java_files_over_limit_count": 6,
+    "stale_completed_card_count": 0,
+    "system_print_count": 0,
+    "test_line_count": 13695,
+    "testcontainers_skipped_count": 10
+  },
+  "repo": "vanrides-backend",
+  "version": 1
+}

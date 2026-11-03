@@ -1,0 +1,139 @@
+{
+  "schemaVersion": 1,
+  "card": "VR-WA-120-DELIVERY-RECOVERY",
+  "n8nVersion": "2.45.4",
+  "n8nSourceCommit": "e0c02a617f5e6ede3d6c448aff41f632a782aaca",
+  "n8nLocalImage": "docker.n8n.io/n8nio/n8n@sha256:80e23ced901f0e22597d4f3464e3aaf9d835372262ea6f08ef760d8ca35df25c",
+  "imagePlatform": "linux/amd64",
+  "activation": "ALL_INACTIVE_REQUIRES_ENVIRONMENT_VALIDATION",
+  "importOrder": [
+    "W07",
+    "W02",
+    "W03",
+    "W04",
+    "W05",
+    "W08",
+    "W06",
+    "W01"
+  ],
+  "credentials": [
+    {
+      "id": "vrWa070Control01",
+      "name": "VanRides Controle070",
+      "type": "httpHeaderAuth",
+      "headerName": "Authorization",
+      "valueSource": "PRIVATE_CONTROL_TOKEN",
+      "containsNoExportedSecret": true
+    }
+  ],
+  "nodeVersions": {
+    "scheduleTrigger": 1.4,
+    "httpRequest": 4.5,
+    "executeWorkflowTrigger": 1.3,
+    "errorTrigger": 1,
+    "set": 3.5
+  },
+  "workflows": [
+    {
+      "logicalId": "W01",
+      "id": "vrWa070Flow00001",
+      "file": "W01.json",
+      "sha256": "418802c85b5f30d6e4897f471446fe2ba8bd9d46078ce680d83235ab3e75b487",
+      "active": false,
+      "mode": "IMPLEMENTED_CONTROL",
+      "prerequisite": null,
+      "errorWorkflow": "vrWa070Flow00007",
+      "acceptsConversationPayload": false
+    },
+    {
+      "logicalId": "W02",
+      "id": "vrWa070Flow00002",
+      "file": "W02.json",
+      "sha256": "023c6b53dad005f623bc2a5cd7a9e8a94571277b5bacfbf355ef2b19186bf05f",
+      "active": false,
+      "mode": "IMPLEMENTED_CONTROL",
+      "prerequisite": null,
+      "errorWorkflow": "vrWa070Flow00007",
+      "acceptsConversationPayload": false
+    },
+    {
+      "logicalId": "W03",
+      "id": "vrWa070Flow00003",
+      "file": "W03.json",
+      "sha256": "fc979ccf6907c639f3c7db0a8653f6d34c626bb6badbaa3fc65e6490b7f30300",
+      "active": false,
+      "mode": "IMPLEMENTED_CONTROL",
+      "prerequisite": null,
+      "errorWorkflow": "vrWa070Flow00007",
+      "acceptsConversationPayload": false
+    },
+    {
+      "logicalId": "W04",
+      "id": "vrWa070Flow00004",
+      "file": "W04.json",
+      "sha256": "8ebc3aebd80132120cad2f72e64d896ede8c6a52445985c8fa2db87ec0bbb65c",
+      "active": false,
+      "mode": "IMPLEMENTED_CONTROL",
+      "prerequisite": null,
+      "errorWorkflow": "vrWa070Flow00007",
+      "acceptsConversationPayload": false
+    },
+    {
+      "logicalId": "W05",
+      "id": "vrWa070Flow00005",
+      "file": "W05.json",
+      "sha256": "f2a8b81391c605adfd33bd3068ba18b6fe70d06a4f30893d2972f1dfced8005d",
+      "active": false,
+      "mode": "IMPLEMENTED_CONTROL",
+      "prerequisite": null,
+      "errorWorkflow": "vrWa070Flow00007",
+      "acceptsConversationPayload": false
+    },
+    {
+      "logicalId": "W06",
+      "id": "vrWa070Flow00006",
+      "file": "W06.json",
+      "sha256": "726217caca3d089423241d9cd1a628aeb7806b5695cfb3a10e9e7a40922f0954",
+      "active": false,
+      "mode": "IMPLEMENTED_CONTROL",
+      "prerequisite": null,
+      "errorWorkflow": "vrWa070Flow00007",
+      "acceptsConversationPayload": false
+    },
+    {
+      "logicalId": "W07",
+      "id": "vrWa070Flow00007",
+      "file": "W07.json",
+      "sha256": "2f0429ee442e4f6542244a9db427a8ca3f00678114706ace6080ff46f1f4a797",
+      "active": false,
+      "mode": "IMPLEMENTED_CONTROL",
+      "prerequisite": null,
+      "errorWorkflow": null,
+      "acceptsConversationPayload": false
+    },
+    {
+      "logicalId": "W08",
+      "id": "vrWa070Flow00008",
+      "file": "W08.json",
+      "sha256": "5a4302d6b1dcb88ca94fbad6f6ea74380f2482d32ed8a6593e2eb93da2f8bbbc",
+      "active": false,
+      "mode": "IMPLEMENTED_CONTROL",
+      "prerequisite": null,
+      "errorWorkflow": "vrWa070Flow00007",
+      "acceptsConversationPayload": false
+    }
+  ],
+  "privacy": {
+    "conversationPayloadInN8n": false,
+    "deliveryPayloadInN8n": false,
+    "executionSaveFlagsDisabled": true,
+    "note": "save*none does not prove zero retention: CLI rows and transient queue errors may persist; control outputs contain closed counters only."
+  },
+  "limits": [
+    "OpenAI classification belongs to the private worker; n8n never receives model or conversation data",
+    "W02, W03 and W05 invoke the common inbox worker; actor authorization and private draft state remain in the API",
+    "W04 advances bounded attendance jobs; only the device API receives GPS and proves departure",
+    "W08 delegates bounded HEALTH_RECONCILE ticks to the private worker; job cursors remain private and retention remains150",
+    "No real WhatsApp or physical-device proof"
+  ]
+}

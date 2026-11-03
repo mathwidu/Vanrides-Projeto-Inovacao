@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "observedAt": "2026-09-02T21:37:29+00:00",
+  "scope": "Snapshot histórico da recuperação M5. Não representa a topologia atual, o SHA do monorepo ou validação de runtimes.",
+  "workspace": "core",
+  "workBranch": "codex/organizacao-m5",
+  "repositories": [
+    {
+      "id": "coordination",
+      "repository": "mathwidu/vanrides-program",
+      "path": ".",
+      "sourceRef": "migration/mac-m2-2026-09-01-wip",
+      "sourceCommit": "6309f32634a1b42a4a4d7de7007c52a4960b4335",
+      "sourceTrackedFiles": 315
+    },
+    {
+      "id": "app",
+      "repository": "mathwidu/vanrides-app",
+      "path": "vanrides-app",
+      "sourceRef": "migration/mac-m2-2026-09-01-sanitized-wip",
+      "sourceCommit": "a2c2508ce048e2a851b0cc92a5fc1c9849218d8c",
+      "sourceTrackedFiles": 1155
+    },
+    {
+      "id": "backend",
+      "repository": "mathwidu/vanrides-backend",
+      "path": "vanrides-backend",
+      "sourceRef": "archive/mac-m2-2026-09-01/dev",
+      "sourceCommit": "6efdb61846d0e4dcc59fd5cab921d275ad9eca98",
+      "sourceTrackedFiles": 724
+    }
+  ],
+  "deferred": [
+    "mathwidu/vanrides-maps-platform"
+  ],
+  "validation": {
+    "gitFsckFull": "PASS em cada clone antes das alterações de organização",
+    "lfsFilesAtSource": 0,
+    "runtimeGates": "not_run",
+    "integration": "not_run"
+  }
+}

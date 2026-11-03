@@ -1,0 +1,3 @@
+# Bound parallel test suites on the 16 GB development Mac.
+# The CLI --concurrency option can override this on a dedicated runner.
+concurrency: 2

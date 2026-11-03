@@ -1,0 +1,77 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=lib/vanrides-dev-common.sh
+source "$SCRIPT_DIR/lib/vanrides-dev-common.sh"
+
+readonly EXPECTED_CONFIRMATION="DEPLOY-VANRIDES-DEV"
+
+usage() {
+  cat >&2 <<EOF
+Uso:
+  sudo /opt/vanrides/ops/vanrides-dev-deploy-image \\
+    --image ghcr.io/mathwidu/vanrides-backend:dev-<sha> \\
+    --confirm $EXPECTED_CONFIRMATION
+EOF
+}
+
+image=""
+confirmation=""
+
+while (($#)); do
+  case "$1" in
+    --image)
+      image="${2:-}"
+      shift 2
+      ;;
+    --confirm)
+      confirmation="${2:-}"
+      shift 2
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    *)
+      usage
+      die "argumento invalido: $1"
+      ;;
+  esac
+done
+
+require_root
+require_docker
+assert_dev_guardrails
+
+[[ "$confirmation" == "$EXPECTED_CONFIRMATION" ]] || {
+  usage
+  die "missing confirmation: --confirm $EXPECTED_CONFIRMATION"
+}
+
+[[ "$image" =~ ^ghcr\.io/mathwidu/vanrides-backend:dev-[0-9a-f]{7,40}$ ]] || {
+  usage
+  die "imagem DEV invalida: $image"
+}
+
+log "deploy DEV image: $image"
+docker pull "$image"
+
+docker service inspect "$VANRIDES_DEV_API_SERVICE" >/dev/null 2>&1 || {
+  docker service ls
+  die "service $VANRIDES_DEV_API_SERVICE nao encontrado"
+}
+
+docker service update \
+  --image "$image" \
+  --with-registry-auth \
+  --detach=false \
+  "$VANRIDES_DEV_API_SERVICE"
+
+applied_image="$(
+  docker service inspect "$VANRIDES_DEV_API_SERVICE" \
+    --format '{{.Spec.TaskTemplate.ContainerSpec.Image}}'
+)"
+log "applied image: $applied_image"
+
+/opt/vanrides/ops/vanrides-dev-smoke

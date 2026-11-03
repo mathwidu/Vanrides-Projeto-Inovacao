@@ -1,0 +1,28 @@
+name: Documentação e backlog
+on:
+  push:
+    branches: [main]
+    paths: ['docs/**', '*.md', '*.docx', '*.xlsx', 'scripts/backlog*.py', 'scripts/check_repository.py', '.github/workflows/documentacao.yml']
+  pull_request:
+    paths: ['docs/**', '*.md', '*.docx', '*.xlsx', 'scripts/backlog*.py', 'scripts/check_repository.py', '.github/workflows/documentacao.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: documentos-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  conferir:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: '3.12'
+      - run: python scripts/check_repository.py
+      - run: python scripts/backlog_test.py

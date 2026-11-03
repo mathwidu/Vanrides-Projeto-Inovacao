@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=lib/vanrides-dev-common.sh
+source "$SCRIPT_DIR/lib/vanrides-dev-common.sh"
+
+api_scaled_down="0"
+backup_file=""
+
+on_error() {
+  local exit_code="$?"
+  if [[ "$api_scaled_down" == "1" ]]; then
+    log "attempting to bring $VANRIDES_DEV_API_SERVICE back to 1 replica after failure"
+    docker service scale "$VANRIDES_DEV_API_SERVICE=1" >/dev/null 2>&1 || true
+  fi
+  if [[ -n "$backup_file" ]]; then
+    log "backup kept at $backup_file"
+  fi
+  exit "$exit_code"
+}
+trap on_error ERR
+
+require_root
+require_docker
+assert_dev_guardrails
+confirm_exact_arg "RESET-VANRIDES-DEV-DB" "$@"
+
+log "reset target confirmed: $VANRIDES_DEV_STACK / $VANRIDES_DEV_DB_SERVICE"
+backup_file="$("$SCRIPT_DIR/vanrides-dev-backup-db" --print-path-only)"
+log "backup created before reset: $backup_file"
+
+log "scaling API down: $VANRIDES_DEV_API_SERVICE=0"
+docker service scale "$VANRIDES_DEV_API_SERVICE=0"
+api_scaled_down="1"
+sleep 6
+
+db_container="$(require_running_container_for_service "$VANRIDES_DEV_DB_SERVICE")"
+
+log "dropping and recreating public schema in DEV database"
+docker exec -i "$db_container" psql \
+  -v ON_ERROR_STOP=1 \
+  -U "$VANRIDES_DEV_DB_USER" \
+  -d "$VANRIDES_DEV_DB_NAME" <<'SQL'
+DROP SCHEMA IF EXISTS public CASCADE;
+CREATE SCHEMA public AUTHORIZATION vanrides_user;
+GRANT ALL ON SCHEMA public TO vanrides_user;
+GRANT USAGE, CREATE ON SCHEMA public TO public;
+SQL
+
+log "scaling API up: $VANRIDES_DEV_API_SERVICE=1"
+docker service scale "$VANRIDES_DEV_API_SERVICE=1"
+api_scaled_down="0"
+
+wait_for_service_container "$VANRIDES_DEV_API_SERVICE" 180
+log "waiting a few seconds for Flyway and Spring readiness"
+sleep 10
+
+"$SCRIPT_DIR/vanrides-dev-smoke"
+
+log "DEV database reset complete"
+log "backup kept at $backup_file"

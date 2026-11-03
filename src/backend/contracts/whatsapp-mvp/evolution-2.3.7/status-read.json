@@ -1,0 +1,6 @@
+{
+  "event": "messages.update",
+  "instance": "synthetic-transport",
+  "date_time": "2030-01-01T12:00:00Z",
+  "data": {"keyId": "synthetic-outbound-001", "remoteJid": "000000000000000@lid", "fromMe": true, "status": "READ"}
+}

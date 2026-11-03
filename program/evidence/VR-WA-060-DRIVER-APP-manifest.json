@@ -1,0 +1,8 @@
+{
+  "recordType": "historical-evidence-receipt",
+  "sourcePath": "program/evidence/VR-WA-060-DRIVER-APP-manifest.json",
+  "sourceSha256": "0b2d58b019c8efa3bb680270b0f991ef67d5c68200cceac2d9e2d3caa10507ab",
+  "archivedOn": "2026-11-02",
+  "scope": "Histórico anterior à migração. Conteúdo completo mantido no acervo local do proprietário; este recibo não é o manifest operacional original nem comprova o novo SHA.",
+  "currentValidation": "NOT_RUN_BY_IMPORT"
+}

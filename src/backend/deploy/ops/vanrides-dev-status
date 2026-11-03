@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=lib/vanrides-dev-common.sh
+source "$SCRIPT_DIR/lib/vanrides-dev-common.sh"
+
+require_root
+require_docker
+assert_dev_guardrails
+
+log "host: $(hostname)"
+log "stack: $VANRIDES_DEV_STACK"
+log "base URL: $VANRIDES_DEV_BASE_URL"
+
+printf '\n== Services ==\n'
+docker service ls --format 'table {{.Name}}\t{{.Image}}\t{{.Replicas}}' \
+  | awk 'NR == 1 || $1 ~ /^vanrides-dev_/ { print }'
+
+printf '\n== API tasks ==\n'
+docker service ps "$VANRIDES_DEV_API_SERVICE" --no-trunc \
+  --format 'table {{.Name}}\t{{.Image}}\t{{.CurrentState}}\t{{.Error}}'
+
+printf '\n== DB tasks ==\n'
+docker service ps "$VANRIDES_DEV_DB_SERVICE" --no-trunc \
+  --format 'table {{.Name}}\t{{.Image}}\t{{.CurrentState}}\t{{.Error}}'
+
+printf '\n== DEV volume ==\n'
+docker volume ls --format 'table {{.Name}}\t{{.Driver}}' \
+  | awk 'NR == 1 || $1 ~ /vanrides.*dev.*db.*data/ { print }'
+
+printf '\n== HTTP probes ==\n'
+for path in "/motoristas" "/auth/refresh"; do
+  if [[ "$path" == "/auth/refresh" ]]; then
+    status="$(http_status POST "$VANRIDES_DEV_BASE_URL$path" -H 'Content-Type: application/json' -d '{}')" || status="curl_error"
+  else
+    status="$(http_status GET "$VANRIDES_DEV_BASE_URL$path")" || status="curl_error"
+  fi
+  printf '%s -> %s\n' "$path" "$status"
+done

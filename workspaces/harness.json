@@ -1,0 +1,83 @@
+{
+  "project": {
+    "name": "VanRides",
+    "root": ".",
+    "dashboard": ".dev-harness/dashboard.md",
+    "status": ".dev-harness/status.json"
+  },
+  "program": {
+    "source": "program/program.json",
+    "repositories": "program/repositories.json",
+    "operating_model": "program/OPERATING_MODEL.md",
+    "quality_gates": "program/QUALITY_GATES.md"
+  },
+  "repos": [
+    {
+      "name": "coordination",
+      "path": ".",
+      "repositoryRoot": ".",
+      "type": "coordination",
+      "commands": [
+        "python3 scripts/program_control.py check --workspace core",
+        "python3 scripts/program_control_test.py"
+      ],
+      "backlog_files": [
+        "program/program.json"
+      ],
+      "qa_log": null
+    },
+    {
+      "name": "backend",
+      "path": "src/backend",
+      "repositoryRoot": ".",
+      "type": "spring-boot",
+      "commands": [
+        "./scripts/qa_gate_card.sh",
+        "./scripts/ci_quality_gate.sh",
+        "./scripts/quality_gate.sh"
+      ],
+      "backlog_files": [
+        "backlog/SpringBoot-Cards.md",
+        "backlog/Panel-Cards.md"
+      ],
+      "qa_log": "backlog/QA-Execution-Log.md"
+    },
+    {
+      "name": "app",
+      "path": "src/aplicativo-motorista",
+      "repositoryRoot": ".",
+      "type": "flutter",
+      "commands": [
+        "./scripts/qa_gate_card.sh --no-e2e",
+        "./scripts/ci_quality_gate.sh",
+        "./scripts/quality_gate.sh"
+      ],
+      "backlog_files": [
+        "backlog/Flutter-Cards.md"
+      ],
+      "qa_log": "backlog/QA-Execution-Log.md"
+    },
+    {
+      "name": "maps",
+      "path": "vanrides-maps-platform",
+      "repositoryRoot": "vanrides-maps-platform",
+      "type": "node-maps-platform",
+      "commands": [
+        "./scripts/qa_gate_card.sh",
+        "npm test",
+        "npm run smoke"
+      ],
+      "backlog_files": [
+        "backlog/MapsPlatform-Cards.md"
+      ],
+      "qa_log": "backlog/QA-Execution-Log.md"
+    }
+  ],
+  "agent_files": [
+    "AGENTS.md",
+    "program/README.md",
+    "src/backend/AGENTS.md",
+    "src/aplicativo-motorista/AGENTS.md",
+    "vanrides-maps-platform/AGENTS.md"
+  ]
+}

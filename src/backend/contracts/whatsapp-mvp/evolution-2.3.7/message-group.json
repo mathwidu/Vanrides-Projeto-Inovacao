@@ -1,0 +1,9 @@
+{
+  "event": "messages.upsert",
+  "instance": "synthetic-transport",
+  "date_time": "2030-01-01T12:00:00Z",
+  "data": {
+    "key": {"id": "synthetic-message-group-001", "fromMe": false, "remoteJid": "000000000000@g.us", "participant": "000000000000@s.whatsapp.net"},
+    "message": {"conversation": "Mensagem artificial de grupo"}
+  }
+}

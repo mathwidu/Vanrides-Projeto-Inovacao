@@ -1,0 +1,47 @@
+{
+  "adaptations": {
+    "launch_vps110_mac.py": [
+      "require private runtime directory outside any Git checkout before prepare/run/recover",
+      "recover writes only journals directly in private runtime ROOT",
+      "pin QA commit3daa34c and CI41342286852 reader artifact46d23e67 for Flutter contentDescription extraction",
+      "pin QA3b1d155 fresh permission onboarding and CI41344745802 passive-line readerc4e66543",
+      "pin QA795c691 bounded readiness, one-shot permission grant and native stop observation; reader JAR unchanged",
+      "pin QAfa1da0a reviewed permission transitions and CI41349296639 reader613ae571 exact installed pt-BR request",
+      "use reviewed APK e022b8f2 basename; preserve QAfa1da0a and reader613ae571"
+    ],
+    "phone_guard_core.py": [
+      "replace reader artifact pin with reviewed CI41342286852 JAR46d23e67; no protocol or cleanup behavior change",
+      "advance reader pin to CI41344745802 JARc4e66543; no protocol or cleanup behavior change",
+      "advance reader to CI41349296639 JAR613ae571; same protocol and cleanup guards",
+      "pin lab APK0.2.0+12 e022b8f2; native identity and cleanup guards unchanged"
+    ],
+    "protocol.py": [
+      "replace reader artifact pin with reviewed CI41342286852 JAR46d23e67; no protocol or cleanup behavior change",
+      "advance reader pin to CI41344745802 JARc4e66543; no protocol or cleanup behavior change",
+      "advance reader to CI41349296639 JAR613ae571; same protocol and cleanup guards",
+      "pin lab APK0.2.0+12 e022b8f2 from CI41351547473; backend, QA reader and protocol guards unchanged"
+    ],
+    "test_mac_prep.py": [
+      "isolate private-runtime write barrier in executor fixtures; exercise barrier separately",
+      "bind Unix fixture by short basename with restored per-process cwd; use short synthetic QA argv path"
+    ]
+  },
+  "origin": "reviewed-private-mac-source-41-tests",
+  "originFiles": {
+    "launch_vps110_mac.py": "d3216274152abe30e88549696585c99074b3c29336a12d3b433c73ad3854fd21",
+    "phone_guard_core.py": "1cd71bd33c6a3ea7adc16d8d82247df92d474628562259f8821d15dcf1212dff",
+    "protocol.py": "74a6a6fdeabc9bcfe5890c52c9b7b960d5d9373778010ea589ebad2ef32fd7d0",
+    "test_mac_prep.py": "772caa71db07e4e714ab332b3b3e0555901f72724fe685e3534af2de9fde4a8d",
+    "transport.py": "3bdeb01be2622cf797d3fd1524ad3c27ba840c8d78a2fe47a49c9e35624729e1"
+  },
+  "originPreparedManifestSha256": "f7b567891e3d0ac872438b4e2c80a6f60644cab02540f89ab08b711bffb9adc9",
+  "originReceiptSha256": "10b792c6e3be9c4c5bae4f49284f7b3830950431e05b1a2017298285fc52605b",
+  "schemaVersion": 1,
+  "versionedFiles": {
+    "launch_vps110_mac.py": "bbb235b622d0cebb41a885dd1bce919054a55675f93ec6fd9688532aedd6945d",
+    "phone_guard_core.py": "b9647ab01147ce34ad6f7b0c113feb9093241adb7a0b457d1fe6fd81d2f452e6",
+    "protocol.py": "66d669168e7025caa3ccaa9304b880456f8839b4c3ef71b079928c867766fd9b",
+    "test_mac_prep.py": "848200136e1ab9a411f361ca03dd06073920a9ae45afbf3797653875af8321fa",
+    "transport.py": "3bdeb01be2622cf797d3fd1524ad3c27ba840c8d78a2fe47a49c9e35624729e1"
+  }
+}

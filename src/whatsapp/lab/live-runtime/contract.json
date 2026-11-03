@@ -1,0 +1,81 @@
+{
+  "schemaVersion": 1,
+  "cardId": "VR-WA-120-DELIVERY-RECOVERY",
+  "state": "PINNED_FOR_PREFLIGHT",
+  "backend": {
+    "sourceSha": "e25ed4e0131bc253b7ccea2fa4ab793e69a89af9",
+    "ciRun": 41366547009,
+    "gateAndSameArtifactSmoke": "PASS",
+    "jarSha256": "2d839cb68b1983160f47c3607ccf129f0080895ebfaea4250f47d48be7abffae",
+    "jarBytes": 58325816,
+    "verifiedCiReceiptSha256": "cc052460264a2dc7548e6420b754a87d566713f7b6032e87279e705547a331a4",
+    "verificationPins": {
+      "backendTree": "9787f0398fb255a5a3f515a65db6803a7d95c753",
+      "coordinationCommit": "cdec0104326fae934655a62a39c53e2b95841d5d",
+      "coordinationTree": "c1c63989a7f4b41d03d28a6a2c5a517b24581081",
+      "gate": {
+        "allTests": {
+          "errors": 0,
+          "failures": 0,
+          "skipped": 0,
+          "tests": 1640
+        },
+        "allClasses": 232,
+        "postgresTests": {
+          "errors": 0,
+          "failures": 0,
+          "skipped": 0,
+          "tests": 531
+        },
+        "postgresClasses": 71,
+        "artifactId": 13108063862,
+        "artifactSha256": "sha256:7d9c03714005159942e881b264b83bd7bb9494db49f8ae3f211f81c416c7756e",
+        "manifestSha256": "017244758f704c1c7fada1c703f1323951e40ad9a06c709d6713a3a05efdb535",
+        "receiptSha256": "255e742e5b9f58c8ae02ebbe275440ff339e48e9e7484a6e76b675411eeb9b30"
+      },
+      "smoke": {
+        "repository": "mathwidu/vanrides-backend",
+        "run": 41369804096,
+        "url": "https://github.com/mathwidu/vanrides-backend/actions/runs/41369804096",
+        "headSha": "e6abf736850f5d5a7a27f23e2f05ed0274dadf1b",
+        "headTree": "a5f101ec2b7aed2421cc278083e7d2d903b5d7cd",
+        "headBranch": "codex/wa120-synthetic-journey",
+        "workflowPath": ".github/workflows/wa120-synthetic-journey.yml",
+        "runAttempt": 1,
+        "artifactId": 13109047168,
+        "artifactSha256": "sha256:a006bd191f2e52a741839bfaa6e71ee1f2d6c9d436824265e83d17ef5fa2d6ac",
+        "receiptSha256": "58388bab47c493de00a60a11176a6827361f8bb190c12bcec62b336b6ecb394d",
+        "bundleManifestSha256": "767878df1558608115b6673d6b57d9ac6312c286f26f3cf7321c9c665b695579",
+        "fileMatrixSha256": "9def82a91d9b950ef9337f5b564f320bddab0f8108d44aa8fead894b0bbc57d5"
+      }
+    }
+  },
+  "images110": "src/whatsapp/scripts/vps110/physical/contract.json",
+  "images": {
+    "evolution": "evoapicloud/evolution-api:v2.3.7@sha256:1bd8afc4a6cf48822e6cf02469aeae7bd35a12a6b616eacd1291926307f4d339",
+    "redis": "redis@sha256:976ab0f0939b78c06d802bcd3bea44c5142ea9a756a57b861e08819817f768c8"
+  },
+  "officialEvolutionConfig": {
+    "sourceSha": "cd800f2976e1e5b682fbf86a01ee4d85ae61f370",
+    "path": "src/config/env.config.ts",
+    "sha256": "831e0914b12de1fb23b51d814ff0c2aa126486374471feeecd7a9a4b149b84b8"
+  },
+  "redisObservation": {
+    "date": "2026-11-01",
+    "platform": "linux/amd64",
+    "version": "7.4.7",
+    "source": "Inventario somente leitura da VPS pelo executor principal; nenhum novo container iniciado."
+  },
+  "policy": {
+    "maximumWindowSeconds": 1800,
+    "minimumHostAvailableMiB": 2048,
+    "publicPorts": [],
+    "testCohortOnly": false,
+    "modelMode": "disabled",
+    "automaticMessagePostRetry": false,
+    "fixturePeople": false,
+    "driverBootstrap": false,
+    "dockerExecutionImplemented": true,
+    "newStartsEnabled": false
+  }
+}

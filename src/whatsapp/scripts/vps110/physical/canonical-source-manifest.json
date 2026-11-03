@@ -1,0 +1,203 @@
+{
+  "adaptations": {
+    "businessLogicChanged": false,
+    "file": "integrations/whatsapp/scripts/070-worker-preflight.mjs",
+    "scope": "Linux tool paths and immutable PostgreSQL image assertion only"
+  },
+  "backendCommit": "5ddb7c3db6c38385c018028741470ab6a509604f",
+  "backendTree": "3b921db06027cce3db4a1ee6dc3f1c216d00a150",
+  "checks": [
+    "same_clean_backend_jar_listener_database_and_synthetic_cohort",
+    "driver_routines_and_two_passengers_from_chat_device_bound_by_pkce_and_dpop",
+    "driver_correction_preserves_personal_attendance_and_delivered_link_does_not_start_a_run",
+    "reviewed_snapshot_activated_once_by_bound_device_without_early_gps_confirmation",
+    "first_valid_acquisition_confirms_driver_once_and_ack_replay_preserves_partial_results",
+    "api_watchdog_degrades_in_silence_without_n8n_and_replay_does_not_restore_freshness",
+    "new_acquisition_recovers_same_run_and_stop_requires_distinct_device_ack",
+    "scoped_reset_and_credential_revocation",
+    "same_backend_jar_worker_agent_transport_and_smoke_hashes_after"
+  ],
+  "coordinationCommit": "6c340a0d1f2883eca46fe846bc10854762ae61be",
+  "coordinationRepository": "mathwidu/vanrides-program",
+  "coordinationTree": "355df370d3dd4403798bcb8c6f51165e788c092f",
+  "fileMatrixSha256": "d9d15dea3476b01f9c62ff45f1298918219a164a61983dd2f8a1742ad7a30228",
+  "files": {
+    "integrations/whatsapp/agent/attendance.mjs": {
+      "gitBlob": "7665528a800a9f18e721dce7a967b03728ff509a",
+      "linuxSha256": "2703c5e2a01ee7caff231fdcfca2b9f047bce7aa65ea317470ac44cfe49532ea",
+      "sha256": "2703c5e2a01ee7caff231fdcfca2b9f047bce7aa65ea317470ac44cfe49532ea"
+    },
+    "integrations/whatsapp/agent/context-offer.mjs": {
+      "gitBlob": "db582efb55cc314782c0e09bae39b796a5d33471",
+      "linuxSha256": "1f5aafacc2a15f6a119def659d1e8d2feb6ef763b0a1afc2a3643db42fde7c04",
+      "sha256": "1f5aafacc2a15f6a119def659d1e8d2feb6ef763b0a1afc2a3643db42fde7c04"
+    },
+    "integrations/whatsapp/agent/deterministic.mjs": {
+      "gitBlob": "4604e6057dd5fd6c3b563392fc8b44033404c0bf",
+      "linuxSha256": "20faccdb995b663172a16aae92bb0ce4b9bbe82af410dfa30bba8608b9a9f0af",
+      "sha256": "20faccdb995b663172a16aae92bb0ce4b9bbe82af410dfa30bba8608b9a9f0af"
+    },
+    "integrations/whatsapp/agent/driver-setup.mjs": {
+      "gitBlob": "bb622cb61dfe6c5238a57e20bfe2c64c0a902999",
+      "linuxSha256": "25e26e55337a50d4306d6712d1b419c76bb4ae0550c3eaac684b59879abf9006",
+      "sha256": "25e26e55337a50d4306d6712d1b419c76bb4ae0550c3eaac684b59879abf9006"
+    },
+    "integrations/whatsapp/agent/model-policy.mjs": {
+      "gitBlob": "14bb2ad2629b1fdc2440cf9f62c1ba1bafc75842",
+      "linuxSha256": "2914a1e3b0821aa623a7ef392cabe9be97a2c3ed8ff6a611f5419b728e54d76e",
+      "sha256": "2914a1e3b0821aa623a7ef392cabe9be97a2c3ed8ff6a611f5419b728e54d76e"
+    },
+    "integrations/whatsapp/agent/passenger-setup.mjs": {
+      "gitBlob": "20abba4130b45eb76ee0f98dd47e64e0afd25de5",
+      "linuxSha256": "0286f3ab4040fca3b0b432efa4f65c38ee2fa4850cf5f86db0b80bf4a2f465e6",
+      "sha256": "0286f3ab4040fca3b0b432efa4f65c38ee2fa4850cf5f86db0b80bf4a2f465e6"
+    },
+    "integrations/whatsapp/scripts/060-pairing-consumer.mjs": {
+      "gitBlob": "71df77ea4096b8f7cbe4f9637c3e37551111dc98",
+      "linuxSha256": "a28e736cf1ad529fc2a77897e30a883931d82bd10665ffc0bfd694a88883c38b",
+      "sha256": "a28e736cf1ad529fc2a77897e30a883931d82bd10665ffc0bfd694a88883c38b"
+    },
+    "integrations/whatsapp/scripts/060-pairing-tls.mjs": {
+      "gitBlob": "5c61dbcf3fd328edf1b545c3d2b69d6cd212b521",
+      "linuxSha256": "22cee28d7784888f82667fa2acb0354f0a65375ee2342ce11c13c17e896c1772",
+      "sha256": "22cee28d7784888f82667fa2acb0354f0a65375ee2342ce11c13c17e896c1772"
+    },
+    "integrations/whatsapp/scripts/070-worker-common.mjs": {
+      "gitBlob": "392c8345095da28c1512e6b89828a5c473d30fc8",
+      "linuxSha256": "a4145fb8b08080f0fd3e32c3f0e5e1ea30e7b913e6e56559b3d6b6ecea5d22da",
+      "sha256": "a4145fb8b08080f0fd3e32c3f0e5e1ea30e7b913e6e56559b3d6b6ecea5d22da"
+    },
+    "integrations/whatsapp/scripts/070-worker-lifecycle.mjs": {
+      "gitBlob": "bd37979be197923a824a8557407654bb67e3bf4d",
+      "linuxSha256": "633c00e44a20d849e096e84a6effb0c77d9fd661ba3251899a531bf22d34e678",
+      "sha256": "633c00e44a20d849e096e84a6effb0c77d9fd661ba3251899a531bf22d34e678"
+    },
+    "integrations/whatsapp/scripts/070-worker-preflight.mjs": {
+      "gitBlob": "6288d7953eeb20f40ee57a75f3031ed5a7214ce9",
+      "linuxSha256": "b95921fa0ae4bd8633dd838daf9896bd8689cf91fc7b2c297aa103b377e27d3e",
+      "sha256": "0cf43a8fa1bb45c5a7c89eb49a27919debe7b20aec2ae386129ecd73e70fb24f"
+    },
+    "integrations/whatsapp/scripts/070-worker-runtime.mjs": {
+      "gitBlob": "36aaf141ee07c9d0d59748b3dcb873aa6d431b84",
+      "linuxSha256": "adf0a63f22f3c98c410832917a942cb25b06b288029ff1e1bbcae864dd8ed1ab",
+      "sha256": "adf0a63f22f3c98c410832917a942cb25b06b288029ff1e1bbcae864dd8ed1ab"
+    },
+    "integrations/whatsapp/scripts/070-worker-scenarios.mjs": {
+      "gitBlob": "bfef3d7164a191b493000ab6f090d619fdfaf1fd",
+      "linuxSha256": "4ccc941cdb98ae831df81443908de6b185ebfe7442d0eaaba70dd1f671bf4f7c",
+      "sha256": "4ccc941cdb98ae831df81443908de6b185ebfe7442d0eaaba70dd1f671bf4f7c"
+    },
+    "integrations/whatsapp/scripts/070-worker-smoke.mjs": {
+      "gitBlob": "b72d3da6dcf7b29325356d910c5a8309f6cba0ca",
+      "linuxSha256": "d445ba6dde4f95c89127e8308a5c922390f55f898d523039d3431a63612579f5",
+      "sha256": "d445ba6dde4f95c89127e8308a5c922390f55f898d523039d3431a63612579f5"
+    },
+    "integrations/whatsapp/scripts/080-driver-evidence.mjs": {
+      "gitBlob": "c41878c73b10a83555b6b9635565157ad13ac445",
+      "linuxSha256": "ee6909a6f67aab36d0ed57735218d4cdec85fb422b10f37aca330a59fafb2bbf",
+      "sha256": "ee6909a6f67aab36d0ed57735218d4cdec85fb422b10f37aca330a59fafb2bbf"
+    },
+    "integrations/whatsapp/scripts/090-passenger-conversation.mjs": {
+      "gitBlob": "71e5445c63420d610bfcbc9d55a5c9e92c4d64ad",
+      "linuxSha256": "fe373209750700085463ed7b38c4b8a152fcdbbfc81742d49d842d20194b5b4b",
+      "sha256": "fe373209750700085463ed7b38c4b8a152fcdbbfc81742d49d842d20194b5b4b"
+    },
+    "integrations/whatsapp/scripts/100-attendance-scenarios.mjs": {
+      "gitBlob": "0df1d1b7c7d59b80ad7400b6fa01c0630445def2",
+      "linuxSha256": "e7dd96d29dd39abc38dc52ea2d8e62d6ac84850153df350252a5071188216ec9",
+      "sha256": "e7dd96d29dd39abc38dc52ea2d8e62d6ac84850153df350252a5071188216ec9"
+    },
+    "integrations/whatsapp/scripts/100-attendance-window.mjs": {
+      "gitBlob": "4ea5b3135e59eb4ec134a1fc0d23e37a1a6fc9c2",
+      "linuxSha256": "4c2af761f6e6076eabe7507e7a65ae0f4e7aeca429648de705610e4ff5b3eb64",
+      "sha256": "4c2af761f6e6076eabe7507e7a65ae0f4e7aeca429648de705610e4ff5b3eb64"
+    },
+    "integrations/whatsapp/scripts/110-run-redmi-sidecar.mjs": {
+      "gitBlob": "2663d3c768ddf264c7053a1c9fbd01c29c5c3b68",
+      "linuxSha256": "44ff401141b801f3a3c2f7069e5ce2945fe3f026962108e8cfe65e805944e628",
+      "sha256": "44ff401141b801f3a3c2f7069e5ce2945fe3f026962108e8cfe65e805944e628"
+    },
+    "integrations/whatsapp/scripts/110-run-redmi.mjs": {
+      "gitBlob": "b19e44bbde065e7d06220f7c7dad320ee76c53bf",
+      "linuxSha256": "4dc1fad95b1fd24395418adaba18c9785cf708926982d34f46954b9c29ec9b2b",
+      "sha256": "4dc1fad95b1fd24395418adaba18c9785cf708926982d34f46954b9c29ec9b2b"
+    },
+    "integrations/whatsapp/scripts/110-run-scenarios.mjs": {
+      "gitBlob": "e644fc862e866d63cb9883b923c10fd1f33b7c9d",
+      "linuxSha256": "91cadfa29383befbaf3c955063f9320ea235c8839590f7e2ac4061983252b3d6",
+      "sha256": "91cadfa29383befbaf3c955063f9320ea235c8839590f7e2ac4061983252b3d6"
+    },
+    "integrations/whatsapp/scripts/110-run-serial-cleanup.mjs": {
+      "gitBlob": "317ff9a7880702215678b5f6c7f6f769011e462d",
+      "linuxSha256": "7207be3ad4fa8e183d76ad91c6e6f8bff86e4655fe252a196670ba64c2ddc6e4",
+      "sha256": "7207be3ad4fa8e183d76ad91c6e6f8bff86e4655fe252a196670ba64c2ddc6e4"
+    },
+    "integrations/whatsapp/scripts/110-run-smoke.mjs": {
+      "gitBlob": "aa1ed99f0d7a51ab389b84c4a61a029131fb3cf4",
+      "linuxSha256": "0ff9a954a57d31c147ff379cfc14e01a4de85612e52b26676b7d875412a25287",
+      "sha256": "0ff9a954a57d31c147ff379cfc14e01a4de85612e52b26676b7d875412a25287"
+    },
+    "integrations/whatsapp/scripts/110-run-wire.mjs": {
+      "gitBlob": "c5b8d50d918bcfed754958101f993fe152519aa4",
+      "linuxSha256": "3c2ab74677e71615819a2fd555b52ba91b2dd88d06591aa64f2f0fefe0f5a80d",
+      "sha256": "3c2ab74677e71615819a2fd555b52ba91b2dd88d06591aa64f2f0fefe0f5a80d"
+    },
+    "integrations/whatsapp/transport/evolution-text.mjs": {
+      "gitBlob": "79f1ca2b8f51803207962a06103d8502ff5421d4",
+      "linuxSha256": "80f2482e8fc51405a7c37ca2ccc8864a7fcbe988095d64c9d4ac644ad697decd",
+      "sha256": "80f2482e8fc51405a7c37ca2ccc8864a7fcbe988095d64c9d4ac644ad697decd"
+    },
+    "integrations/whatsapp/worker/attendance-jobs.mjs": {
+      "gitBlob": "65602903a9472a7e8eedd12a3215fc32cf76a812",
+      "linuxSha256": "508bf590cc2ac654f7a4876dfaef43f93761c19fb6d0ac1c58492bd4d3a40a57",
+      "sha256": "508bf590cc2ac654f7a4876dfaef43f93761c19fb6d0ac1c58492bd4d3a40a57"
+    },
+    "integrations/whatsapp/worker/config.mjs": {
+      "gitBlob": "ea1116265557f32f2a834d4ea4a9a0b6f5078278",
+      "linuxSha256": "d9c78be6113cb4bc835434b905f525f69840a2f69c707b29c75af6468adbbeb3",
+      "sha256": "d9c78be6113cb4bc835434b905f525f69840a2f69c707b29c75af6468adbbeb3"
+    },
+    "integrations/whatsapp/worker/dispatch.mjs": {
+      "gitBlob": "970a742e7a2fdb029911d1b81b5c46c85ad00d45",
+      "linuxSha256": "bbc7661056f37c45f24634cd4e8e425f62c5cdc645f48ec74d3b7b4e7f0e649c",
+      "sha256": "bbc7661056f37c45f24634cd4e8e425f62c5cdc645f48ec74d3b7b4e7f0e649c"
+    },
+    "integrations/whatsapp/worker/errors.mjs": {
+      "gitBlob": "ed63fb09f4b04e80c5614eae4df8301768c8b7c6",
+      "linuxSha256": "714f33e8d67734e413a2fd988a985f50e9406e07a86dc72acea9cb472bbab6c5",
+      "sha256": "714f33e8d67734e413a2fd988a985f50e9406e07a86dc72acea9cb472bbab6c5"
+    },
+    "integrations/whatsapp/worker/http-client.mjs": {
+      "gitBlob": "f75bc522d17e743d4b56741fbe95474dfd7af4fd",
+      "linuxSha256": "882e18d8cd5234f50a7adb8d24cbf09f5226b56ce1a010f020262716dbb068be",
+      "sha256": "882e18d8cd5234f50a7adb8d24cbf09f5226b56ce1a010f020262716dbb068be"
+    },
+    "integrations/whatsapp/worker/main.mjs": {
+      "gitBlob": "3cffe9a9a27af81e4dae931ed6b1b0d5272d32ba",
+      "linuxSha256": "e14858f7a80f8df7de6858bd5a5912ef508c366425a534784127f71a5ae59ff0",
+      "sha256": "e14858f7a80f8df7de6858bd5a5912ef508c366425a534784127f71a5ae59ff0"
+    },
+    "integrations/whatsapp/worker/model-client.mjs": {
+      "gitBlob": "669f7ddaf176c274c533c1d25083b0e5ce9de985",
+      "linuxSha256": "1370b0f32d41c908e9a8b8e2e84413d77c6fd739c54f40e984791a35b0ef7579",
+      "sha256": "1370b0f32d41c908e9a8b8e2e84413d77c6fd739c54f40e984791a35b0ef7579"
+    },
+    "integrations/whatsapp/worker/model-config.mjs": {
+      "gitBlob": "e2487d266d763cae057ffb52ac8180350901dfbb",
+      "linuxSha256": "e3c143d5e3bdc41bd0ade41b8e95d0d8e179afbc673caf68f82da6c398b5a776",
+      "sha256": "e3c143d5e3bdc41bd0ade41b8e95d0d8e179afbc673caf68f82da6c398b5a776"
+    },
+    "integrations/whatsapp/worker/process-inbox.mjs": {
+      "gitBlob": "5e214e803f4b30cc0c0817c8e23535d24210de9b",
+      "linuxSha256": "5f3109963fe2e9485f27cfdfa3837cee5031f79adbf4e00857a591b68eac40f3",
+      "sha256": "5f3109963fe2e9485f27cfdfa3837cee5031f79adbf4e00857a591b68eac40f3"
+    },
+    "integrations/whatsapp/worker/server.mjs": {
+      "gitBlob": "7860ecb734d546b0c60396f5c8d2fafe9d04998e",
+      "linuxSha256": "e4bac4d69eb1aa7c6037b408bb77762060f1acc142928b63d2a07018a80d6873",
+      "sha256": "e4bac4d69eb1aa7c6037b408bb77762060f1acc142928b63d2a07018a80d6873"
+    }
+  },
+  "postgresImage": "postgres@sha256:cbf42f0edc946c0bc1b8eeed62403734e1f25dc67a3491455d07a92fdb558b28",
+  "schemaVersion": 1
+}

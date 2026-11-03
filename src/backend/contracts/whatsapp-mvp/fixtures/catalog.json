@@ -1,0 +1,1619 @@
+{
+  "schemaVersion": "1.5.0",
+  "syntheticOnly": true,
+  "runtimeEvidence": false,
+  "fixtures": [
+    {
+      "id": "StartOnboarding",
+      "schema": "StartOnboardingCommand",
+      "family": "human-command",
+      "implementationCard": "VR-WA-040-DOMAIN-AUTH",
+      "availability": "CARD_040_FOUNDATION",
+      "value": {
+        "commandType": "START_ONBOARDING",
+        "inboxEventId": "00000000-0000-4000-8000-000000000001",
+        "expectedVersion": 0,
+        "payload": {}
+      }
+    },
+    {
+      "id": "SetProfileName",
+      "schema": "SetProfileNameCommand",
+      "family": "human-command",
+      "implementationCard": "VR-WA-040-DOMAIN-AUTH",
+      "availability": "CARD_040_FOUNDATION",
+      "value": {
+        "commandType": "SET_PROFILE_NAME",
+        "inboxEventId": "00000000-0000-4000-8000-000000000001",
+        "expectedVersion": 0,
+        "payload": {
+          "name": "Motorista Exemplo"
+        }
+      }
+    },
+    {
+      "id": "AcceptNotice",
+      "schema": "AcceptNoticeCommand",
+      "family": "human-command",
+      "implementationCard": "VR-WA-040-DOMAIN-AUTH",
+      "availability": "CARD_040_FOUNDATION",
+      "value": {
+        "commandType": "ACCEPT_NOTICE",
+        "inboxEventId": "00000000-0000-4000-8000-000000000001",
+        "expectedVersion": 0,
+        "payload": {
+          "noticeVersion": "wa-mvp-v1"
+        }
+      }
+    },
+    {
+      "id": "ClaimDriverInvite",
+      "schema": "ClaimDriverInviteCommand",
+      "family": "human-command",
+      "implementationCard": "VR-WA-040-DOMAIN-AUTH",
+      "availability": "CARD_040_FOUNDATION",
+      "value": {
+        "commandType": "CLAIM_DRIVER_INVITE",
+        "inboxEventId": "00000000-0000-4000-8000-000000000001",
+        "expectedVersion": 0,
+        "payload": {
+          "inviteCode": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+        }
+      }
+    },
+    {
+      "id": "CreateInvite",
+      "schema": "CreateInviteCommand",
+      "family": "human-command",
+      "implementationCard": "VR-WA-080-DRIVER-ROUTINES",
+      "availability": "CARD_080_DRIVER_SETUP",
+      "value": {
+        "commandType": "CREATE_INVITE",
+        "inboxEventId": "00000000-0000-4000-8000-000000000001",
+        "expectedVersion": 0,
+        "payload": {
+          "confirmationRef": "example_confirmation_ref"
+        }
+      }
+    },
+    {
+      "id": "RevokeInvite",
+      "schema": "RevokeInviteCommand",
+      "family": "human-command",
+      "implementationCard": "VR-WA-080-DRIVER-ROUTINES",
+      "availability": "CARD_080_DRIVER_SETUP",
+      "value": {
+        "commandType": "REVOKE_INVITE",
+        "inboxEventId": "00000000-0000-4000-8000-000000000001",
+        "expectedVersion": 0,
+        "payload": {
+          "inviteRef": "example_invite_ref",
+          "confirmationRef": "example_confirmation_ref"
+        }
+      }
+    },
+    {
+      "id": "RequestLink",
+      "schema": "RequestLinkCommand",
+      "family": "human-command",
+      "implementationCard": "VR-WA-090-PASSENGERS",
+      "availability": "CARD_090_PASSENGER_SETUP",
+      "value": {
+        "commandType": "REQUEST_LINK",
+        "inboxEventId": "00000000-0000-4000-8000-000000000001",
+        "expectedVersion": 0,
+        "payload": {
+          "confirmationRef": "example_confirmation_ref"
+        }
+      }
+    },
+    {
+      "id": "ApproveLink",
+      "schema": "ApproveLinkCommand",
+      "family": "human-command",
+      "implementationCard": "VR-WA-090-PASSENGERS",
+      "availability": "CARD_090_PASSENGER_SETUP",
+      "value": {
+        "commandType": "APPROVE_LINK",
+        "inboxEventId": "00000000-0000-4000-8000-000000000001",
+        "expectedVersion": 0,
+        "payload": {
+          "linkRef": "example_link_ref",
+          "pickupRef": "example_pickup_ref",
+          "confirmationRef": "example_confirmation_ref"
+        }
+      }
+    },
+    {
+      "id": "CloseLink",
+      "schema": "CloseLinkCommand",
+      "family": "human-command",
+      "implementationCard": "VR-WA-090-PASSENGERS",
+      "availability": "CARD_090_PASSENGER_SETUP",
+      "value": {
+        "commandType": "CLOSE_LINK",
+        "inboxEventId": "00000000-0000-4000-8000-000000000001",
+        "expectedVersion": 0,
+        "payload": {
+          "linkRef": "example_link_ref",
+          "confirmationRef": "example_confirmation_ref"
+        }
+      }
+    },
+    {
+      "id": "ProposePickup",
+      "schema": "ProposePickupCommand",
+      "family": "human-command",
+      "implementationCard": "VR-WA-090-PASSENGERS",
+      "availability": "CARD_090_PASSENGER_SETUP",
+      "value": {
+        "commandType": "PROPOSE_PICKUP",
+        "inboxEventId": "00000000-0000-4000-8000-000000000001",
+        "expectedVersion": 0,
+        "payload": {
+          "sourceMessageId": "example_authenticated_pin_ref",
+          "confirmationRef": "example_confirmation_ref"
+        }
+      }
+    },
+    {
+      "id": "ApprovePickup",
+      "schema": "ApprovePickupCommand",
+      "family": "human-command",
+      "implementationCard": "VR-WA-090-PASSENGERS",
+      "availability": "CARD_090_PASSENGER_SETUP",
+      "value": {
+        "commandType": "APPROVE_PICKUP",
+        "inboxEventId": "00000000-0000-4000-8000-000000000001",
+        "expectedVersion": 0,
+        "payload": {
+          "pickupRef": "example_pickup_ref",
+          "confirmationRef": "example_confirmation_ref"
+        }
+      }
+    },
+    {
+      "id": "ConfigureRoutine",
+      "schema": "ConfigureRoutineCommand",
+      "family": "human-command",
+      "implementationCard": "VR-WA-080-DRIVER-ROUTINES",
+      "availability": "CARD_080_DRIVER_SETUP",
+      "value": {
+        "commandType": "CONFIGURE_ROUTINE",
+        "inboxEventId": "00000000-0000-4000-8000-000000000001",
+        "expectedVersion": 0,
+        "payload": {
+          "routineRef": "example_routine_ref",
+          "confirmationRef": "example_confirmation_ref"
+        }
+      }
+    },
+    {
+      "id": "SetStopOrder",
+      "schema": "SetStopOrderCommand",
+      "family": "human-command",
+      "implementationCard": "VR-WA-080-DRIVER-ROUTINES",
+      "availability": "CARD_080_DRIVER_SETUP",
+      "value": {
+        "commandType": "SET_STOP_ORDER",
+        "inboxEventId": "00000000-0000-4000-8000-000000000001",
+        "expectedVersion": 0,
+        "payload": {
+          "routineRef": "example_routine_ref",
+          "confirmationRef": "example_confirmation_ref"
+        }
+      }
+    },
+    {
+      "id": "CancelOccurrence",
+      "schema": "CancelOccurrenceCommand",
+      "family": "human-command",
+      "implementationCard": "VR-WA-080-DRIVER-ROUTINES",
+      "availability": "CARD_080_DRIVER_SETUP",
+      "value": {
+        "commandType": "CANCEL_OCCURRENCE",
+        "inboxEventId": "00000000-0000-4000-8000-000000000001",
+        "expectedVersion": 0,
+        "payload": {
+          "occurrenceRef": "example_occurrence_ref",
+          "confirmationRef": "example_confirmation_ref"
+        }
+      }
+    },
+    {
+      "id": "SetAttendance",
+      "schema": "SetAttendanceCommand",
+      "family": "human-command",
+      "implementationCard": "VR-WA-100-ATTENDANCE",
+      "availability": "CARD_100_ATTENDANCE",
+      "value": {
+        "commandType": "SET_ATTENDANCE",
+        "inboxEventId": "00000000-0000-4000-8000-000000000001",
+        "expectedVersion": 0,
+        "payload": {
+          "questionRef": "question_00000000-0000-4000-8000-000000000100",
+          "choice": "GOING"
+        }
+      }
+    },
+    {
+      "id": "RequestStart",
+      "schema": "RequestStartCommand",
+      "family": "human-command",
+      "implementationCard": "VR-WA-110-RUN-TRACKING",
+      "availability": "CARD_110_RUN_TRACKING",
+      "value": {
+        "commandType": "REQUEST_START",
+        "inboxEventId": "00000000-0000-4000-8000-000000000001",
+        "expectedVersion": 0,
+        "payload": {
+          "occurrenceRef": "example_occurrence_ref",
+          "confirmationRef": "example_confirmation_ref"
+        }
+      }
+    },
+    {
+      "id": "RequestResume",
+      "schema": "RequestResumeCommand",
+      "family": "human-command",
+      "implementationCard": "VR-WA-110-RUN-TRACKING",
+      "availability": "CARD_110_RUN_TRACKING",
+      "value": {
+        "commandType": "REQUEST_RESUME",
+        "inboxEventId": "00000000-0000-4000-8000-000000000001",
+        "expectedVersion": 0,
+        "payload": {
+          "occurrenceRef": "example_occurrence_ref",
+          "confirmationRef": "example_confirmation_ref"
+        }
+      }
+    },
+    {
+      "id": "FinishRun",
+      "schema": "FinishRunCommand",
+      "family": "human-command",
+      "implementationCard": "VR-WA-140-FINISH-SUPPORT",
+      "availability": "FUTURE",
+      "value": {
+        "commandType": "FINISH_RUN",
+        "inboxEventId": "00000000-0000-4000-8000-000000000001",
+        "expectedVersion": 0,
+        "payload": {
+          "runRef": "example_run_ref",
+          "reason": "MANUAL_COMPLETION"
+        }
+      }
+    },
+    {
+      "id": "GetSummary",
+      "schema": "GetSummaryCommand",
+      "family": "human-command",
+      "implementationCard": "VR-WA-080-DRIVER-ROUTINES",
+      "availability": "CARD_080_DRIVER_SETUP",
+      "value": {
+        "commandType": "GET_SUMMARY",
+        "inboxEventId": "00000000-0000-4000-8000-000000000001",
+        "expectedVersion": 0,
+        "payload": {
+          "summaryRef": "example_summary_ref"
+        }
+      }
+    },
+    {
+      "id": "GetDriverLocation",
+      "schema": "GetDriverLocationCommand",
+      "family": "human-command",
+      "implementationCard": "VR-WA-130-APPROACH",
+      "availability": "FUTURE",
+      "value": {
+        "commandType": "GET_DRIVER_LOCATION",
+        "inboxEventId": "00000000-0000-4000-8000-000000000001",
+        "expectedVersion": 0,
+        "payload": {
+          "occurrenceRef": "example_occurrence_ref"
+        }
+      }
+    },
+    {
+      "id": "ConfirmPairing",
+      "schema": "ConfirmPairingCommand",
+      "family": "human-command",
+      "implementationCard": "VR-WA-040-DOMAIN-AUTH",
+      "availability": "CARD_040_FOUNDATION",
+      "value": {
+        "commandType": "CONFIRM_PAIRING",
+        "inboxEventId": "00000000-0000-4000-8000-000000000001",
+        "expectedVersion": 0,
+        "payload": {
+          "userCode": "BCDFGHJK"
+        }
+      }
+    },
+    {
+      "id": "SetPreference",
+      "schema": "SetPreferenceCommand",
+      "family": "human-command",
+      "implementationCard": "VR-WA-140-FINISH-SUPPORT",
+      "availability": "FUTURE",
+      "value": {
+        "commandType": "SET_PREFERENCE",
+        "inboxEventId": "00000000-0000-4000-8000-000000000001",
+        "expectedVersion": 0,
+        "payload": {
+          "preference": "APPROACH_MESSAGES",
+          "enabled": true
+        }
+      }
+    },
+    {
+      "id": "RequestSupport",
+      "schema": "RequestSupportCommand",
+      "family": "human-command",
+      "implementationCard": "VR-WA-070-AGENT-WORKFLOWS",
+      "availability": "CARD_070_CONVERSATION",
+      "value": {
+        "commandType": "REQUEST_SUPPORT",
+        "inboxEventId": "00000000-0000-4000-8000-000000000001",
+        "expectedVersion": 0,
+        "payload": {
+          "reason": "HELP",
+          "detail": "Preciso de ajuda com o exemplo de teste."
+        }
+      }
+    },
+    {
+      "id": "RequestDataDeletion",
+      "schema": "RequestDataDeletionCommand",
+      "family": "human-command",
+      "implementationCard": "VR-WA-140-FINISH-SUPPORT",
+      "availability": "FUTURE",
+      "value": {
+        "commandType": "REQUEST_DATA_DELETION",
+        "inboxEventId": "00000000-0000-4000-8000-000000000001",
+        "expectedVersion": 0,
+        "payload": {
+          "confirmationRef": "example_deletion_confirmation"
+        }
+      }
+    },
+    {
+      "id": "CommandApplied",
+      "schema": "HumanCommandResult",
+      "family": "HumanCommandResult",
+      "implementationCard": "VR-WA-040-DOMAIN-AUTH",
+      "availability": "CARD_040_FOUNDATION",
+      "value": {
+        "commandId": "00000000-0000-4000-8000-000000000005",
+        "outcome": "APPLIED",
+        "entityVersion": 1,
+        "nextStep": "SET_PROFILE_NAME",
+        "responseIds": [],
+        "correlationId": "00000000-0000-4000-8000-000000000006"
+      }
+    },
+    {
+      "id": "ErrorInvalidPayload",
+      "schema": "ErrorResponse",
+      "family": "error",
+      "implementationCard": "VR-WA-040-DOMAIN-AUTH",
+      "availability": "CARD_040_FOUNDATION",
+      "value": {
+        "code": "INVALID_PAYLOAD",
+        "message": "Falha sintética de contrato.",
+        "correlationId": "00000000-0000-4000-8000-000000000006"
+      }
+    },
+    {
+      "id": "ErrorInvalidCredential",
+      "schema": "ErrorResponse",
+      "family": "error",
+      "implementationCard": "VR-WA-040-DOMAIN-AUTH",
+      "availability": "CARD_040_FOUNDATION",
+      "value": {
+        "code": "INVALID_CREDENTIAL",
+        "message": "Falha sintética de contrato.",
+        "correlationId": "00000000-0000-4000-8000-000000000006"
+      }
+    },
+    {
+      "id": "ErrorProofNonceRequired",
+      "schema": "ErrorResponse",
+      "family": "error",
+      "implementationCard": "VR-WA-040-DOMAIN-AUTH",
+      "availability": "CARD_040_FOUNDATION",
+      "value": {
+        "code": "PROOF_NONCE_REQUIRED",
+        "message": "Falha sintética de contrato.",
+        "correlationId": "00000000-0000-4000-8000-000000000006"
+      }
+    },
+    {
+      "id": "ErrorActionNotAllowed",
+      "schema": "ErrorResponse",
+      "family": "error",
+      "implementationCard": "VR-WA-040-DOMAIN-AUTH",
+      "availability": "CARD_040_FOUNDATION",
+      "value": {
+        "code": "ACTION_NOT_ALLOWED",
+        "message": "Falha sintética de contrato.",
+        "correlationId": "00000000-0000-4000-8000-000000000006"
+      }
+    },
+    {
+      "id": "ErrorResourceNotAccessible",
+      "schema": "ErrorResponse",
+      "family": "error",
+      "implementationCard": "VR-WA-040-DOMAIN-AUTH",
+      "availability": "CARD_040_FOUNDATION",
+      "value": {
+        "code": "RESOURCE_NOT_ACCESSIBLE",
+        "message": "Falha sintética de contrato.",
+        "correlationId": "00000000-0000-4000-8000-000000000006"
+      }
+    },
+    {
+      "id": "ErrorVersionConflict",
+      "schema": "ErrorResponse",
+      "family": "error",
+      "implementationCard": "VR-WA-040-DOMAIN-AUTH",
+      "availability": "CARD_040_FOUNDATION",
+      "value": {
+        "code": "VERSION_CONFLICT",
+        "message": "Falha sintética de contrato.",
+        "correlationId": "00000000-0000-4000-8000-000000000006"
+      }
+    },
+    {
+      "id": "ErrorIdempotencyConflict",
+      "schema": "ErrorResponse",
+      "family": "error",
+      "implementationCard": "VR-WA-040-DOMAIN-AUTH",
+      "availability": "CARD_040_FOUNDATION",
+      "value": {
+        "code": "IDEMPOTENCY_CONFLICT",
+        "message": "Falha sintética de contrato.",
+        "correlationId": "00000000-0000-4000-8000-000000000006"
+      }
+    },
+    {
+      "id": "ErrorActiveRunExists",
+      "schema": "ErrorResponse",
+      "family": "error",
+      "implementationCard": "VR-WA-040-DOMAIN-AUTH",
+      "availability": "CARD_040_FOUNDATION",
+      "value": {
+        "code": "ACTIVE_RUN_EXISTS",
+        "message": "Falha sintética de contrato.",
+        "correlationId": "00000000-0000-4000-8000-000000000006"
+      }
+    },
+    {
+      "id": "ErrorIntentExpired",
+      "schema": "ErrorResponse",
+      "family": "error",
+      "implementationCard": "VR-WA-040-DOMAIN-AUTH",
+      "availability": "CARD_040_FOUNDATION",
+      "value": {
+        "code": "INTENT_EXPIRED",
+        "message": "Falha sintética de contrato.",
+        "correlationId": "00000000-0000-4000-8000-000000000006"
+      }
+    },
+    {
+      "id": "ErrorAmbiguousOccurrence",
+      "schema": "ErrorResponse",
+      "family": "error",
+      "implementationCard": "VR-WA-040-DOMAIN-AUTH",
+      "availability": "CARD_040_FOUNDATION",
+      "value": {
+        "code": "AMBIGUOUS_OCCURRENCE",
+        "message": "Falha sintética de contrato.",
+        "correlationId": "00000000-0000-4000-8000-000000000006"
+      }
+    },
+    {
+      "id": "ErrorPointNotApproved",
+      "schema": "ErrorResponse",
+      "family": "error",
+      "implementationCard": "VR-WA-040-DOMAIN-AUTH",
+      "availability": "CARD_040_FOUNDATION",
+      "value": {
+        "code": "POINT_NOT_APPROVED",
+        "message": "Falha sintética de contrato.",
+        "correlationId": "00000000-0000-4000-8000-000000000006"
+      }
+    },
+    {
+      "id": "ErrorRateLimited",
+      "schema": "ErrorResponse",
+      "family": "error",
+      "implementationCard": "VR-WA-040-DOMAIN-AUTH",
+      "availability": "CARD_040_FOUNDATION",
+      "value": {
+        "code": "RATE_LIMITED",
+        "message": "Falha sintética de contrato.",
+        "correlationId": "00000000-0000-4000-8000-000000000006"
+      }
+    },
+    {
+      "id": "ErrorDependencyUnavailable",
+      "schema": "ErrorResponse",
+      "family": "error",
+      "implementationCard": "VR-WA-040-DOMAIN-AUTH",
+      "availability": "CARD_040_FOUNDATION",
+      "value": {
+        "code": "DEPENDENCY_UNAVAILABLE",
+        "message": "Falha sintética de contrato.",
+        "correlationId": "00000000-0000-4000-8000-000000000006"
+      }
+    },
+    {
+      "id": "PairingBegin",
+      "schema": "PairingBeginRequest",
+      "family": "pairing",
+      "implementationCard": "VR-WA-040-DOMAIN-AUTH",
+      "availability": "CARD_040_FOUNDATION",
+      "value": {
+        "publicJwk": {
+          "kty": "EC",
+          "crv": "P-256",
+          "x": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+          "y": "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB"
+        },
+        "pkceChallenge": "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC",
+        "pkceMethod": "S256",
+        "platform": "ANDROID",
+        "appVersion": "0.1.0"
+      }
+    },
+    {
+      "id": "PairingBegun",
+      "schema": "PairingBeginResponse",
+      "family": "pairing",
+      "implementationCard": "VR-WA-040-DOMAIN-AUTH",
+      "availability": "CARD_040_FOUNDATION",
+      "value": {
+        "pairingId": "00000000-0000-4000-8000-000000000002",
+        "userCode": "BCDFGHJK",
+        "expiresAt": "2026-10-31T12:05:00Z",
+        "serverTime": "2026-10-31T12:00:00Z"
+      }
+    },
+    {
+      "id": "PairingPending",
+      "schema": "PairingStatusResponse",
+      "family": "pairing",
+      "implementationCard": "VR-WA-040-DOMAIN-AUTH",
+      "availability": "CARD_040_FOUNDATION",
+      "value": {
+        "pairingId": "00000000-0000-4000-8000-000000000002",
+        "state": "PENDING",
+        "expiresAt": "2026-10-31T12:05:00Z",
+        "serverTime": "2026-10-31T12:00:00Z"
+      }
+    },
+    {
+      "id": "PairingRedeem",
+      "schema": "PairingRedeemRequest",
+      "family": "pairing",
+      "implementationCard": "VR-WA-040-DOMAIN-AUTH",
+      "availability": "CARD_040_FOUNDATION",
+      "value": {
+        "pairingId": "00000000-0000-4000-8000-000000000002",
+        "pkceVerifier": "EXAMPLE_NOT_A_REAL_PKCE_VERIFIER_1234567890123"
+      }
+    },
+    {
+      "id": "DeviceSession",
+      "schema": "DeviceSessionResponse",
+      "family": "session",
+      "implementationCard": "VR-WA-040-DOMAIN-AUTH",
+      "availability": "CARD_040_FOUNDATION",
+      "value": {
+        "deviceId": "00000000-0000-4000-8000-000000000003",
+        "accessToken": "EXAMPLE_NOT_A_CREDENTIAL_ACCESS_TOKEN_0000",
+        "refreshToken": "EXAMPLE_NOT_A_CREDENTIAL_REFRESH_TOKEN_000",
+        "tokenType": "DPoP",
+        "accessExpiresAt": "2026-10-31T12:05:00Z",
+        "refreshExpiresAt": "2026-11-30T12:00:00Z",
+        "serverTime": "2026-10-31T12:00:00Z"
+      }
+    },
+    {
+      "id": "SessionRefresh",
+      "schema": "SessionRefreshRequest",
+      "family": "session",
+      "implementationCard": "VR-WA-040-DOMAIN-AUTH",
+      "availability": "CARD_040_FOUNDATION",
+      "value": {
+        "refreshToken": "EXAMPLE_NOT_A_CREDENTIAL_REFRESH_TOKEN_000"
+      }
+    },
+    {
+      "id": "SessionRevoke",
+      "schema": "SessionRevokeRequest",
+      "family": "session",
+      "implementationCard": "VR-WA-040-DOMAIN-AUTH",
+      "availability": "CARD_040_FOUNDATION",
+      "value": {}
+    },
+    {
+      "id": "SessionRevoked",
+      "schema": "SessionRevokeResponse",
+      "family": "session",
+      "implementationCard": "VR-WA-040-DOMAIN-AUTH",
+      "availability": "CARD_040_FOUNDATION",
+      "value": {
+        "deviceId": "00000000-0000-4000-8000-000000000003",
+        "state": "REVOKED",
+        "serverTime": "2026-10-31T12:00:00Z"
+      }
+    },
+    {
+      "id": "DriverStatus",
+      "schema": "DriverStatusResponse",
+      "family": "driver-status",
+      "implementationCard": "VR-WA-040-DOMAIN-AUTH",
+      "availability": "CARD_040_FOUNDATION",
+      "value": {
+        "deviceId": "00000000-0000-4000-8000-000000000003",
+        "driverId": "00000000-0000-4000-8000-000000000004",
+        "displayName": "Motorista Exemplo",
+        "profileStatus": "ACTIVE",
+        "deviceState": "ACTIVE",
+        "readiness": "SETUP_REQUIRED",
+        "runId": null,
+        "serverTime": "2026-10-31T12:00:00Z"
+      }
+    },
+    {
+      "id": "DPoPHeader",
+      "schema": "DPoPProtectedHeader",
+      "family": "proof",
+      "implementationCard": "VR-WA-040-DOMAIN-AUTH",
+      "availability": "CARD_040_FOUNDATION",
+      "value": {
+        "typ": "dpop+jwt",
+        "alg": "ES256",
+        "jwk": {
+          "kty": "EC",
+          "crv": "P-256",
+          "x": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+          "y": "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB"
+        }
+      }
+    },
+    {
+      "id": "DPoPBeginClaims",
+      "schema": "DPoPBodyBoundClaims",
+      "family": "proof",
+      "implementationCard": "VR-WA-040-DOMAIN-AUTH",
+      "availability": "CARD_040_FOUNDATION",
+      "value": {
+        "jti": "example_unique_jti_0001",
+        "iat": 1793448000,
+        "htm": "POST",
+        "htu": "https://vanrides.invalid/driver-app/v1/pairings/begin",
+        "nonce": "EXAMPLE_NOT_A_VALID_NONCE_0000000000000000A",
+        "vr_body_sha256": "DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD"
+      }
+    },
+    {
+      "id": "DPoPStatusClaims",
+      "schema": "DPoPAccessClaims",
+      "family": "proof",
+      "implementationCard": "VR-WA-040-DOMAIN-AUTH",
+      "availability": "CARD_040_FOUNDATION",
+      "value": {
+        "jti": "example_unique_jti_0002",
+        "iat": 1793448000,
+        "htm": "GET",
+        "htu": "https://vanrides.invalid/driver-app/v1/status",
+        "nonce": "EXAMPLE_NOT_A_VALID_NONCE_0000000000000000A",
+        "ath": "EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEA"
+      }
+    },
+    {
+      "id": "DPoPRevokeClaims",
+      "schema": "DPoPBodyAndAccessClaims",
+      "family": "proof",
+      "implementationCard": "VR-WA-040-DOMAIN-AUTH",
+      "availability": "CARD_040_FOUNDATION",
+      "value": {
+        "jti": "example_unique_jti_0003",
+        "iat": 1793448000,
+        "htm": "POST",
+        "htu": "https://vanrides.invalid/driver-app/v1/session/revoke",
+        "nonce": "EXAMPLE_NOT_A_VALID_NONCE_0000000000000000A",
+        "ath": "EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEA",
+        "vr_body_sha256": "DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDA"
+      }
+    },
+    {
+      "id": "EvolutionRawEvent",
+      "schema": "EvolutionRawEventRequest",
+      "family": "channel",
+      "implementationCard": "VR-WA-050-WHATSAPP-TRANSPORT",
+      "availability": "CARD_050_TRANSPORT",
+      "value": {
+        "event": "messages.upsert",
+        "instance": "synthetic-transport",
+        "data": {
+          "key": {
+            "id": "SYNTHETIC_MESSAGE_01",
+            "remoteJid": "000000000001@s.whatsapp.net",
+            "fromMe": false
+          },
+          "message": {
+            "conversation": "Olá"
+          },
+          "messageType": "conversation",
+          "messageTimestamp": 1893499200
+        }
+      }
+    },
+    {
+      "id": "EventAccepted",
+      "schema": "EventAcceptedResponse",
+      "family": "channel",
+      "implementationCard": "VR-WA-050-WHATSAPP-TRANSPORT",
+      "availability": "CARD_050_TRANSPORT",
+      "value": {
+        "receiptId": "00000000-0000-4000-8000-000000000001",
+        "status": "PERSISTED",
+        "serverTime": "2026-10-31T12:00:00Z"
+      }
+    },
+    {
+      "id": "InboxClaim",
+      "schema": "InboxClaimRequest",
+      "family": "inbox",
+      "implementationCard": "VR-WA-050-WHATSAPP-TRANSPORT",
+      "availability": "CARD_050_TRANSPORT",
+      "value": {
+        "batchLimit": 10,
+        "leaseSeconds": 60
+      }
+    },
+    {
+      "id": "InboxClaimed",
+      "schema": "InboxClaimResponse",
+      "family": "inbox",
+      "implementationCard": "VR-WA-050-WHATSAPP-TRANSPORT",
+      "availability": "CARD_050_TRANSPORT",
+      "value": {
+        "items": [
+          {
+            "inboxEventId": "00000000-0000-4000-8000-000000000001",
+            "conversationRef": "example_conversation_ref",
+            "inboxLease": "EXAMPLE_NOT_A_CREDENTIAL_INBOX_LEASE_0000",
+            "leaseExpiresAt": "2026-10-31T12:01:00Z",
+            "message": {
+              "type": "TEXT",
+              "sourceMessageId": "example_source_message_ref",
+              "text": "Olá, exemplo sintético."
+            }
+          }
+        ],
+        "serverTime": "2026-10-31T12:00:00Z"
+      }
+    },
+    {
+      "id": "ConversationContext",
+      "schema": "ConversationContextResponse",
+      "family": "context",
+      "implementationCard": "VR-WA-070-AGENT-WORKFLOWS",
+      "availability": "CARD_070_CONVERSATION",
+      "value": {
+        "inboxEventId": "00000000-0000-4000-8000-000000000001",
+        "entityVersion": 0,
+        "actorState": "UNREGISTERED",
+        "step": "ONBOARDING",
+        "allowedCommands": [
+          "START_ONBOARDING",
+          "RESPOND_TO_MESSAGE"
+        ],
+        "options": [],
+        "serverTime": "2026-10-31T12:00:00Z",
+        "registrationStep": "WELCOME",
+        "eventFreshness": "CURRENT"
+      }
+    },
+    {
+      "id": "InboxResult",
+      "schema": "InboxResultRequest",
+      "family": "inbox",
+      "implementationCard": "VR-WA-050-WHATSAPP-TRANSPORT",
+      "availability": "CARD_050_TRANSPORT",
+      "value": {
+        "outcome": "COMPLETED"
+      }
+    },
+    {
+      "id": "InboxResultRecorded",
+      "schema": "InboxResultResponse",
+      "family": "inbox",
+      "implementationCard": "VR-WA-050-WHATSAPP-TRANSPORT",
+      "availability": "CARD_050_TRANSPORT",
+      "value": {
+        "inboxEventId": "00000000-0000-4000-8000-000000000001",
+        "state": "PROCESSED",
+        "serverTime": "2026-10-31T12:00:00Z"
+      }
+    },
+    {
+      "id": "JobMaterializeOccurrences",
+      "schema": "JobTickRequest",
+      "family": "system-job",
+      "implementationCard": "VR-WA-100-ATTENDANCE",
+      "availability": "CARD_100_ATTENDANCE",
+      "value": {
+        "jobType": "MATERIALIZE_OCCURRENCES",
+        "windowKey": "2026-10-31T12:00:00Z",
+        "batchLimit": 100
+      }
+    },
+    {
+      "id": "JobDueReminders",
+      "schema": "JobTickRequest",
+      "family": "system-job",
+      "implementationCard": "VR-WA-100-ATTENDANCE",
+      "availability": "CARD_100_ATTENDANCE",
+      "value": {
+        "jobType": "DUE_REMINDERS",
+        "windowKey": "2026-10-31T12:00:00Z",
+        "batchLimit": 100
+      }
+    },
+    {
+      "id": "JobExpireLeases",
+      "schema": "JobTickRequest",
+      "family": "system-job",
+      "implementationCard": "VR-WA-150-OPERATIONS",
+      "availability": "FUTURE",
+      "value": {
+        "jobType": "EXPIRE_LEASES",
+        "windowKey": "2026-10-31T12:00:00Z/PT1M",
+        "batchLimit": 100
+      }
+    },
+    {
+      "id": "JobHealthReconcile",
+      "schema": "JobTickRequest",
+      "family": "system-job",
+      "implementationCard": "VR-WA-120-DELIVERY-RECOVERY",
+      "availability": "CARD_120_DELIVERY_RECOVERY",
+      "value": {
+        "jobType": "HEALTH_RECONCILE",
+        "windowKey": "2026-10-31T12:00:00Z",
+        "batchLimit": 100
+      }
+    },
+    {
+      "id": "JobRetention",
+      "schema": "JobTickRequest",
+      "family": "system-job",
+      "implementationCard": "VR-WA-150-OPERATIONS",
+      "availability": "FUTURE",
+      "value": {
+        "jobType": "RETENTION",
+        "windowKey": "2026-10-31T12:00:00Z/PT1M",
+        "batchLimit": 100
+      }
+    },
+    {
+      "id": "JobTicked",
+      "schema": "JobTickResponse",
+      "family": "system-job",
+      "implementationCard": "VR-WA-120-DELIVERY-RECOVERY",
+      "availability": "CARD_120_DELIVERY_RECOVERY",
+      "value": {
+        "jobType": "HEALTH_RECONCILE",
+        "processed": 0,
+        "nextCursor": null,
+        "serverTime": "2026-10-31T12:00:00Z"
+      }
+    },
+    {
+      "id": "ActivateStartIntent",
+      "schema": "ActivateStartIntentRequest",
+      "family": "run",
+      "implementationCard": "VR-WA-110-RUN-TRACKING",
+      "availability": "CARD_110_RUN_TRACKING",
+      "value": {
+        "expectedVersion": 1,
+        "foregroundConfirmed": "CONFIRMED",
+        "intentToken": "synthetic_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxA"
+      }
+    },
+    {
+      "id": "ResumeRun",
+      "schema": "ResumeRunRequest",
+      "family": "run",
+      "implementationCard": "VR-WA-110-RUN-TRACKING",
+      "availability": "CARD_110_RUN_TRACKING",
+      "value": {
+        "expectedVersion": 1,
+        "foregroundConfirmed": "CONFIRMED",
+        "intentToken": "synthetic_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxA",
+        "intentId": "00000000-0000-4000-8000-000000000110"
+      }
+    },
+    {
+      "id": "FinishRunDeviceRequest",
+      "schema": "FinishRunRequest",
+      "family": "run",
+      "implementationCard": "VR-WA-140-FINISH-SUPPORT",
+      "availability": "FUTURE",
+      "value": {
+        "expectedVersion": 1,
+        "reason": "MANUAL_COMPLETION"
+      }
+    },
+    {
+      "id": "RunControl",
+      "schema": "RunControlResponse",
+      "family": "run",
+      "implementationCard": "VR-WA-110-RUN-TRACKING",
+      "availability": "CARD_110_RUN_TRACKING",
+      "value": {
+        "runId": "00000000-0000-4000-8000-000000000007",
+        "state": "STARTING",
+        "entityVersion": 2,
+        "trackingSessionId": "00000000-0000-4000-8000-000000000008",
+        "generation": 1,
+        "leaseExpiresAt": "2026-10-31T12:05:00Z",
+        "action": "CONTINUE",
+        "serverTime": "2026-10-31T12:00:00Z",
+        "gpsState": "STALE",
+        "stopRequestRef": null
+      }
+    },
+    {
+      "id": "TrackingSamples",
+      "schema": "TrackingSamplesRequest",
+      "family": "tracking",
+      "implementationCard": "VR-WA-110-RUN-TRACKING",
+      "availability": "CARD_110_RUN_TRACKING",
+      "value": {
+        "sessionId": "00000000-0000-4000-8000-000000000008",
+        "generation": 1,
+        "batchId": "00000000-0000-4000-8000-000000000010",
+        "deviceTime": "2026-10-31T12:00:00Z",
+        "samples": [
+          {
+            "sequence": 1,
+            "capturedAt": "2026-10-31T12:00:00Z",
+            "latitude": 0.0,
+            "longitude": 0.0,
+            "accuracyM": 10.0
+          }
+        ]
+      }
+    },
+    {
+      "id": "TrackingSamplesAck",
+      "schema": "TrackingSamplesResponse",
+      "family": "tracking",
+      "implementationCard": "VR-WA-110-RUN-TRACKING",
+      "availability": "CARD_110_RUN_TRACKING",
+      "value": {
+        "accepted": [
+          1
+        ],
+        "duplicate": [],
+        "rejected": [],
+        "serverTime": "2026-10-31T12:00:00Z",
+        "leaseExpiresAt": "2026-10-31T12:05:00Z",
+        "action": "CONTINUE",
+        "gpsState": "FRESH",
+        "stopRequestRef": null,
+        "sessionId": "00000000-0000-4000-8000-000000000008",
+        "generation": 1
+      }
+    },
+    {
+      "id": "TrackingState",
+      "schema": "TrackingStateRequest",
+      "family": "tracking",
+      "implementationCard": "VR-WA-110-RUN-TRACKING",
+      "availability": "CARD_110_RUN_TRACKING",
+      "value": {
+        "sessionId": "00000000-0000-4000-8000-000000000008",
+        "generation": 1,
+        "state": "STOPPED",
+        "stopRequestRef": "example_stop_request_ref"
+      }
+    },
+    {
+      "id": "TrackingStateAck",
+      "schema": "TrackingStateResponse",
+      "family": "tracking",
+      "implementationCard": "VR-WA-110-RUN-TRACKING",
+      "availability": "CARD_110_RUN_TRACKING",
+      "value": {
+        "sessionId": "00000000-0000-4000-8000-000000000008",
+        "generation": 1,
+        "action": "STOP",
+        "leaseExpiresAt": "2026-10-31T12:00:00Z",
+        "serverTime": "2026-10-31T12:00:00Z",
+        "gpsState": "STALE",
+        "stopRequestRef": null
+      }
+    },
+    {
+      "id": "OutboxClaim",
+      "schema": "OutboxClaimRequest",
+      "family": "delivery",
+      "implementationCard": "VR-WA-050-WHATSAPP-TRANSPORT",
+      "availability": "CARD_050_TRANSPORT",
+      "value": {
+        "batchLimit": 10,
+        "leaseSeconds": 60
+      }
+    },
+    {
+      "id": "OutboxClaimed",
+      "schema": "OutboxClaimResponse",
+      "family": "delivery",
+      "implementationCard": "VR-WA-050-WHATSAPP-TRANSPORT",
+      "availability": "CARD_050_TRANSPORT",
+      "value": {
+        "items": [
+          {
+            "outboxId": "00000000-0000-4000-8000-000000000009",
+            "purpose": "COMMAND_RESPONSE",
+            "leaseToken": "EXAMPLE_NOT_A_CREDENTIAL_OUTBOX_LEASE_000",
+            "leaseExpiresAt": "2026-10-31T12:01:00Z",
+            "expiresAt": "2026-10-31T12:05:00Z"
+          }
+        ],
+        "serverTime": "2026-10-31T12:00:00Z"
+      }
+    },
+    {
+      "id": "OutboxAuthorizeSubmit",
+      "schema": "OutboxAuthorizeSubmitRequest",
+      "family": "delivery",
+      "implementationCard": "VR-WA-120-DELIVERY-RECOVERY",
+      "availability": "CARD_120_DELIVERY_RECOVERY",
+      "value": {
+        "leaseToken": "EXAMPLE_NOT_A_CREDENTIAL_OUTBOX_LEASE_000"
+      }
+    },
+    {
+      "id": "OutboxAuthorized",
+      "schema": "OutboxAuthorizeSubmitResponse",
+      "family": "delivery",
+      "implementationCard": "VR-WA-120-DELIVERY-RECOVERY",
+      "availability": "CARD_120_DELIVERY_RECOVERY",
+      "value": {
+        "outboxId": "00000000-0000-4000-8000-000000000009",
+        "attemptToken": "EXAMPLE_NOT_A_CREDENTIAL_ATTEMPT_TOKEN_00",
+        "submitBefore": "2026-10-31T12:00:10Z",
+        "recipient": {
+          "addressType": "JID",
+          "address": "synthetic-recipient@vanrides.invalid"
+        },
+        "content": {
+          "type": "TEXT",
+          "text": "Resposta sintética aprovada pela API.",
+          "referenceTime": "2026-10-31T12:00:00Z"
+        },
+        "serverTime": "2026-10-31T12:00:00Z"
+      }
+    },
+    {
+      "id": "OutboxPinContent",
+      "schema": "OutboxStaticPinContent",
+      "family": "delivery-pin",
+      "implementationCard": "VR-WA-130-APPROACH",
+      "availability": "FUTURE",
+      "value": {
+        "type": "STATIC_PIN",
+        "latitude": 0.0,
+        "longitude": 0.0,
+        "capturedAt": "2026-10-31T12:00:00Z",
+        "label": "Veículo sintético"
+      }
+    },
+    {
+      "id": "OutboxResult",
+      "schema": "OutboxResultRequest",
+      "family": "delivery",
+      "implementationCard": "VR-WA-050-WHATSAPP-TRANSPORT",
+      "availability": "CARD_050_TRANSPORT",
+      "value": {
+        "attemptToken": "EXAMPLE_NOT_A_CREDENTIAL_ATTEMPT_TOKEN_00",
+        "outcome": "UNKNOWN",
+        "failureCode": "TIMEOUT"
+      }
+    },
+    {
+      "id": "OutboxResultRecorded",
+      "schema": "OutboxResultResponse",
+      "family": "delivery",
+      "implementationCard": "VR-WA-050-WHATSAPP-TRANSPORT",
+      "availability": "CARD_050_TRANSPORT",
+      "value": {
+        "outboxId": "00000000-0000-4000-8000-000000000009",
+        "state": "UNKNOWN",
+        "serverTime": "2026-10-31T12:00:00Z"
+      }
+    },
+    {
+      "id": "PairingBegunWithZ",
+      "schema": "PairingBeginResponse",
+      "family": "pairing",
+      "implementationCard": "VR-WA-040-DOMAIN-AUTH",
+      "availability": "CARD_040_FOUNDATION",
+      "value": {
+        "pairingId": "00000000-0000-4000-8000-000000000002",
+        "userCode": "BCDFGHJZ",
+        "expiresAt": "2026-10-31T12:05:00Z",
+        "serverTime": "2026-10-31T12:00:00Z"
+      }
+    },
+    {
+      "id": "RespondToMessage",
+      "schema": "RespondToMessageCommand",
+      "family": "human-command",
+      "implementationCard": "VR-WA-070-AGENT-WORKFLOWS",
+      "availability": "CARD_070_CONVERSATION",
+      "value": {
+        "commandType": "RESPOND_TO_MESSAGE",
+        "inboxEventId": "00000000-0000-4000-8000-000000000001",
+        "expectedVersion": 0,
+        "payload": {
+          "responseCode": "HELP"
+        }
+      }
+    },
+    {
+      "id": "ClaimDriverInviteFromInbox",
+      "schema": "ClaimDriverInviteCommand",
+      "family": "human-command",
+      "implementationCard": "VR-WA-070-AGENT-WORKFLOWS",
+      "availability": "CARD_070_CONVERSATION",
+      "value": {
+        "commandType": "CLAIM_DRIVER_INVITE",
+        "inboxEventId": "00000000-0000-4000-8000-000000000001",
+        "expectedVersion": 0,
+        "payload": {}
+      }
+    },
+    {
+      "id": "ConfirmPairingFromInbox",
+      "schema": "ConfirmPairingCommand",
+      "family": "human-command",
+      "implementationCard": "VR-WA-070-AGENT-WORKFLOWS",
+      "availability": "CARD_070_CONVERSATION",
+      "value": {
+        "commandType": "CONFIRM_PAIRING",
+        "inboxEventId": "00000000-0000-4000-8000-000000000001",
+        "expectedVersion": 0,
+        "payload": {}
+      }
+    },
+    {
+      "id": "AdvanceDriverSetup",
+      "schema": "AdvanceDriverSetupCommand",
+      "family": "human-command",
+      "implementationCard": "VR-WA-080-DRIVER-ROUTINES",
+      "availability": "CARD_080_DRIVER_SETUP",
+      "value": {
+        "commandType": "ADVANCE_DRIVER_SETUP",
+        "inboxEventId": "00000000-0000-4000-8000-000000000001",
+        "expectedVersion": 1,
+        "payload": {}
+      }
+    },
+    {
+      "id": "SetRoutineState",
+      "schema": "SetRoutineStateCommand",
+      "family": "human-command",
+      "implementationCard": "VR-WA-080-DRIVER-ROUTINES",
+      "availability": "CARD_080_DRIVER_SETUP",
+      "value": {
+        "commandType": "SET_ROUTINE_STATE",
+        "inboxEventId": "00000000-0000-4000-8000-000000000001",
+        "expectedVersion": 1,
+        "payload": {
+          "routineRef": "example_routine_ref",
+          "confirmationRef": "example_confirmation_ref"
+        }
+      }
+    },
+    {
+      "id": "AdvancePassengerSetup",
+      "schema": "AdvancePassengerSetupCommand",
+      "family": "human-command",
+      "implementationCard": "VR-WA-090-PASSENGERS",
+      "availability": "CARD_090_PASSENGER_SETUP",
+      "value": {
+        "commandType": "ADVANCE_PASSENGER_SETUP",
+        "inboxEventId": "00000000-0000-4000-8000-000000000001",
+        "expectedVersion": 0,
+        "payload": {}
+      }
+    },
+    {
+      "id": "AdvanceAttendance",
+      "schema": "AdvanceAttendanceCommand",
+      "family": "human-command",
+      "implementationCard": "VR-WA-100-ATTENDANCE",
+      "availability": "CARD_100_ATTENDANCE",
+      "value": {
+        "commandType": "ADVANCE_ATTENDANCE",
+        "inboxEventId": "00000000-0000-4000-8000-000000000001",
+        "expectedVersion": 0,
+        "payload": {}
+      }
+    },
+    {
+      "id": "AttendanceContext",
+      "schema": "ConversationContextResponse",
+      "family": "context",
+      "implementationCard": "VR-WA-100-ATTENDANCE",
+      "availability": "CARD_100_ATTENDANCE",
+      "value": {
+        "inboxEventId": "00000000-0000-4000-8000-000000000001",
+        "entityVersion": 0,
+        "actorState": "PASSENGER",
+        "step": "READY",
+        "allowedCommands": [
+          "SET_ATTENDANCE",
+          "RESPOND_TO_MESSAGE"
+        ],
+        "options": [
+          {
+            "ref": "question_00000000-0000-4000-8000-000000000100",
+            "kind": "QUESTION",
+            "label": "Presença"
+          }
+        ],
+        "serverTime": "2026-10-31T12:00:00Z",
+        "registrationStep": "READY",
+        "eventFreshness": "CURRENT",
+        "attendanceChoice": "GOING"
+      }
+    },
+    {
+      "id": "AttendanceJobTicked",
+      "schema": "JobTickResponse",
+      "family": "system-job",
+      "implementationCard": "VR-WA-100-ATTENDANCE",
+      "availability": "CARD_100_ATTENDANCE",
+      "value": {
+        "jobType": "DUE_REMINDERS",
+        "processed": 0,
+        "nextCursor": null,
+        "serverTime": "2026-10-31T12:00:00Z"
+      }
+    },
+    {
+      "id": "AdvanceRunSetup",
+      "schema": "AdvanceRunSetupCommand",
+      "family": "human-command",
+      "implementationCard": "VR-WA-110-RUN-TRACKING",
+      "availability": "CARD_110_RUN_TRACKING",
+      "value": {
+        "commandType": "ADVANCE_RUN_SETUP",
+        "inboxEventId": "00000000-0000-4000-8000-000000000001",
+        "expectedVersion": 0,
+        "payload": {}
+      }
+    },
+    {
+      "id": "SetOperationalAttendance",
+      "schema": "SetOperationalAttendanceCommand",
+      "family": "human-command",
+      "implementationCard": "VR-WA-110-RUN-TRACKING",
+      "availability": "CARD_110_RUN_TRACKING",
+      "value": {
+        "commandType": "SET_OPERATIONAL_ATTENDANCE",
+        "inboxEventId": "00000000-0000-4000-8000-000000000001",
+        "expectedVersion": 0,
+        "payload": {
+          "occurrenceRef": "example_occurrence_ref",
+          "passengerRef": "example_passenger_ref",
+          "confirmationRef": "example_confirmation_ref"
+        }
+      }
+    },
+    {
+      "id": "TrackingStatus",
+      "schema": "TrackingStatusResponse",
+      "family": "tracking",
+      "implementationCard": "VR-WA-110-RUN-TRACKING",
+      "availability": "CARD_110_RUN_TRACKING",
+      "value": {
+        "deviceId": "00000000-0000-4000-8000-000000000003",
+        "driverId": "00000000-0000-4000-8000-000000000004",
+        "serverTime": "2026-10-31T12:00:00Z",
+        "runId": null,
+        "runState": null,
+        "entityVersion": 0,
+        "trackingSessionId": null,
+        "generation": 0,
+        "leaseExpiresAt": null,
+        "credentialExpiresAt": "2026-10-31T12:05:00Z",
+        "sessionState": "IDLE",
+        "action": "STOP",
+        "gpsState": "STALE",
+        "stopRequestRef": null
+      }
+    },
+    {
+      "id": "OutboxNotSubmitted",
+      "schema": "OutboxResultRequest",
+      "family": "delivery",
+      "implementationCard": "VR-WA-120-DELIVERY-RECOVERY",
+      "availability": "CARD_120_DELIVERY_RECOVERY",
+      "value": {
+        "attemptToken": "EXAMPLE_NOT_A_CREDENTIAL_ATTEMPT_TOKEN_00",
+        "outcome": "NOT_SUBMITTED",
+        "failureCode": "CHANNEL_UNAVAILABLE"
+      }
+    },
+    {
+      "id": "OutboxDeferred",
+      "schema": "OutboxResultResponse",
+      "family": "delivery",
+      "implementationCard": "VR-WA-120-DELIVERY-RECOVERY",
+      "availability": "CARD_120_DELIVERY_RECOVERY",
+      "value": {
+        "outboxId": "00000000-0000-4000-8000-000000000009",
+        "state": "PENDING",
+        "serverTime": "2026-10-31T12:00:00Z"
+      }
+    }
+  ],
+  "negativeFixtures": [
+    {
+      "id": "PairingBegunWithForbiddenL",
+      "schema": "PairingBeginResponse",
+      "family": "pairing",
+      "implementationCard": "VR-WA-040-DOMAIN-AUTH",
+      "availability": "CARD_040_FOUNDATION",
+      "value": {
+        "pairingId": "00000000-0000-4000-8000-000000000002",
+        "userCode": "BCDFGHJL",
+        "expiresAt": "2026-10-31T12:05:00Z",
+        "serverTime": "2026-10-31T12:00:00Z"
+      }
+    },
+    {
+      "id": "InviteRejectsCallerHash",
+      "schema": "ClaimDriverInvitePayload",
+      "value": {
+        "driverInviteCodeHash": "0000000000000000000000000000000000000000000000000000000000000000"
+      }
+    },
+    {
+      "id": "PairingRejectsSourceOverride",
+      "schema": "ConfirmPairingPayload",
+      "value": {
+        "inboxEventId": "00000000-0000-4000-8000-000000000002"
+      }
+    },
+    {
+      "id": "FixedReplyRejectsFreeText",
+      "schema": "RespondToMessagePayload",
+      "value": {
+        "responseCode": "HELP",
+        "text": "untrusted"
+      }
+    },
+    {
+      "id": "FixedReplyRejectsUnknownTemplate",
+      "schema": "RespondToMessagePayload",
+      "value": {
+        "responseCode": "GRANT_ADMIN"
+      }
+    },
+    {
+      "id": "RoutineRejectsCallerValues",
+      "schema": "ConfigureRoutinePayload",
+      "value": {
+        "routineRef": "example_routine_ref",
+        "confirmationRef": "example_confirmation_ref",
+        "name": "Valor livre proibido"
+      }
+    },
+    {
+      "id": "InviteRejectsCallerLimits",
+      "schema": "CreateInvitePayload",
+      "value": {
+        "confirmationRef": "example_confirmation_ref",
+        "maxUses": 10
+      }
+    },
+    {
+      "id": "RequestLinkRejectsPrivateLegacyPayload090",
+      "schema": "RequestLinkPayload",
+      "value": {
+        "inviteCode": "EXAMPLE_NOT_A_VALID_PASSENGER_INVITE"
+      }
+    },
+    {
+      "id": "CloseLinkRejectsPrivateLegacyPayload090",
+      "schema": "CloseLinkPayload",
+      "value": {
+        "linkRef": "example_link_ref",
+        "reason": "REQUESTED"
+      }
+    },
+    {
+      "id": "ProposePickupRejectsPrivateLegacyPayload090",
+      "schema": "ProposePickupPayload",
+      "value": {
+        "sourceMessageId": "example_authenticated_pin_ref",
+        "reference": "Referência privada de teste"
+      }
+    },
+    {
+      "id": "RequestLinkRequiresConfirmation090",
+      "schema": "RequestLinkPayload",
+      "value": {}
+    },
+    {
+      "id": "ApproveLinkRequiresConfirmation090",
+      "schema": "ApproveLinkPayload",
+      "value": {
+        "linkRef": "example_link_ref",
+        "pickupRef": "example_pickup_ref"
+      }
+    },
+    {
+      "id": "CloseLinkRequiresConfirmation090",
+      "schema": "CloseLinkPayload",
+      "value": {
+        "linkRef": "example_link_ref"
+      }
+    },
+    {
+      "id": "ProposePickupRequiresConfirmation090",
+      "schema": "ProposePickupPayload",
+      "value": {
+        "sourceMessageId": "example_authenticated_pin_ref"
+      }
+    },
+    {
+      "id": "ApprovePickupRequiresConfirmation090",
+      "schema": "ApprovePickupPayload",
+      "value": {
+        "pickupRef": "example_pickup_ref"
+      }
+    },
+    {
+      "id": "AttendanceUnknownChoice",
+      "schema": "SetAttendancePayload",
+      "value": {
+        "questionRef": "question_example",
+        "choice": "PENDING"
+      }
+    },
+    {
+      "id": "AttendanceMissingQuestion",
+      "schema": "SetAttendancePayload",
+      "value": {
+        "choice": "GOING"
+      }
+    },
+    {
+      "id": "AdvanceAttendanceCannotChooseRecipient",
+      "schema": "AdvanceAttendancePayload",
+      "value": {
+        "recipient": "example_actor"
+      }
+    },
+    {
+      "id": "JobCannotChooseInstance",
+      "schema": "JobTickRequest",
+      "value": {
+        "jobType": "DUE_REMINDERS",
+        "windowKey": "2026-10-31T12:00:00Z",
+        "batchLimit": 100,
+        "instance": "example"
+      }
+    },
+    {
+      "id": "ActivateWithoutIntentToken",
+      "schema": "ActivateStartIntentRequest",
+      "value": {
+        "expectedVersion": 1,
+        "foregroundConfirmed": "CONFIRMED"
+      }
+    },
+    {
+      "id": "ResumeWithBareDevice",
+      "schema": "ResumeRunRequest",
+      "value": {
+        "expectedVersion": 1,
+        "foregroundConfirmed": "CONFIRMED"
+      }
+    },
+    {
+      "id": "CorrectionWithoutReview",
+      "schema": "SetOperationalAttendancePayload",
+      "value": {
+        "passengerRef": "example_passenger_ref",
+        "occurrenceRef": "example_occurrence_ref"
+      }
+    },
+    {
+      "id": "NoPostCannotClaimProviderId",
+      "schema": "OutboxResultRequest",
+      "value": {
+        "attemptToken": "EXAMPLE_NOT_A_CREDENTIAL_ATTEMPT_TOKEN_00",
+        "outcome": "NOT_SUBMITTED",
+        "failureCode": "CHANNEL_UNAVAILABLE",
+        "externalMessageId": "SYNTHETIC_IMPOSSIBLE_ID"
+      }
+    },
+    {
+      "id": "NoPostCannotBeTimeout",
+      "schema": "OutboxResultRequest",
+      "value": {
+        "attemptToken": "EXAMPLE_NOT_A_CREDENTIAL_ATTEMPT_TOKEN_00",
+        "outcome": "NOT_SUBMITTED",
+        "failureCode": "TIMEOUT"
+      }
+    },
+    {
+      "id": "NoPostCannotBeRejection",
+      "schema": "OutboxResultRequest",
+      "value": {
+        "attemptToken": "EXAMPLE_NOT_A_CREDENTIAL_ATTEMPT_TOKEN_00",
+        "outcome": "NOT_SUBMITTED",
+        "failureCode": "REJECTED"
+      }
+    },
+    {
+      "id": "NoPostCannotChooseRetry",
+      "schema": "OutboxResultRequest",
+      "value": {
+        "attemptToken": "EXAMPLE_NOT_A_CREDENTIAL_ATTEMPT_TOKEN_00",
+        "outcome": "NOT_SUBMITTED",
+        "failureCode": "CHANNEL_UNAVAILABLE",
+        "retry": true
+      }
+    },
+    {
+      "id": "NoPostRequiresFailureCode",
+      "schema": "OutboxResultRequest",
+      "value": {
+        "attemptToken": "EXAMPLE_NOT_A_CREDENTIAL_ATTEMPT_TOKEN_00",
+        "outcome": "NOT_SUBMITTED"
+      }
+    },
+    {
+      "id": "FailedTimeoutMustBeUnknown",
+      "schema": "OutboxResultRequest",
+      "value": {
+        "attemptToken": "EXAMPLE_NOT_A_CREDENTIAL_ATTEMPT_TOKEN_00",
+        "outcome": "FAILED",
+        "failureCode": "TIMEOUT"
+      }
+    },
+    {
+      "id": "SubmittedCannotOmitProviderId",
+      "schema": "OutboxResultRequest",
+      "value": {
+        "attemptToken": "EXAMPLE_NOT_A_CREDENTIAL_ATTEMPT_TOKEN_00",
+        "outcome": "SUBMITTED"
+      }
+    },
+    {
+      "id": "UnknownCannotIncludeProviderId",
+      "schema": "OutboxResultRequest",
+      "value": {
+        "attemptToken": "EXAMPLE_NOT_A_CREDENTIAL_ATTEMPT_TOKEN_00",
+        "outcome": "UNKNOWN",
+        "failureCode": "TIMEOUT",
+        "externalMessageId": "SYNTHETIC_ID"
+      }
+    }
+  ]
+}

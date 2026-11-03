@@ -1,0 +1,24 @@
+{
+  "instance": "<INSTANCIA_EXCLUSIVA>",
+  "startsAt": "<INICIO_RFC3339_COM_OFFSET>",
+  "endsAt": "<FIM_ATE_30_MINUTOS_DEPOIS>",
+  "contacts": [
+    { "label": "A", "pn": "<PN_EXPLICITO>@s.whatsapp.net" }
+  ],
+  "secrets": {
+    "webhookToken": "<BASE64URL_CANONICO_43_CARACTERES>",
+    "channelToken": "<CHANNEL_EMITIDO_PELA_CLI>",
+    "conversationToken": "<CONVERSATION_WORKER_EMITIDO_PELA_CLI>",
+    "deliveryToken": "<DELIVERY_WORKER_EMITIDO_PELA_CLI>",
+    "jobToken": "<SYSTEM_JOB_EMITIDO_PELA_CLI>",
+    "controlToken": "<TOKEN_PROPRIO_DO_WORKER>",
+    "evolutionApiKey": "<CHAVE_NOVA_EXCLUSIVA_DA_EVOLUTION>",
+    "operatorToken": "<CREDENCIAL_NOVA_DO_OPERADOR_LOCAL>",
+    "databasePassword": "<SENHA_NOVA_POSTGRES_APP>",
+    "evolutionDatabasePassword": "<SENHA_NOVA_POSTGRES_EVOLUTION>",
+    "redisPassword": "<SENHA_NOVA_REDIS>",
+    "jwtSecret": "<SEGREDO_NOVO_JWT>",
+    "hashKey": "<CHAVE_NOVA_HASH>",
+    "responseKey": "<CHAVE_NOVA_RESPOSTA>"
+  }
+}

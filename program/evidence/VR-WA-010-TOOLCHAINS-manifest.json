@@ -1,0 +1,8 @@
+{
+  "recordType": "historical-evidence-receipt",
+  "sourcePath": "program/evidence/VR-WA-010-TOOLCHAINS-manifest.json",
+  "sourceSha256": "255775f9cc4920ccba7842cb55fd73439f0cd0f841e4e9676a8f259cb83452be",
+  "archivedOn": "2026-11-02",
+  "scope": "Histórico anterior à migração. Conteúdo completo mantido no acervo local do proprietário; este recibo não é o manifest operacional original nem comprova o novo SHA.",
+  "currentValidation": "NOT_RUN_BY_IMPORT"
+}

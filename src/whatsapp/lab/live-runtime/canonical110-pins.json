@@ -1,0 +1,6 @@
+{
+  "integrations/whatsapp/scripts/vps110/server/protocol.py": "00fe1e59b239a854ea564f87ab735810be13a6163b60b0dfc82a70b924ba0ffb",
+  "integrations/whatsapp/scripts/vps110/server/control.py": "7d42a86410b99163f1d409c65bfff1c3de18918825075b4b86c88b36a5739013",
+  "integrations/whatsapp/scripts/vps110/physical/stage_physical_remote.py": "7d3e00654d1ef82ac416752243d17e9f0ccd297761ed60864c29e81550f9c3d5",
+  "integrations/whatsapp/scripts/vps110/physical/contract.json": "e965a00939794bee83fcabdd0440af4b57bf0bc1398e27885d36009d95aaf0af"
+}

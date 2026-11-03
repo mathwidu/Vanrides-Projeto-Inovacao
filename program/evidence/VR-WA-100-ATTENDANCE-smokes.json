@@ -1,0 +1,8 @@
+{
+  "recordType": "historical-evidence-receipt",
+  "sourcePath": "program/evidence/VR-WA-100-ATTENDANCE-smokes.json",
+  "sourceSha256": "8f291294400eef78c20470238dfae0918ac22898c228a3b7c2c2decd284f219d",
+  "archivedOn": "2026-11-02",
+  "scope": "Histórico anterior à migração. Conteúdo completo mantido no acervo local do proprietário; este recibo não é o manifest operacional original nem comprova o novo SHA.",
+  "currentValidation": "NOT_RUN_BY_IMPORT"
+}

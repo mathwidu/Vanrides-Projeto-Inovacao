@@ -1,0 +1,119 @@
+{
+  "id": "vrWa070Flow00006",
+  "name": "VanRides070 · W06 Envio",
+  "active": false,
+  "nodes": [
+    {
+      "id": "W06-0-scheduleTrigger",
+      "name": "Agendar",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "seconds",
+              "secondsInterval": 2
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "W06-1-httpRequest",
+      "name": "Executar operação privada",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        260,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "http://vanrides-wa070-worker:7080/v1/dispatch-one",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{}",
+        "options": {
+          "timeout": 29000,
+          "redirect": {
+            "redirect": {
+              "followRedirects": false
+            }
+          },
+          "response": {
+            "response": {
+              "responseFormat": "json",
+              "neverError": false
+            }
+          }
+        }
+      },
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "vrWa070Control01",
+          "name": "VanRides Controle070"
+        }
+      },
+      "retryOnFail": false
+    },
+    {
+      "id": "W06-0-executeWorkflowTrigger",
+      "name": "Subfluxo",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        220
+      ],
+      "parameters": {
+        "inputSource": "passthrough"
+      }
+    }
+  ],
+  "connections": {
+    "Agendar": {
+      "main": [
+        [
+          {
+            "node": "Executar operação privada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Subfluxo": {
+      "main": [
+        [
+          {
+            "node": "Executar operação privada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveDataErrorExecution": "none",
+    "saveDataSuccessExecution": "none",
+    "saveManualExecutions": false,
+    "saveExecutionProgress": false,
+    "executionTimeout": 40,
+    "timezone": "America/Sao_Paulo",
+    "callerPolicy": "workflowsFromAList",
+    "callerIds": "vrWa070Flow00001,vrWa070Flow00008",
+    "errorWorkflow": "vrWa070Flow00007"
+  },
+  "staticData": null,
+  "pinData": {},
+  "tags": []
+}

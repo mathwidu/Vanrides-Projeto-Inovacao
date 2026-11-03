@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "profile": "VPS_INFRASTRUCTURE_SMOKE_ONLY_V1",
+  "destination": {
+    "host": "187.77.47.96",
+    "sshAlias": "vps-pessoal-nova",
+    "user": "mathwidu",
+    "hostname": "srv1397065",
+    "rootPrefix": "/home/mathwidu/.local/share/vanrides/wa110-vps-lab",
+    "projectPrefix": "wa110-physical-",
+    "apiPort": 28083,
+    "sidecarPort": 28444,
+    "ttlSeconds": 1800
+  },
+  "backend": {
+    "commit": "5ddb7c3db6c38385c018028741470ab6a509604f",
+    "jarSha256": "fc5dccdf30e234f6dc9a572ce679aa5cbc126b3e5fc90b4bf9f312270d3063ce",
+    "jarBytes": 58304246,
+    "ciRun": 41267558403,
+    "ciHarnessCommit": "ab58aeabb01431c24aa82fcb29cc6721c08047fd",
+    "verifiedReceiptSha256": "8c856988e236956e156a7c8011b1810378263fd3eb6b50c4753c12275efbc035"
+  },
+  "apk": {
+    "source": "4da06003447f7e733e5cd9d985cf3f4ab4c06d32",
+    "sha256": "902962e5d67eb688f0001d2a76d89b04c5fc86b5f0698f7512ca7cbc2dfb3b05",
+    "publicCaSha256": "153618de000dc4ad8a23f01771f7557920ea8901ada2a15055cbcbf0b3598781",
+    "package": "dev.matheusduarte.vanrides.driver.lab",
+    "version": "0.2.0+11"
+  },
+  "macExecutor": {
+    "qaSource": "ba8de020282b6f48ffcae41d8b6891ae82e51981",
+    "qaRunnerSha256": "8fd4ff9a6149b58f8cfb339dadde90e1fdcbb7f04d87278b37ae5bd7de59e518",
+    "officialReaderJarSha256": "d179e0e94c65efc65ba82e327e537cefbab2e77df9f5a229bfb3be5cf7f14f6f"
+  },
+  "images": {
+    "postgres": "postgres@sha256:cbf42f0edc946c0bc1b8eeed62403734e1f25dc67a3491455d07a92fdb558b28",
+    "java": "eclipse-temurin@sha256:3bfc6f507a7e543939c54f5b59f49c13886b999fdda8f253b649849f0881bb02",
+    "node": "node@sha256:43aeff40f4afc22e83f7589a2f37e111cff5ca84529571f1c8415bcc5fcc21b2"
+  },
+  "proofBoundary": "Exact JAR, PostgreSQL SCRAM, host-loopback health and owned rollback only. Worker/conversation/sidecar/Redmi journey is not implemented in this slice; bridge-bootstrap is blocked.",
+  "rawSensorPolicy": "Memory and temporary PostgreSQL only; no request/response/GPS bodies in files, logs or receipts."
+}

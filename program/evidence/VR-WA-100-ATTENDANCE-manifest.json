@@ -1,0 +1,8 @@
+{
+  "recordType": "historical-evidence-receipt",
+  "sourcePath": "program/evidence/VR-WA-100-ATTENDANCE-manifest.json",
+  "sourceSha256": "c99eb76c9e0ca3c132833e50ba0f5ac5943fdfd54712a12aa777b85b4e7c9254",
+  "archivedOn": "2026-11-02",
+  "scope": "Histórico anterior à migração. Conteúdo completo mantido no acervo local do proprietário; este recibo não é o manifest operacional original nem comprova o novo SHA.",
+  "currentValidation": "NOT_RUN_BY_IMPORT"
+}

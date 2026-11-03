@@ -1,0 +1,11 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="dev.matheusduarte.vanrides.gnssprobe"
+    android:versionCode="1" android:versionName="1.0">
+    <uses-sdk android:minSdkVersion="29" android:targetSdkVersion="29" />
+    <application android:hasCode="true" android:debuggable="false"
+        android:testOnly="true" android:allowBackup="false" />
+    <instrumentation
+        android:name="dev.matheusduarte.vanrides.gnssprobe.DirectGnssProbe"
+        android:targetPackage="dev.matheusduarte.vanrides.driver"
+        android:functionalTest="true" android:handleProfiling="false" />
+</manifest>

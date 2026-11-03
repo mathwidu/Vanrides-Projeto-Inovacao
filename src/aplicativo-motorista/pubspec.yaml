@@ -1,0 +1,56 @@
+name: vanrides_frontend_dev
+description: "Aplicativo de transporte VanRides (ambiente de desenvolvimento)"
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.7.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Funcionalidades principais
+  http: ^0.13.6
+  http_parser: ^4.1.2
+  shared_preferences: ^2.2.2
+  intl: ^0.18.1
+
+  # Geolocalização e mapas
+  geolocator: ^11.0.0
+  geocoding: ^2.1.0
+  google_maps_flutter: ^2.6.0
+  google_place: ^0.4.7
+  url_launcher: ^6.3.2
+  app_links: ^6.3.2
+
+  # WebSocket
+  stomp_dart_client: ^0.4.4
+  web_socket_channel: ^2.4.5
+
+
+  # Interface
+  table_calendar: ^3.0.9
+  cupertino_icons: ^1.0.8
+  flutter_riverpod: ^2.6.1
+  image_picker: ^1.2.2
+  maplibre_gl: ^0.24.1
+  flutter_tts: ^4.2.5
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  integration_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  app_links_platform_interface: ^2.0.2
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/map_markers/
+    - assets/telaInicio.png
+    - assets/van.png
+    - assets/telaPassageiro.png

@@ -1,0 +1,8 @@
+{
+  "recordType": "historical-evidence-receipt",
+  "sourcePath": "program/evidence/VR-WA-030-GPS-PROOF-manifest.json",
+  "sourceSha256": "429de9056fbffa874115598434a54fef98143f1379a52ce7c8d6e20688fd9c7e",
+  "archivedOn": "2026-11-02",
+  "scope": "Histórico anterior à migração. Conteúdo completo mantido no acervo local do proprietário; este recibo não é o manifest operacional original nem comprova o novo SHA.",
+  "currentValidation": "NOT_RUN_BY_IMPORT"
+}

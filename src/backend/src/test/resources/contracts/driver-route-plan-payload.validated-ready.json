@@ -1,0 +1,111 @@
+{
+  "id": 30,
+  "rotaBaseId": 10,
+  "rotaNome": "Rota Escolar Manha",
+  "servicoNome": "Rota Escolar Manha",
+  "dataOperacao": "2026-03-12",
+  "status": "IN_PROGRESS",
+  "rotaVersao": 2,
+  "etaMinutosAteProximaParada": 12,
+  "proximaParada": {
+    "id": 300,
+    "ordem": 1,
+    "status": "PENDING",
+    "etaMinutos": 12,
+    "confirmadoPresenca": true,
+    "proximaParada": true,
+    "passageiro": {
+      "id": 21,
+      "nome": "Aluno Um",
+      "menorDeIdade": true
+    }
+  },
+  "paradas": [
+    {
+      "id": 300,
+      "ordem": 1,
+      "status": "PENDING",
+      "etaMinutos": 12,
+      "confirmadoPresenca": true,
+      "proximaParada": true,
+      "passageiro": {
+        "id": 21,
+        "nome": "Aluno Um",
+        "menorDeIdade": true
+      }
+    }
+  ],
+  "rotaGeografica": {
+    "provider": "STATIC_GEOMETRY_V1",
+    "polyline": "abcd",
+    "navegacao": {
+      "provider": "GOOGLE_MAPS_HANDOFF",
+      "url": "https://maps.example",
+      "origem": "Motorista",
+      "destino": "Aluno Um",
+      "quantidadeWaypoints": 0
+    },
+    "waypoints": [
+      {
+        "tipo": "STOP",
+        "paradaId": 300,
+        "passageiroId": 21,
+        "nome": "Aluno Um",
+        "latitude": -29.0,
+        "longitude": -51.0,
+        "ordem": 1,
+        "proximaParada": true,
+        "paradaDoPassageiro": true
+      }
+    ],
+    "legs": [
+      {
+        "indice": 1,
+        "origemLabel": "Motorista",
+        "destinoLabel": "Aluno Um",
+        "distanciaMetros": 1200,
+        "duracaoSegundos": 300
+      }
+    ],
+    "filaTotalParadas": 1
+  },
+  "navigationRoutePlan": {
+    "routeId": "route-br-rs-001",
+    "provider": "valhalla",
+    "region": "BR-RS",
+    "vehicleType": "van_school_safe",
+    "coverageStatus": "validada",
+    "offlinePackStatus": "ready",
+    "qualityScore": 0.95,
+    "fallbackReason": null,
+    "estimatedDurationSeconds": 780,
+    "estimatedDistanceMeters": 4200,
+    "polyline": [
+      [
+        -30.0346,
+        -51.2177
+      ],
+      [
+        -30.035,
+        -51.218
+      ]
+    ],
+    "legs": [
+      {
+        "fromStopId": "driver",
+        "toStopId": "stop-300",
+        "distanceMeters": 2100,
+        "durationSeconds": 390
+      }
+    ],
+    "instructions": [
+      {
+        "index": 0,
+        "text": "Siga pela Avenida Ipiranga.",
+        "voiceText": "Em 200 metros, siga pela Avenida Ipiranga.",
+        "distanceMeters": 200,
+        "maneuver": "continue"
+      }
+    ]
+  }
+}

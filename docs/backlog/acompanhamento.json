@@ -1,0 +1,2879 @@
+{
+  "schemaVersion": 1,
+  "asOf": "2026-11-02",
+  "method": "Leitura de código, cenários e evidências diretas. Não é inferência automática pelo status dos cards e não executa testes do produto.",
+  "sourceRevisions": {
+    "coordination": "96130bc84b27c3468c4129c3810c4417e7eb8b9a",
+    "backend": "e25ed4e0131bc253b7ccea2fa4ab793e69a89af9",
+    "app": "b9fcedbbf949ad9f1684efcc1a2b0f2176cf7877"
+  },
+  "publicationStatus": "Código atual em repositórios privados. Publicação acadêmica dos fontes ainda pendente.",
+  "implementationValues": [
+    "Implementado",
+    "Parcial",
+    "Planejado",
+    "Proposta de escopo"
+  ],
+  "validationValues": [
+    "Teste automatizado",
+    "Laboratório",
+    "Físico parado",
+    "Pendente"
+  ],
+  "tasks": [
+    {
+      "taskId": "T01",
+      "title": "Preparar a API Java Spring Boot e o banco de dados para os cadastros pelo WhatsApp, preservando a configuração anterior.",
+      "feature": "F09",
+      "component": "API Java e banco",
+      "implementationStatus": "Implementado",
+      "codeStatus": "Implementado",
+      "implementationNote": "Base Spring Boot e configuração do domínio WhatsApp presentes.",
+      "validationStatus": "Laboratório",
+      "validationNote": "API e PostgreSQL usados nos ensaios de cadastro; não é implantação final.",
+      "sourcePaths": [
+        "src/backend/pom.xml",
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/config/WaSettings.java"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-010-TOOLCHAINS.md",
+        "program/evidence/VR-WA-040-DOMAIN-AUTH.md",
+        "program/cards/VR-WA-000-PREFLIGHT.md",
+        "program/cards/VR-WA-040-DOMAIN-AUTH.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-000-PREFLIGHT.md",
+        "program/cards/VR-WA-040-DOMAIN-AUTH.md"
+      ],
+      "nextAction": "Manter a configuração compatível na versão de teste.",
+      "refs": [
+        "VR-WA-000-PREFLIGHT",
+        "VR-WA-040-DOMAIN-AUTH"
+      ],
+      "sourceVisibility": "Código no repositório acadêmico; evidências de origem identificadas separadamente da validação da migração.",
+      "validationEvidencePaths": [
+        "program/evidence/VR-WA-010-TOOLCHAINS.md",
+        "program/evidence/VR-WA-040-DOMAIN-AUTH.md"
+      ],
+      "documentationPaths": [],
+      "evidenceRefs": [
+        {
+          "path": "program/evidence/VR-WA-010-TOOLCHAINS.md",
+          "kind": "Validação documentada"
+        },
+        {
+          "path": "program/evidence/VR-WA-040-DOMAIN-AUTH.md",
+          "kind": "Validação documentada"
+        },
+        {
+          "path": "program/cards/VR-WA-000-PREFLIGHT.md",
+          "kind": "Planejamento"
+        },
+        {
+          "path": "program/cards/VR-WA-040-DOMAIN-AUTH.md",
+          "kind": "Planejamento"
+        }
+      ]
+    },
+    {
+      "taskId": "T02",
+      "title": "Cadastrar o motorista pelo WhatsApp, validando os dados e a permissão de acesso.",
+      "feature": "F09",
+      "component": "API e conversa do motorista",
+      "implementationStatus": "Implementado",
+      "codeStatus": "Implementado",
+      "implementationNote": "Cadastro e rotina do motorista têm comandos e validação no servidor.",
+      "validationStatus": "Laboratório",
+      "validationNote": "Jornada de cadastro e rotina com mensagens simuladas aprovada.",
+      "sourcePaths": [
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaDriverSetup.java",
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaDriverMutations.java"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-080-DRIVER-ROUTINES.md",
+        "program/cards/VR-WA-080-DRIVER-ROUTINES.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-080-DRIVER-ROUTINES.md"
+      ],
+      "nextAction": "Repetir a conversa com o número dedicado.",
+      "refs": [
+        "VR-WA-080-DRIVER-ROUTINES"
+      ],
+      "sourceVisibility": "Código no repositório acadêmico; evidências de origem identificadas separadamente da validação da migração.",
+      "validationEvidencePaths": [
+        "program/evidence/VR-WA-080-DRIVER-ROUTINES.md"
+      ],
+      "documentationPaths": [],
+      "evidenceRefs": [
+        {
+          "path": "program/evidence/VR-WA-080-DRIVER-ROUTINES.md",
+          "kind": "Validação documentada"
+        },
+        {
+          "path": "program/cards/VR-WA-080-DRIVER-ROUTINES.md",
+          "kind": "Planejamento"
+        }
+      ]
+    },
+    {
+      "taskId": "T03",
+      "title": "Permitir que cada pessoa execute apenas as ações autorizadas para seu perfil e separar as ações automáticas do sistema.",
+      "feature": "F09",
+      "component": "Autorização da API",
+      "implementationStatus": "Implementado",
+      "codeStatus": "Implementado",
+      "implementationNote": "Filtros separam identidade do canal, aparelho e automações.",
+      "validationStatus": "Laboratório",
+      "validationNote": "Regras de acesso e integração com PostgreSQL verificadas.",
+      "sourcePaths": [
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/auth/WaIngressFilter.java",
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/auth/WaProofFilter.java"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-040-DOMAIN-AUTH.md",
+        "program/cards/VR-WA-040-DOMAIN-AUTH.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-040-DOMAIN-AUTH.md"
+      ],
+      "nextAction": "Preservar a autorização ao conectar o canal real.",
+      "refs": [
+        "VR-WA-040-DOMAIN-AUTH"
+      ],
+      "sourceVisibility": "Código no repositório acadêmico; evidências de origem identificadas separadamente da validação da migração.",
+      "validationEvidencePaths": [
+        "program/evidence/VR-WA-040-DOMAIN-AUTH.md"
+      ],
+      "documentationPaths": [],
+      "evidenceRefs": [
+        {
+          "path": "program/evidence/VR-WA-040-DOMAIN-AUTH.md",
+          "kind": "Validação documentada"
+        },
+        {
+          "path": "program/cards/VR-WA-040-DOMAIN-AUTH.md",
+          "kind": "Planejamento"
+        }
+      ]
+    },
+    {
+      "taskId": "T04",
+      "title": "Cadastrar o passageiro pelo WhatsApp com dados essenciais, dias da rotina e ponto de embarque validado.",
+      "feature": "F10",
+      "component": "API e conversa do passageiro",
+      "implementationStatus": "Implementado",
+      "codeStatus": "Implementado",
+      "implementationNote": "Cadastro, dias e aprovação do ponto estão implementados.",
+      "validationStatus": "Laboratório",
+      "validationNote": "Jornada de cadastro, correção e aprovação testada com canal simulado.",
+      "sourcePaths": [
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaPassengerSetup.java",
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaPassengerMutations.java"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-090-PASSENGERS.md",
+        "program/cards/VR-WA-090-PASSENGERS.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-090-PASSENGERS.md"
+      ],
+      "nextAction": "Conferir o cadastro no WhatsApp real.",
+      "refs": [
+        "VR-WA-090-PASSENGERS"
+      ],
+      "sourceVisibility": "Código no repositório acadêmico; evidências de origem identificadas separadamente da validação da migração.",
+      "validationEvidencePaths": [
+        "program/evidence/VR-WA-090-PASSENGERS.md"
+      ],
+      "documentationPaths": [],
+      "evidenceRefs": [
+        {
+          "path": "program/evidence/VR-WA-090-PASSENGERS.md",
+          "kind": "Validação documentada"
+        },
+        {
+          "path": "program/cards/VR-WA-090-PASSENGERS.md",
+          "kind": "Planejamento"
+        }
+      ]
+    },
+    {
+      "taskId": "T05",
+      "title": "Gerar convite com prazo de validade e vincular o passageiro após aprovação do motorista, impedindo uso duplicado.",
+      "feature": "F10",
+      "component": "Convites e vínculos",
+      "implementationStatus": "Implementado",
+      "codeStatus": "Implementado",
+      "implementationNote": "Emissão, prazo, consumo e aprovação de convite presentes.",
+      "validationStatus": "Laboratório",
+      "validationNote": "Concorrência pelo último uso e repetição de mensagens testadas.",
+      "sourcePaths": [
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/transport/WaPrivateInviteDelivery.java",
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaPassengerSetup.java"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-080-DRIVER-ROUTINES.md",
+        "program/evidence/VR-WA-090-PASSENGERS.md",
+        "program/cards/VR-WA-080-DRIVER-ROUTINES.md",
+        "program/cards/VR-WA-090-PASSENGERS.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-080-DRIVER-ROUTINES.md",
+        "program/cards/VR-WA-090-PASSENGERS.md"
+      ],
+      "nextAction": "Verificar convite com participantes autorizados no número dedicado.",
+      "refs": [
+        "VR-WA-080-DRIVER-ROUTINES",
+        "VR-WA-090-PASSENGERS"
+      ],
+      "sourceVisibility": "Código no repositório acadêmico; evidências de origem identificadas separadamente da validação da migração.",
+      "validationEvidencePaths": [
+        "program/evidence/VR-WA-080-DRIVER-ROUTINES.md",
+        "program/evidence/VR-WA-090-PASSENGERS.md"
+      ],
+      "documentationPaths": [],
+      "evidenceRefs": [
+        {
+          "path": "program/evidence/VR-WA-080-DRIVER-ROUTINES.md",
+          "kind": "Validação documentada"
+        },
+        {
+          "path": "program/evidence/VR-WA-090-PASSENGERS.md",
+          "kind": "Validação documentada"
+        },
+        {
+          "path": "program/cards/VR-WA-080-DRIVER-ROUTINES.md",
+          "kind": "Planejamento"
+        },
+        {
+          "path": "program/cards/VR-WA-090-PASSENGERS.md",
+          "kind": "Planejamento"
+        }
+      ]
+    },
+    {
+      "taskId": "T6",
+      "title": "Registrar confirmação ou ausência para a data e o sentido corretos, mantendo pendente quem não respondeu.",
+      "feature": "F02",
+      "component": "Presença na API e conversa",
+      "implementationStatus": "Implementado",
+      "codeStatus": "Implementado",
+      "implementationNote": "Confirmação e ausência por data e sentido estão implementadas.",
+      "validationStatus": "Laboratório",
+      "validationNote": "Confirmar, corrigir e manter outra viagem pendente passaram no laboratório.",
+      "sourcePaths": [
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaAttendanceMutation.java",
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaAttendanceConversation.java"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-100-ATTENDANCE.md",
+        "program/cards/VR-WA-100-ATTENDANCE.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-100-ATTENDANCE.md"
+      ],
+      "nextAction": "Repetir respostas e lembrete no canal real.",
+      "refs": [
+        "VR-WA-100-ATTENDANCE"
+      ],
+      "sourceVisibility": "Código no repositório acadêmico; evidências de origem identificadas separadamente da validação da migração.",
+      "validationEvidencePaths": [
+        "program/evidence/VR-WA-100-ATTENDANCE.md"
+      ],
+      "documentationPaths": [],
+      "evidenceRefs": [
+        {
+          "path": "program/evidence/VR-WA-100-ATTENDANCE.md",
+          "kind": "Validação documentada"
+        },
+        {
+          "path": "program/cards/VR-WA-100-ATTENDANCE.md",
+          "kind": "Planejamento"
+        }
+      ]
+    },
+    {
+      "taskId": "T7",
+      "title": "Receber posições GPS do aparelho vinculado e rejeitar posições antigas, repetidas ou de outra viagem.",
+      "feature": "F05",
+      "component": "API de localização",
+      "implementationStatus": "Implementado",
+      "codeStatus": "Implementado",
+      "implementationNote": "Recepção autenticada e rejeição de amostras inválidas presentes.",
+      "validationStatus": "Físico parado",
+      "validationNote": "Testes de GPS e cenário Android parado aprovados; percurso e iPhone pendentes.",
+      "sourcePaths": [
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/tracking/WaTrackingSamples.java",
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/tracking/WaTrackingService.java"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-110-RUN-TRACKING.md",
+        "program/cards/VR-WA-110-RUN-TRACKING.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-110-RUN-TRACKING.md"
+      ],
+      "nextAction": "Validar continuidade durante os percursos nos dois aparelhos.",
+      "refs": [
+        "VR-WA-110-RUN-TRACKING"
+      ],
+      "sourceVisibility": "Código no repositório acadêmico; evidências de origem identificadas separadamente da validação da migração.",
+      "validationEvidencePaths": [
+        "program/evidence/VR-WA-110-RUN-TRACKING.md"
+      ],
+      "documentationPaths": [],
+      "evidenceRefs": [
+        {
+          "path": "program/evidence/VR-WA-110-RUN-TRACKING.md",
+          "kind": "Validação documentada"
+        },
+        {
+          "path": "program/cards/VR-WA-110-RUN-TRACKING.md",
+          "kind": "Planejamento"
+        }
+      ]
+    },
+    {
+      "taskId": "T9a",
+      "title": "Permitir a consulta da localização apenas ao motorista e aos passageiros autorizados para aquela viagem.",
+      "feature": "F05",
+      "component": "Consulta de localização",
+      "implementationStatus": "Parcial",
+      "codeStatus": "Parcial",
+      "implementationNote": "Há autorização do aparelho e da viagem, mas a consulta do passageiro permanece futura.",
+      "validationStatus": "Teste automatizado",
+      "validationNote": "GET_DRIVER_LOCATION ainda é recusado como dependência indisponível no código.",
+      "sourcePaths": [
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/auth/WaIngressFilter.java",
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/auth/WaProofFilter.java",
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaCommandService.java"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-040-DOMAIN-AUTH.md",
+        "program/evidence/VR-WA-110-RUN-TRACKING.md",
+        "program/cards/VR-WA-040-DOMAIN-AUTH.md",
+        "program/cards/VR-WA-110-RUN-TRACKING.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-040-DOMAIN-AUTH.md",
+        "program/cards/VR-WA-110-RUN-TRACKING.md"
+      ],
+      "nextAction": "Implementar a consulta com escopo dos participantes e seus testes.",
+      "refs": [
+        "VR-WA-040-DOMAIN-AUTH",
+        "VR-WA-110-RUN-TRACKING"
+      ],
+      "sourceVisibility": "Código no repositório acadêmico; evidências de origem identificadas separadamente da validação da migração.",
+      "validationEvidencePaths": [
+        "program/evidence/VR-WA-040-DOMAIN-AUTH.md",
+        "program/evidence/VR-WA-110-RUN-TRACKING.md"
+      ],
+      "documentationPaths": [],
+      "evidenceRefs": [
+        {
+          "path": "program/evidence/VR-WA-040-DOMAIN-AUTH.md",
+          "kind": "Validação documentada"
+        },
+        {
+          "path": "program/evidence/VR-WA-110-RUN-TRACKING.md",
+          "kind": "Validação documentada"
+        },
+        {
+          "path": "program/cards/VR-WA-040-DOMAIN-AUTH.md",
+          "kind": "Planejamento"
+        },
+        {
+          "path": "program/cards/VR-WA-110-RUN-TRACKING.md",
+          "kind": "Planejamento"
+        }
+      ]
+    },
+    {
+      "taskId": "T9b",
+      "title": "Responder à consulta de localização com a última posição válida e seu horário, indicando quando estiver desatualizada.",
+      "feature": "F05",
+      "component": "Resposta de localização no WhatsApp",
+      "implementationStatus": "Planejado",
+      "codeStatus": "Planejado",
+      "implementationNote": "A resposta de última posição ao passageiro ainda não está implementada.",
+      "validationStatus": "Pendente",
+      "validationNote": "O comando GET_DRIVER_LOCATION está explicitamente na lista de ações futuras.",
+      "sourcePaths": [
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaCommandService.java"
+      ],
+      "evidencePaths": [
+        "program/cards/VR-WA-110-RUN-TRACKING.md",
+        "program/cards/VR-WA-130-APPROACH.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-110-RUN-TRACKING.md",
+        "program/cards/VR-WA-130-APPROACH.md"
+      ],
+      "nextAction": "Implementar a resposta com horário e indicação de posição antiga.",
+      "refs": [
+        "VR-WA-110-RUN-TRACKING",
+        "VR-WA-130-APPROACH"
+      ],
+      "sourceVisibility": "Código no repositório acadêmico; evidências de origem identificadas separadamente da validação da migração.",
+      "validationEvidencePaths": [],
+      "documentationPaths": [],
+      "evidenceRefs": [
+        {
+          "path": "program/cards/VR-WA-110-RUN-TRACKING.md",
+          "kind": "Planejamento"
+        },
+        {
+          "path": "program/cards/VR-WA-130-APPROACH.md",
+          "kind": "Planejamento"
+        }
+      ]
+    },
+    {
+      "taskId": "T10",
+      "title": "Guardar a última posição válida da van e disponibilizar sua consulta com o horário de atualização.",
+      "feature": "F05",
+      "component": "Armazenamento e consulta de GPS",
+      "implementationStatus": "Parcial",
+      "codeStatus": "Parcial",
+      "implementationNote": "Última posição e horário são gravados; falta a consulta prevista para o passageiro.",
+      "validationStatus": "Teste automatizado",
+      "validationNote": "WaTrackingSamples atualiza a última posição; GET_DRIVER_LOCATION continua futuro.",
+      "sourcePaths": [
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/tracking/WaTrackingSamples.java",
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/tracking/WaTrackingService.java",
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaCommandService.java"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-110-RUN-TRACKING.md",
+        "program/cards/VR-WA-110-RUN-TRACKING.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-110-RUN-TRACKING.md"
+      ],
+      "nextAction": "Concluir a consulta autorizada e testar posição desatualizada.",
+      "refs": [
+        "VR-WA-110-RUN-TRACKING"
+      ],
+      "sourceVisibility": "Código no repositório acadêmico; evidências de origem identificadas separadamente da validação da migração.",
+      "validationEvidencePaths": [
+        "program/evidence/VR-WA-110-RUN-TRACKING.md"
+      ],
+      "documentationPaths": [],
+      "evidenceRefs": [
+        {
+          "path": "program/evidence/VR-WA-110-RUN-TRACKING.md",
+          "kind": "Validação documentada"
+        },
+        {
+          "path": "program/cards/VR-WA-110-RUN-TRACKING.md",
+          "kind": "Planejamento"
+        }
+      ]
+    },
+    {
+      "taskId": "T11",
+      "title": "Preparar o aviso de aproximação para o passageiro correto, uma única vez por viagem, ponto e regra de aviso.",
+      "feature": "F11",
+      "component": "Aviso de aproximação",
+      "implementationStatus": "Planejado",
+      "codeStatus": "Planejado",
+      "implementationNote": "Ainda não há produtor de aproximação integrado ao MVP.",
+      "validationStatus": "Pendente",
+      "validationNote": "A prova isolada do receptor não comprova este aviso no produto.",
+      "sourcePaths": [
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaCommandService.java"
+      ],
+      "evidencePaths": [
+        "program/cards/VR-WA-130-APPROACH.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-130-APPROACH.md"
+      ],
+      "nextAction": "Implementar a regra e o aviso por passageiro antes do teste de utilidade.",
+      "refs": [
+        "VR-WA-130-APPROACH"
+      ],
+      "sourceVisibility": "Código no repositório acadêmico; evidências de origem identificadas separadamente da validação da migração.",
+      "validationEvidencePaths": [],
+      "documentationPaths": [],
+      "evidenceRefs": [
+        {
+          "path": "program/cards/VR-WA-130-APPROACH.md",
+          "kind": "Planejamento"
+        }
+      ]
+    },
+    {
+      "taskId": "T23",
+      "title": "Definir as mensagens de cadastro, envio da localização fixa e correção ou aprovação do ponto de embarque.",
+      "feature": "F10",
+      "component": "Mensagens de cadastro do passageiro",
+      "implementationStatus": "Implementado",
+      "codeStatus": "Implementado",
+      "implementationNote": "Mensagens e estados de cadastro, correção e aprovação existem.",
+      "validationStatus": "Laboratório",
+      "validationNote": "A conversa de envio do ponto e retificação foi exercitada no laboratório.",
+      "sourcePaths": [
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaPassengerTexts.java",
+        "src/whatsapp/agent/passenger-setup.mjs"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-090-PASSENGERS.md",
+        "program/cards/VR-WA-090-PASSENGERS.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-090-PASSENGERS.md"
+      ],
+      "nextAction": "Revisar a compreensão das mensagens com a equipe no canal real.",
+      "refs": [
+        "VR-WA-090-PASSENGERS"
+      ],
+      "sourceVisibility": "Código no repositório acadêmico; evidências de origem identificadas separadamente da validação da migração.",
+      "validationEvidencePaths": [
+        "program/evidence/VR-WA-090-PASSENGERS.md"
+      ],
+      "documentationPaths": [],
+      "evidenceRefs": [
+        {
+          "path": "program/evidence/VR-WA-090-PASSENGERS.md",
+          "kind": "Validação documentada"
+        },
+        {
+          "path": "program/cards/VR-WA-090-PASSENGERS.md",
+          "kind": "Planejamento"
+        }
+      ]
+    },
+    {
+      "taskId": "T24",
+      "title": "Criar as viagens de ida e volta no calendário da rotina, respeitando o fuso horário de São Paulo.",
+      "feature": "F02",
+      "component": "Calendário da presença",
+      "implementationStatus": "Implementado",
+      "codeStatus": "Implementado",
+      "implementationNote": "Calendário considera rotina, sentido e fuso configurado.",
+      "validationStatus": "Laboratório",
+      "validationNote": "Matriz de datas/fusos e jornada integrada registradas; a lógica não é fixa a Manaus.",
+      "sourcePaths": [
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/attendance/WaAttendanceCalendar.java",
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/attendance/WaAttendanceMaterializer.java"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-100-ATTENDANCE.md",
+        "program/cards/VR-WA-100-ATTENDANCE.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-100-ATTENDANCE.md"
+      ],
+      "nextAction": "Conferir a configuração de São Paulo no ensaio real.",
+      "refs": [
+        "VR-WA-100-ATTENDANCE"
+      ],
+      "sourceVisibility": "Código no repositório acadêmico; evidências de origem identificadas separadamente da validação da migração.",
+      "validationEvidencePaths": [
+        "program/evidence/VR-WA-100-ATTENDANCE.md"
+      ],
+      "documentationPaths": [],
+      "evidenceRefs": [
+        {
+          "path": "program/evidence/VR-WA-100-ATTENDANCE.md",
+          "kind": "Validação documentada"
+        },
+        {
+          "path": "program/cards/VR-WA-100-ATTENDANCE.md",
+          "kind": "Planejamento"
+        }
+      ]
+    },
+    {
+      "taskId": "T25",
+      "title": "Enviar o lembrete de presença às 20h do dia anterior, uma única vez por viagem.",
+      "feature": "F02",
+      "component": "Lembretes de presença",
+      "implementationStatus": "Implementado",
+      "codeStatus": "Implementado",
+      "implementationNote": "Lembrete das 20h do dia anterior e proteção contra repetição presentes.",
+      "validationStatus": "Laboratório",
+      "validationNote": "A janela real de 20h e o reinício foram exercitados em laboratório com fuso de Manaus.",
+      "sourcePaths": [
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/attendance/WaAttendanceCalendar.java",
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/attendance/WaAttendanceMaterializer.java",
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/attendance/WaAttendanceReminders.java",
+        "src/whatsapp/worker/attendance-jobs.mjs"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-100-ATTENDANCE.md",
+        "program/cards/VR-WA-100-ATTENDANCE.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-100-ATTENDANCE.md"
+      ],
+      "nextAction": "Executar o agendamento com São Paulo no ambiente autorizado.",
+      "refs": [
+        "VR-WA-100-ATTENDANCE"
+      ],
+      "sourceVisibility": "Código no repositório acadêmico; evidências de origem identificadas separadamente da validação da migração.",
+      "validationEvidencePaths": [
+        "program/evidence/VR-WA-100-ATTENDANCE.md"
+      ],
+      "documentationPaths": [],
+      "evidenceRefs": [
+        {
+          "path": "program/evidence/VR-WA-100-ATTENDANCE.md",
+          "kind": "Validação documentada"
+        },
+        {
+          "path": "program/cards/VR-WA-100-ATTENDANCE.md",
+          "kind": "Planejamento"
+        }
+      ]
+    },
+    {
+      "taskId": "T26",
+      "title": "Testar respostas antigas, falta de resposta e repetição do lembrete sem alterar outra viagem.",
+      "feature": "F02",
+      "component": "Testes de presença",
+      "implementationStatus": "Implementado",
+      "codeStatus": "Implementado",
+      "implementationNote": "Existem cenários de resposta antiga, silêncio, corte e disputa com início da saída.",
+      "validationStatus": "Teste automatizado",
+      "validationNote": "A evidência 100 registra a matriz PostgreSQL e os cenários integrados aprovados.",
+      "sourcePaths": [
+        "src/backend/src/test/java/com/vanrides/vanrides/whatsapp/transport/WaAttendanceCutoffIntegrationTest.java",
+        "src/backend/src/test/java/com/vanrides/vanrides/whatsapp/transport/WaAttendanceJobsIntegrationTest.java"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-100-ATTENDANCE.md",
+        "program/cards/VR-WA-100-ATTENDANCE.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-100-ATTENDANCE.md"
+      ],
+      "nextAction": "Manter regressões e repetir os casos essenciais no WhatsApp real.",
+      "refs": [
+        "VR-WA-100-ATTENDANCE"
+      ],
+      "sourceVisibility": "Código no repositório acadêmico; evidências de origem identificadas separadamente da validação da migração.",
+      "validationEvidencePaths": [
+        "program/evidence/VR-WA-100-ATTENDANCE.md"
+      ],
+      "documentationPaths": [],
+      "evidenceRefs": [
+        {
+          "path": "program/evidence/VR-WA-100-ATTENDANCE.md",
+          "kind": "Validação documentada"
+        },
+        {
+          "path": "program/cards/VR-WA-100-ATTENDANCE.md",
+          "kind": "Planejamento"
+        }
+      ]
+    },
+    {
+      "taskId": "T27",
+      "title": "Registrar as versões e alterações dos três repositórios e preparar a recuperação da configuração anterior.",
+      "feature": "F09",
+      "component": "Organização e recuperação dos fontes",
+      "implementationStatus": "Implementado",
+      "codeStatus": "Implementado",
+      "implementationNote": "Versões, alterações anteriores e recuperação foram documentadas.",
+      "validationStatus": "Teste automatizado",
+      "validationNote": "Inventário e controle do workspace validados; arquivos anteriores preservados.",
+      "sourcePaths": [],
+      "evidencePaths": [
+        "program/evidence/VR-WA-000-PREFLIGHT.md",
+        "docs/workspace/preflight-2026-10-30.md",
+        "program/cards/VR-WA-000-PREFLIGHT.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-000-PREFLIGHT.md"
+      ],
+      "nextAction": "Preservar a cópia recuperável nas próximas entregas.",
+      "refs": [
+        "VR-WA-000-PREFLIGHT"
+      ],
+      "sourceVisibility": "Código no repositório acadêmico; evidências de origem identificadas separadamente da validação da migração.",
+      "validationEvidencePaths": [
+        "program/evidence/VR-WA-000-PREFLIGHT.md"
+      ],
+      "documentationPaths": [
+        "docs/workspace/preflight-2026-10-30.md"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "program/evidence/VR-WA-000-PREFLIGHT.md",
+          "kind": "Validação documentada"
+        },
+        {
+          "path": "docs/workspace/preflight-2026-10-30.md",
+          "kind": "Documentação existente"
+        },
+        {
+          "path": "program/cards/VR-WA-000-PREFLIGHT.md",
+          "kind": "Planejamento"
+        }
+      ]
+    },
+    {
+      "taskId": "T28",
+      "title": "Preparar as ferramentas Android e gerar um aplicativo mínimo de teste com versão identificada.",
+      "feature": "F09",
+      "component": "Preparação Android",
+      "implementationStatus": "Implementado",
+      "codeStatus": "Implementado",
+      "implementationNote": "Ferramentas e aplicativo mínimo Android foram preparados.",
+      "validationStatus": "Físico parado",
+      "validationNote": "Instalação e abertura no Redmi Note 8 sem USB confirmadas; não é prova de percurso.",
+      "sourcePaths": [
+        "src/aplicativo-motorista/android/app/build.gradle.kts"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-010-TOOLCHAINS.md",
+        "program/cards/VR-WA-010-TOOLCHAINS.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-010-TOOLCHAINS.md"
+      ],
+      "nextAction": "Usar a versão integrada nos próximos testes físicos.",
+      "refs": [
+        "VR-WA-010-TOOLCHAINS"
+      ],
+      "sourceVisibility": "Código no repositório acadêmico; evidências de origem identificadas separadamente da validação da migração.",
+      "validationEvidencePaths": [
+        "program/evidence/VR-WA-010-TOOLCHAINS.md"
+      ],
+      "documentationPaths": [],
+      "evidenceRefs": [
+        {
+          "path": "program/evidence/VR-WA-010-TOOLCHAINS.md",
+          "kind": "Validação documentada"
+        },
+        {
+          "path": "program/cards/VR-WA-010-TOOLCHAINS.md",
+          "kind": "Planejamento"
+        }
+      ]
+    },
+    {
+      "taskId": "T29",
+      "title": "Gerar um aplicativo mínimo para iPhone e documentar a assinatura de desenvolvimento e sua renovação.",
+      "feature": "F09",
+      "component": "Preparação iPhone",
+      "implementationStatus": "Implementado",
+      "codeStatus": "Implementado",
+      "implementationNote": "Aplicativo mínimo iOS e instruções de assinatura e renovação existem.",
+      "validationStatus": "Físico parado",
+      "validationNote": "Abertura do build inicial no iPhone confirmada; não valida o GPS do MVP atual.",
+      "sourcePaths": [
+        "src/aplicativo-motorista/ios/Runner.xcodeproj/project.pbxproj"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-010-TOOLCHAINS.md",
+        "docs/runbooks/whatsapp-mvp/010-builds-e-instalacao.md",
+        "program/cards/VR-WA-010-TOOLCHAINS.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-010-TOOLCHAINS.md"
+      ],
+      "nextAction": "Renovar a instalação e retomar os testes do coletor quando autorizado.",
+      "refs": [
+        "VR-WA-010-TOOLCHAINS"
+      ],
+      "sourceVisibility": "Código no repositório acadêmico; evidências de origem identificadas separadamente da validação da migração.",
+      "validationEvidencePaths": [
+        "program/evidence/VR-WA-010-TOOLCHAINS.md"
+      ],
+      "documentationPaths": [
+        "docs/runbooks/whatsapp-mvp/010-builds-e-instalacao.md"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "program/evidence/VR-WA-010-TOOLCHAINS.md",
+          "kind": "Validação documentada"
+        },
+        {
+          "path": "docs/runbooks/whatsapp-mvp/010-builds-e-instalacao.md",
+          "kind": "Documentação existente"
+        },
+        {
+          "path": "program/cards/VR-WA-010-TOOLCHAINS.md",
+          "kind": "Planejamento"
+        }
+      ]
+    },
+    {
+      "taskId": "T30",
+      "title": "Coletar a localização no Android em segundo plano, mostrando o estado da coleta e limitando posições ainda não enviadas.",
+      "feature": "F05",
+      "component": "Coletor Android",
+      "implementationStatus": "Implementado",
+      "codeStatus": "Implementado",
+      "implementationNote": "Serviço nativo e fila limitada de localização estão implementados.",
+      "validationStatus": "Laboratório",
+      "validationNote": "Cenários em emulador do coletor isolado aprovados; aparelho real tem prova separada.",
+      "sourcePaths": [
+        "src/aplicativo-motorista/android/app/src/driver/kotlin/com/example/vanrides_frontend_dev/driver/DriverTrackingRuntime.kt",
+        "src/aplicativo-motorista/android/app/src/driver/kotlin/com/example/vanrides_frontend_dev/driver/DriverTrackingService.kt"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-020-GPS-SPIKE.md",
+        "program/cards/VR-WA-020-GPS-SPIKE.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-020-GPS-SPIKE.md"
+      ],
+      "nextAction": "Concluir os ensaios de percurso e energia no Android.",
+      "refs": [
+        "VR-WA-020-GPS-SPIKE"
+      ],
+      "sourceVisibility": "Código no repositório acadêmico; evidências de origem identificadas separadamente da validação da migração.",
+      "validationEvidencePaths": [
+        "program/evidence/VR-WA-020-GPS-SPIKE.md"
+      ],
+      "documentationPaths": [],
+      "evidenceRefs": [
+        {
+          "path": "program/evidence/VR-WA-020-GPS-SPIKE.md",
+          "kind": "Validação documentada"
+        },
+        {
+          "path": "program/cards/VR-WA-020-GPS-SPIKE.md",
+          "kind": "Planejamento"
+        }
+      ]
+    },
+    {
+      "taskId": "T31",
+      "title": "Coletar a localização no iPhone com as permissões necessárias, mantendo a coleta independente da tela aberta.",
+      "feature": "F05",
+      "component": "Coletor iPhone",
+      "implementationStatus": "Implementado",
+      "codeStatus": "Implementado",
+      "implementationNote": "Coletor nativo iOS e permissões estão implementados.",
+      "validationStatus": "Laboratório",
+      "validationNote": "Cenários em simulador e testes nativos aprovados; falta prova física do coletor.",
+      "sourcePaths": [
+        "src/aplicativo-motorista/ios/Runner/DriverTrackingCoordinator.swift",
+        "src/aplicativo-motorista/ios/Runner/DriverTrackingCore.swift"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-020-GPS-SPIKE.md",
+        "program/cards/VR-WA-020-GPS-SPIKE.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-020-GPS-SPIKE.md"
+      ],
+      "nextAction": "Executar o coletor no iPhone físico após a retomada.",
+      "refs": [
+        "VR-WA-020-GPS-SPIKE"
+      ],
+      "sourceVisibility": "Código no repositório acadêmico; evidências de origem identificadas separadamente da validação da migração.",
+      "validationEvidencePaths": [
+        "program/evidence/VR-WA-020-GPS-SPIKE.md"
+      ],
+      "documentationPaths": [],
+      "evidenceRefs": [
+        {
+          "path": "program/evidence/VR-WA-020-GPS-SPIKE.md",
+          "kind": "Validação documentada"
+        },
+        {
+          "path": "program/cards/VR-WA-020-GPS-SPIKE.md",
+          "kind": "Planejamento"
+        }
+      ]
+    },
+    {
+      "taskId": "T32",
+      "title": "Receber posições de teste em um serviço separado, com autenticação e dados fictícios.",
+      "feature": "F05",
+      "component": "Receptor isolado de GPS",
+      "implementationStatus": "Implementado",
+      "codeStatus": "Implementado",
+      "implementationNote": "Receptor autenticado de prova e armazenamento de recibos existem.",
+      "validationStatus": "Laboratório",
+      "validationNote": "Testes do receptor, integração nativa e recuperação do volume aprovados.",
+      "sourcePaths": [
+        "src/whatsapp/gps-spike/receiver/service.py",
+        "src/whatsapp/gps-spike/receiver/store.py"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-020-GPS-SPIKE.md",
+        "program/cards/VR-WA-020-GPS-SPIKE.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-020-GPS-SPIKE.md"
+      ],
+      "nextAction": "Manter separado do receptor integrado e dos dados reais.",
+      "refs": [
+        "VR-WA-020-GPS-SPIKE"
+      ],
+      "sourceVisibility": "Código no repositório acadêmico; evidências de origem identificadas separadamente da validação da migração.",
+      "validationEvidencePaths": [
+        "program/evidence/VR-WA-020-GPS-SPIKE.md"
+      ],
+      "documentationPaths": [],
+      "evidenceRefs": [
+        {
+          "path": "program/evidence/VR-WA-020-GPS-SPIKE.md",
+          "kind": "Validação documentada"
+        },
+        {
+          "path": "program/cards/VR-WA-020-GPS-SPIKE.md",
+          "kind": "Planejamento"
+        }
+      ]
+    },
+    {
+      "taskId": "T33",
+      "title": "Testar a localização durante um percurso Android com tela bloqueada e interrupção de rede, medindo atrasos nas posições.",
+      "feature": "F05",
+      "component": "Percurso Android",
+      "implementationStatus": "Parcial",
+      "codeStatus": "Parcial",
+      "implementationNote": "Instalação e GPS parado foram exercitados; percurso em movimento ainda falta.",
+      "validationStatus": "Pendente",
+      "validationNote": "A8 não cobre duração com tela bloqueada, rede em movimento ou bateria.",
+      "sourcePaths": [
+        "src/aplicativo-motorista/android/app/src/driver/kotlin/com/example/vanrides_frontend_dev/driver/DriverTrackingRuntime.kt",
+        "src/aplicativo-motorista/android/app/src/driver/kotlin/com/example/vanrides_frontend_dev/driver/DriverTrackingService.kt"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-030-GPS-PROOF.md",
+        "program/evidence/VR-WA-110-RUN-TRACKING.md",
+        "program/cards/VR-WA-030-GPS-PROOF.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-030-GPS-PROOF.md"
+      ],
+      "nextAction": "Realizar o percurso Android e registrar atrasos e recuperação da rede.",
+      "refs": [
+        "VR-WA-030-GPS-PROOF"
+      ],
+      "sourceVisibility": "Código no repositório acadêmico; evidências de origem identificadas separadamente da validação da migração.",
+      "validationEvidencePaths": [
+        "program/evidence/VR-WA-030-GPS-PROOF.md",
+        "program/evidence/VR-WA-110-RUN-TRACKING.md"
+      ],
+      "documentationPaths": [],
+      "evidenceRefs": [
+        {
+          "path": "program/evidence/VR-WA-030-GPS-PROOF.md",
+          "kind": "Validação documentada"
+        },
+        {
+          "path": "program/evidence/VR-WA-110-RUN-TRACKING.md",
+          "kind": "Validação documentada"
+        },
+        {
+          "path": "program/cards/VR-WA-030-GPS-PROOF.md",
+          "kind": "Planejamento"
+        }
+      ]
+    },
+    {
+      "taskId": "T34",
+      "title": "Testar a localização durante um percurso no iPhone com tela bloqueada e interrupção de rede, medindo atrasos nas posições.",
+      "feature": "F05",
+      "component": "Percurso iPhone",
+      "implementationStatus": "Planejado",
+      "codeStatus": "Planejado",
+      "implementationNote": "O percurso físico do coletor no iPhone não foi concluído.",
+      "validationStatus": "Pendente",
+      "validationNote": "Testes físicos do coletor iPhone estão pausados; a abertura mínima não fecha esta tarefa.",
+      "sourcePaths": [
+        "src/aplicativo-motorista/ios/Runner/DriverTrackingCoordinator.swift",
+        "src/aplicativo-motorista/ios/Runner/DriverTrackingCore.swift"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-030-GPS-PROOF.md",
+        "program/cards/VR-WA-030-GPS-PROOF.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-030-GPS-PROOF.md"
+      ],
+      "nextAction": "Retomar o aparelho e executar o percurso completo.",
+      "refs": [
+        "VR-WA-030-GPS-PROOF"
+      ],
+      "sourceVisibility": "Código no repositório acadêmico; evidências de origem identificadas separadamente da validação da migração.",
+      "validationEvidencePaths": [
+        "program/evidence/VR-WA-030-GPS-PROOF.md"
+      ],
+      "documentationPaths": [],
+      "evidenceRefs": [
+        {
+          "path": "program/evidence/VR-WA-030-GPS-PROOF.md",
+          "kind": "Validação documentada"
+        },
+        {
+          "path": "program/cards/VR-WA-030-GPS-PROOF.md",
+          "kind": "Planejamento"
+        }
+      ]
+    },
+    {
+      "taskId": "T35",
+      "title": "Medir consumo de bateria e recuperação da localização em cada aparelho, sem conexão USB.",
+      "feature": "F05",
+      "component": "Energia e recuperação nos aparelhos",
+      "implementationStatus": "Parcial",
+      "codeStatus": "Parcial",
+      "implementationNote": "Há instrumentação e medições Android; falta fechar o ensaio bilateral sem USB.",
+      "validationStatus": "Pendente",
+      "validationNote": "Diagnósticos de energia Android são limitados e não demonstram autonomia do produto.",
+      "sourcePaths": [
+        "src/aplicativo-motorista/android/app/src/driver/kotlin/com/example/vanrides_frontend_dev/driver/DriverTrackingRuntime.kt",
+        "src/aplicativo-motorista/android/app/src/driver/kotlin/com/example/vanrides_frontend_dev/driver/DriverTrackingService.kt"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-030-GPS-PROOF.md",
+        "program/cards/VR-WA-030-GPS-PROOF.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-030-GPS-PROOF.md"
+      ],
+      "nextAction": "Medir bateria e interrupções em Android e iPhone no cenário previsto.",
+      "refs": [
+        "VR-WA-030-GPS-PROOF"
+      ],
+      "sourceVisibility": "Código no repositório acadêmico; evidências de origem identificadas separadamente da validação da migração.",
+      "validationEvidencePaths": [
+        "program/evidence/VR-WA-030-GPS-PROOF.md"
+      ],
+      "documentationPaths": [],
+      "evidenceRefs": [
+        {
+          "path": "program/evidence/VR-WA-030-GPS-PROOF.md",
+          "kind": "Validação documentada"
+        },
+        {
+          "path": "program/cards/VR-WA-030-GPS-PROOF.md",
+          "kind": "Planejamento"
+        }
+      ]
+    },
+    {
+      "taskId": "T36",
+      "title": "Guardar as mensagens recebidas do WhatsApp e impedir que o mesmo evento execute uma ação mais de uma vez.",
+      "feature": "F09",
+      "component": "Recepção de mensagens",
+      "implementationStatus": "Implementado",
+      "codeStatus": "Implementado",
+      "implementationNote": "Mensagens e eventos são persistidos e deduplicados antes das ações.",
+      "validationStatus": "Laboratório",
+      "validationNote": "Normalização, duplicatas e reinício testados com entradas e provedor simulados.",
+      "sourcePaths": [
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/transport/WaInboxService.java",
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/transport/WaEvolutionNormalizer.java"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-050-WHATSAPP-TRANSPORT.md",
+        "program/evidence/VR-WA-070-AGENT-WORKFLOWS.md",
+        "program/cards/VR-WA-050-WHATSAPP-TRANSPORT.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-050-WHATSAPP-TRANSPORT.md"
+      ],
+      "nextAction": "Validar os eventos do número dedicado.",
+      "refs": [
+        "VR-WA-050-WHATSAPP-TRANSPORT"
+      ],
+      "sourceVisibility": "Código no repositório acadêmico; evidências de origem identificadas separadamente da validação da migração.",
+      "validationEvidencePaths": [
+        "program/evidence/VR-WA-050-WHATSAPP-TRANSPORT.md",
+        "program/evidence/VR-WA-070-AGENT-WORKFLOWS.md"
+      ],
+      "documentationPaths": [],
+      "evidenceRefs": [
+        {
+          "path": "program/evidence/VR-WA-050-WHATSAPP-TRANSPORT.md",
+          "kind": "Validação documentada"
+        },
+        {
+          "path": "program/evidence/VR-WA-070-AGENT-WORKFLOWS.md",
+          "kind": "Validação documentada"
+        },
+        {
+          "path": "program/cards/VR-WA-050-WHATSAPP-TRANSPORT.md",
+          "kind": "Planejamento"
+        }
+      ]
+    },
+    {
+      "taskId": "T37",
+      "title": "Guardar as respostas a enviar e conectar o envio ao serviço de WhatsApp utilizado.",
+      "feature": "F09",
+      "component": "Envio de respostas",
+      "implementationStatus": "Implementado",
+      "codeStatus": "Implementado",
+      "implementationNote": "Fila persistida e adaptador de envio implementados.",
+      "validationStatus": "Laboratório",
+      "validationNote": "Envios ao receptor simulado e falhas controladas aprovados; entrega real ainda falta.",
+      "sourcePaths": [
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/transport/WaOutboxService.java",
+        "src/whatsapp/transport/evolution-text.mjs"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-050-WHATSAPP-TRANSPORT.md",
+        "program/evidence/VR-WA-120-DELIVERY-RECOVERY.md",
+        "program/cards/VR-WA-050-WHATSAPP-TRANSPORT.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-050-WHATSAPP-TRANSPORT.md"
+      ],
+      "nextAction": "Comprovar a entrega e seu retorno pelo WhatsApp real.",
+      "refs": [
+        "VR-WA-050-WHATSAPP-TRANSPORT"
+      ],
+      "sourceVisibility": "Código no repositório acadêmico; evidências de origem identificadas separadamente da validação da migração.",
+      "validationEvidencePaths": [
+        "program/evidence/VR-WA-050-WHATSAPP-TRANSPORT.md",
+        "program/evidence/VR-WA-120-DELIVERY-RECOVERY.md"
+      ],
+      "documentationPaths": [],
+      "evidenceRefs": [
+        {
+          "path": "program/evidence/VR-WA-050-WHATSAPP-TRANSPORT.md",
+          "kind": "Validação documentada"
+        },
+        {
+          "path": "program/evidence/VR-WA-120-DELIVERY-RECOVERY.md",
+          "kind": "Validação documentada"
+        },
+        {
+          "path": "program/cards/VR-WA-050-WHATSAPP-TRANSPORT.md",
+          "kind": "Planejamento"
+        }
+      ]
+    },
+    {
+      "taskId": "T38",
+      "title": "Usar a IA apenas para interpretar a mensagem e validar respostas incompletas, recusas ou demora antes de executar uma ação.",
+      "feature": "F09",
+      "component": "Interpretação de mensagens com IA",
+      "implementationStatus": "Implementado",
+      "codeStatus": "Implementado",
+      "implementationNote": "Modelo limitado a intenções e validação de saída implementados.",
+      "validationStatus": "Laboratório",
+      "validationNote": "Corpus com modelo real registrado; integração completa com WhatsApp não comprovada.",
+      "sourcePaths": [
+        "src/whatsapp/agent/model-policy.mjs",
+        "src/whatsapp/worker/model-client.mjs"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-070-AGENT-WORKFLOWS.md",
+        "program/cards/VR-WA-070-AGENT-WORKFLOWS.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-070-AGENT-WORKFLOWS.md"
+      ],
+      "nextAction": "Revalidar as mensagens do uso real mantendo a autorização na API.",
+      "refs": [
+        "VR-WA-070-AGENT-WORKFLOWS"
+      ],
+      "sourceVisibility": "Código no repositório acadêmico; evidências de origem identificadas separadamente da validação da migração.",
+      "validationEvidencePaths": [
+        "program/evidence/VR-WA-070-AGENT-WORKFLOWS.md"
+      ],
+      "documentationPaths": [],
+      "evidenceRefs": [
+        {
+          "path": "program/evidence/VR-WA-070-AGENT-WORKFLOWS.md",
+          "kind": "Validação documentada"
+        },
+        {
+          "path": "program/cards/VR-WA-070-AGENT-WORKFLOWS.md",
+          "kind": "Planejamento"
+        }
+      ]
+    },
+    {
+      "taskId": "T39",
+      "title": "Organizar as oito automações do n8n para importação desativada, sem incluir senhas ou chaves.",
+      "feature": "F09",
+      "component": "Automações n8n",
+      "implementationStatus": "Implementado",
+      "codeStatus": "Implementado",
+      "implementationNote": "Oito automações exportadas e importáveis sem credenciais públicas.",
+      "validationStatus": "Laboratório",
+      "validationNote": "Importação, execução isolada e reinício/reexportação aprovados; rotinas ficam desativadas.",
+      "sourcePaths": [
+        "src/whatsapp/workflows/generate.mjs",
+        "src/whatsapp/workflows/W08.json"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-070-AGENT-WORKFLOWS.md",
+        "program/evidence/VR-WA-120-DELIVERY-RECOVERY.md",
+        "program/cards/VR-WA-070-AGENT-WORKFLOWS.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-070-AGENT-WORKFLOWS.md"
+      ],
+      "nextAction": "Ativar somente no ambiente autorizado após revisar a operação.",
+      "refs": [
+        "VR-WA-070-AGENT-WORKFLOWS"
+      ],
+      "sourceVisibility": "Código no repositório acadêmico; evidências de origem identificadas separadamente da validação da migração.",
+      "validationEvidencePaths": [
+        "program/evidence/VR-WA-070-AGENT-WORKFLOWS.md",
+        "program/evidence/VR-WA-120-DELIVERY-RECOVERY.md"
+      ],
+      "documentationPaths": [],
+      "evidenceRefs": [
+        {
+          "path": "program/evidence/VR-WA-070-AGENT-WORKFLOWS.md",
+          "kind": "Validação documentada"
+        },
+        {
+          "path": "program/evidence/VR-WA-120-DELIVERY-RECOVERY.md",
+          "kind": "Validação documentada"
+        },
+        {
+          "path": "program/cards/VR-WA-070-AGENT-WORKFLOWS.md",
+          "kind": "Planejamento"
+        }
+      ]
+    },
+    {
+      "taskId": "T40",
+      "title": "Permitir ao motorista configurar dias, horários e sentidos da rotina pela conversa.",
+      "feature": "F09",
+      "component": "Rotinas do motorista",
+      "implementationStatus": "Implementado",
+      "codeStatus": "Implementado",
+      "implementationNote": "Dias, horários, sentidos e destino têm configuração pela conversa.",
+      "validationStatus": "Laboratório",
+      "validationNote": "Criar, editar, pausar e retomar rotina foram exercitados.",
+      "sourcePaths": [
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaDriverSetup.java",
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaDriverMutations.java"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-080-DRIVER-ROUTINES.md",
+        "program/cards/VR-WA-080-DRIVER-ROUTINES.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-080-DRIVER-ROUTINES.md"
+      ],
+      "nextAction": "Validar a configuração da rotina com participantes reais autorizados.",
+      "refs": [
+        "VR-WA-080-DRIVER-ROUTINES"
+      ],
+      "sourceVisibility": "Código no repositório acadêmico; evidências de origem identificadas separadamente da validação da migração.",
+      "validationEvidencePaths": [
+        "program/evidence/VR-WA-080-DRIVER-ROUTINES.md"
+      ],
+      "documentationPaths": [],
+      "evidenceRefs": [
+        {
+          "path": "program/evidence/VR-WA-080-DRIVER-ROUTINES.md",
+          "kind": "Validação documentada"
+        },
+        {
+          "path": "program/cards/VR-WA-080-DRIVER-ROUTINES.md",
+          "kind": "Planejamento"
+        }
+      ]
+    },
+    {
+      "taskId": "T41",
+      "title": "Mostrar no aplicativo o código de vínculo e as situações de aparelho vinculado, falha e recuperação.",
+      "feature": "F09",
+      "component": "Telas do aplicativo do motorista",
+      "implementationStatus": "Implementado",
+      "codeStatus": "Implementado",
+      "implementationNote": "Código de vínculo e estados do aparelho aparecem no aplicativo.",
+      "validationStatus": "Físico parado",
+      "validationNote": "Vínculo no Redmi e testes de apresentação registrados; iPhone completo pendente.",
+      "sourcePaths": [
+        "src/aplicativo-motorista/lib/features/driver_mvp/presentation/driver_pairing_app.dart",
+        "src/aplicativo-motorista/lib/features/driver_mvp/presentation/driver_tracking_view_state.dart"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-060-DRIVER-APP.md",
+        "program/evidence/VR-WA-110-RUN-TRACKING.md",
+        "program/cards/VR-WA-060-DRIVER-APP.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-060-DRIVER-APP.md"
+      ],
+      "nextAction": "Conferir a apresentação no iPhone e no percurso.",
+      "refs": [
+        "VR-WA-060-DRIVER-APP"
+      ],
+      "sourceVisibility": "Código no repositório acadêmico; evidências de origem identificadas separadamente da validação da migração.",
+      "validationEvidencePaths": [
+        "program/evidence/VR-WA-060-DRIVER-APP.md",
+        "program/evidence/VR-WA-110-RUN-TRACKING.md"
+      ],
+      "documentationPaths": [],
+      "evidenceRefs": [
+        {
+          "path": "program/evidence/VR-WA-060-DRIVER-APP.md",
+          "kind": "Validação documentada"
+        },
+        {
+          "path": "program/evidence/VR-WA-110-RUN-TRACKING.md",
+          "kind": "Validação documentada"
+        },
+        {
+          "path": "program/cards/VR-WA-060-DRIVER-APP.md",
+          "kind": "Planejamento"
+        }
+      ]
+    },
+    {
+      "taskId": "T42",
+      "title": "Vincular o aparelho ao pedido iniciado no aplicativo somente após confirmação pelo WhatsApp autenticado.",
+      "feature": "F09",
+      "component": "Pareamento seguro do aparelho",
+      "implementationStatus": "Implementado",
+      "codeStatus": "Implementado",
+      "implementationNote": "Confirmação vincula o pedido à chave original do aparelho.",
+      "validationStatus": "Físico parado",
+      "validationNote": "Jornada de pareamento no Redmi com canal sintético aprovada.",
+      "sourcePaths": [
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/pairing/WaPairingService.java",
+        "src/aplicativo-motorista/lib/features/driver_mvp/presentation/driver_pairing_controller.dart"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-060-DRIVER-APP.md",
+        "program/evidence/VR-WA-110-RUN-TRACKING.md",
+        "program/cards/VR-WA-060-DRIVER-APP.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-060-DRIVER-APP.md"
+      ],
+      "nextAction": "Repetir com a conta WhatsApp dedicada e depois no iPhone.",
+      "refs": [
+        "VR-WA-060-DRIVER-APP"
+      ],
+      "sourceVisibility": "Código no repositório acadêmico; evidências de origem identificadas separadamente da validação da migração.",
+      "validationEvidencePaths": [
+        "program/evidence/VR-WA-060-DRIVER-APP.md",
+        "program/evidence/VR-WA-110-RUN-TRACKING.md"
+      ],
+      "documentationPaths": [],
+      "evidenceRefs": [
+        {
+          "path": "program/evidence/VR-WA-060-DRIVER-APP.md",
+          "kind": "Validação documentada"
+        },
+        {
+          "path": "program/evidence/VR-WA-110-RUN-TRACKING.md",
+          "kind": "Validação documentada"
+        },
+        {
+          "path": "program/cards/VR-WA-060-DRIVER-APP.md",
+          "kind": "Planejamento"
+        }
+      ]
+    },
+    {
+      "taskId": "T43",
+      "title": "Fixar, no início de cada viagem, a lista de passageiros previstos para a rotina e o sentido selecionados.",
+      "feature": "F05",
+      "component": "Lista de passageiros na partida",
+      "implementationStatus": "Implementado",
+      "codeStatus": "Implementado",
+      "implementationNote": "Início da viagem fixa nomes, pontos, ordem e presença da partida.",
+      "validationStatus": "Laboratório",
+      "validationNote": "Teste activationFreezesTheCurrentNamesPinsOrderPolicyAndPendingPresence e jornada integrada registrados.",
+      "sourcePaths": [
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaRunPreparation.java",
+        "src/backend/src/test/java/com/vanrides/vanrides/whatsapp/transport/WaRunPreparationIntegrationTest.java"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-110-RUN-TRACKING.md",
+        "program/cards/VR-WA-110-RUN-TRACKING.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-110-RUN-TRACKING.md"
+      ],
+      "nextAction": "Conferir o conjunto de passageiros no percurso real.",
+      "refs": [
+        "VR-WA-110-RUN-TRACKING"
+      ],
+      "sourceVisibility": "Código no repositório acadêmico; evidências de origem identificadas separadamente da validação da migração.",
+      "validationEvidencePaths": [
+        "program/evidence/VR-WA-110-RUN-TRACKING.md"
+      ],
+      "documentationPaths": [],
+      "evidenceRefs": [
+        {
+          "path": "program/evidence/VR-WA-110-RUN-TRACKING.md",
+          "kind": "Validação documentada"
+        },
+        {
+          "path": "program/cards/VR-WA-110-RUN-TRACKING.md",
+          "kind": "Planejamento"
+        }
+      ]
+    },
+    {
+      "taskId": "T44",
+      "title": "Iniciar a localização pelo aplicativo e mostrar a coleta como ativa somente após receber a primeira posição válida.",
+      "feature": "F05",
+      "component": "Início da coleta no aplicativo",
+      "implementationStatus": "Implementado",
+      "codeStatus": "Implementado",
+      "implementationNote": "Aplicativo só mostra início confirmado após GPS válido aceito na API.",
+      "validationStatus": "Físico parado",
+      "validationNote": "Cenário A8 no Redmi parado comprovou primeira aquisição e confirmação única.",
+      "sourcePaths": [
+        "src/aplicativo-motorista/lib/features/driver_mvp/presentation/driver_tracking_setup.dart",
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/tracking/WaTrackingService.java",
+        "src/aplicativo-motorista/android/app/src/driver/kotlin/com/example/vanrides_frontend_dev/driver/DriverTrackingRuntime.kt",
+        "src/aplicativo-motorista/android/app/src/driver/kotlin/com/example/vanrides_frontend_dev/driver/DriverTrackingService.kt"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-110-RUN-TRACKING.md",
+        "program/cards/VR-WA-110-RUN-TRACKING.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-110-RUN-TRACKING.md"
+      ],
+      "nextAction": "Repetir no iPhone e durante o percurso.",
+      "refs": [
+        "VR-WA-110-RUN-TRACKING"
+      ],
+      "sourceVisibility": "Código no repositório acadêmico; evidências de origem identificadas separadamente da validação da migração.",
+      "validationEvidencePaths": [
+        "program/evidence/VR-WA-110-RUN-TRACKING.md"
+      ],
+      "documentationPaths": [],
+      "evidenceRefs": [
+        {
+          "path": "program/evidence/VR-WA-110-RUN-TRACKING.md",
+          "kind": "Validação documentada"
+        },
+        {
+          "path": "program/cards/VR-WA-110-RUN-TRACKING.md",
+          "kind": "Planejamento"
+        }
+      ]
+    },
+    {
+      "taskId": "T45",
+      "title": "Guardar o pedido de parada sem internet e confirmar sua conclusão após reconectar e reabrir o aplicativo, sem reiniciar a coleta.",
+      "feature": "F05",
+      "component": "Parada e recuperação sem internet",
+      "implementationStatus": "Implementado",
+      "codeStatus": "Implementado",
+      "implementationNote": "Parada durável e reenvio após reabrir sem nova coleta implementados.",
+      "validationStatus": "Físico parado",
+      "validationNote": "A8 confirmou o cenário Android; código iOS tem testes, sem repetição física atual.",
+      "sourcePaths": [
+        "src/aplicativo-motorista/android/app/src/driver/kotlin/com/example/vanrides_frontend_dev/driver/DriverTrackingRuntime.kt",
+        "src/aplicativo-motorista/android/app/src/driver/kotlin/com/example/vanrides_frontend_dev/driver/DriverTrackingService.kt",
+        "src/aplicativo-motorista/ios/Runner/DriverTrackingCoordinator.swift",
+        "src/aplicativo-motorista/ios/Runner/DriverTrackingCore.swift"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-110-RUN-TRACKING.md",
+        "program/cards/VR-WA-110-RUN-TRACKING.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-110-RUN-TRACKING.md"
+      ],
+      "nextAction": "Exercitar a mesma parada no iPhone físico e no percurso.",
+      "refs": [
+        "VR-WA-110-RUN-TRACKING"
+      ],
+      "sourceVisibility": "Código no repositório acadêmico; evidências de origem identificadas separadamente da validação da migração.",
+      "validationEvidencePaths": [
+        "program/evidence/VR-WA-110-RUN-TRACKING.md"
+      ],
+      "documentationPaths": [],
+      "evidenceRefs": [
+        {
+          "path": "program/evidence/VR-WA-110-RUN-TRACKING.md",
+          "kind": "Validação documentada"
+        },
+        {
+          "path": "program/cards/VR-WA-110-RUN-TRACKING.md",
+          "kind": "Planejamento"
+        }
+      ]
+    },
+    {
+      "taskId": "T46",
+      "title": "Reservar cada aviso para um único envio e limitar novas tentativas após falha ou reinício do serviço.",
+      "feature": "F11",
+      "component": "Recuperação do envio de avisos",
+      "implementationStatus": "Implementado",
+      "codeStatus": "Implementado",
+      "implementationNote": "Reserva única e repetição segura limitada estão implementadas.",
+      "validationStatus": "Laboratório",
+      "validationNote": "Testes de três tentativas e jornada integrada 120 passaram; canal externo não foi usado.",
+      "sourcePaths": [
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/transport/WaDeliveryAttempts.java",
+        "src/backend/src/test/java/com/vanrides/vanrides/whatsapp/transport/WaDeliveryRetryIntegrationTest.java",
+        "src/whatsapp/worker/dispatch.mjs"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-120-DELIVERY-RECOVERY.md",
+        "program/cards/VR-WA-120-DELIVERY-RECOVERY.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-120-DELIVERY-RECOVERY.md"
+      ],
+      "nextAction": "Comprovar as mesmas regras com o número dedicado.",
+      "refs": [
+        "VR-WA-120-DELIVERY-RECOVERY"
+      ],
+      "sourceVisibility": "Código no repositório acadêmico; evidências de origem identificadas separadamente da validação da migração.",
+      "validationEvidencePaths": [
+        "program/evidence/VR-WA-120-DELIVERY-RECOVERY.md"
+      ],
+      "documentationPaths": [],
+      "evidenceRefs": [
+        {
+          "path": "program/evidence/VR-WA-120-DELIVERY-RECOVERY.md",
+          "kind": "Validação documentada"
+        },
+        {
+          "path": "program/cards/VR-WA-120-DELIVERY-RECOVERY.md",
+          "kind": "Planejamento"
+        }
+      ]
+    },
+    {
+      "taskId": "T47",
+      "title": "Registrar a entrega de mensagens somente com confirmação do serviço de WhatsApp e identificar envios sem confirmação.",
+      "feature": "F11",
+      "component": "Confirmação da entrega",
+      "implementationStatus": "Implementado",
+      "codeStatus": "Implementado",
+      "implementationNote": "Retornos e entrega incerta são conciliados sem inventar confirmação.",
+      "validationStatus": "Laboratório",
+      "validationNote": "Cenários de retorno tardio e desconhecido testados; falta retorno real da Evolution.",
+      "sourcePaths": [
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/transport/WaDeliveryReconciler.java",
+        "src/backend/src/test/java/com/vanrides/vanrides/whatsapp/transport/WaDeliveryRecoveryIntegrationTest.java"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-120-DELIVERY-RECOVERY.md",
+        "program/cards/VR-WA-120-DELIVERY-RECOVERY.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-120-DELIVERY-RECOVERY.md"
+      ],
+      "nextAction": "Verificar envio e confirmação reais com destinatário autorizado.",
+      "refs": [
+        "VR-WA-120-DELIVERY-RECOVERY"
+      ],
+      "sourceVisibility": "Código no repositório acadêmico; evidências de origem identificadas separadamente da validação da migração.",
+      "validationEvidencePaths": [
+        "program/evidence/VR-WA-120-DELIVERY-RECOVERY.md"
+      ],
+      "documentationPaths": [],
+      "evidenceRefs": [
+        {
+          "path": "program/evidence/VR-WA-120-DELIVERY-RECOVERY.md",
+          "kind": "Validação documentada"
+        },
+        {
+          "path": "program/cards/VR-WA-120-DELIVERY-RECOVERY.md",
+          "kind": "Planejamento"
+        }
+      ]
+    },
+    {
+      "taskId": "T48",
+      "title": "Descartar avisos que perderam a utilidade e respeitar a opção de não receber mensagens antes de tentar novo envio.",
+      "feature": "F11",
+      "component": "Expiração e recusa de mensagens",
+      "implementationStatus": "Implementado",
+      "codeStatus": "Implementado",
+      "implementationNote": "Mensagens vencidas são encerradas e permissões de recebimento revalidadas.",
+      "validationStatus": "Laboratório",
+      "validationNote": "Expiração, perda de elegibilidade e retorno tardio cobertos na suíte 120.",
+      "sourcePaths": [
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/transport/WaDeliveryMaintenance.java",
+        "src/backend/src/test/java/com/vanrides/vanrides/whatsapp/transport/WaDeliveryRecoveryIntegrationTest.java",
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/transport/WaDeliveryAttempts.java",
+        "src/backend/src/test/java/com/vanrides/vanrides/whatsapp/transport/WaDeliveryRetryIntegrationTest.java",
+        "src/whatsapp/worker/dispatch.mjs"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-120-DELIVERY-RECOVERY.md",
+        "program/cards/VR-WA-120-DELIVERY-RECOVERY.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-120-DELIVERY-RECOVERY.md"
+      ],
+      "nextAction": "Repetir expiração e recusa durante o teste real de avisos.",
+      "refs": [
+        "VR-WA-120-DELIVERY-RECOVERY"
+      ],
+      "sourceVisibility": "Código no repositório acadêmico; evidências de origem identificadas separadamente da validação da migração.",
+      "validationEvidencePaths": [
+        "program/evidence/VR-WA-120-DELIVERY-RECOVERY.md"
+      ],
+      "documentationPaths": [],
+      "evidenceRefs": [
+        {
+          "path": "program/evidence/VR-WA-120-DELIVERY-RECOVERY.md",
+          "kind": "Validação documentada"
+        },
+        {
+          "path": "program/cards/VR-WA-120-DELIVERY-RECOVERY.md",
+          "kind": "Planejamento"
+        }
+      ]
+    },
+    {
+      "taskId": "T49",
+      "title": "Avaliar a aproximação pela posição atual, ponto e sentido da viagem, sem informar minutos de chegada sem cálculo comprovado.",
+      "feature": "F11",
+      "component": "Cálculo de aproximação",
+      "implementationStatus": "Planejado",
+      "codeStatus": "Planejado",
+      "implementationNote": "Regra de aproximação do MVP não está concluída.",
+      "validationStatus": "Pendente",
+      "validationNote": "A regra do receptor isolado não é a entrega do aviso por pessoa.",
+      "sourcePaths": [],
+      "evidencePaths": [
+        "program/cards/VR-WA-130-APPROACH.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-130-APPROACH.md"
+      ],
+      "nextAction": "Implementar a regra com posição atual, sentido e ponto corretos.",
+      "refs": [
+        "VR-WA-130-APPROACH"
+      ],
+      "sourceVisibility": "Código no repositório acadêmico; evidências de origem identificadas separadamente da validação da migração.",
+      "validationEvidencePaths": [],
+      "documentationPaths": [],
+      "evidenceRefs": [
+        {
+          "path": "program/cards/VR-WA-130-APPROACH.md",
+          "kind": "Planejamento"
+        }
+      ]
+    },
+    {
+      "taskId": "T50",
+      "title": "Acompanhar a ordem dos pontos e impedir avisos com posição antiga, presença cancelada ou ponto incorreto.",
+      "feature": "F11",
+      "component": "Ordem dos pontos e avisos",
+      "implementationStatus": "Parcial",
+      "codeStatus": "Parcial",
+      "implementationNote": "Ordem e cancelamento da parada existem; falta o produtor de aproximação.",
+      "validationStatus": "Teste automatizado",
+      "validationNote": "Lista congelada e ausência tardia testadas; regra de passagem e aproximação ainda pendente.",
+      "sourcePaths": [
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaDriverMutations.java",
+        "src/backend/src/test/java/com/vanrides/vanrides/whatsapp/transport/WaDriverRoutinesIntegrationTest.java",
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaAttendanceMutation.java",
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaAttendanceConversation.java"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-100-ATTENDANCE.md",
+        "program/evidence/VR-WA-110-RUN-TRACKING.md",
+        "program/cards/VR-WA-130-APPROACH.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-130-APPROACH.md"
+      ],
+      "nextAction": "Integrar a progressão dos pontos ao aviso de aproximação.",
+      "refs": [
+        "VR-WA-130-APPROACH"
+      ],
+      "sourceVisibility": "Código no repositório acadêmico; evidências de origem identificadas separadamente da validação da migração.",
+      "validationEvidencePaths": [
+        "program/evidence/VR-WA-100-ATTENDANCE.md",
+        "program/evidence/VR-WA-110-RUN-TRACKING.md"
+      ],
+      "documentationPaths": [],
+      "evidenceRefs": [
+        {
+          "path": "program/evidence/VR-WA-100-ATTENDANCE.md",
+          "kind": "Validação documentada"
+        },
+        {
+          "path": "program/evidence/VR-WA-110-RUN-TRACKING.md",
+          "kind": "Validação documentada"
+        },
+        {
+          "path": "program/cards/VR-WA-130-APPROACH.md",
+          "kind": "Planejamento"
+        }
+      ]
+    },
+    {
+      "taskId": "T51",
+      "title": "Testar o destinatário do aviso, pontos compartilhados e prevenção de mensagens repetidas com dados fictícios.",
+      "feature": "F11",
+      "component": "Testes do aviso de aproximação",
+      "implementationStatus": "Planejado",
+      "codeStatus": "Planejado",
+      "implementationNote": "Não foi identificada a matriz final deste aviso no MVP.",
+      "validationStatus": "Pendente",
+      "validationNote": "Testes do GPS isolado não fecham os cenários do produtor futuro.",
+      "sourcePaths": [],
+      "evidencePaths": [
+        "program/cards/VR-WA-130-APPROACH.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-130-APPROACH.md"
+      ],
+      "nextAction": "Criar e executar os cenários de destinatário, ponto comum e duplicação.",
+      "refs": [
+        "VR-WA-130-APPROACH"
+      ],
+      "sourceVisibility": "Código no repositório acadêmico; evidências de origem identificadas separadamente da validação da migração.",
+      "validationEvidencePaths": [],
+      "documentationPaths": [],
+      "evidenceRefs": [
+        {
+          "path": "program/cards/VR-WA-130-APPROACH.md",
+          "kind": "Planejamento"
+        }
+      ]
+    },
+    {
+      "taskId": "T52",
+      "title": "Encerrar a viagem automaticamente ao identificar seu término e manter o encerramento manual como alternativa de emergência.",
+      "feature": "F05",
+      "component": "Encerramento automático da viagem",
+      "implementationStatus": "Planejado",
+      "codeStatus": "Planejado",
+      "implementationNote": "FINISH_RUN continua futuro; parada técnica não equivale a fim automático da viagem.",
+      "validationStatus": "Pendente",
+      "validationNote": "Há proteção de sessão vencida, sem prova do término automático de negócio.",
+      "sourcePaths": [
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaCommandService.java",
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/tracking/WaTrackingSamples.java",
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/tracking/WaTrackingService.java"
+      ],
+      "evidencePaths": [
+        "program/cards/VR-WA-140-FINISH-SUPPORT.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-140-FINISH-SUPPORT.md"
+      ],
+      "nextAction": "Implementar e testar o reconhecimento de fim da viagem.",
+      "refs": [
+        "VR-WA-140-FINISH-SUPPORT"
+      ],
+      "sourceVisibility": "Código no repositório acadêmico; evidências de origem identificadas separadamente da validação da migração.",
+      "validationEvidencePaths": [],
+      "documentationPaths": [],
+      "evidenceRefs": [
+        {
+          "path": "program/cards/VR-WA-140-FINISH-SUPPORT.md",
+          "kind": "Planejamento"
+        }
+      ]
+    },
+    {
+      "taskId": "T53",
+      "title": "Parar a coleta de localização ao encerrar a viagem e mostrar se a parada foi confirmada ou ainda está pendente.",
+      "feature": "F05",
+      "component": "Parada pelo encerramento",
+      "implementationStatus": "Parcial",
+      "codeStatus": "Parcial",
+      "implementationNote": "Parada técnica e expiração de sessão existem; falta ligar ao fim automático do produto.",
+      "validationStatus": "Físico parado",
+      "validationNote": "Parada manual/offline Android testada; fim automático da viagem ainda não.",
+      "sourcePaths": [
+        "src/aplicativo-motorista/android/app/src/driver/kotlin/com/example/vanrides_frontend_dev/driver/DriverTrackingRuntime.kt",
+        "src/aplicativo-motorista/android/app/src/driver/kotlin/com/example/vanrides_frontend_dev/driver/DriverTrackingService.kt",
+        "src/aplicativo-motorista/ios/Runner/DriverTrackingCoordinator.swift",
+        "src/aplicativo-motorista/ios/Runner/DriverTrackingCore.swift"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-110-RUN-TRACKING.md",
+        "program/cards/VR-WA-140-FINISH-SUPPORT.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-140-FINISH-SUPPORT.md"
+      ],
+      "nextAction": "Integrar ao encerramento automático e repetir nos dois aparelhos.",
+      "refs": [
+        "VR-WA-140-FINISH-SUPPORT"
+      ],
+      "sourceVisibility": "Código no repositório acadêmico; evidências de origem identificadas separadamente da validação da migração.",
+      "validationEvidencePaths": [
+        "program/evidence/VR-WA-110-RUN-TRACKING.md"
+      ],
+      "documentationPaths": [],
+      "evidenceRefs": [
+        {
+          "path": "program/evidence/VR-WA-110-RUN-TRACKING.md",
+          "kind": "Validação documentada"
+        },
+        {
+          "path": "program/cards/VR-WA-140-FINISH-SUPPORT.md",
+          "kind": "Planejamento"
+        }
+      ]
+    },
+    {
+      "taskId": "T54",
+      "title": "Oferecer AJUDA, retirada de acesso e retomada assistida, pausando as respostas automáticas quando necessário.",
+      "feature": "F05",
+      "component": "Ajuda, retirada de acesso e retomada",
+      "implementationStatus": "Parcial",
+      "codeStatus": "Parcial",
+      "implementationNote": "AJUDA e pausa para suporte existem; recuperação completa ainda não foi fechada.",
+      "validationStatus": "Laboratório",
+      "validationNote": "Pausa e retomada de conversa testadas; não equivalem ao suporte operacional completo.",
+      "sourcePaths": [
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaConversationPolicy.java",
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaOnboardingCommands.java",
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/pairing/WaPairingService.java",
+        "src/aplicativo-motorista/lib/features/driver_mvp/presentation/driver_pairing_controller.dart"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-070-AGENT-WORKFLOWS.md",
+        "program/evidence/VR-WA-060-DRIVER-APP.md",
+        "program/cards/VR-WA-140-FINISH-SUPPORT.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-140-FINISH-SUPPORT.md"
+      ],
+      "nextAction": "Concluir retirada de acesso e recuperação do ciclo de viagem.",
+      "refs": [
+        "VR-WA-140-FINISH-SUPPORT"
+      ],
+      "sourceVisibility": "Código no repositório acadêmico; evidências de origem identificadas separadamente da validação da migração.",
+      "validationEvidencePaths": [
+        "program/evidence/VR-WA-070-AGENT-WORKFLOWS.md",
+        "program/evidence/VR-WA-060-DRIVER-APP.md"
+      ],
+      "documentationPaths": [],
+      "evidenceRefs": [
+        {
+          "path": "program/evidence/VR-WA-070-AGENT-WORKFLOWS.md",
+          "kind": "Validação documentada"
+        },
+        {
+          "path": "program/evidence/VR-WA-060-DRIVER-APP.md",
+          "kind": "Validação documentada"
+        },
+        {
+          "path": "program/cards/VR-WA-140-FINISH-SUPPORT.md",
+          "kind": "Planejamento"
+        }
+      ]
+    },
+    {
+      "taskId": "T55",
+      "title": "Executar lembretes com permissão exclusiva da automação e impedir duplicações após falha ou reinício.",
+      "feature": "F02",
+      "component": "Permissão das automações de presença",
+      "implementationStatus": "Implementado",
+      "codeStatus": "Implementado",
+      "implementationNote": "Processamento usa identidade própria de automação e páginas persistidas.",
+      "validationStatus": "Laboratório",
+      "validationNote": "Presença e repetição após reinício testadas; operação contínua ainda pendente.",
+      "sourcePaths": [
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/attendance/WaAttendanceJobs.java",
+        "src/whatsapp/worker/attendance-jobs.mjs"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-100-ATTENDANCE.md",
+        "program/evidence/VR-WA-120-DELIVERY-RECOVERY.md",
+        "program/cards/VR-WA-150-OPERATIONS.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-150-OPERATIONS.md"
+      ],
+      "nextAction": "Conferir o agendamento no ambiente definitivo de teste.",
+      "refs": [
+        "VR-WA-150-OPERATIONS"
+      ],
+      "sourceVisibility": "Código no repositório acadêmico; evidências de origem identificadas separadamente da validação da migração.",
+      "validationEvidencePaths": [
+        "program/evidence/VR-WA-100-ATTENDANCE.md",
+        "program/evidence/VR-WA-120-DELIVERY-RECOVERY.md"
+      ],
+      "documentationPaths": [],
+      "evidenceRefs": [
+        {
+          "path": "program/evidence/VR-WA-100-ATTENDANCE.md",
+          "kind": "Validação documentada"
+        },
+        {
+          "path": "program/evidence/VR-WA-120-DELIVERY-RECOVERY.md",
+          "kind": "Validação documentada"
+        },
+        {
+          "path": "program/cards/VR-WA-150-OPERATIONS.md",
+          "kind": "Planejamento"
+        }
+      ]
+    },
+    {
+      "taskId": "T56",
+      "title": "Configurar o n8n para preservar automações e mensagens pendentes após reiniciar o serviço.",
+      "feature": "F09",
+      "component": "Persistência e execução do n8n",
+      "implementationStatus": "Parcial",
+      "codeStatus": "Parcial",
+      "implementationNote": "Exportação e reinício preservam automações; fila e agenda contínuas ainda não validadas.",
+      "validationStatus": "Laboratório",
+      "validationNote": "Ensaio standalone 120 não valida o modo de fila/agendamento compartilhado.",
+      "sourcePaths": [
+        "src/whatsapp/workflows/generate.mjs",
+        "src/whatsapp/workflows/W08.json"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-120-DELIVERY-RECOVERY.md",
+        "program/cards/VR-WA-150-OPERATIONS.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-150-OPERATIONS.md"
+      ],
+      "nextAction": "Validar o modo operacional, a fila e as agendas do ambiente escolhido.",
+      "refs": [
+        "VR-WA-150-OPERATIONS"
+      ],
+      "sourceVisibility": "Código no repositório acadêmico; evidências de origem identificadas separadamente da validação da migração.",
+      "validationEvidencePaths": [
+        "program/evidence/VR-WA-120-DELIVERY-RECOVERY.md"
+      ],
+      "documentationPaths": [],
+      "evidenceRefs": [
+        {
+          "path": "program/evidence/VR-WA-120-DELIVERY-RECOVERY.md",
+          "kind": "Validação documentada"
+        },
+        {
+          "path": "program/cards/VR-WA-150-OPERATIONS.md",
+          "kind": "Planejamento"
+        }
+      ]
+    },
+    {
+      "taskId": "T57",
+      "title": "Coletar apenas os dados necessários ao cadastro, registrar consentimento e aplicar os prazos de exclusão definidos.",
+      "feature": "F10",
+      "component": "Privacidade dos cadastros",
+      "implementationStatus": "Parcial",
+      "codeStatus": "Parcial",
+      "implementationNote": "Dados mínimos e aceite existem; prazos e exclusão do conjunto do MVP não foram concluídos.",
+      "validationStatus": "Laboratório",
+      "validationNote": "Aceite e descarte de alguns conteúdos testados; retenção integral ainda pendente.",
+      "sourcePaths": [
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaOnboardingCommands.java",
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/transport/WaDeliveryMaintenance.java"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-040-DOMAIN-AUTH.md",
+        "program/evidence/VR-WA-070-AGENT-WORKFLOWS.md",
+        "program/evidence/VR-WA-120-DELIVERY-RECOVERY.md",
+        "program/cards/VR-WA-150-OPERATIONS.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-150-OPERATIONS.md"
+      ],
+      "nextAction": "Definir e testar retenção e exclusão de todas as famílias necessárias.",
+      "refs": [
+        "VR-WA-150-OPERATIONS"
+      ],
+      "sourceVisibility": "Código no repositório acadêmico; evidências de origem identificadas separadamente da validação da migração.",
+      "validationEvidencePaths": [
+        "program/evidence/VR-WA-040-DOMAIN-AUTH.md",
+        "program/evidence/VR-WA-070-AGENT-WORKFLOWS.md",
+        "program/evidence/VR-WA-120-DELIVERY-RECOVERY.md"
+      ],
+      "documentationPaths": [],
+      "evidenceRefs": [
+        {
+          "path": "program/evidence/VR-WA-040-DOMAIN-AUTH.md",
+          "kind": "Validação documentada"
+        },
+        {
+          "path": "program/evidence/VR-WA-070-AGENT-WORKFLOWS.md",
+          "kind": "Validação documentada"
+        },
+        {
+          "path": "program/evidence/VR-WA-120-DELIVERY-RECOVERY.md",
+          "kind": "Validação documentada"
+        },
+        {
+          "path": "program/cards/VR-WA-150-OPERATIONS.md",
+          "kind": "Planejamento"
+        }
+      ]
+    },
+    {
+      "taskId": "T58",
+      "title": "Testar cópia de segurança, restauração e exclusão dos dados em ambiente separado, registrando a recuperação realizada.",
+      "feature": "F09",
+      "component": "Cópia de segurança e restauração",
+      "implementationStatus": "Parcial",
+      "codeStatus": "Parcial",
+      "implementationNote": "Restauração do receptor isolado foi exercitada; falta restaurar o conjunto do MVP.",
+      "validationStatus": "Laboratório",
+      "validationNote": "O ensaio 020 não é prova de recuperação completa da API, n8n e dados do MVP.",
+      "sourcePaths": [
+        "src/whatsapp/gps-spike/deploy/state_backup.py"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-020-GPS-SPIKE.md",
+        "program/cards/VR-WA-150-OPERATIONS.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-150-OPERATIONS.md"
+      ],
+      "nextAction": "Executar restauração isolada e reaplicação de exclusões do conjunto completo.",
+      "refs": [
+        "VR-WA-150-OPERATIONS"
+      ],
+      "sourceVisibility": "Código no repositório acadêmico; evidências de origem identificadas separadamente da validação da migração.",
+      "validationEvidencePaths": [
+        "program/evidence/VR-WA-020-GPS-SPIKE.md"
+      ],
+      "documentationPaths": [],
+      "evidenceRefs": [
+        {
+          "path": "program/evidence/VR-WA-020-GPS-SPIKE.md",
+          "kind": "Validação documentada"
+        },
+        {
+          "path": "program/cards/VR-WA-150-OPERATIONS.md",
+          "kind": "Planejamento"
+        }
+      ]
+    },
+    {
+      "taskId": "T59",
+      "title": "Preparar alertas e guia de operação com limites de uso e procedimento para pausar novos envios com segurança.",
+      "feature": "F09",
+      "component": "Alertas e guia de operação",
+      "implementationStatus": "Parcial",
+      "codeStatus": "Parcial",
+      "implementationNote": "Há verificações de saúde e guias por componente; operação completa e alertas precisam ser fechados.",
+      "validationStatus": "Pendente",
+      "validationNote": "Inspeção dos guias e funções de saúde; sem teste operacional completo desta tarefa.",
+      "sourcePaths": [],
+      "evidencePaths": [
+        "src/whatsapp/worker/README.md",
+        "docs/runbooks/whatsapp-mvp/120-entrega-e-canal-real.md",
+        "program/cards/VR-WA-150-OPERATIONS.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-150-OPERATIONS.md"
+      ],
+      "nextAction": "Consolidar alertas, limites e parada segura no ensaio de operação.",
+      "refs": [
+        "VR-WA-150-OPERATIONS"
+      ],
+      "sourceVisibility": "Código no repositório acadêmico; evidências de origem identificadas separadamente da validação da migração.",
+      "validationEvidencePaths": [],
+      "documentationPaths": [
+        "src/whatsapp/worker/README.md",
+        "docs/runbooks/whatsapp-mvp/120-entrega-e-canal-real.md"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "src/whatsapp/worker/README.md",
+          "kind": "Documentação existente"
+        },
+        {
+          "path": "docs/runbooks/whatsapp-mvp/120-entrega-e-canal-real.md",
+          "kind": "Documentação existente"
+        },
+        {
+          "path": "program/cards/VR-WA-150-OPERATIONS.md",
+          "kind": "Planejamento"
+        }
+      ]
+    },
+    {
+      "taskId": "T60",
+      "title": "Registrar as versões e os arquivos aprovados que compõem a versão de teste.",
+      "feature": "F05",
+      "component": "Identificação da versão de teste",
+      "implementationStatus": "Parcial",
+      "codeStatus": "Parcial",
+      "implementationNote": "Há versões e recibos de laboratório; o pacote do MVP completo ainda não foi congelado.",
+      "validationStatus": "Pendente",
+      "validationNote": "Provas individuais não certificam o candidato final de todas as funções.",
+      "sourcePaths": [],
+      "evidencePaths": [
+        "program/evidence/VR-WA-110-RUN-TRACKING.md",
+        "program/evidence/VR-WA-120-DELIVERY-RECOVERY.md",
+        "program/cards/VR-WA-160-RELEASE-PREP.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-160-RELEASE-PREP.md"
+      ],
+      "nextAction": "Fechar dependências e identificar todos os arquivos da versão integrada.",
+      "refs": [
+        "VR-WA-160-RELEASE-PREP"
+      ],
+      "sourceVisibility": "Código no repositório acadêmico; evidências de origem identificadas separadamente da validação da migração.",
+      "validationEvidencePaths": [
+        "program/evidence/VR-WA-110-RUN-TRACKING.md",
+        "program/evidence/VR-WA-120-DELIVERY-RECOVERY.md"
+      ],
+      "documentationPaths": [
+        "program/evidence/VR-WA-110-RUN-TRACKING.md",
+        "program/evidence/VR-WA-120-DELIVERY-RECOVERY.md"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "program/evidence/VR-WA-110-RUN-TRACKING.md",
+          "kind": "Validação documentada"
+        },
+        {
+          "path": "program/evidence/VR-WA-120-DELIVERY-RECOVERY.md",
+          "kind": "Validação documentada"
+        },
+        {
+          "path": "program/evidence/VR-WA-110-RUN-TRACKING.md",
+          "kind": "Documentação existente"
+        },
+        {
+          "path": "program/evidence/VR-WA-120-DELIVERY-RECOVERY.md",
+          "kind": "Documentação existente"
+        },
+        {
+          "path": "program/cards/VR-WA-160-RELEASE-PREP.md",
+          "kind": "Planejamento"
+        }
+      ]
+    },
+    {
+      "taskId": "T61",
+      "title": "Preparar o aplicativo Android para instalação de teste, com assinatura identificada e verificação de integridade.",
+      "feature": "F05",
+      "component": "Instalação de teste Android",
+      "implementationStatus": "Implementado",
+      "codeStatus": "Implementado",
+      "implementationNote": "Aplicativo Android assinado e identificado foi preparado e instalado.",
+      "validationStatus": "Físico parado",
+      "validationNote": "Instalação e abertura conferidas; não implica que todas as funções do MVP estejam prontas.",
+      "sourcePaths": [
+        "src/aplicativo-motorista/android/app/build.gradle.kts"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-010-TOOLCHAINS.md",
+        "program/evidence/VR-WA-110-RUN-TRACKING.md",
+        "docs/runbooks/whatsapp-mvp/010-builds-e-instalacao.md",
+        "program/cards/VR-WA-160-RELEASE-PREP.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-160-RELEASE-PREP.md"
+      ],
+      "nextAction": "Gerar nova versão quando os módulos pendentes forem integrados.",
+      "refs": [
+        "VR-WA-160-RELEASE-PREP"
+      ],
+      "sourceVisibility": "Código no repositório acadêmico; evidências de origem identificadas separadamente da validação da migração.",
+      "validationEvidencePaths": [
+        "program/evidence/VR-WA-010-TOOLCHAINS.md",
+        "program/evidence/VR-WA-110-RUN-TRACKING.md"
+      ],
+      "documentationPaths": [
+        "docs/runbooks/whatsapp-mvp/010-builds-e-instalacao.md"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "program/evidence/VR-WA-010-TOOLCHAINS.md",
+          "kind": "Validação documentada"
+        },
+        {
+          "path": "program/evidence/VR-WA-110-RUN-TRACKING.md",
+          "kind": "Validação documentada"
+        },
+        {
+          "path": "docs/runbooks/whatsapp-mvp/010-builds-e-instalacao.md",
+          "kind": "Documentação existente"
+        },
+        {
+          "path": "program/cards/VR-WA-160-RELEASE-PREP.md",
+          "kind": "Planejamento"
+        }
+      ]
+    },
+    {
+      "taskId": "T62",
+      "title": "Preparar o aplicativo para iPhone com instruções de instalação e renovação da autorização de desenvolvimento.",
+      "feature": "F05",
+      "component": "Instalação de teste iPhone",
+      "implementationStatus": "Parcial",
+      "codeStatus": "Parcial",
+      "implementationNote": "Build inicial e renovação documentados; versão integrada atual ainda não validada no aparelho.",
+      "validationStatus": "Físico parado",
+      "validationNote": "Instalação mínima 010 aprovada; GPS integrado e renovação atual permanecem pendentes.",
+      "sourcePaths": [
+        "src/aplicativo-motorista/ios/Runner.xcodeproj/project.pbxproj"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-010-TOOLCHAINS.md",
+        "program/evidence/VR-WA-110-RUN-TRACKING.md",
+        "docs/runbooks/whatsapp-mvp/010-builds-e-instalacao.md",
+        "program/cards/VR-WA-160-RELEASE-PREP.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-160-RELEASE-PREP.md"
+      ],
+      "nextAction": "Instalar e validar a versão integrada no iPhone após retomar os testes.",
+      "refs": [
+        "VR-WA-160-RELEASE-PREP"
+      ],
+      "sourceVisibility": "Código no repositório acadêmico; evidências de origem identificadas separadamente da validação da migração.",
+      "validationEvidencePaths": [
+        "program/evidence/VR-WA-010-TOOLCHAINS.md",
+        "program/evidence/VR-WA-110-RUN-TRACKING.md"
+      ],
+      "documentationPaths": [
+        "docs/runbooks/whatsapp-mvp/010-builds-e-instalacao.md"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "program/evidence/VR-WA-010-TOOLCHAINS.md",
+          "kind": "Validação documentada"
+        },
+        {
+          "path": "program/evidence/VR-WA-110-RUN-TRACKING.md",
+          "kind": "Validação documentada"
+        },
+        {
+          "path": "docs/runbooks/whatsapp-mvp/010-builds-e-instalacao.md",
+          "kind": "Documentação existente"
+        },
+        {
+          "path": "program/cards/VR-WA-160-RELEASE-PREP.md",
+          "kind": "Planejamento"
+        }
+      ]
+    },
+    {
+      "taskId": "T63",
+      "title": "Planejar instalação no servidor, atualização do banco, teste de funcionamento e retorno à versão anterior.",
+      "feature": "F05",
+      "component": "Plano de instalação no servidor",
+      "implementationStatus": "Parcial",
+      "codeStatus": "Parcial",
+      "implementationNote": "Existem planos e reversão de laboratórios; falta o plano da versão completa do MVP.",
+      "validationStatus": "Pendente",
+      "validationNote": "O laboratório temporário não é o ambiente final de teste do produto.",
+      "sourcePaths": [],
+      "evidencePaths": [
+        "docs/runbooks/whatsapp-mvp/110-laboratorio-temporario.md",
+        "program/cards/VR-WA-160-RELEASE-PREP.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-160-RELEASE-PREP.md"
+      ],
+      "nextAction": "Consolidar a implantação da versão completa com verificações e retorno.",
+      "refs": [
+        "VR-WA-160-RELEASE-PREP"
+      ],
+      "sourceVisibility": "Código no repositório acadêmico; evidências de origem identificadas separadamente da validação da migração.",
+      "validationEvidencePaths": [],
+      "documentationPaths": [
+        "docs/runbooks/whatsapp-mvp/110-laboratorio-temporario.md"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "docs/runbooks/whatsapp-mvp/110-laboratorio-temporario.md",
+          "kind": "Documentação existente"
+        },
+        {
+          "path": "program/cards/VR-WA-160-RELEASE-PREP.md",
+          "kind": "Planejamento"
+        }
+      ]
+    },
+    {
+      "taskId": "T64",
+      "title": "Instalar a versão aprovada no ambiente de teste autorizado e conferir o endereço seguro e as versões dos componentes.",
+      "feature": "F05",
+      "component": "Ambiente integrado de teste",
+      "implementationStatus": "Parcial",
+      "codeStatus": "Parcial",
+      "implementationNote": "Ambientes temporários foram exercitados; a versão completa com canal dedicado ainda falta.",
+      "validationStatus": "Laboratório",
+      "validationNote": "Prontidão e limpeza 120 aprovadas sem conta conectada ou despacho real.",
+      "sourcePaths": [],
+      "evidencePaths": [
+        "program/evidence/VR-WA-120-DELIVERY-RECOVERY.md",
+        "docs/runbooks/whatsapp-mvp/110-laboratorio-temporario.md",
+        "src/whatsapp/worker/README.md",
+        "docs/runbooks/whatsapp-mvp/120-entrega-e-canal-real.md",
+        "program/cards/VR-WA-170-TEST-ENVIRONMENT.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-170-TEST-ENVIRONMENT.md"
+      ],
+      "nextAction": "Preparar ambiente final quando as funções e o número dedicado estiverem disponíveis.",
+      "refs": [
+        "VR-WA-170-TEST-ENVIRONMENT"
+      ],
+      "sourceVisibility": "Código no repositório acadêmico; evidências de origem identificadas separadamente da validação da migração.",
+      "validationEvidencePaths": [
+        "program/evidence/VR-WA-120-DELIVERY-RECOVERY.md"
+      ],
+      "documentationPaths": [
+        "docs/runbooks/whatsapp-mvp/110-laboratorio-temporario.md",
+        "src/whatsapp/worker/README.md",
+        "docs/runbooks/whatsapp-mvp/120-entrega-e-canal-real.md"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "program/evidence/VR-WA-120-DELIVERY-RECOVERY.md",
+          "kind": "Validação documentada"
+        },
+        {
+          "path": "docs/runbooks/whatsapp-mvp/110-laboratorio-temporario.md",
+          "kind": "Documentação existente"
+        },
+        {
+          "path": "src/whatsapp/worker/README.md",
+          "kind": "Documentação existente"
+        },
+        {
+          "path": "docs/runbooks/whatsapp-mvp/120-entrega-e-canal-real.md",
+          "kind": "Documentação existente"
+        },
+        {
+          "path": "program/cards/VR-WA-170-TEST-ENVIRONMENT.md",
+          "kind": "Planejamento"
+        }
+      ]
+    },
+    {
+      "taskId": "T65",
+      "title": "Conectar o número exclusivo do bot e conferir envio e confirmação de entrega com participantes autorizados.",
+      "feature": "F11",
+      "component": "Número dedicado e entrega real",
+      "implementationStatus": "Planejado",
+      "codeStatus": "Planejado",
+      "implementationNote": "A conta dedicada não foi pareada no checkpoint atual.",
+      "validationStatus": "Pendente",
+      "validationNote": "Proprietário precisa de outra linha; nenhuma entrega real foi comprovada.",
+      "sourcePaths": [],
+      "evidencePaths": [
+        "program/evidence/VR-WA-120-DELIVERY-RECOVERY.md",
+        "src/whatsapp/worker/README.md",
+        "docs/runbooks/whatsapp-mvp/120-entrega-e-canal-real.md",
+        "program/cards/VR-WA-170-TEST-ENVIRONMENT.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-170-TEST-ENVIRONMENT.md"
+      ],
+      "nextAction": "Disponibilizar a linha e conferir envio e confirmação reais.",
+      "refs": [
+        "VR-WA-170-TEST-ENVIRONMENT"
+      ],
+      "sourceVisibility": "Código no repositório acadêmico; evidências de origem identificadas separadamente da validação da migração.",
+      "validationEvidencePaths": [
+        "program/evidence/VR-WA-120-DELIVERY-RECOVERY.md"
+      ],
+      "documentationPaths": [
+        "src/whatsapp/worker/README.md",
+        "docs/runbooks/whatsapp-mvp/120-entrega-e-canal-real.md"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "program/evidence/VR-WA-120-DELIVERY-RECOVERY.md",
+          "kind": "Validação documentada"
+        },
+        {
+          "path": "src/whatsapp/worker/README.md",
+          "kind": "Documentação existente"
+        },
+        {
+          "path": "docs/runbooks/whatsapp-mvp/120-entrega-e-canal-real.md",
+          "kind": "Documentação existente"
+        },
+        {
+          "path": "program/cards/VR-WA-170-TEST-ENVIRONMENT.md",
+          "kind": "Planejamento"
+        }
+      ]
+    },
+    {
+      "taskId": "T66",
+      "title": "Testar os agendamentos e as automações no ambiente autorizado, verificando recuperação após falha ou reinício.",
+      "feature": "F02",
+      "component": "Agendamentos no ambiente integrado",
+      "implementationStatus": "Parcial",
+      "codeStatus": "Parcial",
+      "implementationNote": "Agendas e processamento existem, com chamadas isoladas testadas.",
+      "validationStatus": "Laboratório",
+      "validationNote": "Importação e chamada manual não comprovam agenda/fila contínuas do ambiente integrado.",
+      "sourcePaths": [
+        "src/whatsapp/workflows/generate.mjs",
+        "src/whatsapp/workflows/W08.json",
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/attendance/WaAttendanceJobs.java",
+        "src/whatsapp/worker/attendance-jobs.mjs"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-100-ATTENDANCE.md",
+        "program/evidence/VR-WA-120-DELIVERY-RECOVERY.md",
+        "program/cards/VR-WA-170-TEST-ENVIRONMENT.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-170-TEST-ENVIRONMENT.md"
+      ],
+      "nextAction": "Executar agenda real, reinício e recuperação no modo operacional escolhido.",
+      "refs": [
+        "VR-WA-170-TEST-ENVIRONMENT"
+      ],
+      "sourceVisibility": "Código no repositório acadêmico; evidências de origem identificadas separadamente da validação da migração.",
+      "validationEvidencePaths": [
+        "program/evidence/VR-WA-100-ATTENDANCE.md",
+        "program/evidence/VR-WA-120-DELIVERY-RECOVERY.md"
+      ],
+      "documentationPaths": [],
+      "evidenceRefs": [
+        {
+          "path": "program/evidence/VR-WA-100-ATTENDANCE.md",
+          "kind": "Validação documentada"
+        },
+        {
+          "path": "program/evidence/VR-WA-120-DELIVERY-RECOVERY.md",
+          "kind": "Validação documentada"
+        },
+        {
+          "path": "program/cards/VR-WA-170-TEST-ENVIRONMENT.md",
+          "kind": "Planejamento"
+        }
+      ]
+    },
+    {
+      "taskId": "T67",
+      "title": "Testar a jornada completa no Redmi Note 8 com WhatsApp real e registrar resultados e versões utilizadas.",
+      "feature": "F05",
+      "component": "Jornada completa Android",
+      "implementationStatus": "Parcial",
+      "codeStatus": "Parcial",
+      "implementationNote": "Um subconjunto da jornada Android foi aprovado com aparelho parado e canal simulado.",
+      "validationStatus": "Físico parado",
+      "validationNote": "A8 não cobre WhatsApp real, aproximação útil e encerramento automático.",
+      "sourcePaths": [
+        "src/aplicativo-motorista/android/app/src/driver/kotlin/com/example/vanrides_frontend_dev/driver/DriverTrackingRuntime.kt",
+        "src/aplicativo-motorista/android/app/src/driver/kotlin/com/example/vanrides_frontend_dev/driver/DriverTrackingService.kt"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-110-RUN-TRACKING.md",
+        "docs/runbooks/whatsapp-mvp/110-laboratorio-temporario.md",
+        "program/cards/VR-WA-180-E2E-DEVICES.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-180-E2E-DEVICES.md"
+      ],
+      "nextAction": "Executar o ciclo completo no Android com o canal real e percurso.",
+      "refs": [
+        "VR-WA-180-E2E-DEVICES"
+      ],
+      "sourceVisibility": "Código no repositório acadêmico; evidências de origem identificadas separadamente da validação da migração.",
+      "validationEvidencePaths": [
+        "program/evidence/VR-WA-110-RUN-TRACKING.md"
+      ],
+      "documentationPaths": [
+        "docs/runbooks/whatsapp-mvp/110-laboratorio-temporario.md"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "program/evidence/VR-WA-110-RUN-TRACKING.md",
+          "kind": "Validação documentada"
+        },
+        {
+          "path": "docs/runbooks/whatsapp-mvp/110-laboratorio-temporario.md",
+          "kind": "Documentação existente"
+        },
+        {
+          "path": "program/cards/VR-WA-180-E2E-DEVICES.md",
+          "kind": "Planejamento"
+        }
+      ]
+    },
+    {
+      "taskId": "T68",
+      "title": "Testar a jornada completa no iPhone com WhatsApp real e registrar resultados e versões utilizadas.",
+      "feature": "F05",
+      "component": "Jornada completa iPhone",
+      "implementationStatus": "Planejado",
+      "codeStatus": "Planejado",
+      "implementationNote": "Jornada completa do MVP no iPhone não foi executada.",
+      "validationStatus": "Pendente",
+      "validationNote": "Abertura inicial e testes em simulador não substituem essa jornada física.",
+      "sourcePaths": [
+        "src/aplicativo-motorista/ios/Runner/DriverTrackingCoordinator.swift",
+        "src/aplicativo-motorista/ios/Runner/DriverTrackingCore.swift"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-030-GPS-PROOF.md",
+        "program/cards/VR-WA-180-E2E-DEVICES.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-180-E2E-DEVICES.md"
+      ],
+      "nextAction": "Retomar o aparelho depois de fechar as dependências.",
+      "refs": [
+        "VR-WA-180-E2E-DEVICES"
+      ],
+      "sourceVisibility": "Código no repositório acadêmico; evidências de origem identificadas separadamente da validação da migração.",
+      "validationEvidencePaths": [
+        "program/evidence/VR-WA-030-GPS-PROOF.md"
+      ],
+      "documentationPaths": [],
+      "evidenceRefs": [
+        {
+          "path": "program/evidence/VR-WA-030-GPS-PROOF.md",
+          "kind": "Validação documentada"
+        },
+        {
+          "path": "program/cards/VR-WA-180-E2E-DEVICES.md",
+          "kind": "Planejamento"
+        }
+      ]
+    },
+    {
+      "taskId": "T69",
+      "title": "Medir se os avisos chegam em tempo útil nos percursos dos dois aparelhos e se o destinatário está correto.",
+      "feature": "F11",
+      "component": "Utilidade dos avisos em percurso",
+      "implementationStatus": "Planejado",
+      "codeStatus": "Planejado",
+      "implementationNote": "Utilidade dos avisos de aproximação ainda não foi medida no uso real.",
+      "validationStatus": "Pendente",
+      "validationNote": "Não há prova de avisos úteis nos percursos dos dois aparelhos.",
+      "sourcePaths": [],
+      "evidencePaths": [
+        "program/cards/VR-WA-180-E2E-DEVICES.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-180-E2E-DEVICES.md"
+      ],
+      "nextAction": "Medir antecedência útil e destinatário correto após implementar os avisos.",
+      "refs": [
+        "VR-WA-180-E2E-DEVICES"
+      ],
+      "sourceVisibility": "Código no repositório acadêmico; evidências de origem identificadas separadamente da validação da migração.",
+      "validationEvidencePaths": [],
+      "documentationPaths": [],
+      "evidenceRefs": [
+        {
+          "path": "program/cards/VR-WA-180-E2E-DEVICES.md",
+          "kind": "Planejamento"
+        }
+      ]
+    },
+    {
+      "taskId": "T70",
+      "title": "Entregar guia de uso e relatório com resultados, versões, limites e pendências do MVP.",
+      "feature": "F05",
+      "component": "Guia e relatório finais do MVP",
+      "implementationStatus": "Parcial",
+      "codeStatus": "Parcial",
+      "implementationNote": "Existem guias e resultados por componente; entrega operacional final ainda falta.",
+      "validationStatus": "Pendente",
+      "validationNote": "Documentação existente não equivale ao pacote concluído do MVP.",
+      "sourcePaths": [],
+      "evidencePaths": [
+        "src/whatsapp/worker/README.md",
+        "docs/runbooks/whatsapp-mvp/120-entrega-e-canal-real.md",
+        "docs/runbooks/whatsapp-mvp/010-builds-e-instalacao.md",
+        "program/cards/VR-WA-190-HANDOFF.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-190-HANDOFF.md"
+      ],
+      "nextAction": "Consolidar o guia e os resultados após a validação completa.",
+      "refs": [
+        "VR-WA-190-HANDOFF"
+      ],
+      "sourceVisibility": "Código no repositório acadêmico; evidências de origem identificadas separadamente da validação da migração.",
+      "validationEvidencePaths": [],
+      "documentationPaths": [
+        "src/whatsapp/worker/README.md",
+        "docs/runbooks/whatsapp-mvp/120-entrega-e-canal-real.md",
+        "docs/runbooks/whatsapp-mvp/010-builds-e-instalacao.md"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "src/whatsapp/worker/README.md",
+          "kind": "Documentação existente"
+        },
+        {
+          "path": "docs/runbooks/whatsapp-mvp/120-entrega-e-canal-real.md",
+          "kind": "Documentação existente"
+        },
+        {
+          "path": "docs/runbooks/whatsapp-mvp/010-builds-e-instalacao.md",
+          "kind": "Documentação existente"
+        },
+        {
+          "path": "program/cards/VR-WA-190-HANDOFF.md",
+          "kind": "Planejamento"
+        }
+      ]
+    },
+    {
+      "taskId": "T71",
+      "title": "Repetir a instalação e a renovação a partir do pacote entregue e conferir se todos os arquivos necessários estão disponíveis.",
+      "feature": "F05",
+      "component": "Reprodução da instalação final",
+      "implementationStatus": "Planejado",
+      "codeStatus": "Planejado",
+      "implementationNote": "Reprodução do pacote completo ainda não foi realizada.",
+      "validationStatus": "Pendente",
+      "validationNote": "Instalações individuais anteriores não certificam a entrega final.",
+      "sourcePaths": [],
+      "evidencePaths": [
+        "docs/runbooks/whatsapp-mvp/010-builds-e-instalacao.md",
+        "program/cards/VR-WA-190-HANDOFF.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-190-HANDOFF.md"
+      ],
+      "nextAction": "Reproduzir instalação e renovação do pacote final nos dois aparelhos.",
+      "refs": [
+        "VR-WA-190-HANDOFF"
+      ],
+      "sourceVisibility": "Código no repositório acadêmico; evidências de origem identificadas separadamente da validação da migração.",
+      "validationEvidencePaths": [],
+      "documentationPaths": [
+        "docs/runbooks/whatsapp-mvp/010-builds-e-instalacao.md"
+      ],
+      "evidenceRefs": [
+        {
+          "path": "docs/runbooks/whatsapp-mvp/010-builds-e-instalacao.md",
+          "kind": "Documentação existente"
+        },
+        {
+          "path": "program/cards/VR-WA-190-HANDOFF.md",
+          "kind": "Planejamento"
+        }
+      ]
+    },
+    {
+      "taskId": "T72",
+      "title": "Registrar cancelamento ou correção de presença para a viagem indicada na conversa.",
+      "feature": "F06",
+      "component": "Cancelamento de presença",
+      "implementationStatus": "Proposta de escopo",
+      "codeStatus": "Implementado",
+      "implementationNote": "Código de ausência/correção existe; inclusão acadêmica na Onda 2 ainda é proposta.",
+      "validationStatus": "Laboratório",
+      "validationNote": "Mudança de resposta e ausência após início foram testadas no laboratório.",
+      "sourcePaths": [
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaAttendanceMutation.java",
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaAttendanceConversation.java",
+        "src/backend/src/test/java/com/vanrides/vanrides/whatsapp/transport/WaAttendanceCutoffIntegrationTest.java",
+        "src/backend/src/test/java/com/vanrides/vanrides/whatsapp/transport/WaAttendanceJobsIntegrationTest.java"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-100-ATTENDANCE.md",
+        "program/cards/VR-WA-100-ATTENDANCE.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-100-ATTENDANCE.md"
+      ],
+      "nextAction": "Confirmar o enquadramento da funcionalidade com a equipe.",
+      "refs": [
+        "VR-WA-100-ATTENDANCE"
+      ],
+      "sourceVisibility": "Código no repositório acadêmico; evidências de origem identificadas separadamente da validação da migração.",
+      "validationEvidencePaths": [
+        "program/evidence/VR-WA-100-ATTENDANCE.md"
+      ],
+      "documentationPaths": [],
+      "evidenceRefs": [
+        {
+          "path": "program/evidence/VR-WA-100-ATTENDANCE.md",
+          "kind": "Validação documentada"
+        },
+        {
+          "path": "program/cards/VR-WA-100-ATTENDANCE.md",
+          "kind": "Planejamento"
+        }
+      ]
+    },
+    {
+      "taskId": "T73",
+      "title": "Aplicar o horário limite para alterar a presença e manter o histórico mínimo dos cancelamentos.",
+      "feature": "F06",
+      "component": "Limite de alteração de presença",
+      "implementationStatus": "Proposta de escopo",
+      "codeStatus": "Parcial",
+      "implementationNote": "A conferir: regra atual permite ausência após a partida; não é bloqueio geral por horário.",
+      "validationStatus": "Teste automatizado",
+      "validationNote": "Os testes cobrem corte e preservação da lista, com semântica diferente de proibir todo cancelamento tardio.",
+      "sourcePaths": [
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaAttendanceMutation.java",
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaAttendanceConversation.java",
+        "src/backend/src/test/java/com/vanrides/vanrides/whatsapp/transport/WaAttendanceCutoffIntegrationTest.java",
+        "src/backend/src/test/java/com/vanrides/vanrides/whatsapp/transport/WaAttendanceJobsIntegrationTest.java"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-100-ATTENDANCE.md",
+        "program/cards/VR-WA-100-ATTENDANCE.md",
+        "program/cards/VR-WA-120-DELIVERY-RECOVERY.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-100-ATTENDANCE.md",
+        "program/cards/VR-WA-120-DELIVERY-RECOVERY.md"
+      ],
+      "nextAction": "Alinhar o significado de horário limite antes de declarar a tarefa pronta.",
+      "refs": [
+        "VR-WA-100-ATTENDANCE",
+        "VR-WA-120-DELIVERY-RECOVERY"
+      ],
+      "sourceVisibility": "Código no repositório acadêmico; evidências de origem identificadas separadamente da validação da migração.",
+      "validationEvidencePaths": [
+        "program/evidence/VR-WA-100-ATTENDANCE.md"
+      ],
+      "documentationPaths": [],
+      "evidenceRefs": [
+        {
+          "path": "program/evidence/VR-WA-100-ATTENDANCE.md",
+          "kind": "Validação documentada"
+        },
+        {
+          "path": "program/cards/VR-WA-100-ATTENDANCE.md",
+          "kind": "Planejamento"
+        },
+        {
+          "path": "program/cards/VR-WA-120-DELIVERY-RECOVERY.md",
+          "kind": "Planejamento"
+        }
+      ]
+    },
+    {
+      "taskId": "T74",
+      "title": "Informar ao motorista a mudança de presença pelo WhatsApp, evitando aviso repetido ou atrasado.",
+      "feature": "F12",
+      "component": "Aviso de cancelamento ao motorista",
+      "implementationStatus": "Proposta de escopo",
+      "codeStatus": "Planejado",
+      "implementationNote": "Cancelamento muda a parada; aviso específico ao motorista não foi comprovado.",
+      "validationStatus": "Pendente",
+      "validationNote": "WaAttendanceMutation responde ao passageiro; não foi identificado envio correspondente ao motorista.",
+      "sourcePaths": [
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaAttendanceMutation.java",
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaAttendanceConversation.java"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-100-ATTENDANCE.md",
+        "program/cards/VR-WA-120-DELIVERY-RECOVERY.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-120-DELIVERY-RECOVERY.md"
+      ],
+      "nextAction": "Aprovar o ajuste e implementar ou localizar o aviso ao motorista.",
+      "refs": [
+        "VR-WA-120-DELIVERY-RECOVERY"
+      ],
+      "sourceVisibility": "Código no repositório acadêmico; evidências de origem identificadas separadamente da validação da migração.",
+      "validationEvidencePaths": [
+        "program/evidence/VR-WA-100-ATTENDANCE.md"
+      ],
+      "documentationPaths": [],
+      "evidenceRefs": [
+        {
+          "path": "program/evidence/VR-WA-100-ATTENDANCE.md",
+          "kind": "Validação documentada"
+        },
+        {
+          "path": "program/cards/VR-WA-120-DELIVERY-RECOVERY.md",
+          "kind": "Planejamento"
+        }
+      ]
+    },
+    {
+      "taskId": "T75",
+      "title": "Mostrar ao motorista a lista da viagem, distinguindo passageiros confirmados, pendentes e ausentes.",
+      "feature": "F02",
+      "component": "Lista de presença do motorista",
+      "implementationStatus": "Implementado",
+      "codeStatus": "Implementado",
+      "implementationNote": "Resumo nominal por ocorrência distingue confirmações, ausências e pendências.",
+      "validationStatus": "Laboratório",
+      "validationNote": "Motorista consultou a lista e duas desistências no laboratório.",
+      "sourcePaths": [
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaAttendanceSummary.java"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-100-ATTENDANCE.md",
+        "program/cards/VR-WA-100-ATTENDANCE.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-100-ATTENDANCE.md"
+      ],
+      "nextAction": "Verificar a mesma consulta pelo número dedicado.",
+      "refs": [
+        "VR-WA-100-ATTENDANCE"
+      ],
+      "sourceVisibility": "Código no repositório acadêmico; evidências de origem identificadas separadamente da validação da migração.",
+      "validationEvidencePaths": [
+        "program/evidence/VR-WA-100-ATTENDANCE.md"
+      ],
+      "documentationPaths": [],
+      "evidenceRefs": [
+        {
+          "path": "program/evidence/VR-WA-100-ATTENDANCE.md",
+          "kind": "Validação documentada"
+        },
+        {
+          "path": "program/cards/VR-WA-100-ATTENDANCE.md",
+          "kind": "Planejamento"
+        }
+      ]
+    },
+    {
+      "taskId": "T78",
+      "title": "Testar as operações da API, as permissões de acesso e as atualizações do banco PostgreSQL com dados fictícios.",
+      "feature": "F09",
+      "component": "Contrato, permissões e banco",
+      "implementationStatus": "Implementado",
+      "codeStatus": "Implementado",
+      "implementationNote": "Contrato e testes de autorização e migração do domínio WhatsApp presentes.",
+      "validationStatus": "Teste automatizado",
+      "validationNote": "Suítes PostgreSQL e contratos constam nas evidências; nenhum teste novo foi executado nesta leitura.",
+      "sourcePaths": [
+        "src/backend/contracts/whatsapp-mvp/openapi.yaml",
+        "src/backend/src/test/java/com/vanrides/vanrides/whatsapp/auth/WaFoundationIntegrationTest.java",
+        "src/backend/src/test/java/com/vanrides/vanrides/whatsapp/persistence/WhatsappMigrationIntegrationTest.java"
+      ],
+      "evidencePaths": [
+        "program/evidence/VR-WA-040-DOMAIN-AUTH.md",
+        "program/evidence/VR-WA-120-DELIVERY-RECOVERY.md",
+        "program/cards/VR-WA-040-DOMAIN-AUTH.md"
+      ],
+      "planningPaths": [
+        "program/cards/VR-WA-040-DOMAIN-AUTH.md"
+      ],
+      "nextAction": "Preservar os testes ao concluir os próximos componentes.",
+      "refs": [
+        "VR-WA-040-DOMAIN-AUTH"
+      ],
+      "sourceVisibility": "Código no repositório acadêmico; evidências de origem identificadas separadamente da validação da migração.",
+      "validationEvidencePaths": [
+        "program/evidence/VR-WA-040-DOMAIN-AUTH.md",
+        "program/evidence/VR-WA-120-DELIVERY-RECOVERY.md"
+      ],
+      "documentationPaths": [],
+      "evidenceRefs": [
+        {
+          "path": "program/evidence/VR-WA-040-DOMAIN-AUTH.md",
+          "kind": "Validação documentada"
+        },
+        {
+          "path": "program/evidence/VR-WA-120-DELIVERY-RECOVERY.md",
+          "kind": "Validação documentada"
+        },
+        {
+          "path": "program/cards/VR-WA-040-DOMAIN-AUTH.md",
+          "kind": "Planejamento"
+        }
+      ]
+    }
+  ],
+  "pathContext": "Caminhos adaptados para o repositório acadêmico; sourceRevisions registram a origem histórica, não a aprovação desta migração."
+}
