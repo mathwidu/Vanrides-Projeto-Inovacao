@@ -46,6 +46,7 @@ const manifest = { schemaVersion: 1, card: 'VR-WA-120-DELIVERY-RECOVERY', n8nVer
     'W02, W03 and W05 invoke the common inbox worker; actor authorization and private draft state remain in the API', 'W04 advances bounded attendance jobs; only the device API receives GPS and proves departure',
     'W08 delegates bounded HEALTH_RECONCILE ticks to the private worker; job cursors remain private and retention remains150', 'No real WhatsApp or physical-device proof'] };
 
+const exportsById = new Map();
 if (team) mkdirSync(root, { mode: 0o700 });
 else mkdirSync(root, { recursive: true });
 for (const flow of Object.keys(ids)) {
@@ -70,6 +71,7 @@ for (const flow of Object.keys(ids)) {
       executionTimeout: 40, timezone: 'America/Sao_Paulo', callerPolicy: 'workflowsFromAList',
       callerIds: [ids.W01, ids.W08].join(','), ...(flow === 'W07' ? {} : { errorWorkflow: ids.W07 }) },
     staticData: null, pinData: {}, tags: [] };
+  if (team) exportsById.set(flow, workflow);
   const file = `${flow}.json`, content = JSON.stringify(workflow, null, 2) + '\n';
   writeFileSync(new URL(file, root), content);
   manifest.workflows.push({ logicalId: flow, id: ids[flow], file, sha256: createHash('sha256').update(content).digest('hex'),
@@ -77,5 +79,7 @@ for (const flow of Object.keys(ids)) {
     prerequisite: null, errorWorkflow: flow === 'W07' ? null : ids.W07,
     acceptsConversationPayload: false });
 }
+if (team) writeFileSync(new URL('importar.json', root),
+  JSON.stringify(manifest.importOrder.map(id => exportsById.get(id)), null, 2) + '\n');
 writeFileSync(new URL('manifest.json', root), JSON.stringify(manifest, null, 2) + '\n');
 process.stdout.write(`Generated eight inactive workflows in ${fileURLToPath(root)}\n`);
