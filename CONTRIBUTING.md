@@ -71,6 +71,10 @@ Use os comandos da sua frente. Preserve contratos ou ajuste produtores e
 consumidores juntos. Não reduza testes para obter CI verde. Registre comando,
 revisão, ambiente, resultado e testes que não conseguiu executar.
 
+A [revisão da CI e dos testes](docs/desenvolvimento/revisao-ci-e-testes.md)
+registra os gargalos medidos e a proposta de simplificação. As mudanças
+descritas ainda não substituem os comandos atuais de validação.
+
 Não comite `.env`, chaves, assinatura Apple/Android, conversas, telefones reais
 ou coordenadas pessoais. Use dados sintéticos. Revise os logs antes de anexá-los.
 
