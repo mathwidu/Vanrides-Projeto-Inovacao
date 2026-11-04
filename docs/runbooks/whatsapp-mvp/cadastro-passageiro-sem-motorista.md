@@ -2,11 +2,12 @@
 
 Ensaio de 04/11/2026, autorizado pelo proprietário nas issues #28, #29 e #91.
 Cliente: WhatsApp do Mac, usando o contato pessoal já admitido. Bot: WhatsApp
-Business no Redmi, conectado à Evolution dedicada. A API publicada nesta rodada
-usa o backend `57a2ffd`; o receptor usa a correção `fc4dea9`. Modelo pago desligado;
+Business no Redmi, conectado à Evolution dedicada. A rodada inicial usou o
+backend `57a2ffd`; a repetição após a atualização aprovada usa `acc572f`.
+O receptor usa a correção `fc4dea9`. Modelo pago desligado;
 testes físicos do aplicativo iPhone continuam pausados.
 
-## Resultado observado
+## Resultado inicial observado
 
 | Etapa | Resultado no WhatsApp e na API |
 | --- | --- |
@@ -45,16 +46,15 @@ preferências de avisos, rotinas, dias, pin estático, referência e confirmaç�
 O motorista correto aprova o vínculo e o ponto. Não criar uma empresa nem usar
 localização contínua do passageiro para essa etapa.
 
-## Correções preparadas
+## Correções publicadas e repetidas no WhatsApp
 
-A orientação de ajuda/retomada deve explicar que o perfil está pronto e que é
+A orientação de ajuda/retomada agora explica que o perfil está pronto e que é
 necessário pedir e enviar o convite do motorista. Ela preserva recusas e não
-cria vínculo automaticamente. A consulta de presença sem ocorrências deve
-encerrar sua seleção vazia, permitindo outras intenções em seguida.
+cria vínculo automaticamente. A consulta de presença sem ocorrências agora
+encerra sua seleção vazia, permitindo outras intenções em seguida.
 
-A prova acima é da versão já publicada. Testes locais e a publicação das
-correções devem ser registrados separadamente; não apresentar a melhoria como
-validada no WhatsApp antes da nova instalação e repetição.
+A tabela inicial preserva o comportamento anterior. A repetição abaixo registra
+o resultado observado depois da atualização, sem refazer o cadastro.
 
 Validação local da correção `acc572f`: 26 testes passaram, zero falhas, erros ou
 skips, em 59 segundos. Foram 19 testes unitários e 7 com PostgreSQL em contêiner
@@ -65,7 +65,37 @@ independente conferiu preservação de autorização e de drafts anteriores.
 
 O JAR foi empacotado com JDK17 e conferido dentro da imagem linux/amd64 preparada.
 A receita de atualização conserva os configs, banco, secrets e serviços do canal;
-somente a imagem da API e seu hash de JAR serão substituídos após autorização.
-A suíte canônica completa e a CI não foram repetidas nesta etapa. A publicação e
-a repetição real das correções ainda estão pendentes; o perfil já concluído não
-precisa ser cadastrado novamente.
+somente a imagem da API e seu hash de JAR foram substituídos após autorização.
+A suíte canônica completa e a CI não foram repetidas nesta etapa. A publicação e a repetição real foram concluídas em 04/11/2026; o perfil
+já concluído foi preservado.
+
+
+| Repetição na API atualizada | Resultado |
+| --- | --- |
+| AJUDA | Orientou pedir e enviar convite do motorista; explicou a revisão e aprovação do vínculo. |
+| CONTINUAR CADASTRO | Apresentou a mesma orientação, sem criar vínculo automaticamente. |
+| VOU HOJE sem rotina | Informou ausência de ocorrência e devolveu a conversa a READY, sem attendanceDraft. |
+| SOU MOTORISTA imediatamente depois | Exigiu convite autorizado, sem precisar enviar ABANDONAR e sem alterar o papel. |
+
+As quatro respostas foram vistas no WhatsApp do Mac. O banco confirmou 15
+respostas e 15 tentativas DELIVERED acumuladas, sem código de erro (11 anteriores
+mais quatro desta repetição). Perfil PASSENGER/ACTIVE, nome e aceite preservados,
+`driver_enabled=false`, conversa READY. Continuam zerados os vínculos, pontos,
+participações em rotinas e presenças desse passageiro. As issues #28/#29 permanecem
+abertas para os critérios que exigem motorista; este ensaio não comprova percurso.
+
+A API convergiu para a imagem `4648c6c43401`, fonte `acc572f`, JAR SHA-256
+`df9c642ba993af262406e03baf1939ca73d57e8a663cc5c728ce98beef3c3707`.
+HTTPS retornou 200/UP; aparelho e eventos continuaram exigindo autenticação
+(401). A comparação das especificações confirmou alteração somente da imagem
+e do hash de JAR da API. Os outros oito serviços da homologação mantiveram
+especificações e versões. Houve 502 transitório durante a inicialização da
+réplica única, seguido de recuperação; não foi necessário retorno à imagem anterior.
+O push até `639d70d` foi concluído; não houve execução automática de CI nessa branch.
+
+O ponteiro privado `homologacao/current-api.json` na VPS indica o manifesto atual
+`homologacao/passenger-acc572f/online.json`. O manifesto `online-57a2ffd-r2`
+permanece como histórico de retorno. Operações administrativas futuras devem
+usar o ponteiro atual; o auxiliar antigo do canal mantém o caminho anterior e
+não deve ser repetido sem atualizar sua entrada e verificar a imagem esperada.
+Recibos e cópia da especificação anterior permanecem privados, fora do Git.

@@ -24,7 +24,8 @@ e preparação do QR no Redmi. Nenhum serviço pago ou modelo de IA foi ativado.
   exclusiva controla o worker. W07 e W01/W04/W06/W08 publicados após conexão OPEN do bot.
   W02/W03/W05 permanecem subfluxos inativos.
 
-A API publicada continua no backend `57a2ffd`; o aplicativo continua
+A API foi atualizada de `57a2ffd` para `acc572f` após autorização e repetição
+dos testes de passageiro; o aplicativo continua
 `0.3.0-hml+13`. O JAR administrativo é executado em serviços temporários
 não web, sem reiniciar a API nem executar migração. Os sete pedidos
 administrativos iniciais e a correção posterior da admissão retornaram COMMITTED;
@@ -172,9 +173,10 @@ não comprova PN→LID.
 
 ## Continuação e retorno
 
-Com OPEN, agendamentos e primeira conversa confirmados, continuar o cadastro
-do passageiro a partir da pergunta do nome. Depois validar vínculo, presença
-e GPS com um participante motorista. Registrar estados e contagens sem guardar
+Com OPEN, agendamentos, perfil básico e correções de conversa confirmados,
+validar vínculo, presença e GPS com um participante motorista. O
+[ensaio de passageiro](cadastro-passageiro-sem-motorista.md) registra 15 respostas
+entregues acumuladas e a repetição das quatro interações após a atualização. Registrar estados e contagens sem guardar
 a conversa na evidência pública. A inclusão dos colegas exige confirmação dos contatos e
 admissão na mesma homologação, sem compartilhar credenciais administrativas.
 
