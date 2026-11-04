@@ -18,6 +18,13 @@ import java.util.UUID;
 
 /** Passenger conversation seam. Offer is computed again under the same transactional authority. */
 final class WaPassengerSetup {
+    private static final String INVITATION_HELP =
+            "Seu perfil de passageiro está pronto, mas você ainda não tem vínculo com um motorista."
+                    + " Peça ao seu motorista um convite de passageiro do VanRides e envie esse"
+                    + " convite aqui. Você vai revisar o motorista, as rotinas e o ponto de embarque;"
+                    + " o vínculo depende da aprovação do motorista. Para atendimento, escreva"
+                    + " FALAR COM SUPORTE.";
+
     static final Set<String> COMMANDS =
             Set.of(
                     "ADVANCE_PASSENGER_SETUP",
@@ -285,9 +292,11 @@ final class WaPassengerSetup {
             }
         }
         store.save(actor, event, draft);
+        String invitation = draft.isEmpty() ? invitationHelp(actor) : null;
         return new Result(
                 WaDecision.error(failure.code()),
-                "Essa proposta não pode mais ser aplicada. Nenhum vínculo ou ponto foi aprovado."
+                invitation != null ? invitation :
+                    "Essa proposta não pode mais ser aplicada. Nenhum vínculo ou ponto foi aprovado."
                         + " Envie PASSAGEIROS para revisar como motorista, CORRIGIR PONTO como"
                         + " passageiro vinculado, ou um novo convite para retomar seu cadastro.",
                 null);
@@ -295,7 +304,16 @@ final class WaPassengerSetup {
 
     String help(WaProfileState actor) {
         ObjectNode draft = store.load(actor.identityId());
-        return draft.isEmpty() ? null : WaPassengerTexts.prompt(draft);
+        return draft.isEmpty() ? invitationHelp(actor) : WaPassengerTexts.prompt(draft);
+    }
+
+    private String invitationHelp(WaProfileState actor) {
+        return actor.role().equals("PASSENGER")
+                        && actor.status().equals("ACTIVE")
+                        && actor.name() != null
+                        && WaOnboardingCommands.NOTICE_VERSION.equals(actor.noticeVersion())
+                        && data.links(actor.identityId(), false).isEmpty()
+                ? INVITATION_HELP : null;
     }
 
     static Result unavailable() {
