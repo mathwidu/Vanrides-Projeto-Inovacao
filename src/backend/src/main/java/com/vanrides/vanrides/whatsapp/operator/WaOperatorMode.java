@@ -22,4 +22,11 @@ public final class WaOperatorMode {
         for (String profile : environment.getActiveProfiles())
             if (profile.toLowerCase(java.util.Locale.ROOT).startsWith("prod")) throw new WaOperatorFailure();
     }
+    void requireOnline() {
+        requireLocal();
+        try {
+            if (!com.vanrides.vanrides.config.MvpOnlineMode.enabled(environment)) throw new WaOperatorFailure();
+            com.vanrides.vanrides.config.MvpOnlineMode.validate(environment);
+        } catch (RuntimeException failure) { throw new WaOperatorFailure(); }
+    }
 }

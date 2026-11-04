@@ -19,6 +19,7 @@ import uuid
 
 sys.dont_write_bytecode = True
 import canonical110
+import evidence
 import plan
 import private_files as private
 import receipt
@@ -55,7 +56,7 @@ def verify_package(base):
                      and plan.hash_file(path) == digest, 'PACKAGE_FILE_CHANGED')
     captured = {name: (base / name).read_bytes() for name in ('contract.json', 'source-manifest.json', 'SHA256SUMS.json')}
     contract = stage.verify_bindings(files, captured, files['source-manifest.json'])
-    receipt.validate_envelope(contract, (base / 'inputs/verified-ci-receipt.json').read_bytes(), base / 'inputs/backend.jar')
+    evidence.validate_envelope(contract, (base / 'inputs/verified-ci-receipt.json').read_bytes(), base / 'inputs/backend.jar')
     return contract, files
 
 

@@ -21,27 +21,57 @@ bash scripts/check_backend.sh --light
 bash scripts/check_backend.sh
 ```
 
-`--light` executa contratos dos gates, isolamento/proveniência/locks e ratchet,
-sem Maven, containers ou rede. O comando completo exige Docker local: roda
+`--light` executa primeiro o ratchet e depois os testes dos gates,
+isolamento/proveniência/locks, sem Maven, containers ou rede. Usa a mesma
+definição de checks de `src/backend/scripts/ci_quality_gate.sh --quick`.
+É uma validação parcial, não aprovação do backend. O comando completo exige Docker local: roda
 uma vez o gate canônico com toda a matriz PostgreSQL, empacota o mesmo código
 e executa a jornada HTTP sintética com Spring/PostgreSQL/worker Node reais e
 um provedor Evolution simulado em loopback. Não requer número, WhatsApp, IA
 paga nem credencial externa. Os recursos temporários pertencem à execução.
 
-CI: [backend.yml](../../.github/workflows/backend.yml), com dois jobs paralelos
-obrigatórios, Ubuntu padrão e permissão `contents: read`:
+CI: [backend.yml](../../.github/workflows/backend.yml), Ubuntu padrão e
+permissão `contents: read`:
 
-- **Suíte canônica PostgreSQL**: executa o gate completo, toda a matriz e os
-  contratos, sem reduzir testes nem aceitar skips.
-- **Integração HTTP e imagem**: empacota o mesmo checkout com testes pulados
-  somente nesse empacotamento, executa as quatro jornadas reais sintéticas e
-  constrói a imagem local. A aprovação da suíte canônica continua obrigatória.
+- **Verificações rápidas**: ratchet e testes dos auxiliares, antes dos jobs pesados.
+- **Suíte canônica PostgreSQL**: toda a matriz `--all-tests`, sem reduzir casos
+  ou aceitar skips. Roda em paralelo ao empacotamento do candidato.
+- **Empacotar candidato uma vez**: gera um JAR e seu checksum, guarda somente
+  esse arquivo como artefato imutável por um dia. Ainda não é aprovação do produto.
+- **Integração HTTP e imagem**: recebe o candidato por ID, verifica revisão e
+  checksum, executa cinco jornadas com os seis conjuntos de validação, e monta
+  a imagem com o mesmo JAR. O target `tested-jar` confere o checksum novamente.
+- **Homologação do candidato compartilhado**: chama
+  [homologacao-api.yml](../../.github/workflows/homologacao-api.yml), que testa
+  o auxiliar em Windows/Linux e exercita a API com duas credenciais sintéticas.
+  Usa o mesmo JAR, sem empacotar outro.
+- **Resultado do backend**: exige sucesso de rápida, PostgreSQL, candidato,
+  integração e homologação. Etapas puladas ou canceladas não viram aprovação.
 
-Os dois checkouts usam explicitamente o mesmo `github.sha` (merge de teste em
-PR), com proveniência e árvore limpa; o smoke rejeita um SHA diferente do esperado.
-O workflow só fica aprovado quando ambos os jobs passam. Não há cache Maven,
-publicação de imagens, implantação ou upload de logs brutos. Um `mvnw test`
-isolado que tenha testes pulados não substitui o gate.
+Todos os checkouts usam `github.sha` (merge de teste no PR). A ação local
+`receive-backend` exige ID único desta execução, SHA compatível com o checkout,
+checksum calculado pelo produtor e somente `backend.jar` no artefato. Não há
+busca pela última compilação de outra branch. O cache Maven guarda dependências,
+não resultados de testes ou aprovação. O `user.home` isolado e os locks da
+matriz PostgreSQL continuam preservados.
+
+A homologação deixou de disparar outro workflow independente para cada mudança.
+Seu disparo manual agora é pelo workflow **Backend e integração sintética**,
+que produz o candidato e executa todos os consumidores. Os paths anteriores
+foram incorporados ao caller. Antes da integração no GitHub, conferir os checks
+exigidos pela proteção da branch, pois os nomes da homologação passam a ser aninhados.
+
+O backend continua com duas compilações (suíte e candidato), mas um único JAR
+empacotado. PostgreSQL e as integrações permanecem obrigatórios. Não há publicação
+de imagem, implantação, uso de WhatsApp real ou upload de logs brutos.
+Maven usa `-ntp` sem ocultar saída de falhas. O build Docker padrão por fontes
+continua disponível para os consumidores existentes.
+
+A jornada 130 já executa integralmente a 110. O smoke agora a executa uma vez,
+com cinco execuções e seis conjuntos de verificações. O recibo V2 identifica
+os checks 110 como executados dentro de 130; os recibos históricos V1 continuam
+validados no formato original. Quotas, espera de frescor do GPS e viradas de
+minuto de presença não foram encurtadas artificialmente.
 
 `bash scripts/check_backend.sh --integration-only` é essa checagem parcial de
 package e jornada; não equivale ao gate completo. O comando local sem flags

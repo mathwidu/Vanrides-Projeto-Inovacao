@@ -91,12 +91,14 @@ export async function runTrackingScenarios(runtime) {
     passed('api_watchdog_degrades_in_silence_without_n8n_and_replay_does_not_restore_freshness');
     const newTime=Date.now(),fresh=await postSamples({...batch,batchId:crypto.randomUUID(),deviceTime:iso(newTime),samples:[sample(3,newTime)]});
     demand(fresh.data.gpsState==='FRESH'&&(await status()).data.runState==='TRACKING','RUN_NEW_FIX_NOT_RECOVERED');
+    await runtime.onTrackingReady?.({ chat, run, postSamples, batch, status });
     const indicate=(state,ref)=>device.request('POST',track+'/state',{sessionId:sid,generation,state,...(ref?{stopRequestRef:ref}:{})},access);
     const stop=await indicate('PERMISSION_DENIED');demand(stop.status===200&&stop.data.action==='STOP'&&uuid(stop.data.stopRequestRef),'RUN_STOP_NOT_REQUESTED');
     demand(count("SELECT count(*) FROM wa.tracking_session WHERE id="+quote(sid)+" AND stop_requested_at IS NOT NULL AND stopped_at IS NULL")===1,'RUN_STOP_FABRICATED');
     const stopped=await indicate('STOPPED',stop.data.stopRequestRef);demand(stopped.status===200&&stopped.data.action==='STOP','RUN_STOP_NOT_ACKED');
     demand(count("SELECT count(*) FROM wa.tracking_session WHERE id="+quote(sid)+" AND stopped_at IS NOT NULL")===1 && (await postSamples(batch)).data.action==='STOP','RUN_STOPPED_REOPENED');
     passed('new_acquisition_recovers_same_run_and_stop_requires_distinct_device_ack');
+    await runtime.onTrackingStopped?.({ chat, run, status });
     return {...chat.totals(),actors:3,sessionGenerations:1,syntheticFixtures:true,realWhatsApp:false,physicalDevices:false};
   } finally {
     device.dispose();chat.dispose();await proxy?.stop();

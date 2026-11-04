@@ -29,11 +29,13 @@ public class WaOperatorService {
     private final WaOperatorFixtures fixtures;
     private final WaOperatorReset reset;
     private final WaOperatorRevocation revocation;
+    private final WaOperatorAdmission admission;
 
     public WaOperatorService(JdbcTemplate jdbc, WaSettings settings, WaCrypto crypto, WaClock clock,
             WaOperatorMode mode, WaOperatorFixtures fixtures, WaOperatorReset reset, WaOperatorRevocation revocation) {
         this.jdbc = jdbc; this.settings = settings; this.crypto = crypto; this.clock = clock;
         this.mode = mode; this.fixtures = fixtures; this.reset = reset; this.revocation = revocation;
+        this.admission = new WaOperatorAdmission(jdbc,crypto,mode);
     }
 
     @Transactional
@@ -44,6 +46,8 @@ public class WaOperatorService {
         Actor actor = authenticate(request);
         ObjectNode result = switch (request.operation()) {
             case CREATE_COHORT -> createCohort(actor);
+            case CREATE_AUTHORIZED_COHORT -> admission.createCohort(actor);
+            case ADMIT_PARTICIPANT -> admission.admit(request,actor);
             case PROVISION_CREDENTIAL -> provision(request, actor);
             case REVOKE_CREDENTIAL -> revokeCredential(request, actor);
             case DRIVER_BOOTSTRAP -> bootstrap(request, actor);
@@ -58,7 +62,8 @@ public class WaOperatorService {
                 .put("serverTime", actor.now().toString());
         audit(actor, request.operation().value.toUpperCase(java.util.Locale.ROOT).replace('-', '_'),
                 result.has("resourceId") ? UUID.fromString(result.get("resourceId").asText()) : actor.batchId(),
-                request.has("reasonCode") ? request.text("reasonCode", 1, 64) : "AUTHORIZED_LOCAL_OPERATION");
+                request.has("reasonCode") ? request.text("reasonCode", 1, 64)
+                    : request.operation()==WaOperatorRequest.Operation.ADMIT_PARTICIPANT ? "PARTICIPANT_CONFIRMED" : "AUTHORIZED_LOCAL_OPERATION");
         requireCurrentAuthorization(actor);
         // A write/force failure is a runtime exception and rolls the database transaction back.
         resultWriter.accept(result);
@@ -135,6 +140,7 @@ public class WaOperatorService {
     }
 
     private ObjectNode bootstrap(WaOperatorRequest request, Actor actor) {
+        if (request.has("inviteId")) return admission.bootstrap(request,actor);
         requireCohort(jdbc, actor);
         UUID identity = request.uuid("identityId");
         requireIdentity(jdbc, actor, identity);

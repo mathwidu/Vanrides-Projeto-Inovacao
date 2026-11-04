@@ -4,8 +4,12 @@ import static com.vanrides.vanrides.whatsapp.transport.WaConversationTestSupport
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.vanrides.vanrides.whatsapp.api.WaJson;
+import com.vanrides.vanrides.whatsapp.attendance.WaAttendanceJobs;
 import com.vanrides.vanrides.whatsapp.auth.WaCrypto;
+import com.vanrides.vanrides.whatsapp.auth.WaPrincipal;
 import java.sql.Timestamp;
+import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -18,7 +22,6 @@ class WaAttendanceOwnershipIntegrationTest {
     @Container static final PostgreSQLContainer<?> POSTGRES = WaTransportTestSupport.postgres("wa_attendance_ownership");
     private WaPassengerTestSupport f;
     private UUID driver, passenger;
-    private UUID preferenceResponse;
 
     @BeforeEach void setup() {
         f = new WaPassengerTestSupport(POSTGRES);
@@ -27,8 +30,7 @@ class WaAttendanceOwnershipIntegrationTest {
         passenger = f.passenger();
         f.open(passenger, f.invite(driver, 3));
         for (String text : java.util.List.of("CONTINUAR", "Passageiro sintético", "ACEITO")) {
-            var step = f.send(passenger, text);
-            preferenceResponse = UUID.fromString(step.response().path("responseIds").get(0).asText());
+            f.send(passenger, text);
         }
         assertEquals("PREF_APPROACH", f.draft(passenger).path("stage").asText());
     }
@@ -60,15 +62,18 @@ class WaAttendanceOwnershipIntegrationTest {
         assertEquals("PREF_REMINDER", f.draft(passenger).path("stage").asText());
     }
 
-    @Test void anExplicitPresenceInterruptionCanBeAbandonedWithoutLosingOnboarding() {
+    @Test void anExplicitPresenceInterruptionCanBeAbandonedWithoutLosingPickupCorrection() {
+        eligiblePickupCorrection();
         ObjectNode before = f.draft(passenger).deepCopy();
         attendance("PRESENÇA");
         assertEquals(before, f.draft(passenger));
-        assertEquals("ATTENDANCE", owner(passenger));
+        assertActiveAttendanceSelection();
         attendance("ABANDONAR");
         assertEquals("PASSENGER_SETUP", owner(passenger));
-        f.send(passenger, "SIM");
-        assertEquals("PREF_REMINDER", f.draft(passenger).path("stage").asText());
+        assertEquals(before, f.draft(passenger));
+        f.send(passenger, "Portão lateral");
+        assertEquals("REVIEW", f.draft(passenger).path("stage").asText());
+        assertEquals("Portão lateral", f.draft(passenger).path("reference").asText());
     }
 
     @Test void numericDaysAndDriverReviewRemainInTheRoutineWizard() {
@@ -93,25 +98,60 @@ class WaAttendanceOwnershipIntegrationTest {
         assertEquals(before, f.conversation.number("SELECT count(*) FROM wa.routine WHERE driver_id=?", driver));
     }
 
-    @Test void quotingTheAbandonAcknowledgementCannotAnswerTheSuspendedPreference() {
-        String preferenceQuote = submitted(preferenceResponse);
+    @Test void quotingTheAbandonAcknowledgementCannotAnswerTheSuspendedPickupCorrection() {
+        String correctionQuote = submitted(eligiblePickupCorrection());
+        ObjectNode before = f.draft(passenger).deepCopy();
         attendance("PRESENÇA");
+        assertActiveAttendanceSelection();
         String acknowledgement = submitted(attendance("ABANDONAR"));
-        var rejected = quoted("SIM", acknowledgement);
+        var rejected = quoted("Portão lateral", acknowledgement);
         assertTrue(rejected.text().contains("não corresponde à etapa atual"));
-        assertEquals("PREF_APPROACH", f.draft(passenger).path("stage").asText());
-        var accepted = quoted("SIM", preferenceQuote);
+        assertEquals(before, f.draft(passenger));
+        var accepted = quoted("Portão lateral", correctionQuote);
         assertFalse(accepted.text().contains("não corresponde"));
-        assertEquals("PREF_REMINDER", f.draft(passenger).path("stage").asText());
+        assertEquals("REVIEW", f.draft(passenger).path("stage").asText());
+        assertEquals("Portão lateral", f.draft(passenger).path("reference").asText());
     }
 
-    @Test void anOriginalPreferenceQuoteRemainsUsableAfterPresenceIsAbandoned() {
-        String preferenceQuote = submitted(preferenceResponse);
+    @Test void anOriginalPickupQuoteRemainsUsableAfterPresenceIsAbandoned() {
+        String correctionQuote = submitted(eligiblePickupCorrection());
         attendance("PRESENÇA"); attendance("ABANDONAR");
-        quoted("NÃO", preferenceQuote);
-        assertEquals("PREF_REMINDER", f.draft(passenger).path("stage").asText());
-        assertTrue(f.draft(passenger).has("approachMessages"));
-        assertFalse(f.draft(passenger).path("approachMessages").asBoolean());
+        quoted("Entrada principal", correctionQuote);
+        assertEquals("REVIEW", f.draft(passenger).path("stage").asText());
+        assertEquals("Entrada principal", f.draft(passenger).path("reference").asText());
+        assertTrue(f.draft(passenger).has("sourceEvent"));
+    }
+
+    /** A real approved relationship makes presence eligible before another private wizard is suspended. */
+    private UUID eligiblePickupCorrection() {
+        for (String answer : java.util.List.of("SIM", "NÃO", "1", "1,3,5")) f.send(passenger, answer);
+        f.pin(passenger);
+        f.confirm(passenger, f.send(passenger, "PULAR"));
+        f.approve(driver);
+        assertEquals(1, f.conversation.number(
+            "SELECT count(*) FROM wa.driver_passenger_link WHERE passenger_id=? AND state='APPROVED'", passenger));
+
+        var jobs = f.transport.proxy(new WaAttendanceJobs(f.transport.jdbc, f.transport.access,
+            f.transport.settings, f.transport.clock));
+        var job = f.transport.principal(WaPrincipal.Kind.SYSTEM_JOB);
+        var page = jobs.tick(job, json().put("jobType", "MATERIALIZE_OCCURRENCES")
+            .put("windowKey", f.transport.clock.now().truncatedTo(ChronoUnit.MINUTES).toString()).put("batchLimit", 100));
+        assertTrue(page.path("nextCursor").isNull(), "The single routine's seven-day fixture fits one page");
+        assertTrue(f.conversation.number("SELECT count(*) FROM wa.attendance_question WHERE passenger_id=? AND state='OPEN'",
+            passenger) > 0);
+
+        f.send(passenger, "CORRIGIR PONTO");
+        var referenceQuestion = f.pin(passenger);
+        assertEquals("REFERENCE", f.draft(passenger).path("stage").asText());
+        return UUID.fromString(referenceQuestion.response().path("responseIds").get(0).asText());
+    }
+
+    private void assertActiveAttendanceSelection() {
+        ObjectNode context = WaJson.object(f.conversation.string(
+            "SELECT context_json::text FROM wa.conversation_state WHERE identity_id=?", passenger));
+        assertEquals("ATTENDANCE", owner(passenger));
+        assertTrue(context.path("attendanceDraft").path("choices").size() > 0,
+            "The catalogue must actually offer eligible occurrences, not an empty owner placeholder");
     }
 
     private UUID attendance(String text) {

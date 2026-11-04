@@ -17,6 +17,7 @@ final class WaConversationOwnership {
 
     static String owner(ObjectNode context) {
         String explicit = context.path("conversationOwner").asText();
+        if (explicit.equals("LOCATION") && !context.path("locationDraft").isEmpty()) return explicit;
         if (explicit.equals("RUN_SETUP") && !context.path("runDraft").isEmpty()) return explicit;
         if (explicit.equals("ATTENDANCE") && !context.path("attendanceDraft").isEmpty()) return explicit;
         if (explicit.equals("PASSENGER_SETUP") && !context.path("passengerDraft").isEmpty()) return explicit;
@@ -31,7 +32,7 @@ final class WaConversationOwnership {
     static boolean currentDraftReply(JdbcTemplate jdbc, WaInboxAccess.Context event) {
         if (!event.normalizedPayload().hasNonNull("replyTo")) return true;
         String owner = owner(jdbc, event.identityId());
-        String draftKey = owner.equals("RUN_SETUP") ? "runDraft" : owner.equals("DRIVER_SETUP") ? "driverDraft" : "passengerDraft";
+        String draftKey = owner.equals("LOCATION") ? "locationDraft" : owner.equals("RUN_SETUP") ? "runDraft" : owner.equals("DRIVER_SETUP") ? "driverDraft" : "passengerDraft";
         return Boolean.TRUE.equals(jdbc.queryForObject("""
             SELECT EXISTS(SELECT 1 FROM wa.conversation_state conversation
               JOIN wa.command_receipt receipt ON receipt.identity_id=conversation.identity_id

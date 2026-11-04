@@ -1,0 +1,90 @@
+name: Preparar binário para ensaio WhatsApp
+'on':
+  workflow_dispatch:
+    inputs:
+      expected_sha:
+        description: Commit completo revisado para esta execução
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: whatsapp-lab-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  candidate:
+    name: Testar e preservar o mesmo binário
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      VANRIDES_QA_REQUIRE_CLEAN: '1'
+      VANRIDES_QA_RETENTION_CLASS: ci
+      VANRIDES_EXPECTED_SOURCE_SHA: ${{ github.sha }}
+    steps:
+      - name: Conferir revisão solicitada
+        env:
+          REQUESTED_SHA: ${{ inputs.expected_sha }}
+          CHECKOUT_SHA: ${{ github.sha }}
+        run: |
+          [[ "$REQUESTED_SHA" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$REQUESTED_SHA" == "$CHECKOUT_SHA" ]]
+      - name: Checkout da revisão exata
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Preparar caminhos exclusivos desta execução
+        run: |
+          printf '%s\n' "VANRIDES_QA_EVIDENCE_ROOT=$RUNNER_TEMP/vanrides-gate-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" >> "$GITHUB_ENV"
+          printf '%s\n' "VANRIDES_ACADEMIC_RECEIPT_PATH=$RUNNER_TEMP/vanrides-smoke-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT.json" >> "$GITHUB_ENV"
+      - name: Java 17
+        uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Node 22 do bot
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: '22.23.2'
+      - name: Testes completos do bot e dos controles do pacote
+        run: python3 scripts/check_whatsapp.py
+      - name: Gate completo com PostgreSQL obrigatório
+        working-directory: src/backend
+        run: ./scripts/ci_quality_gate.sh
+      - name: Exportar somente o resultado final do gate
+        run: |
+          python3 -B src/whatsapp/lab/live-runtime/export.py gate \
+            --evidence-root "$VANRIDES_QA_EVIDENCE_ROOT" \
+            --repository-root "$GITHUB_WORKSPACE" \
+            --output "$RUNNER_TEMP/vanrides-gate.json"
+      - name: Empacotar uma vez e validar seis conjuntos em cinco execuções
+        run: bash scripts/check_backend.sh --integration-only
+      - name: Conferir fonte e binário e montar o artefato permitido
+        run: |
+          shopt -s nullglob
+          jars=(src/backend/target/*.jar)
+          [[ "${#jars[@]}" -eq 1 ]]
+          python3 -B src/whatsapp/lab/live-runtime/export.py bundle \
+            --gate "$RUNNER_TEMP/vanrides-gate.json" \
+            --smoke "$VANRIDES_ACADEMIC_RECEIPT_PATH" \
+            --jar "${jars[0]}" \
+            --repository-root "$GITHUB_WORKSPACE" \
+            --output "$RUNNER_TEMP/vanrides-lab-candidate"
+      - name: Preservar binário e recibos por um dia
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: whatsapp-lab-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/vanrides-lab-candidate/backend.jar
+            ${{ runner.temp }}/vanrides-lab-candidate/gate.json
+            ${{ runner.temp }}/vanrides-lab-candidate/smoke.json
+            ${{ runner.temp }}/vanrides-lab-candidate/candidate.json
+          if-no-files-found: error
+          retention-days: 1
+          compression-level: 0
+          include-hidden-files: false
+      - name: Registrar limites
+        run: |
+          printf '%s\n' 'Binário comprovado em testes sintéticos. Este workflow não publica imagem, não acessa a VPS, não conecta WhatsApp nem libera piloto. O recibo externo precisa conferir a execução e o digest antes do ensaio real.' >> "$GITHUB_STEP_SUMMARY"

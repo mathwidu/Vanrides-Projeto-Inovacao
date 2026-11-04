@@ -1373,3 +1373,55 @@ registra o alcance e a revisão futura. Não houve mudança de código ou servi�
 nem redução dos critérios de GPS, segundo plano, bateria, retomada ou percurso.
 A apresentação acadêmica também passa a tons neutros e títulos centralizados,
 preservando as seções e colunas do professor.
+
+## RD46 — Retomada pelas issues e aproximação condicionada ao percurso (2026-11-03)
+
+O proprietário confirmou o número dedicado ativo no WhatsApp Business do Redmi
+e autorizou continuar a implementação pelas issues existentes do repositório
+centralizado. A aquisição da linha deixou de ser impedimento; pareamento e
+entrega correlacionada continuam pendentes na issue #91 e no card 120.
+O card 130 reúne #33–36 e #75–77. As atribuições anteriores das issues foram
+preservadas. Código implementado, revisão e validação em percurso têm registros
+separados; os testes físicos do aplicativo iPhone permanecem pausados.
+
+A consulta inclui o motorista dono e passageiros elegíveis. As coordenadas
+saem apenas na autorização final do pin estático; fila atrasada exige nova
+aquisição válida ou texto de indisponibilidade. O prazo de fila é de cinco
+minutos para a resposta e 60 segundos para aproximação. A submissão de posição
+continua limitada ao frescor de 20 segundos, sem confundir esses dois prazos.
+
+Avisos ficam desligados por padrão e exigem uma lista explícita de rotinas com
+percurso revisado para o ensaio. Essa lista não detecta pisos de viaduto nem
+substitui validação geográfica. Sem contexto suficiente, o sistema suprime o
+aviso e registra a razão. Os parâmetros permanecem hipóteses de calibração;
+nenhuma integração paga de rotas foi introduzida.
+
+A evidência de chegada a um ponto é progresso da operação, não uma posição
+atual: uma parada normal não pode apagá-la apenas por durar mais de 20 segundos.
+Continuidade, lacuna de GPS e troca de sessão são tratadas separadamente.
+Pessoas no mesmo ponto físico compartilham a progressão, mesmo quando aparecem
+separadas na lista; cada destinatário mantém autorização e aviso próprios.
+
+O preparo de ensaio do monorepo recebe um perfil de evidência próprio. Recibos
+históricos não são convertidos para parecer atuais. A execução manual preparada
+confere a suíte completa, seis jornadas e o mesmo JAR, preservando somente o
+binário e recibos permitidos. Ela não conecta WhatsApp, publica imagens ou faz
+deploy. A aprovação do ensaio externo exige versão concreta e sua prova real.
+
+## RD47 — Homologação compartilhada para os integrantes (03/11/2026)
+
+A equipe escolheu `vanrides-inovacao-api.matheusduarte.dev.br` para testar as versões do MVP. O registro A foi criado e conferido em dois resolvedores públicos e na VPS. O endereço respondeu com o certificado padrão do Traefik antes da implantação. O DNS só reserva o nome.
+
+As APIs anteriores de desenvolvimento e produção já estão ativas com versões próprias. A proposta é publicar a API do monorepo e seu PostgreSQL em uma stack separada, com versão reproduzível e roteiro para um colega conferir uma operação. O worker do n8n executa fluxos da plataforma. O worker do VanRides executa os comandos do atendimento e requer configuração, credenciais e uma rota privada a partir do n8n.
+
+A primeira comprovação de transporte com o número do Redmi segue RD41. Contatos e etiquetas continuam habilitados na persistência da Evolution compartilhada. O ensaio usa Evolution própria e não altera as configurações globais de outros projetos. A janela de transporte tem até 30 minutos e dois contatos. Uma homologação permanente para toda a equipe requer seu próprio controle de participantes, validade e recuperação.
+
+As issues #89, #90 e #91 distinguem preparação e retorno, publicação HTTPS e prova de entrega real. Os critérios de percurso, utilidade, iPhone e aceite do piloto continuam vinculados às etapas próprias. Esta decisão registra o destino e o caminho técnico. A implantação precisa de manifest, versão, revisão e ensaio dos procedimentos. Leia o [guia de homologação da equipe](../../desenvolvimento/homologacao-da-equipe.md).
+
+## RD48 — Publicar primeiro a API do MVP para todo o grupo
+
+O proprietário priorizou o uso online das funcionalidades já implementadas e a demonstração do motorista enviando informações. O destino passa a ser a API do produto, com suas rotas de aplicativo e de atendimento. O perfil de quatro rotas de cadastro continua como exercício técnico separado. O novo modo online conserva as credenciais e o vínculo exigidos em cada rota. A liberação é para o grupo inteiro; uma primeira chamada é apenas a conferência da instalação.
+
+Sequência: API e PostgreSQL exclusivos, depois worker, fluxos n8n, instância Evolution e número do bot, e APK integrado com origem/links do ambiente. O coletor GPS 0.1.0+8 possui um receptor já publicado e pode demonstrar GPS de forma independente; o APK integrado do ensaio anterior aponta a localhost e não passa automaticamente a usar o novo domínio.
+
+A publicação de homologação pode transferir uma imagem imutável diretamente à VPS de nó único, com arquivo e digest conferidos, a partir da revisão empacotada. Essa entrega rápida é identificada como compilação local. O operador registra o que efetivamente foi publicado, a saúde HTTPS e o retorno, sem atribuir ao pacote comprovação de CI da mesma revisão que não tenha sido obtida. O PR #104 permanece uma entrega separada.

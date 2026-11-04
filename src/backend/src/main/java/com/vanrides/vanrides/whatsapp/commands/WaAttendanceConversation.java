@@ -89,6 +89,7 @@ final class WaAttendanceConversation {
             return new Result(WaDecision.ok(Map.of("changed", true)),
                 "Essa mensagem citada não identifica uma pergunta de presença atual sua. Nenhuma outra data foi alterada. Envie PRESENÇA para escolher a data e o sentido.");
         }
+        if (selected.choices().isEmpty()) return noOccurrences(actor, event);
         if (Set.of("proxima", "anterior").contains(input.text()) && draft.path("kind").asText().equals("PASSENGER_MENU")) {
             draft.put("page", WaAttendanceSelection.page(draft, input.text()));
         } else if (selected.question() != null && selected.choice() == null && !input.invalid()) {
@@ -161,11 +162,20 @@ final class WaAttendanceConversation {
             return new Result(WaDecision.ok(Map.of("changed", true)), summaries.render(actor.identityId(), occurrence, page));
         }
         ArrayNode live = questions.filtered(summaries.occurrences(actor.identityId(), instance), input);
+        if (live.isEmpty()) return noOccurrences(actor, event);
         if (draft.path("kind").asText().equals("DRIVER_MENU") && Set.of("proxima", "anterior").contains(input.text())) {
             draft.put("page", WaAttendanceSelection.page(draft, input.text()));
         } else draft = selection.menu(live, "DRIVER_MENU", null);
         questions.save(actor, event, draft);
         return new Result(WaDecision.ok(Map.of("changed", true)), WaAttendanceSelection.menuText(draft, live, true));
+    }
+
+    private Result noOccurrences(WaProfileState actor, WaInboxAccess.Context event) {
+        questions.save(actor, event, WaAttendanceSelection.empty());
+        return new Result(WaDecision.ok(Map.of("changed", true)),
+            actor.role().equals("DRIVER")
+                ? "Nenhuma ocorrência disponível. Confirme suas rotinas e os pontos dos passageiros. Envie PRESENÇAS para consultar novamente."
+                : "Nenhuma ocorrência disponível. Aguarde o motorista confirmar as rotinas e os pontos. Envie PRESENÇA para consultar novamente.");
     }
 
     private boolean eligible(WaProfileState actor) {

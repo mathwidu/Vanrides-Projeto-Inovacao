@@ -1,8 +1,10 @@
 import { createServer } from 'node:http';
 import { timingSafeEqual } from 'node:crypto';
 import { strictJson } from './strict-json.mjs';
-import { filterEvent } from './policy.mjs';
+import { filterEvent, classifyPolicyDrop } from './policy.mjs';
 import { startPost } from './post.mjs';
+import { isHml } from './hml-config.mjs';
+import { createMinuteLimit } from './minute-limit.mjs';
 
 const MAX_BODY = 32768;
 const LIMITS = Object.freeze({ human: 16, status: 64, connection: 16 });
@@ -50,12 +52,15 @@ function body(request) {
   });
 }
 
-/** Disposable WA120 lab filter only. All mutable state consists of bounded counters and two occupied lanes. */
+/** Legacy lab quotas or explicit HML rolling minute; both retain two bounded occupied lanes. */
 export function createLiveIngressServer({ config, fetchImpl = fetch, now = Date.now, log = () => {} }) {
   if (!Object.isFrozen(config) || !Object.isFrozen(config.contacts) || typeof fetchImpl !== 'function'
       || typeof now !== 'function' || typeof log !== 'function') throw new Error('CONFIG_INVALID');
   const counters = { human: 0, status: 0, connection: 0, contactA: 0, contactB: 0,
     forwarded: 0, dropped: 0, unauthorized: 0, invalid: 0, oversized: 0, busy: 0, unavailable: 0 };
+  const hml = isHml(config);
+  if (hml) Object.assign(counters, { contactC: 0, contactD: 0, rateLimited: 0, ignored: 0 });
+  const minuteLimit = hml ? createMinuteLimit(config.limitsPerMinute) : null;
   const active = { human: 0, callback: 0 };
   const controllers = new Set();
   let reading = 0, stopped = false;
@@ -64,11 +69,11 @@ export function createLiveIngressServer({ config, fetchImpl = fetch, now = Date.
     if (counter) counters[counter]++;
     try { log(Object.freeze({ code, counters: snapshot() })); } catch { /* Log failure cannot expose the request. */ }
   };
-  function reply(response, status, result, code, counter, close = false) {
+  function reply(response, status, result, code, counter, close = false, headers = {}) {
     record(code, counter);
     if (response.destroyed || response.writableEnded) return;
     response.writeHead(status, { 'cache-control': 'no-store', 'x-content-type-options': 'nosniff',
-      connection: close ? 'close' : 'keep-alive', ...(status === 204 ? {} : { 'content-type': 'application/json' }) });
+      ...headers, connection: close ? 'close' : 'keep-alive', ...(status === 204 ? {} : { 'content-type': 'application/json' }) });
     response.end(status === 204 ? undefined : JSON.stringify(result));
   }
   const invalid = (response, status = 400) => reply(response, status, { code: status === 413 ? 'BODY_TOO_LARGE' : 'INVALID_REQUEST' },
@@ -87,11 +92,18 @@ export function createLiveIngressServer({ config, fetchImpl = fetch, now = Date.
     catch (status) { return invalid(response, status === 413 ? 413 : 400); }
     finally { reading--; }
     if (request.aborted || response.destroyed) return;
-    const event = filterEvent(envelope, config, now());
-    if (!event || counters[event.kind] >= LIMITS[event.kind]
-        || event.kind === 'human' && counters[`contact${event.contact}`] >= 8)
-      return reply(response, 204, null, 'POLICY_DROP', 'dropped');
+    const eventNow = now();
+    const event = filterEvent(envelope, config, eventNow);
+    if (!event || !hml && (counters[event.kind] >= LIMITS[event.kind]
+        || event.kind === 'human' && counters['contact' + event.contact] >= 8))
+      return reply(response, 204, null, hml ? classifyPolicyDrop(envelope, config, eventNow) ?? 'POLICY_DROP' : 'POLICY_DROP', 'dropped');
     if (stopped || active[event.lane]) return busy(response);
+    if (hml) {
+      const capacity = minuteLimit.take(event, now());
+      if (!capacity.allowed)
+        return reply(response, 429, { code: 'RATE_LIMITED' }, 'RATE_LIMITED', 'rateLimited', true,
+          { 'retry-after': String(capacity.retryAfter) });
+    }
     counters[event.kind]++;
     if (event.kind === 'human') counters[`contact${event.contact}`]++;
     active[event.lane]++;
@@ -103,7 +115,11 @@ export function createLiveIngressServer({ config, fetchImpl = fetch, now = Date.
     operation.settled.then(() => { active[event.lane]--; controllers.delete(controller); });
     const result = await operation.result;
     response.off('close', disconnect);
-    if (result.ok) return reply(response, 202, result.receipt, 'FORWARDED', 'forwarded');
+    if (result.ok) {
+      if (hml && result.receipt.status === 'IGNORED')
+        return reply(response, 202, result.receipt, 'BACKEND_IGNORED', 'ignored');
+      return reply(response, 202, result.receipt, 'FORWARDED', 'forwarded');
+    }
     return reply(response, 503, { code: 'UPSTREAM_UNAVAILABLE' }, 'UPSTREAM_UNAVAILABLE', 'unavailable', true);
   }
   const server = createServer({ maxHeaderSize: 4096, requestTimeout: 4000, headersTimeout: 3000,

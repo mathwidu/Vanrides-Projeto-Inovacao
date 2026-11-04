@@ -304,14 +304,12 @@
       "schema": "GetDriverLocationCommand",
       "family": "human-command",
       "implementationCard": "VR-WA-130-APPROACH",
-      "availability": "FUTURE",
+      "availability": "CARD_130_APPROACH",
       "value": {
         "commandType": "GET_DRIVER_LOCATION",
         "inboxEventId": "00000000-0000-4000-8000-000000000001",
         "expectedVersion": 0,
-        "payload": {
-          "occurrenceRef": "example_occurrence_ref"
-        }
+        "payload": {}
       }
     },
     {
@@ -1108,13 +1106,13 @@
       "schema": "OutboxStaticPinContent",
       "family": "delivery-pin",
       "implementationCard": "VR-WA-130-APPROACH",
-      "availability": "FUTURE",
+      "availability": "CARD_130_APPROACH",
       "value": {
         "type": "STATIC_PIN",
         "latitude": 0.0,
         "longitude": 0.0,
         "capturedAt": "2026-10-31T12:00:00Z",
-        "label": "Veículo sintético"
+        "label": "Localização atual do veículo"
       }
     },
     {

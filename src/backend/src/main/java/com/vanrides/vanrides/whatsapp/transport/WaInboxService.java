@@ -49,12 +49,13 @@ public class WaInboxService {
         List<UUID> identities = jdbc.query("""
             SELECT h.identity_id FROM wa.integration_inbox h
             WHERE h.instance_id=? AND h.category='MESSAGE' AND h.identity_id IS NOT NULL
+              AND (?=false OR h.provider='SYNTHETIC')
               AND h.state IN %s
               AND NOT EXISTS (SELECT 1 FROM wa.integration_inbox earlier
                 WHERE earlier.identity_id=h.identity_id AND earlier.category='MESSAGE'
                   AND earlier.state IN %s AND earlier.received_order<h.received_order)
             ORDER BY h.received_order
-            """.formatted(NONTERMINAL, NONTERMINAL), (rs, i) -> rs.getObject(1, UUID.class), grant.instance());
+            """.formatted(NONTERMINAL, NONTERMINAL), (rs, i) -> rs.getObject(1, UUID.class), grant.instance(),settings.teamApiOnly());
         for (UUID identity : identities) {
             if (items.size() == limit) break;
             var locked = jdbc.query("SELECT id FROM wa.identity WHERE id=? FOR UPDATE SKIP LOCKED",
@@ -72,8 +73,8 @@ public class WaInboxService {
         while (true) {
             List<UUID> heads = jdbc.query("""
                 SELECT id FROM wa.integration_inbox WHERE identity_id=? AND category='MESSAGE'
-                  AND state IN %s ORDER BY received_order LIMIT 1
-                """.formatted(NONTERMINAL), (rs, i) -> rs.getObject(1, UUID.class), identity);
+                  AND (?=false OR provider='SYNTHETIC') AND state IN %s ORDER BY received_order LIMIT 1
+                """.formatted(NONTERMINAL), (rs, i) -> rs.getObject(1, UUID.class), identity,settings.teamApiOnly());
             if (heads.isEmpty()) return null;
             List<Event> rows = jdbc.query("SELECT * FROM wa.integration_inbox WHERE id=? FOR UPDATE SKIP LOCKED",
                 WaInboxService::event, heads.get(0));
@@ -127,8 +128,8 @@ public class WaInboxService {
         WaTransportAccess.Grant grant = access.lock(principal, WaPrincipal.Kind.CONVERSATION_WORKER);
         List<Event> rows = jdbc.query("""
             SELECT * FROM wa.integration_inbox WHERE id=? AND instance_id=? AND category='MESSAGE'
-              AND lease_credential_id=? AND lease_token_hash=? AND lease_generation>0 FOR UPDATE
-            """, WaInboxService::event, eventId, grant.instance(), grant.credentialId(), WaCrypto.digest(lease));
+              AND lease_credential_id=? AND lease_token_hash=? AND lease_generation>0 AND (?=false OR provider='SYNTHETIC') FOR UPDATE
+            """, WaInboxService::event, eventId, grant.instance(), grant.credentialId(), WaCrypto.digest(lease),settings.teamApiOnly());
         access.revalidate(grant);
         if (rows.size() != 1) throw WaProblem.missing();
         Event event = rows.get(0);

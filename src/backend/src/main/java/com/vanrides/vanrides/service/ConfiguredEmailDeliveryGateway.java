@@ -30,6 +30,13 @@ public class ConfiguredEmailDeliveryGateway implements EmailDeliveryGateway {
 
     @PostConstruct
     void validateConfiguration() {
+        if(!java.util.Set.of("log","resend","disabled").contains(normalizedProvider()))
+            throw new IllegalStateException("EMAIL_PROVIDER_INVALID");
+        if(normalizedProvider().equals("disabled")) {
+            if(com.vanrides.vanrides.config.TeamApiMode.enabled(environment)) com.vanrides.vanrides.config.TeamApiMode.validate(environment);
+            else if(com.vanrides.vanrides.config.MvpOnlineMode.enabled(environment)) com.vanrides.vanrides.config.MvpOnlineMode.validate(environment);
+            else throw new IllegalStateException("EMAIL_DISABLED_OUTSIDE_EXPLICIT_MVP_MODE");
+        }
         if (usesResend() && !resendEmailDeliveryGateway.isConfigured()) {
             if (isLocalProfileActive()) {
                 log.warn("Resend solicitado, mas sem credenciais; ambiente local vai usar logging como fallback.");
@@ -41,6 +48,8 @@ public class ConfiguredEmailDeliveryGateway implements EmailDeliveryGateway {
 
     @Override
     public void sendEmail(String toEmail, String subject, String htmlBody, String textBody) {
+        if(normalizedProvider().equals("disabled")) throw new IllegalStateException("EMAIL_DELIVERY_DISABLED");
+        if(!java.util.Set.of("log","resend").contains(normalizedProvider())) throw new IllegalStateException("EMAIL_PROVIDER_INVALID");
         if (usesResend()) {
             if (resendEmailDeliveryGateway.isConfigured()) {
                 resendEmailDeliveryGateway.sendEmail(toEmail, subject, htmlBody, textBody);

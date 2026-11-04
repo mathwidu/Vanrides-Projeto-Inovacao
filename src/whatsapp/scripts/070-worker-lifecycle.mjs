@@ -7,6 +7,7 @@ export function createInterruption(emitter = process) {
   emitter.on('SIGINT', interrupt); emitter.on('SIGTERM', interrupt);
   const assertActive = () => { if (controller.signal.aborted) throw new SmokeFailure('SMOKE_INTERRUPTED'); };
   return {
+    signal: controller.signal,
     assertActive,
     async wait(action) {
       assertActive();

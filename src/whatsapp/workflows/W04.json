@@ -16,8 +16,8 @@
         "rule": {
           "interval": [
             {
-              "field": "seconds",
-              "secondsInterval": 60
+              "field": "minutes",
+              "minutesInterval": 1
             }
           ]
         }

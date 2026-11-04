@@ -40,19 +40,20 @@ public final class WaInboxAccess {
         List<Context> found = jdbc.query("""
             SELECT id,identity_id,payload_json::text,normalized_kind,lease_expires_at FROM wa.integration_inbox
             WHERE id=? AND instance_id=? AND category='MESSAGE' AND state='CLAIMED'
-              AND lease_credential_id=? AND lease_token_hash=? AND lease_generation>0 AND lease_expires_at>? FOR UPDATE
+              AND lease_credential_id=? AND lease_token_hash=? AND lease_generation>0 AND lease_expires_at>?
+              AND (?=false OR provider='SYNTHETIC') FOR UPDATE
             """, (rs, i) -> new Context(rs.getObject("id", UUID.class), rs.getObject("identity_id", UUID.class),
                 WaJson.object(rs.getString("payload_json")), rs.getString("normalized_kind"), rs.getTimestamp("lease_expires_at").toInstant(), instances.get(0).expiresAt()),
             eventId, instances.get(0).instance(), worker.credentialId(),
-            WaCrypto.digest(lease), Timestamp.from(clock.now()));
+            WaCrypto.digest(lease), Timestamp.from(clock.now()),settings.teamApiOnly());
         if (found.size() != 1 || found.get(0).identityId() == null) throw WaProblem.missing();
         Context context = found.get(0);
         revalidate(context);
         if (settings.cohortOnly()) {
             Boolean allowed = jdbc.queryForObject("""
                 SELECT EXISTS(SELECT 1 FROM wa.identity i JOIN wa.test_cohort c ON c.id=i.test_cohort_id
-                    WHERE i.id=? AND c.environment=?)
-                """, Boolean.class, context.identityId(), settings.environment());
+                    WHERE i.id=? AND c.environment=? AND (?=false OR c.synthetic))
+                    """, Boolean.class, context.identityId(), settings.environment(),settings.teamApiOnly());
             if (!Boolean.TRUE.equals(allowed)) throw WaProblem.denied();
         }
         return context;

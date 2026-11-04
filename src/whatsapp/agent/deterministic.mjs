@@ -2,10 +2,12 @@
 import { DRIVER_PAYLOADS, decideDriverSetup, isDriverCommand, validContextOptions, validDriverDecision } from './driver-setup.mjs';
 import { PASSENGER_PAYLOADS, decidePassengerSetup, isPassengerCommand, validPassengerDecision } from './passenger-setup.mjs';
 import { decideAttendance, isAttendanceChoice, isAttendanceCommand, validAttendanceDecision } from './attendance.mjs';
+import { decideDriverLocation, isDriverLocationCommand, validDriverLocationDecision } from './driver-location.mjs';
 
 const commands = new Set([
   'START_ONBOARDING', 'SET_PROFILE_NAME', 'ACCEPT_NOTICE', 'CLAIM_DRIVER_INVITE',
   'CONFIRM_PAIRING', 'REQUEST_SUPPORT', 'RESPOND_TO_MESSAGE', 'ADVANCE_ATTENDANCE', 'SET_ATTENDANCE',
+  'GET_DRIVER_LOCATION',
   ...Object.keys(DRIVER_PAYLOADS), ...Object.keys(PASSENGER_PAYLOADS),
 ]);
 const runCommands = new Set(['ADVANCE_RUN_SETUP', 'REQUEST_START', 'REQUEST_RESUME', 'SET_OPERATIONAL_ATTENDANCE']);
@@ -79,7 +81,8 @@ export function validateDecision(decision, context) {
     case 'RESPOND_TO_MESSAGE': valid = exact(['responseCode']) && responseCodes.has(payload.responseCode); break;
     default: valid = isDriverCommand(decision.commandType) && validDriverDecision(decision, context)
       || isPassengerCommand(decision.commandType) && validPassengerDecision(decision, context)
-      || isAttendanceCommand(decision.commandType) && validAttendanceDecision(decision, context);
+      || isAttendanceCommand(decision.commandType) && validAttendanceDecision(decision, context)
+      || isDriverLocationCommand(decision.commandType) && validDriverLocationDecision(decision, context);
   }
   if (!valid || decision.commandType !== 'RESPOND_TO_MESSAGE' && context.eventFreshness !== 'CURRENT')
     throw new Error('INVALID_DECISION');
@@ -106,6 +109,7 @@ export function decideDeterministically(message, context) {
   // The server recognizes the invitation and interprets every private draft field.
   // Its offer must be copied even when the guest has no profile or text projection.
   // Even private replies without a text projection can advance an API-bound run review.
+  if (context.allowedCommands.some(isDriverLocationCommand)) return decideDriverLocation(context);
   if (context.allowedCommands.some(isRunCommand)) return decideDriverSetup(context);
   if (context.allowedCommands.some(isAttendanceCommand)) return decideAttendance(context);
   if (context.allowedCommands.some(isPassengerCommand)) return decidePassengerSetup(context);

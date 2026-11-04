@@ -14,10 +14,22 @@ import uuid
 sys.dont_write_bytecode = True
 HERE = Path(__file__).resolve().parent
 ROOT = HERE / 'inputs/source' if (HERE / 'source-manifest.json').is_file() else HERE.parents[3]
+
+
+def resolve_source(relative):
+    """Find a sealed helper in either layout without rewriting its pinned bytes."""
+    original = ROOT / relative
+    if original.is_file():
+        return original
+    if relative.startswith('integrations/whatsapp/'):
+        return ROOT / relative.replace('integrations/whatsapp/', 'src/whatsapp/', 1)
+    return ROOT / relative.replace('src/whatsapp/', 'integrations/whatsapp/', 1)
+
+
 # Reuse the pure protocol helpers of 110; importing its controller would expose
 # live operations unnecessarily. Pressure/cgroup enforcement remains its job.
 _spec = importlib.util.spec_from_file_location(
-    'wa120_110_protocol', ROOT / 'src/whatsapp/scripts/vps110/server/protocol.py')
+    'wa120_110_protocol', resolve_source('src/whatsapp/scripts/vps110/server/protocol.py'))
 _protocol = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(_protocol)
 Blocked, require, token = _protocol.Blocked, _protocol.require, _protocol.token
@@ -103,6 +115,11 @@ def validate_private(value, issued=True):
 
 def load_contract(file=HERE / 'contract.json'):
     value = json.loads(Path(file).read_bytes(), object_pairs_hook=strict_object)
+    if value.get('schemaVersion') == 2:
+        import monorepo_receipt
+        monorepo_receipt.ready_pins(value)
+        return value, value['images']
+    require('evidenceProfile' not in value, 'EVIDENCE_PROFILE_INVALID')
     require(value['schemaVersion'] == 1 and value['cardId'] == CARD
             and value['policy'] == {'maximumWindowSeconds': 1800, 'minimumHostAvailableMiB': 2048,
                                    'publicPorts': [], 'testCohortOnly': False, 'modelMode': 'disabled',
@@ -110,7 +127,7 @@ def load_contract(file=HERE / 'contract.json'):
                                    'driverBootstrap': False, 'dockerExecutionImplemented': True,
                                    'newStartsEnabled': False}, 'POLICY_CHANGED')
     require(value['images110'] == 'src/whatsapp/scripts/vps110/physical/contract.json', 'PIN_SOURCE_CHANGED')
-    source = json.loads((ROOT / value['images110']).read_bytes())
+    source = json.loads(resolve_source(value['images110']).read_bytes())
     images = {key: source['images'][key] for key in ('java', 'node', 'postgres')}
     images.update(value['images'])
     require(set(images) == {'java', 'node', 'postgres', 'evolution', 'redis'}, 'IMAGE_SET_CHANGED')
@@ -186,12 +203,12 @@ def build_plan(attempt, owner_id, uid, gid, contract=None):
     specs['api']['command'] = ['java', '-Xms24m', '-Xmx192m', '-XX:MaxMetaspaceSize=192m',
                                '-XX:+UseSerialGC', '-XX:ActiveProcessorCount=2', '-jar', '/opt/wa120/backend.jar']
     specs['ingress']['networks'] = ['control']
-    bind('ingress', 'inputs/source/integrations/whatsapp', '/opt/whatsapp')
+    bind('ingress', 'inputs/source/src/whatsapp', '/opt/whatsapp')
     bind('ingress', 'private/ingress.json', '/run/wa120/ingress.json')
     specs['ingress']['env'] = {'WA120_INGRESS_CONFIG_FILE': '/run/wa120/ingress.json'}
     specs['ingress']['command'] = ['node', '--max-old-space-size=64', '/opt/whatsapp/lab/live-ingress/main.mjs']
     specs['worker']['networkMode'] = {'containerIdFrom': 'evolution', 'generationLeaseRequired': True}
-    bind('worker', 'inputs/source/integrations/whatsapp', '/opt/whatsapp')
+    bind('worker', 'inputs/source/src/whatsapp', '/opt/whatsapp')
     for name in ('conversation-token', 'delivery-token', 'job-token', 'control-token', 'evolution-api-key'):
         bind('worker', 'private/' + name, '/run/wa120/' + name)
     specs['worker']['env'] = {'WA070_ENVIRONMENT': 'wa070-local', 'WA070_LOCAL_MODE': 'true',
@@ -444,10 +461,3 @@ def main():
 
 if __name__ == '__main__':
     sys.exit(main())
-
-
-def resolve_source(relative):
-    """Relocate an original sealed helper without rewriting its pinned bytes."""
-    original = ROOT / relative
-    migrated = ROOT / relative.replace('integrations/whatsapp/', 'src/whatsapp/', 1)
-    return original if original.is_file() else migrated

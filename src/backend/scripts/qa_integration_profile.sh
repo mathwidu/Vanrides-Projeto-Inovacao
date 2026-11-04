@@ -26,7 +26,10 @@ EXPECTED_TEST_CLASSES=(
   "com.vanrides.vanrides.whatsapp.pairing.WaPairingConcurrencyIntegrationTest=7"
   "com.vanrides.vanrides.whatsapp.auth.WaFoundationIntegrationTest=14"
   "com.vanrides.vanrides.whatsapp.auth.WaHttpIntegrationTest=9"
+  "com.vanrides.vanrides.whatsapp.auth.WaTeamApiHttpIntegrationTest=7"
   "com.vanrides.vanrides.whatsapp.operator.WaOperatorPostgresIntegrationTest=15"
+  "com.vanrides.vanrides.whatsapp.operator.WaOperatorBatchPostgresIntegrationTest=6"
+  "com.vanrides.vanrides.whatsapp.operator.WaOperatorAdmissionPostgresIntegrationTest=8"
   "com.vanrides.vanrides.whatsapp.operator.WaOperatorEmptyCohortPostgresIntegrationTest=1"
   "com.vanrides.vanrides.whatsapp.transport.WaEvolutionIngressIntegrationTest=16"
   "com.vanrides.vanrides.whatsapp.transport.WaInboxTransportIntegrationTest=19"
@@ -48,6 +51,7 @@ EXPECTED_TEST_CLASSES=(
   "com.vanrides.vanrides.whatsapp.operator.WaConversationResetIntegrationTest=1"
   "com.vanrides.vanrides.whatsapp.transport.WaDriverWizardIntegrationTest=16"
   "com.vanrides.vanrides.whatsapp.transport.WaDriverRoutinesIntegrationTest=16"
+  "com.vanrides.vanrides.whatsapp.transport.WaTransportTestDatabaseIntegrationTest=2"
   "com.vanrides.vanrides.whatsapp.transport.WaDriverInvitesIntegrationTest=11"
   "com.vanrides.vanrides.whatsapp.transport.WaDriverFencingIntegrationTest=9"
   "com.vanrides.vanrides.whatsapp.transport.WaPassengerWizardIntegrationTest=12"
@@ -73,6 +77,8 @@ EXPECTED_TEST_CLASSES=(
   "com.vanrides.vanrides.whatsapp.transport.WaRunPreparationIntegrationTest=8"
   "com.vanrides.vanrides.whatsapp.transport.WaTrackingActivationIntegrationTest=6"
   "com.vanrides.vanrides.whatsapp.transport.WaTrackingSamplesIntegrationTest=7"
+  "com.vanrides.vanrides.whatsapp.transport.WaDriverLocationIntegrationTest=17"
+  "com.vanrides.vanrides.whatsapp.transport.WaApproachIntegrationTest=18"
   "com.vanrides.vanrides.whatsapp.transport.WaTrackingLifecycleIntegrationTest=6"
   "com.vanrides.vanrides.whatsapp.transport.WaTrackingEnvironmentIntegrationTest=1"
 )
@@ -427,6 +433,7 @@ done
 log "Docker OK; running $PROFILE_SCOPE integration profile with Docker API $TESTCONTAINERS_API_VERSION (server range $DOCKER_MIN_API_VERSION..$DOCKER_MAX_API_VERSION)"
 FAILURE_STAGE="maven"
 maven_args=(
+  -ntp
   -Dapi.version="$TESTCONTAINERS_API_VERSION"
   -Duser.home="$MAVEN_ISOLATED_HOME"
   -Dmaven.repo.local="$MAVEN_REPOSITORY"

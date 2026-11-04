@@ -8,14 +8,14 @@ import crypto from 'node:crypto';
 import { execFileSync, spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { createTools } from './070-worker-preflight.mjs';
-import { provision, connectionEvent, runScenarios } from './070-worker-scenarios.mjs';
-import { runDriverScenarios } from './080-driver-scenarios.mjs';
-import { runAttendanceScenarios } from './100-attendance-scenarios.mjs';
-import { runTrackingScenarios } from './110-run-scenarios.mjs';
+import { createOperatorBatch } from './070-operator-batch.mjs';
+import { provision, connectionEvent } from './070-worker-scenarios.mjs';
+import { academicScenarios, academicCheck, assertTrackingChecks } from './academic-scenario-plan.mjs';
 import { startProvider, createWorkerProcess } from './070-worker-runtime.mjs';
 import { createInterruption } from './070-worker-lifecycle.mjs';
 import { expectedApiExit } from './academic-process-exit.mjs';
 import { createPacedDispatch } from './academic-dispatch-pacing.mjs';
+import { prepareAcademicReceipt } from './academic-receipt.mjs';
 import { SmokeFailure, demand, digest, quote, privateWrite, localJson, safeCode } from './070-worker-common.mjs';
 
 const root = fs.realpathSync(fileURLToPath(new URL('../../../', import.meta.url)));
@@ -48,6 +48,7 @@ async function run() {
       || ['DOCKER_HOST', 'DOCKER_CONTEXT', 'DOCKER_TLS_VERIFY', 'DOCKER_CERT_PATH'].includes(key)))
       demand(false, 'SMOKE_RUNTIME_OVERRIDE_REJECTED');
   }
+  const writeReceipt = prepareAcademicReceipt(process.env.VANRIDES_ACADEMIC_RECEIPT_PATH, root);
   const java = process.env.JAVA_HOME ? path.join(process.env.JAVA_HOME, 'bin/java')
     : command('/usr/bin/which', ['java']);
   demand(fs.realpathSync(git('rev-parse', '--show-toplevel')) === root, 'SMOKE_GIT_ROOT_MISMATCH');
@@ -61,6 +62,7 @@ async function run() {
   const jar = path.join(backend, 'target', jars[0]);
   demand(fs.lstatSync(jar).isFile() && !fs.lstatSync(jar).isSymbolicLink(), 'SMOKE_JAR_TYPE_INVALID');
   const jarHash = digest(fs.readFileSync(jar));
+  const jarBytes = fs.statSync(jar).size;
   const assertSource = () => demand(git('rev-parse', 'HEAD') === sourceSha
     && git('rev-parse', 'HEAD^{tree}') === sourceTree
     && git('status', '--porcelain', '--untracked-files=all') === ''
@@ -152,8 +154,8 @@ async function run() {
       operator: { environment: 'wa070-local', operatorCredential: operatorToken } };
     const frozen = { env: minimal, docker: 'docker', dockerArgs, assertContainer, assertSource, assertListener,
       assertArtifacts: assertSource };
-    for (const [scenario, execute] of [['070', runScenarios], ['080', runDriverScenarios],
-      ['100', runAttendanceScenarios], ['110', runTrackingScenarios]]) {
+    for (const execution of academicScenarios) {
+      const { scenario, covers, execute } = execution;
       interruption.assertActive(); assertSource();
       const scenarioWork = path.join(work, scenario); fs.mkdirSync(scenarioWork, { mode: 0o700 });
       const batch = crypto.randomUUID(), actor = crypto.randomUUID(), aliasId = crypto.randomUUID();
@@ -161,10 +163,12 @@ async function run() {
       const peers = [14, 13].map(length => ({ actor: crypto.randomUUID(), aliasId: crypto.randomUUID(),
         address: '0'.repeat(length) + '@s.whatsapp.net' }));
       const tools = createTools(input, frozen, scenarioWork, batch), credentials = [];
+      const operatorBatch = createOperatorBatch({ java, input, frozen, work: scenarioWork, batch, next: tools.next });
       let worker = null, provider = null, scenarioFailure = null;
       try {
-        await provision({ input, tools, batch, actor, aliasId, instance, address, peers, credentials, attendance: true, interruption });
-        await connectionEvent({ input, instance, credentials, interruption }, 'open');
+        await provision({ input, tools, batch, actor, aliasId, instance, address, peers, credentials, attendance: true, interruption, operatorBatch });
+        // Recovery120 proves the UNKNOWN starting state before its own OPEN event.
+        if (scenario !== '120') await connectionEvent({ input, instance, credentials, interruption }, 'open');
         const apiKey = 'synthetic-provider-' + crypto.randomBytes(24).toString('hex');
         provider = await startProvider(instance, address, apiKey, peers.map(peer => peer.address));
         worker = createWorkerProcess({ input, frozen, tools, work: scenarioWork, instance, provider,
@@ -199,23 +203,29 @@ async function run() {
           wait: ms => interruption.wait(() => pause(ms)), assertActive: interruption.assertActive,
           onWait: detail => console.log(JSON.stringify({ scope: 'SYNTHETIC_QUOTA_PACING', scenario, ...detail })),
         });
-        worker = paced.worker; provider = paced.provider;
+        // Recovery120 deliberately expects NOT_SUBMITTED/UNKNOWN and submits one
+        // authorized attempt directly to lose its ACK. Seven total attempts stay
+        // under the real API quota; the SUBMITTED-only pacing wrapper is unsuitable.
+        if (scenario !== '120') { worker = paced.worker; provider = paced.provider; }
         await worker.start();
         const result = await execute({ input, tools, work: scenarioWork, actor, instance, address, peers,
           credentials, worker, provider, apiKey, interruption,
-          passed: check => { checks.push({ scenario, check, status: 'PASS' });
-            console.log(JSON.stringify({ scenario, check, status: 'PASS' })); } });
-        totals.push({ scenario, ...result, pacing: paced.stats() });
+          passed: check => { const row = academicCheck(execution, check); checks.push(row);
+            console.log(JSON.stringify(row)); } });
+        assertTrackingChecks(execution, checks);
+        totals.push({ scenario, covers, ...result, pacing: scenario === '120' ? { policy: 'API_ONLY' } : paced.stats() });
       } catch (error) { scenarioFailure = error; }
       finally {
         for (const resource of [worker, provider]) if (resource) {
           try { await resource.stop(); } catch { cleanupErrors.push('SCENARIO_OWNED_PROCESS_CLEANUP_FAILED'); }
         }
         try {
+          const cleanup = [];
           if (tools.count(`SELECT count(*) FROM wa.test_cohort WHERE id=${quote(batch)}`) === 1)
-            tools.operate('reset-test-data');
-          for (const item of credentials) tools.operate('revoke-service-credential',
-            { credentialId: item.credentialId, reasonCode: 'SYNTHETIC_SMOKE_COMPLETED' });
+            cleanup.push({ operation: 'reset-test-data' });
+          for (const item of credentials) cleanup.push({ operation: 'revoke-service-credential',
+            fields: { credentialId: item.credentialId, reasonCode: 'SYNTHETIC_SMOKE_COMPLETED' } });
+          if (cleanup.length) await operatorBatch(cleanup);
           demand(tools.count(`SELECT count(*) FROM wa.identity WHERE test_cohort_id=${quote(batch)}`) === 0,
             'SMOKE_SCOPED_RESET_FAILED');
         } catch { cleanupErrors.push('SCENARIO_SCOPED_RESET_FAILED'); }
@@ -249,6 +259,13 @@ async function run() {
   }
   if (failure) throw failure instanceof SmokeFailure ? failure : new SmokeFailure('SMOKE_SCENARIO_FAILED');
   demand(cleanupErrors.length === 0, 'SMOKE_CLEANUP_FAILED');
+  assertSource();
+  writeReceipt({ schemaVersion: 2, profile: 'VANRIDES_ACADEMIC_INTEGRATION_V2', status: 'PASS',
+    sourceSha, sourceTree, jar: { sha256: jarHash, bytes: jarBytes }, checks, scenarios: totals,
+    cleanup: { status: 'OWNED_RESOURCES_REMOVED', errors: [] },
+    boundaries: { realWhatsApp: false, physicalDevices: false, provider: 'FAKE_LOOPBACK', model: 'DISABLED' },
+    runtime: { node: process.version, platform: process.platform, arch: process.arch,
+      api: 'LOCAL_JAR', database: 'OWNED_POSTGRES_CONTAINER' } });
   console.log(JSON.stringify({ status: 'PASS', sourceSha, sourceTree, jarSha256: jarHash,
     checks: checks.length, scenarios: totals, realWhatsApp: false, physicalDevices: false,
     provider: 'FAKE_LOOPBACK', cleanup: 'OWNED_RESOURCES_REMOVED' }));

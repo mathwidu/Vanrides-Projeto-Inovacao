@@ -75,6 +75,20 @@ test('the thirty-first cross-recipient response respects the instance window', a
   assert.equal(f.counts().sends, 31);
   assert.equal(f.sleeps.length, 1);
 });
+test('synthetic acquisition preparation runs after quota admission and before the single dispatch', async () => {
+  const f = fixture();
+  for (let n = 1; n <= 12; n++) await f.send(n);
+  let preparations = 0;
+  f.controls.provider.enqueue({ outboxId: id(13), beforeDispatch: async () => {
+    preparations++;
+    assert.equal(f.sleeps.length, 1);
+    assert.equal(f.counts().claims, 12);
+  } });
+  await f.controls.worker.request('/v1/dispatch-one');
+  assert.equal(preparations, 1);
+  assert.equal(f.counts().claims, 13);
+  assert.equal(f.counts().sends, 13);
+});
 test('a truly missing or foreign response fails before dispatch and is never interpreted as quota', async () => {
   for (const [state, scopeValid] of [['MISSING', false], ['SUBMITTED', true], ['PENDING', false]]) {
     const f = fixture({ inspectOverride: { scopeValid, state, expiresInMs: 300000, delayMs: 0 } });

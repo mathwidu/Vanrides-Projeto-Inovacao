@@ -71,6 +71,10 @@ Use os comandos da sua frente. Preserve contratos ou ajuste produtores e
 consumidores juntos. Não reduza testes para obter CI verde. Registre comando,
 revisão, ambiente, resultado e testes que não conseguiu executar.
 
+A [revisão da CI e dos testes](docs/desenvolvimento/revisao-ci-e-testes.md)
+registra os gargalos medidos e a proposta de simplificação. As mudanças
+descritas ainda não substituem os comandos atuais de validação.
+
 Não comite `.env`, chaves, assinatura Apple/Android, conversas, telefones reais
 ou coordenadas pessoais. Use dados sintéticos. Revise os logs antes de anexá-los.
 
@@ -125,5 +129,13 @@ Envie uma correção pequena de instrução ou um teste de cenário compreendido
 Isso confirma acesso e revisão. A escolha da área depende do grupo, não do
 sistema operacional de cada pessoa.
 
-Deploy e testes com usuários são etapas separadas. Testes físicos do iPhone
-continuam pausados e a linha dedicada do bot ainda depende de ativação.
+Deploy e testes com usuários são etapas separadas. O bot está conectado à
+Evolution e o perfil básico foi validado no WhatsApp real. O uso pelo colega
+requer admissão do contato; credenciais e convites são individuais. Testes
+físicos do aplicativo iPhone continuam pausados. Alterar a `main` não atualiza
+a VPS automaticamente.
+
+O [guia de homologação da equipe](docs/desenvolvimento/homologacao-da-equipe.md)
+reúne URLs, versões, fluxos, roteiro de teste e limites do que está publicado.
+Antes de diagnosticar uma diferença de resposta, confira se a mudança está
+somente na sua branch, na `main` ou também na versão instalada na VPS.

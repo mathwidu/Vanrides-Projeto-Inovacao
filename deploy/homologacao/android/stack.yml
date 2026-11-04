@@ -1,0 +1,39 @@
+version: '3.8'
+services:
+  links:
+    image: nginx:1.27-alpine@sha256:65645c7bb6a0661892a8b03b89d0743208a18dd2f3f17a54ef4b76fb8e2f2a10
+    entrypoint: ["/usr/sbin/nginx"]
+    command: ["-c", "/srv/vanrides/links.conf", "-g", "daemon off;"]
+    user: "101:101"
+    read_only: true
+    cap_drop: [ALL]
+    volumes:
+      - type: bind
+        source: ${VANRIDES_ANDROID_BUNDLE:?Informe o diretório da versão}
+        target: /srv/vanrides
+        read_only: true
+      - type: tmpfs
+        target: /tmp
+        tmpfs:
+          size: 8388608
+    networks: [public]
+    deploy:
+      replicas: 1
+      placement:
+        constraints: ["node.hostname == srv1397065"]
+      resources:
+        limits: { memory: 48M, cpus: '0.20' }
+      labels:
+        traefik.enable: 'true'
+        traefik.docker.network: network_swarm_public
+        traefik.http.routers.vanrides-hml-android.rule: 'Host(`vanrides-inovacao-api.matheusduarte.dev.br`) && (Path(`/.well-known/assetlinks.json`) || Path(`/motorista/vinculo/retorno`) || Path(`/motorista/saida`) || Path(`/motorista/saida.js`) || Path(`/motorista/VanRides.apk`))'
+        traefik.http.routers.vanrides-hml-android.priority: '10100'
+        traefik.http.routers.vanrides-hml-android.entrypoints: websecure
+        traefik.http.routers.vanrides-hml-android.tls: 'true'
+        traefik.http.routers.vanrides-hml-android.tls.certresolver: letsencryptresolver
+        traefik.http.routers.vanrides-hml-android.service: vanrides-hml-android
+        traefik.http.services.vanrides-hml-android.loadbalancer.server.port: '8080'
+networks:
+  public:
+    external: true
+    name: network_swarm_public

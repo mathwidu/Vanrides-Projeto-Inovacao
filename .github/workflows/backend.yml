@@ -1,10 +1,10 @@
 name: Backend e integração sintética
 'on':
   pull_request:
-    paths: ['src/backend/**', 'src/whatsapp/**', 'scripts/check_backend.sh', '.github/workflows/backend.yml']
+    paths: ['src/backend/**', 'src/whatsapp/**', 'scripts/check_backend.sh', 'scripts/check_backend_image.py', 'scripts/verify_backend_candidate.py', 'scripts/homologacao/**', 'deploy/homologacao/**', '.github/actions/receive-backend/**', '.github/workflows/backend.yml', '.github/workflows/homologacao-api.yml']
   push:
     branches: [main]
-    paths: ['src/backend/**', 'src/whatsapp/**', 'scripts/check_backend.sh', '.github/workflows/backend.yml']
+    paths: ['src/backend/**', 'src/whatsapp/**', 'scripts/check_backend.sh', 'scripts/check_backend_image.py', 'scripts/verify_backend_candidate.py', 'scripts/homologacao/**', 'deploy/homologacao/**', '.github/actions/receive-backend/**', '.github/workflows/backend.yml', '.github/workflows/homologacao-api.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -12,8 +12,21 @@ concurrency:
   group: backend-${{ github.ref }}
   cancel-in-progress: true
 jobs:
+  quick:
+    name: Verificações rápidas do backend
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Regras estáticas e testes dos auxiliares, sem Maven ou Docker
+        run: bash scripts/check_backend.sh --light
   test:
     name: Suíte canônica PostgreSQL
+    needs: quick
     runs-on: ubuntu-latest
     timeout-minutes: 40
     env:
@@ -32,13 +45,59 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - name: Gate canônico com toda a matriz PostgreSQL obrigatória
+          cache: maven
+          cache-dependency-path: src/backend/pom.xml
+      - name: Parte PostgreSQL do gate, após as verificações rápidas obrigatórias
         working-directory: src/backend
-        run: ./scripts/ci_quality_gate.sh
+        run: ./scripts/qa_integration_profile.sh --all-tests
+  candidate:
+    name: Empacotar candidato uma vez
+    needs: quick
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      artifact-id: ${{ steps.upload.outputs.artifact-id }}
+      jar-sha256: ${{ steps.jar.outputs.sha256 }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          fetch-depth: 1
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+          cache-dependency-path: src/backend/pom.xml
+      - name: Empacotar sem repetir a suíte obrigatória do job test
+        working-directory: src/backend
+        run: ./mvnw -B -ntp -DskipTests package
+      - name: Separar somente o JAR e calcular seu checksum
+        id: jar
+        run: |
+          shopt -s nullglob
+          jars=(src/backend/target/*.jar)
+          [[ "${#jars[@]}" -eq 1 && -f "${jars[0]}" && ! -L "${jars[0]}" ]] || exit 1
+          mkdir "$RUNNER_TEMP/backend-candidate"
+          cp "${jars[0]}" "$RUNNER_TEMP/backend-candidate/backend.jar"
+          read -r digest _ < <(sha256sum "$RUNNER_TEMP/backend-candidate/backend.jar")
+          printf 'sha256=%s\n' "$digest" >> "$GITHUB_OUTPUT"
+      - name: Compartilhar candidato por um dia, sem logs ou credenciais
+        id: upload
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: backend-candidate-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/backend-candidate/backend.jar
+          if-no-files-found: error
+          retention-days: 1
+          compression-level: 0
+          include-hidden-files: false
   integration:
     name: Integração HTTP e imagem
+    needs: candidate
     runs-on: ubuntu-latest
-    # As quatro jornadas levaram 19m42s no ensaio inicial, antes do build da imagem.
+    # Mantido até medir as cinco execuções com seis conjuntos de validação.
     timeout-minutes: 35
     env:
       VANRIDES_EXPECTED_SOURCE_SHA: ${{ github.sha }}
@@ -59,12 +118,56 @@ jobs:
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '22.23.2'
-      - name: Empacotar e executar quatro jornadas HTTP no mesmo checkout
-        run: bash scripts/check_backend.sh --integration-only
-      - name: Construir imagem local sem publicação
-        run: docker build -t vanrides-backend:ci src/backend
+      - uses: ./.github/actions/receive-backend
+        with:
+          artifact-id: ${{ needs.candidate.outputs.artifact-id }}
+          jar-sha256: ${{ needs.candidate.outputs.jar-sha256 }}
+          source-sha: ${{ github.sha }}
+      - name: Exercitar o JAR compartilhado nas jornadas HTTP
+        env:
+          VANRIDES_ACADEMIC_RECEIPT_PATH: ${{ runner.temp }}/vanrides-integration.json
+        run: node src/whatsapp/scripts/academic-integration-smoke.mjs
+      - name: Construir imagem local com o JAR aprovado pelas jornadas
+        env:
+          VANRIDES_ACADEMIC_RECEIPT_PATH: ${{ runner.temp }}/vanrides-integration.json
+        run: python3 scripts/check_backend_image.py --receipt "$VANRIDES_ACADEMIC_RECEIPT_PATH"
       - name: Identificar a fonte e os limites
         env:
           SOURCE_SHA: ${{ github.sha }}
         run: |
           printf 'Integração HTTP e imagem avaliadas em %s. PostgreSQL isolado e provedor sintético em loopback; sem WhatsApp, IA ao vivo ou dispositivos. Suíte canônica em job independente igualmente obrigatório. Nenhuma implantação.\n' "$SOURCE_SHA" >> "$GITHUB_STEP_SUMMARY"
+  homologation:
+    name: Homologação do candidato compartilhado
+    needs: candidate
+    uses: ./.github/workflows/homologacao-api.yml
+    with:
+      artifact-id: ${{ needs.candidate.outputs.artifact-id }}
+      jar-sha256: ${{ needs.candidate.outputs.jar-sha256 }}
+      source-sha: ${{ github.sha }}
+  result:
+    name: Resultado do backend
+    needs: [quick, test, candidate, integration, homologation]
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Resumo das etapas e resultado conjunto
+        env:
+          SOURCE_SHA: ${{ github.sha }}
+          QUICK: ${{ needs.quick.result }}
+          TESTS: ${{ needs.test.result }}
+          CANDIDATE: ${{ needs.candidate.result }}
+          HOMOLOGATION: ${{ needs.homologation.result }}
+          INTEGRATION: ${{ needs.integration.result }}
+        run: |
+          {
+            printf '### Backend\n\nRevisão: %s\n\n' "$SOURCE_SHA"
+            printf '| Etapa | Resultado |\n|---|---|\n'
+            printf '| Verificações rápidas | %s |\n' "$QUICK"
+            printf '| PostgreSQL | %s |\n' "$TESTS"
+            printf '| Candidato | %s |\n' "$CANDIDATE"
+            printf '| Homologação | %s |\n' "$HOMOLOGATION"
+            printf '| Jornadas HTTP e imagem | %s |\n' "$INTEGRATION"
+            printf '\nDetalhes no job que falhou. Sem serviços reais ou implantação.\n'
+          } >> "$GITHUB_STEP_SUMMARY"
+          [[ "$QUICK" == success && "$TESTS" == success && "$INTEGRATION" == success && "$CANDIDATE" == success && "$HOMOLOGATION" == success ]]

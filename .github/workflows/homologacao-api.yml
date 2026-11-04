@@ -1,0 +1,65 @@
+name: Homologação técnica da API
+# Chamado pelo backend.yml na mesma execução, com o mesmo JAR. Disparo manual pelo caller.
+'on':
+  workflow_call:
+    inputs:
+      artifact-id:
+        required: true
+        type: string
+      jar-sha256:
+        required: true
+        type: string
+      source-sha:
+        required: true
+        type: string
+permissions:
+  contents: read
+jobs:
+  colega:
+    name: Runner do colega (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: '3.12'
+      - name: Conferir limites e replay do cenário
+        run: python -B -m unittest discover -s scripts/homologacao -p '*_test.py'
+  api:
+    name: Cadastro e isolamento no perfil homolog
+    needs: colega
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Regras estáticas antes de preparar Java e banco
+        run: bash src/backend/scripts/quality_gate.sh
+      - name: Testar receitas da stack e da restauração
+        run: python3 -B -m unittest discover -s deploy/homologacao -p '*_test.py'
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: ./.github/actions/receive-backend
+        with:
+          artifact-id: ${{ inputs.artifact-id }}
+          jar-sha256: ${{ inputs.jar-sha256 }}
+          source-sha: ${{ inputs.source-sha }}
+      - name: Exercitar o JAR com duas credenciais sintéticas em loopback
+        run: |
+          shopt -s nullglob
+          jars=(src/backend/target/*.jar)
+          [[ "${#jars[@]}" -eq 1 ]]
+          read -r digest _ < <(sha256sum "${jars[0]}")
+          python3 -B scripts/homologacao/ensaio_local.py --jar "${jars[0]}" --sha-fonte "$GITHUB_SHA" --sha256-jar "$digest"

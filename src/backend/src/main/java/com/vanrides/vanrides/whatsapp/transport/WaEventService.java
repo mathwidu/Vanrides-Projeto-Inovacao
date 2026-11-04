@@ -127,7 +127,8 @@ public class WaEventService {
         jdbc.query("SELECT pg_advisory_xact_lock(?)", (rs, i) -> 0, lockKey(namespace, instance, value));
         access.revalidate(grant);
     }
-    static long lockKey(String namespace, String instance, String value) {
+    /** Also used by the private operator admission so inbound resolution cannot race an alias reservation. */
+    public static long lockKey(String namespace, String instance, String value) {
         return ByteBuffer.wrap(WaCrypto.sha256(("EVOLUTION_" + namespace + "\0" + instance + "\0" + value)
             .getBytes(StandardCharsets.UTF_8))).getLong();
     }

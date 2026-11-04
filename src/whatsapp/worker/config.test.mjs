@@ -104,3 +104,54 @@ test('attendance uses a separate optional 0600 SYSTEM_JOB credential and rejects
   invalid(() => loadConfig({ ...env, WA100_JOB_TOKEN: marker }));
   invalid(() => loadConfig({ ...env, WA100_JOB_TOKEN_FILE: env.WA070_CONVERSATION_TOKEN_FILE }));
 });
+
+
+test('MVP homologation accepts explicit HTTPS origins and keeps secrets private', t => {
+  const { env, values } = fixture(t);
+  const config = loadConfig({ ...env, WA070_ENVIRONMENT: 'vanrides-mvp-hml',
+    WA070_LOCAL_MODE: 'false', WA070_HTTP_HOSTS: '',
+    WA070_BACKEND_BASE_URL: 'https://vanrides-inovacao-api.matheusduarte.dev.br',
+    WA070_EVOLUTION_BASE_URL: 'https://evolution.private.example.test',
+    WA070_HOST: '0.0.0.0' });
+  assert.equal(config.environment, 'vanrides-mvp-hml');
+  assert.equal(config.localMode, false);
+  assert.deepEqual(config.allowedHttpHosts, []);
+  assert.equal(config.backendBaseUrl, 'https://vanrides-inovacao-api.matheusduarte.dev.br');
+  assert.equal(config.evolutionBaseUrl, 'https://evolution.private.example.test');
+  assert.equal(config.host, '0.0.0.0');
+  for (const value of Object.values(values)) assert.equal(JSON.stringify(config).includes(value), false);
+});
+
+test('MVP homologation rejects the lab HTTP exceptions and malformed HTTPS origins', t => {
+  const { env } = fixture(t);
+  const online = { ...env, WA070_ENVIRONMENT: 'vanrides-mvp-hml',
+    WA070_LOCAL_MODE: 'false', WA070_HTTP_HOSTS: '',
+    WA070_BACKEND_BASE_URL: 'https://vanrides-inovacao-api.matheusduarte.dev.br',
+    WA070_EVOLUTION_BASE_URL: 'https://evolution.private.example.test' };
+  for (const patch of [
+    { WA070_LOCAL_MODE: 'true' }, { WA070_HTTP_HOSTS: 'backend' },
+    { WA070_BACKEND_BASE_URL: 'http://backend:8080' },
+    { WA070_EVOLUTION_BASE_URL: 'http://127.0.0.1:8080' },
+    { WA070_EVOLUTION_BASE_URL: 'http://evolution:8080' },
+    { WA070_EVOLUTION_BASE_URL: 'https://evolution.private.example.test/path' },
+    { WA070_BACKEND_BASE_URL: 'https://user:secret@example.test' },
+  ]) invalid(() => loadConfig({ ...online, ...patch }));
+  assert.equal(loadConfig({ ...online, WA070_LOCAL_MODE: undefined, WA070_HTTP_HOSTS: undefined }).environment,
+    'vanrides-mvp-hml');
+});
+
+test('MVP homologation preserves non-root file modes and rejects plaintext or shared principals', t => {
+  const { env, values } = fixture(t);
+  const online = { ...env, WA070_ENVIRONMENT: 'vanrides-mvp-hml',
+    WA070_LOCAL_MODE: 'false', WA070_HTTP_HOSTS: '',
+    WA070_BACKEND_BASE_URL: 'https://vanrides-inovacao-api.matheusduarte.dev.br',
+    WA070_EVOLUTION_BASE_URL: 'https://evolution.private.example.test' };
+  for (const mode of [0o444, 0o400, 0o640]) {
+    chmodSync(env.WA070_CONTROL_TOKEN_FILE, mode);
+    invalid(() => loadConfig(online));
+  }
+  chmodSync(env.WA070_CONTROL_TOKEN_FILE, 0o600);
+  assert.equal(loadConfig(online).controlToken, values.CONTROL_TOKEN);
+  invalid(() => loadConfig({ ...online, WA070_CONTROL_TOKEN: values.CONTROL_TOKEN }));
+  invalid(() => loadConfig({ ...online, WA070_DELIVERY_TOKEN_FILE: env.WA070_CONVERSATION_TOKEN_FILE }));
+});

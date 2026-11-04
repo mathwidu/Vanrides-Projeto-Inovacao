@@ -1,4 +1,4 @@
-# Worker privado local070
+# Worker privado de laboratório e homologação
 
 Serviço Node sem banco próprio, nova fila ou dependências npm. A API continua
 autoritativa para leases, autorização, comandos, recibos e reconciliação.
@@ -67,7 +67,9 @@ HTTP 400/422 é UNKNOWN, 401/403/404 é rejeição conhecida; 201 não prova ent
 
 ## Configuração explícita
 
-`loadConfig(env)` exige `WA070_ENVIRONMENT=wa070-local`. Variáveis não secretas:
+loadConfig(env) exige ambiente explícito WA070_ENVIRONMENT=wa070-local ou
+WA070_ENVIRONMENT=vanrides-mvp-hml. Outros ambientes continuam recusados.
+Os nomes WA070_* são mantidos para compatibilidade. Variáveis não secretas:
 
 | Variável | Regra |
 |---|---|
@@ -200,3 +202,94 @@ com despacho serial. GET/healthz permanece disponível para healthcheck técnico
 Timeout não deixa uma resposta tardia avançar o cursor ou abrir outra página.
 Os exports permanecem inativos até validação do ambiente; testes Node/Python
 não comprovam execução n8n/Spring do novo job.
+
+
+## Preparar o worker da API online
+
+Para o ambiente vanrides-mvp-hml, a API e a Evolution precisam de HTTPS.
+WA070_LOCAL_MODE=true ou allowlist HTTP não vazia são recusados nesse perfil.
+O laboratório wa070-local conserva suas regras anteriores; o perfil online
+não habilita HTTP para Docker DNS nem para loopback.
+
+Exemplo somente de valores de configuração, sem emitir credenciais:
+~~~properties
+WA070_ENVIRONMENT=vanrides-mvp-hml
+WA070_BACKEND_BASE_URL=https://vanrides-inovacao-api.matheusduarte.dev.br
+WA070_EVOLUTION_BASE_URL=https://evolution.private.example.test
+WA070_INSTANCE=INSTANCIA_EXCLUSIVA_APROVADA
+WA070_LOCAL_MODE=false
+WA070_HTTP_HOSTS=
+WA070_HOST=0.0.0.0
+WA070_PORT=7080
+WA070_MODEL_MODE=disabled
+WA070_CONVERSATION_TOKEN_FILE=/run/secrets/conversation_token
+WA070_DELIVERY_TOKEN_FILE=/run/secrets/delivery_token
+WA070_CONTROL_TOKEN_FILE=/run/secrets/control_token
+WA070_EVOLUTION_API_KEY_FILE=/run/secrets/evolution_api_key
+WA100_JOB_TOKEN_FILE=/run/secrets/job_token
+~~~
+
+O hostname Evolution do exemplo é fictício e precisa ser substituído.
+Aceita origem HTTPS sem path/userinfo/query/fragment, com porta TLS explícita
+se necessário. Pode resolver a um endereço privado: o certificado precisa ser
+válido para o nome usado e confiável pelo Node. A política não desliga TLS,
+não segue redirects e não adiciona CA automaticamente. Usar o domínio HTTPS
+real da Evolution é a opção imediata se não há DNS/certificado privado.
+http://evolution:8080 permanece recusado; HTTPS do proxy precisa ser alcançável
+pelo container. Esta preparação não prova esse caminho de rede.
+
+0.0.0.0 permite ao n8n de outro container alcançar o listener. O worker
+continua HTTP de controle na rede privada, sem porta publicada no host nem
+router público; API e Evolution usam HTTPS. Preservar o default 127.0.0.1
+quando todos os consumidores estiverem no mesmo namespace de rede.
+Uma réplica evita ampliar o paralelismo local sem uma decisão operacional.
+
+Segredos no Swarm: o Dockerfile roda como node. Os arquivos devem ser regulares,
+do UID efetivo do processo e ter modo 0600 exato. O padrão 0444 do Docker Secret
+e uma montagem 0400 falham propositalmente. A [receita oficial do Node22](https://raw.githubusercontent.com/nodejs/docker-node/main/22/bookworm-slim/Dockerfile)
+cria node com UID/GID 1000; confirmar esses IDs na imagem final antes da implantação.
+A montagem usa a [sintaxe longa de secrets](https://docs.docker.com/reference/compose-file/services/#secrets) do Swarm.
+Usar a sintaxe longa de secrets por arquivo, por exemplo:
+~~~yaml
+secrets:
+  - source: conversation_token
+    target: conversation_token
+    uid: '1000'
+    gid: '1000'
+    mode: 0600
+~~~
+Aplicar o mesmo UID/modo aos outros arquivos, com source/target próprios.
+Não usar root para contornar a validação nem colocar valores no env.
+Os cinco valores precisam ser distintos. O SYSTEM_JOB continua opcional no
+loader para compatibilidade, mas tick-attendance e reconcile-delivery só
+funcionam quando WA100_JOB_TOKEN_FILE é montado. API emite os principals
+CONVERSATION_WORKER, DELIVERY_WORKER e SYSTEM_JOB no ambiente vanrides-mvp-hml
+e na mesma allowedInstanceId. O token de controle é exclusivo do n8n/worker;
+a apikey pertence à instância Evolution aprovada. Nenhum foi emitido aqui.
+
+Integração restante:
+
+- Os workflows versionados continuam inativos, com URL fixa
+  http://vanrides-wa070-worker:7080. Preparar cópias de IDs/credencial/URL para
+  a nova rede/nome do worker; não sobrescrever os workflows compartilhados.
+- O n8n envia somente {} e seu Bearer de controle. Os quatro endpoints são
+  /v1/process-inbox, /v1/dispatch-one, /v1/tick-attendance e
+  /v1/reconcile-delivery. Os callbacks de controle têm teto de 25s; preparar timeout
+  do n8n acima desse teto. O workflow W05 histórico usa 10s e precisa de ajuste.
+- /healthz continua informando apenas UP/WA070_WORKER por compatibilidade;
+  não é prova de conexão à API, canal OPEN, instância ou entrega.
+- Uma URL Evolution válida não cria/conecta instância nem cadastra webhook.
+  O backend precisa receber eventos por CHANNEL da mesma instância, inclusive
+  CONNECTION OPEN autenticado. Sem essa confirmação, authorize-submit pode negar.
+- O simulador070 atual aceita somente destinatários sintéticos e expectativas
+  programadas; não é uma Evolution permanente para uso livre da equipe.
+  Uso de Evolution/WhatsApp reais e encaminhamento de eventos exigem preparação,
+  autorização e prova próprias. Nada é conectado por esta configuração.
+
+Menor validação: node --test src/whatsapp/worker/config.test.mjs, a partir da
+raiz Git. Usa apenas arquivos temporários sintéticos, sem rede/Docker/JVM.
+Não substitui uma rodada de n8n→worker→API→Evolution com a nova configuração.
+
+Validação local desta alteração: esse teste de configuração passou com 11/11,
+zero skips, Node22.23.2, sem rede/Docker/JVM ou serviços. A montagem Swarm real,
+o certificado/DNS da Evolution e a jornada integrada ainda não foram executados.

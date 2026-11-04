@@ -21,7 +21,8 @@ final class WaDriverTestSupport {
     record Step(WaConversationTestSupport.Lease lease, ObjectNode context, ObjectNode body, ObjectNode response, String text) { }
     final WaConversationTestSupport s;
     final WaTransportTestSupport h;
-    WaDriverTestSupport(PostgreSQLContainer<?> postgres) { s = new WaConversationTestSupport(postgres); h = s.h; }
+    WaDriverTestSupport(PostgreSQLContainer<?> postgres) { this(new WaTransportTestSupport(postgres)); }
+    WaDriverTestSupport(WaTransportTestSupport transport) { s = new WaConversationTestSupport(transport); h = s.h; }
     UUID driver() { UUID actor = s.actor(); s.driver(actor); return actor; }
     ObjectNode context(WaConversationTestSupport.Lease lease) { return s.commands.context(s.worker, lease.id(), lease.token()); }
     ObjectNode payload(ObjectNode context, String type) {

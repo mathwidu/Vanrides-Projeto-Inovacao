@@ -16,6 +16,29 @@ class WaOperatorRequestTest {
     private static WaOperatorRequest parse(ObjectNode value) {
         return WaOperatorRequest.parse(WaJson.write(value).getBytes(StandardCharsets.UTF_8));
     }
+    @Test void acceptsExplicitParticipantAdmissionAndNeverPrintsItsPhone() {
+        var cohort=request("create-authorized-cohort").put("reasonCode","AUTHORIZED_HOMOLOGATION_GROUP");
+        assertThat(parse(cohort).operation()).isEqualTo(WaOperatorRequest.Operation.CREATE_AUTHORIZED_COHORT);
+        var admission=request("admit-participant").put("identityId",UUID.randomUUID().toString()).put("allowedInstanceId","hml-individual")
+            .put("phoneNumber","+15550001111").put("phoneVerification","PARTICIPANT_CONFIRMED");
+        assertThat(parse(admission).toString()).isEqualTo("WaOperatorRequest[redacted]").doesNotContain("15550001111");
+    }
+    @Test void participantAdmissionRejectsUnverifiedOrNoncanonicalPhonesAndProviderInjection() {
+        var admission=request("admit-participant").put("identityId",UUID.randomUUID().toString()).put("allowedInstanceId","hml-individual")
+            .put("phoneNumber","+15550001111").put("phoneVerification","PARTICIPANT_CONFIRMED");
+        for(String phone:new String[]{"15550001111","+05550001111","+1 5550001111","+15550001111@s.whatsapp.net","+123","+1234567890123456"})
+            assertThatThrownBy(()->parse(admission.deepCopy().put("phoneNumber",phone))).isInstanceOf(WaOperatorFailure.class);
+        for(var invalid:new ObjectNode[]{admission.deepCopy().put("phoneVerification","ASSUMED"),admission.deepCopy().put("phoneVerification",true),
+                admission.deepCopy().put("provider","EVOLUTION"),admission.deepCopy().put("synthetic",false)})
+            assertThatThrownBy(()->parse(invalid)).isInstanceOf(WaOperatorFailure.class);
+    }
+    @Test void idempotentBootstrapAcceptsOnlyAnOpaqueReferenceNotACallerChosenSecret() {
+        var bootstrap=request("driver-bootstrap").put("identityId",UUID.randomUUID().toString()).put("inviteId",UUID.randomUUID().toString())
+            .put("expiresAt","2030-01-01T00:00:00Z");
+        assertThat(parse(bootstrap).operation()).isEqualTo(WaOperatorRequest.Operation.DRIVER_BOOTSTRAP);
+        assertThatThrownBy(()->parse(bootstrap.deepCopy().put("inviteId","invalid"))).isInstanceOf(WaOperatorFailure.class);
+        assertThatThrownBy(()->parse(bootstrap.deepCopy().put("driverInviteCode",WaCrypto.randomToken()))).isInstanceOf(WaOperatorFailure.class);
+    }
 
     @Test void acceptsExplicitSyntheticCohortAndRedactsItsRepresentation() {
         ObjectNode data = request("create-test-cohort").put("synthetic", true);
