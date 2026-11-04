@@ -1,6 +1,6 @@
 # Revisão da CI e dos testes
 
-**04/11/2026 — candidato compartilhado aprovado no GitHub; pilotos locais de preparação do PostgreSQL e do operador em validação.**
+**04/11/2026 — candidato compartilhado aprovado no GitHub; pilotos de preparação do PostgreSQL e do operador implementados e validados localmente.**
 
 O objetivo é reduzir o tempo de retorno e o trabalho de manutenção sem perder
 as verificações que protegem o MVP. Esta revisão interrompe a continuação do
@@ -217,8 +217,34 @@ Redução local de **81,3% nessa preparação/limpeza**, com variação entre am
 O JAR comum teve SHA-256
 `f10e8a5b76c4ceb17641464407ac67ca6130f152051ccf71a375ee60207e2ebc`.
 Isso não significa reduzir a CI inteira em 81,3%: as esperas de quota e os
-outros testes permanecem. A regressão completa desta revisão está pendente. Fontes, testes e comandos ficam no repositório; XML e logs locais
-ficam no checkpoint privado `ci-pilots-20261104`.
+outros testes permanecem.
+
+Validação final do commit local `aa4cd5e`:
+
+| Verificação | Resultado |
+|---|---|
+| Gate rápido (`bash scripts/check_backend.sh --light`) | Ratchet e 207 testes aprovados. |
+| Matriz canônica completa (`./scripts/qa_integration_profile.sh --all-tests`, executado em `src/backend`, com checkout limpo) | **1.787 testes Java**, incluindo **592 PostgreSQL em 77 classes**, sem falhas, erros ou skips. Perfil completo em 11 min 28 s; Maven em 11 min 25 s. |
+| WhatsApp offline (`python3 scripts/check_whatsapp.py`) | **709 Node e 303 Python** aprovados. Executados antes do commit; os arquivos pertinentes permaneceram idênticos. |
+| Integração acadêmica com JAR empacotado e revisão congelada | **42 checks**, cinco execuções/seis conjuntos, em **15 min 22,130 s**. Recibo V2 confirma o SHA/árvore, todas as verificações e remoção dos recursos. |
+| Casos negativos do lote e do reset | Autorização, transação, saída parcial, cancelamento, sementes e sequência preservados. A revisão independente terminou sem achados pendentes. |
+| Organização | Links e referências do backlog, controle do programa e `git diff --check` aprovados. |
+
+A integração usou o JAR SHA-256
+`9fe068bb94f1245a8c2a8ae94f47b861a49b3e006a1a706ab9ea3ead8c78c07a`,
+reempacotado após a compilação limpa. As 20 pausas por quota somaram 9 min 49 s;
+nenhum modelo pago, WhatsApp real ou dispositivo físico foi usado. A porta da
+API ficou fechada e não restou contêiner dos dois ensaios após a conclusão.
+
+A jornada local anterior, em `657f343`, levou 18 min 7 s com os mesmos 42 checks.
+A diferença observada foi de 2 min 45 s; não é uma repetição controlada nem
+uma medição do GitHub. A nova duração da CI remota ainda precisa ser comprovada.
+O piloto de banco permanece restrito a quatro classes: o ganho observado não
+foi extrapolado automaticamente para o restante da matriz.
+
+A documentação posterior registra a evidência de `aa4cd5e`; não apresenta uma
+nova execução após mudanças somente documentais. Fontes, testes e comandos
+ficam no repositório; XML e logs locais ficam no checkpoint privado `ci-pilots-20261104`.
 
 Retorno: reverter os commits desses pilotos restaura a preparação integral de
 fixtures e as chamadas individuais do ensaio. Não há migração de dados,

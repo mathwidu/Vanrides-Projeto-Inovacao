@@ -156,4 +156,10 @@ dois novos casos do reset aprovados. Operador: dez operações por rodada,
 média 50,172 s individual e 9,361 s em lote, 40 recibos/auditorias conferidos.
 Gate rápido, 709 testes Node e 303 Python aprovados; revisão independente sem
 achados pendentes. Matriz ampliada para 592 casos PostgreSQL, sem exclusões.
-Regressão canônica completa e jornada integrada desta revisão ainda pendentes.
+Fechamento em `aa4cd5e`: 1.787 testes Java, 592 PostgreSQL/77 classes, sem falhas,
+erros ou skips; perfil completo em 11 min 28 s. Jornada integrada: 42 checks,
+cinco execuções/seis conjuntos, em 15 min 22,130 s; recibo V2 e limpeza aprovados.
+Os 207 testes rápidos e a consistência documental também passaram. Registro de
+método, tempos, limites e hashes em `docs/desenvolvimento/revisao-ci-e-testes.md`.
+Pilotos prontos localmente; nova CI GitHub ainda não executada. Não houve push,
+merge, alteração da VPS ou teste físico. Aceite do MVP continua separado.
