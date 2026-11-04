@@ -59,7 +59,7 @@ jobs:
             --evidence-root "$VANRIDES_QA_EVIDENCE_ROOT" \
             --repository-root "$GITHUB_WORKSPACE" \
             --output "$RUNNER_TEMP/vanrides-gate.json"
-      - name: Empacotar uma vez e testar seis jornadas no mesmo JAR
+      - name: Empacotar uma vez e validar seis conjuntos em cinco execuções
         run: bash scripts/check_backend.sh --integration-only
       - name: Conferir fonte e binário e montar o artefato permitido
         run: |

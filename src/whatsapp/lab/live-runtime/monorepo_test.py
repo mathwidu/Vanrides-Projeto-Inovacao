@@ -23,7 +23,7 @@ E = collect.exporter
 SHA, TREE = 'a' * 40, 'b' * 40
 
 
-def fixture():
+def fixture(version=1):
     source = {'repository': M.REPOSITORY, 'sha': SHA, 'tree': TREE, 'files': {
         E.MATRIX_PATH: {'gitBlob': 'c' * 40, 'sha256': 'd' * 64, 'bytes': 1}}}
     ci = {'repository': M.REPOSITORY, 'sha': SHA, 'runId': 101, 'runAttempt': 2,
@@ -42,13 +42,20 @@ def fixture():
     gate = {'schemaVersion': 1, 'profile': 'MONOREPO_CANONICAL_GATE_V1', 'status': 'PASS', 'source': source,
             'ci': ci, 'manifestSha256': 'f' * 64, 'manifest': manifest, 'requiredClasses': {row['className']: 2}}
     jar = b'UNIT TEST ONLY - NOT A JVM ARTIFACT'
+    required = {**M.REQUIRED_CHECKS, **({'110': M.TRACKING_CHECKS} if version == 2 else {})}
     checks = [{'scenario': scenario, 'check': check, 'status': 'PASS'} for scenario in M.SCENARIOS
-              for check in sorted(M.REQUIRED_CHECKS.get(scenario, {'fixture_check'}))]
+              for check in sorted(required.get(scenario, {'fixture_check'}))]
     scenarios = [{'scenario': item, 'syntheticFixtures': True, 'realWhatsApp': False, 'physicalDevices': False} for item in M.SCENARIOS]
     scenarios[-2].update(events=9, attempts=7, providerSubmissions=3, connectionReads=21)
     scenarios[-2]['pacing'] = {'policy': 'API_ONLY'}
     scenarios[-1].update(pinQueries=3, t43=True)
-    smoke = {'schemaVersion': 1, 'profile': 'VANRIDES_ACADEMIC_INTEGRATION_V1', 'status': 'PASS',
+    if version == 2:
+        scenarios = [row for row in scenarios if row['scenario'] != '110']
+        for row in scenarios:
+            row['covers'] = list(M.EXECUTION_COVERAGE_V2[row['scenario']])
+        for row in checks:
+            row['execution'] = '130' if row['scenario'] == '110' else row['scenario']
+    smoke = {'schemaVersion': version, 'profile': f'VANRIDES_ACADEMIC_INTEGRATION_V{version}', 'status': 'PASS',
              'sourceSha': SHA, 'sourceTree': TREE, 'jar': {'sha256': M.digest(jar), 'bytes': len(jar)},
              'checks': checks, 'scenarios': scenarios, 'cleanup': {'status': 'OWNED_RESOURCES_REMOVED', 'errors': []},
              'boundaries': {'realWhatsApp': False, 'physicalDevices': False, 'provider': 'FAKE_LOOPBACK', 'model': 'DISABLED'},
@@ -103,22 +110,56 @@ class ValidationTests(unittest.TestCase):
         gate, smoke, _ = fixture()
         M.candidate(candidate(gate, smoke), gate, smoke)
 
+    def test_v2_covers_six_groups_in_five_real_executions(self):
+        gate, smoke, _ = fixture(version=2)
+        M.candidate(candidate(gate, smoke), gate, smoke)
+        self.assertEqual([row['scenario'] for row in smoke['scenarios']], ['070', '080', '100', '120', '130'])
+        self.assertEqual(next(row for row in smoke['scenarios'] if row['scenario'] == '130')['covers'], ['110', '130'])
+
+    def test_v2_cannot_replace_tracking_assertions_with_a_coverage_claim(self):
+        for omitted in M.TRACKING_CHECKS:
+            _, smoke, _ = fixture(version=2)
+            smoke['checks'] = [row for row in smoke['checks'] if row['check'] != omitted]
+            with self.subTest(omitted=omitted), self.assertRaisesRegex(plan.Blocked, 'MONOREPO_SMOKE_CHECK_INVALID'):
+                M.smoke(smoke)
+        changes = [lambda s: s['checks'][0].update(execution='130'),
+                   lambda s: next(row for row in s['checks'] if row['scenario'] == '110').update(execution='110'),
+                   lambda s: s['checks'][0].pop('execution'),
+                   lambda s: s['checks'].append(copy.deepcopy(s['checks'][0])),
+                   lambda s: s['scenarios'][-1].update(covers=['130']),
+                   lambda s: s['scenarios'].append({'scenario': '110', 'covers': ['110']}),
+                   lambda s: s.update(checks=[row for row in s['checks'] if row['scenario'] != '110']),
+                   lambda s: s.update(profile='VANRIDES_ACADEMIC_INTEGRATION_V1')]
+        for change in changes:
+            _, smoke, _ = fixture(version=2); change(smoke)
+            with self.subTest(change=change), self.assertRaises(plan.Blocked):
+                M.smoke(smoke)
+
+    def test_v1_still_requires_six_executions_and_its_exact_historical_shape(self):
+        changes = [lambda s: s['scenarios'].pop(3),
+                   lambda s: s['scenarios'][-1].update(covers=['110', '130']),
+                   lambda s: s['checks'][0].update(execution='070'),
+                   lambda s: s.update(profile='VANRIDES_ACADEMIC_INTEGRATION_V2')]
+        for change in changes:
+            _, smoke, _ = fixture(); change(smoke)
+            with self.subTest(change=change), self.assertRaises(plan.Blocked):
+                M.smoke(smoke)
+
     def test_receipt_writer_and_actual_scenario_projection_shapes_are_consumable(self):
-        # Field sets mirror the six current scenario return values and the
+        # Field sets mirror the five current execution return values and the
         # academic runner's pacing projection. Counts below are synthetic data,
         # never observations of a gate or journey being run by this test.
-        gate, smoke, _ = fixture()
+        gate, smoke, _ = fixture(version=2)
         common = dict(uniqueEvents=1, duplicateEvents=1, commandReceipts=1, submittedAttempts=1,
                       providerRequests=1, workerStarts=1)
-        smoke['scenarios'][0] = {'scenario': '070', 'uniqueEvents': 6, 'duplicateEvents': 7,
+        smoke['scenarios'][0] = {'scenario': '070', 'covers': ['070'], 'uniqueEvents': 6, 'duplicateEvents': 7,
             'commandReceipts': 6, 'outbox': 6, 'supportCases': 1, 'providerRequests': 6,
             'submittedAttempts': 6, 'workerStarts': 2, 'modelCalls': 0}
-        smoke['scenarios'][1] = {'scenario': '080', **common, 'outbox': 1, 'modelCalls': 0,
+        smoke['scenarios'][1] = {'scenario': '080', 'covers': ['080'], **common, 'outbox': 1, 'modelCalls': 0,
             'controlledBusinessRejections': 1, 'privateInviteHashVerified': True, 'rawInviteAbsentFromDurablePlaintext': True}
-        smoke['scenarios'][2] = {'scenario': '100', **common, 'crossActorDeliveries': 1, 'actors': 3,
+        smoke['scenarios'][2] = {'scenario': '100', 'covers': ['100'], **common, 'crossActorDeliveries': 1, 'actors': 3,
             'ticks': 1, 'reminderSubmissions': 1, 'seededReminderWindows': 1, 'modelMode': 'disabled', 'realWhatsApp': False}
-        for index in (3, 5):
-            smoke['scenarios'][index].update(common, crossActorDeliveries=1, actors=3, sessionGenerations=1)
+        smoke['scenarios'][-1].update(common, crossActorDeliveries=1, actors=3, sessionGenerations=1)
         for row in smoke['scenarios']:
             row['pacing'] = {'policy': 'API_ONLY'} if row['scenario'] == '120' else {'windowWaits': 0, 'waitedMs': 0}
         with tempfile.TemporaryDirectory() as folder:

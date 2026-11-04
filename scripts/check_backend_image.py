@@ -13,8 +13,9 @@ def tested_jar(backend, receipt_path, source_sha, source_tree):
     if receipt_path.is_symlink() or not receipt_path.is_file():
         raise ValueError('Recibo das jornadas ausente ou inválido')
     receipt = json.loads(receipt_path.read_text())
-    if (receipt.get('schemaVersion') != 1
-            or receipt.get('profile') != 'VANRIDES_ACADEMIC_INTEGRATION_V1'
+    if ((receipt.get('schemaVersion'), receipt.get('profile')) not in (
+                (1, 'VANRIDES_ACADEMIC_INTEGRATION_V1'),
+                (2, 'VANRIDES_ACADEMIC_INTEGRATION_V2'))
             or receipt.get('status') != 'PASS'
             or receipt.get('sourceSha') != source_sha
             or receipt.get('sourceTree') != source_tree

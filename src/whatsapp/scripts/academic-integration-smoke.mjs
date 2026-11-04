@@ -8,12 +8,8 @@ import crypto from 'node:crypto';
 import { execFileSync, spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { createTools } from './070-worker-preflight.mjs';
-import { provision, connectionEvent, runScenarios } from './070-worker-scenarios.mjs';
-import { runDriverScenarios } from './080-driver-scenarios.mjs';
-import { runAttendanceScenarios } from './100-attendance-scenarios.mjs';
-import { runTrackingScenarios } from './110-run-scenarios.mjs';
-import { runDeliveryScenarios } from './120-delivery-scenarios.mjs';
-import { runApproachScenarios } from './130-approach-scenarios.mjs';
+import { provision, connectionEvent } from './070-worker-scenarios.mjs';
+import { academicScenarios, academicCheck, assertTrackingChecks } from './academic-scenario-plan.mjs';
 import { startProvider, createWorkerProcess } from './070-worker-runtime.mjs';
 import { createInterruption } from './070-worker-lifecycle.mjs';
 import { expectedApiExit } from './academic-process-exit.mjs';
@@ -157,9 +153,8 @@ async function run() {
       operator: { environment: 'wa070-local', operatorCredential: operatorToken } };
     const frozen = { env: minimal, docker: 'docker', dockerArgs, assertContainer, assertSource, assertListener,
       assertArtifacts: assertSource };
-    for (const [scenario, execute] of [['070', runScenarios], ['080', runDriverScenarios],
-      ['100', runAttendanceScenarios], ['110', runTrackingScenarios], ['120', runDeliveryScenarios],
-      ['130', runApproachScenarios]]) {
+    for (const execution of academicScenarios) {
+      const { scenario, covers, execute } = execution;
       interruption.assertActive(); assertSource();
       const scenarioWork = path.join(work, scenario); fs.mkdirSync(scenarioWork, { mode: 0o700 });
       const batch = crypto.randomUUID(), actor = crypto.randomUUID(), aliasId = crypto.randomUUID();
@@ -213,9 +208,10 @@ async function run() {
         await worker.start();
         const result = await execute({ input, tools, work: scenarioWork, actor, instance, address, peers,
           credentials, worker, provider, apiKey, interruption,
-          passed: check => { checks.push({ scenario, check, status: 'PASS' });
-            console.log(JSON.stringify({ scenario, check, status: 'PASS' })); } });
-        totals.push({ scenario, ...result, pacing: scenario === '120' ? { policy: 'API_ONLY' } : paced.stats() });
+          passed: check => { const row = academicCheck(execution, check); checks.push(row);
+            console.log(JSON.stringify(row)); } });
+        assertTrackingChecks(execution, checks);
+        totals.push({ scenario, covers, ...result, pacing: scenario === '120' ? { policy: 'API_ONLY' } : paced.stats() });
       } catch (error) { scenarioFailure = error; }
       finally {
         for (const resource of [worker, provider]) if (resource) {
@@ -260,7 +256,7 @@ async function run() {
   if (failure) throw failure instanceof SmokeFailure ? failure : new SmokeFailure('SMOKE_SCENARIO_FAILED');
   demand(cleanupErrors.length === 0, 'SMOKE_CLEANUP_FAILED');
   assertSource();
-  writeReceipt({ schemaVersion: 1, profile: 'VANRIDES_ACADEMIC_INTEGRATION_V1', status: 'PASS',
+  writeReceipt({ schemaVersion: 2, profile: 'VANRIDES_ACADEMIC_INTEGRATION_V2', status: 'PASS',
     sourceSha, sourceTree, jar: { sha256: jarHash, bytes: jarBytes }, checks, scenarios: totals,
     cleanup: { status: 'OWNED_RESOURCES_REMOVED', errors: [] },
     boundaries: { realWhatsApp: false, physicalDevices: false, provider: 'FAKE_LOOPBACK', model: 'DISABLED' },

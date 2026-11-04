@@ -5926,7 +5926,15 @@
           ".github/workflows/backend.yml",
           "scripts/check_backend.sh",
           "scripts/check_whatsapp.py",
-          "scripts/check_backend_image.py"
+          "scripts/check_backend_image.py",
+          "scripts/verify_backend_candidate.py",
+          ".github/actions/receive-backend/",
+          ".github/workflows/laboratorio-whatsapp.yml",
+          "src/whatsapp/scripts/academic-integration-smoke.mjs",
+          "src/whatsapp/scripts/academic-integration-smoke.test.mjs",
+          "src/whatsapp/scripts/academic-scenario-plan.mjs",
+          "src/whatsapp/lab/live-runtime/monorepo_receipt.py",
+          "src/whatsapp/lab/live-runtime/monorepo_test.py"
         ],
         "backend": [
           "src/main/",

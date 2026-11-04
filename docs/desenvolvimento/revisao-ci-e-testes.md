@@ -88,6 +88,45 @@ foi rejeitado e a etapa Maven não apareceu no build. O teste não iniciou a API
 nem substituiu as seis jornadas. Contêiner de inspeção e tag temporária foram
 removidos. A revisão independente da extração e da CI terminou sem achados.
 
+## Compartilhamento do candidato e execução sem duplicação
+
+A etapa seguinte reúne o empacotamento em um job do workflow backend. Ele
+publica somente `backend.jar` como artefato de CI, por um dia, e fornece ID
+imutável e SHA-256 aos consumidores. Integração e homologação recebem esse ID
+na mesma execução; não procuram artefatos recentes de outras branches.
+A ação local `receive-backend` confere ID único, revisão e checksum e rejeita
+arquivos extras, ausência de JAR e links simbólicos.
+
+`homologacao-api.yml` passa a ser um workflow reutilizável chamado pelo backend.
+O disparo manual fica no caller, e os paths anteriores foram incorporados nele.
+Os testes Windows/Linux do auxiliar e o isolamento com duas credenciais são
+preservados. O resumo final exige também candidato e homologação aprovados.
+Antes do merge, conferir a proteção de branch: nomes dos checks de homologação
+mudam quando o workflow é chamado. Não houve alteração remota dessas regras.
+
+São duas compilações (suíte PostgreSQL e candidato) e **um empacotamento**.
+Integração, homologação e imagem usam esse mesmo JAR. Compilar uma vez sem
+testes não o torna uma release: todos os gates continuam obrigatórios.
+
+Para reduzir esperas, removemos uma repetição comprovada: a execução 130 já
+chama integralmente a jornada 110 antes de acrescentar as verificações de
+localização. Agora ela roda uma vez. O recibo V2 registra cinco execuções e
+seis conjuntos lógicos; os seis checks 110 apontam para a execução 130. O
+validador exige cada um deles e os cinco checks de localização. Uma indicação
+`covers` sozinha não comprova aprovação. O formato V1 histórico continua aceito
+com suas exigências originais de seis execuções independentes.
+
+Nenhuma quota foi aumentada ou desabilitada. Mantivemos o relógio real, a espera
+que comprova atualização do GPS e as viradas de minuto do calendário. Evitamos
+paralelizar jornadas no mesmo processo: há porta TLS compartilhada e operações
+sincrônicas que poderiam interferir nos prazos de ACK/GPS. Não introduzimos
+outro endpoint de teste ou controle de relógio na API de produção.
+
+Testes locais de contrato e casos negativos passaram; actionlint aprovou a
+composição. A validação integrada da sequência consolidada será registrada
+abaixo após sua execução. O transporte via GitHub e o efeito do cache ainda
+dependem da execução remota autorizada. Não houve push, merge ou acesso à VPS.
+
 ## O que foi medido
 
 Fontes inspecionadas em `34250b8`. Tempos obtidos de execuções existentes do
@@ -237,6 +276,8 @@ porque aparecem em níveis diferentes; cada nível deve ter uma finalidade clara
 ## Fontes oficiais consultadas
 
 - [GitHub: compartilhar artefatos entre jobs](https://docs.github.com/en/actions/tutorials/store-and-share-data).
+- [GitHub: workflows reutilizáveis](https://docs.github.com/en/actions/how-tos/reuse-automations/reuse-workflows).
+- [download-artifact v8: identificação e integridade](https://github.com/actions/download-artifact).
 - [GitHub: cache de dependências](https://docs.github.com/en/actions/reference/workflows-and-actions/dependency-caching).
 - [setup-java: cache de dependências](https://github.com/actions/setup-java#caching-packages-dependencies).
 - [Docker: estágios e seleção de target no BuildKit](https://docs.docker.com/build/building/multi-stage/).

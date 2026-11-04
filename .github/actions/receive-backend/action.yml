@@ -1,0 +1,43 @@
+name: Receber JAR candidato
+description: Baixa um artefato desta execução e confere revisão e conteúdo antes de usá-lo.
+inputs:
+  artifact-id:
+    description: ID imutável devolvido pelo upload do candidato
+    required: true
+  jar-sha256:
+    description: Checksum calculado pelo job de compilação
+    required: true
+  source-sha:
+    description: Revisão usada na compilação
+    required: true
+runs:
+  using: composite
+  steps:
+    - name: Conferir identidade antes do download
+      shell: bash
+      env:
+        ARTIFACT_ID: ${{ inputs.artifact-id }}
+        EXPECTED_SHA: ${{ inputs.source-sha }}
+        EXPECTED_DIGEST: ${{ inputs.jar-sha256 }}
+      run: |
+        [[ "$ARTIFACT_ID" =~ ^[1-9][0-9]*$ ]] || exit 1
+        [[ "$EXPECTED_SHA" =~ ^[a-f0-9]{40}$ && "$EXPECTED_DIGEST" =~ ^[a-f0-9]{64}$ ]] || exit 1
+        [[ "$GITHUB_SHA" == "$EXPECTED_SHA" && "$(git rev-parse HEAD)" == "$EXPECTED_SHA" ]] || exit 1
+        [[ -z "$(git status --porcelain --untracked-files=all)" ]] || exit 1
+    - name: Baixar somente o ID produzido nesta execução
+      uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+      with:
+        artifact-ids: ${{ inputs.artifact-id }}
+        path: ${{ runner.temp }}/backend-candidate
+        digest-mismatch: error
+    - name: Conferir conteúdo e instalar no target local
+      shell: bash
+      env:
+        EXPECTED_DIGEST: ${{ inputs.jar-sha256 }}
+      run: |
+        python3 -B scripts/verify_backend_candidate.py --directory "$RUNNER_TEMP/backend-candidate" --sha256 "$EXPECTED_DIGEST"
+        mkdir -p src/backend/target
+        shopt -s nullglob
+        jars=(src/backend/target/*.jar)
+        [[ "${#jars[@]}" -eq 0 ]] || exit 1
+        cp "$RUNNER_TEMP/backend-candidate/backend.jar" src/backend/target/backend.jar

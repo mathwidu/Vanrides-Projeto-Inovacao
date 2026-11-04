@@ -609,7 +609,7 @@ class BackendCiQualityGateWiringTest(unittest.TestCase):
     def test_workflow_requires_quick_checks_before_the_full_postgres_matrix(self) -> None:
         workflow = WORKFLOW.read_text(encoding="utf-8")
         quick = workflow.split("\n  quick:\n", 1)[1].split("\n  test:\n", 1)[0]
-        canonical = workflow.split("\n  test:\n", 1)[1].split("\n  integration:\n", 1)[0]
+        canonical = workflow.split("\n  test:\n", 1)[1].split("\n  candidate:\n", 1)[0]
         self.assertIn("run: bash scripts/check_backend.sh --light", quick)
         self.assertNotIn("setup-java", quick)
         self.assertIn("runs-on: ubuntu-latest", canonical)
@@ -627,28 +627,94 @@ class BackendCiQualityGateWiringTest(unittest.TestCase):
         workflow = WORKFLOW.read_text(encoding="utf-8")
         self.assertIn("permissions:\n  contents: read", workflow)
         for forbidden in ("packages: write", "contents: write", "build_and_push:", "deploy_swarm:",
-                          "docker push", "docker/login-action", "upload-artifact", "ssh "):
+                          "docker push", "docker/login-action", "ssh "):
             self.assertNotIn(forbidden, workflow)
-        self.assertEqual(3, workflow.count("persist-credentials: false"))
-        self.assertEqual(3, workflow.count("ref: ${{ github.sha }}"))
+        self.assertEqual(4, workflow.count("persist-credentials: false"))
+        self.assertEqual(4, workflow.count("ref: ${{ github.sha }}"))
         self.assertIn("  push:\n    branches: [main]", workflow)
         self.assertEqual(2, workflow.count("cache: maven"))
         self.assertEqual(2, workflow.count("cache-dependency-path: src/backend/pom.xml"))
 
-    def test_parallel_integration_is_required_and_builds_the_same_clean_revision(self) -> None:
+    def test_parallel_consumers_require_one_candidate_and_no_second_package(self) -> None:
         workflow = WORKFLOW.read_text(encoding="utf-8")
-        canonical, integration = workflow.split("\n  test:\n", 1)[1].split("\n  integration:\n", 1)
-        integration = integration.split("\n  result:\n", 1)[0]
-        for job in (canonical, integration):
+        candidate = workflow.split("\n  candidate:\n", 1)[1].split("\n  integration:\n", 1)[0]
+        integration = workflow.split("\n  integration:\n", 1)[1].split("\n  homologation:\n", 1)[0]
+        homologation = workflow.split("\n  homologation:\n", 1)[1].split("\n  result:\n", 1)[0]
+        called = (ROOT.parents[1] / ".github/workflows/homologacao-api.yml").read_text()
+        self.assertIn("needs: quick", candidate)
+        for job in (integration, homologation):
             self.assertNotRegex(job, r"(?m)^    (?:if|continue-on-error):")
-            self.assertIn("needs: quick", job)
-            self.assertIn("runs-on: ubuntu-latest", job)
+            self.assertIn("needs: candidate", job)
+            self.assertIn("artifact-id: ${{ needs.candidate.outputs.artifact-id }}", job)
+            self.assertIn("jar-sha256: ${{ needs.candidate.outputs.jar-sha256 }}", job)
+        self.assertEqual(1, workflow.count("run: ./mvnw -B -ntp -DskipTests package"))
+        self.assertNotIn("mvnw", called)
+        self.assertIn("workflow_call:", called)
+        for event in ("pull_request:", "push:", "workflow_dispatch:"):
+            self.assertNotIn(event, called)
+        self.assertIn("uses: ./.github/workflows/homologacao-api.yml", homologation)
+        self.assertIn("uses: ./.github/actions/receive-backend", called)
+        self.assertIn("uses: ./.github/actions/receive-backend", integration)
         self.assertIn("VANRIDES_EXPECTED_SOURCE_SHA: ${{ github.sha }}", integration)
-        self.assertEqual(1, integration.count("run: bash scripts/check_backend.sh --integration-only"))
-        self.assertNotIn("ci_quality_gate.sh", integration)
-        self.assertIn("VANRIDES_ACADEMIC_RECEIPT_PATH: ${{ runner.temp }}/vanrides-integration.json", integration)
-        self.assertLess(integration.index("run: bash scripts/check_backend.sh --integration-only"),
-                        integration.index('python3 scripts/check_backend_image.py --receipt "$VANRIDES_ACADEMIC_RECEIPT_PATH"'))
+        self.assertLess(integration.index("run: node src/whatsapp/scripts/academic-integration-smoke.mjs"),
+                        integration.index('python3 scripts/check_backend_image.py --receipt'))
+        self.assertIn("path: ${{ runner.temp }}/backend-candidate/backend.jar", candidate)
+        self.assertIn("retention-days: 1", candidate)
+        self.assertNotIn("overwrite:", candidate)
+
+    def test_artifact_identity_is_checked_before_download(self) -> None:
+        action = (ROOT.parents[1] / ".github/actions/receive-backend/action.yml").read_text()
+        before_download = action.split("    - name: Baixar somente", 1)[0]
+        command = textwrap.dedent(before_download.split("      run: |\n", 1)[1])
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            git = root / "git"
+            git.write_text('#!/bin/sh\ncase "$*" in "rev-parse HEAD") printf "%s" "$OBSERVED_SHA";; "status --porcelain --untracked-files=all") printf "%s" "$DIRTY";; *) exit 90;; esac\n')
+            git.chmod(0o755)
+            base = {"ARTIFACT_ID": "123", "EXPECTED_SHA": "a" * 40,
+                    "GITHUB_SHA": "a" * 40, "OBSERVED_SHA": "a" * 40,
+                    "EXPECTED_DIGEST": "b" * 64, "DIRTY": ""}
+            cases = [(None, None)] + [(name, value) for name, value in (
+                ("ARTIFACT_ID", ""), ("ARTIFACT_ID", "123,456"),
+                ("EXPECTED_DIGEST", ""), ("GITHUB_SHA", "c" * 40),
+                ("OBSERVED_SHA", "c" * 40), ("DIRTY", " M source.java"))]
+            for name, value in cases:
+                with self.subTest(name=name):
+                    env = {**os.environ, **base, "PATH": str(root) + os.pathsep + os.environ["PATH"]}
+                    if name: env[name] = value
+                    result = subprocess.run(["bash", "-e", "-c", command], env=env, capture_output=True)
+                    self.assertEqual(0 if name is None else 1, result.returncode, result.stderr)
+
+    def test_downloaded_candidate_rejects_corruption_extra_files_and_symlinks(self) -> None:
+        spec = importlib.util.spec_from_file_location(
+            "candidate", ROOT.parents[1] / "scripts/verify_backend_candidate.py")
+        candidate = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(candidate)
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            jar = directory / "backend.jar"
+            payload = b"synthetic artifact transport"
+            jar.write_bytes(payload)
+            digest = hashlib.sha256(payload).hexdigest()
+            self.assertEqual(jar, candidate.verify(directory, digest))
+            for expected in ("", "a" * 63, "0" * 64):
+                with self.assertRaises(ValueError):
+                    candidate.verify(directory, expected)
+            jar.write_bytes(b"x" * len(payload))
+            with self.assertRaises(ValueError):
+                candidate.verify(directory, digest)
+            jar.write_bytes(payload)
+            extra = directory / ".unexpected"
+            extra.write_text("fixture")
+            with self.assertRaises(ValueError):
+                candidate.verify(directory, digest)
+            extra.unlink()
+            jar.unlink()
+            with self.assertRaises(ValueError):
+                candidate.verify(directory, digest)
+            jar.symlink_to(directory / "missing")
+            with self.assertRaises(ValueError):
+                candidate.verify(directory, digest)
 
     def test_image_requires_the_unchanged_jar_and_receipt_of_this_revision(self) -> None:
         spec = importlib.util.spec_from_file_location(
@@ -671,6 +737,8 @@ class BackendCiQualityGateWiringTest(unittest.TestCase):
                 receipt.write_text(json.dumps(value))
                 return image.tested_jar(backend, receipt, "a" * 40, "b" * 40)
             self.assertEqual(digest, verify(valid))
+            self.assertEqual(digest, verify({**valid, "schemaVersion": 2,
+                                           "profile": "VANRIDES_ACADEMIC_INTEGRATION_V2"}))
             for field, value in (("status", "FAIL"), ("sourceSha", "c" * 40),
                                  ("sourceTree", "c" * 40), ("schemaVersion", 2),
                                  ("cleanup", {"status": "OWNED_RESOURCES_REMOVED", "errors": ["failure"]}),
@@ -801,26 +869,26 @@ class BackendCiQualityGateWiringTest(unittest.TestCase):
     def test_ci_summary_does_not_turn_failed_or_skipped_dependencies_green(self) -> None:
         workflow = WORKFLOW.read_text(encoding="utf-8")
         result_job = workflow.split("\n  result:\n", 1)[1]
-        self.assertIn("needs: [quick, test, integration]", result_job)
+        self.assertIn("needs: [quick, test, candidate, integration, homologation]", result_job)
         self.assertIn("if: ${{ always() }}", result_job)
         command = textwrap.dedent(result_job.split("run: |\n", 1)[1])
         with tempfile.TemporaryDirectory() as temporary:
             summary = Path(temporary) / "summary.md"
-            for quick, tests, integration in (("success", "success", "success"),
-                                              ("failure", "skipped", "skipped"),
-                                              ("success", "failure", "success"),
-                                              ("success", "success", "cancelled")):
-                with self.subTest(quick=quick, tests=tests, integration=integration):
+            names = ("QUICK", "TESTS", "CANDIDATE", "INTEGRATION", "HOMOLOGATION")
+            cases = [dict.fromkeys(names, "success")]
+            cases += [{**cases[0], name: state} for name in names
+                      for state in ("failure", "skipped", "cancelled")]
+            for states in cases:
+                with self.subTest(states=states):
                     summary.unlink(missing_ok=True)
                     env = {**os.environ, "GITHUB_STEP_SUMMARY": str(summary),
-                           "SOURCE_SHA": "a" * 40, "QUICK": quick,
-                           "TESTS": tests, "INTEGRATION": integration}
+                           "SOURCE_SHA": "a" * 40, **states}
                     result = subprocess.run(["bash", "-e", "-c", command], env=env,
                                             capture_output=True, text=True)
-                    self.assertEqual(0 if quick == tests == integration == "success" else 1,
+                    self.assertEqual(0 if set(states.values()) == {"success"} else 1,
                                      result.returncode, result.stderr)
                     self.assertIn("a" * 40, summary.read_text())
-                    self.assertIn(f"| PostgreSQL | {tests} |", summary.read_text())
+                    self.assertIn(f"| PostgreSQL | {states['TESTS']} |", summary.read_text())
 
     def test_card_gate_composes_canonical_gate_before_http_smoke(self) -> None:
         script = CARD_GATE_SCRIPT.read_text(encoding="utf-8")

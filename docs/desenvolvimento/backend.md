@@ -33,41 +33,45 @@ paga nem credencial externa. Os recursos temporários pertencem à execução.
 CI: [backend.yml](../../.github/workflows/backend.yml), Ubuntu padrão e
 permissão `contents: read`:
 
-- **Verificações rápidas do backend**: ratchet e testes dos auxiliares. Uma
-  falha impede a execução dos dois jobs pesados seguintes.
-- **Suíte canônica PostgreSQL**: após a etapa rápida, executa toda a matriz
-  com `qa_integration_profile.sh --all-tests`, sem reduzir testes nem aceitar
-  skips. As duas etapas compõem o mesmo gate canônico do comando local.
-- **Integração HTTP e imagem**: empacota o mesmo checkout com testes pulados
-  somente nesse empacotamento, executa as seis jornadas reais sintéticas e
-  constrói a imagem local com esse JAR, sem recompilar no Docker. O recibo das
-  jornadas deve confirmar revisão, árvore, limpeza, checksum e tamanho do
-  arquivo. O target `tested-jar` do Dockerfile confere novamente o checksum
-  ao copiar o JAR. A aprovação da suíte canônica continua obrigatória.
-- **Resultado do backend**: apresenta a revisão e os resultados de cada etapa;
-  só aprova se rápida, PostgreSQL e integração tiverem sucesso. Falha,
-  cancelamento ou etapa não executada não viram aprovação.
+- **Verificações rápidas**: ratchet e testes dos auxiliares, antes dos jobs pesados.
+- **Suíte canônica PostgreSQL**: toda a matriz `--all-tests`, sem reduzir casos
+  ou aceitar skips. Roda em paralelo ao empacotamento do candidato.
+- **Empacotar candidato uma vez**: gera um JAR e seu checksum, guarda somente
+  esse arquivo como artefato imutável por um dia. Ainda não é aprovação do produto.
+- **Integração HTTP e imagem**: recebe o candidato por ID, verifica revisão e
+  checksum, executa cinco jornadas com os seis conjuntos de validação, e monta
+  a imagem com o mesmo JAR. O target `tested-jar` confere o checksum novamente.
+- **Homologação do candidato compartilhado**: chama
+  [homologacao-api.yml](../../.github/workflows/homologacao-api.yml), que testa
+  o auxiliar em Windows/Linux e exercita a API com duas credenciais sintéticas.
+  Usa o mesmo JAR, sem empacotar outro.
+- **Resultado do backend**: exige sucesso de rápida, PostgreSQL, candidato,
+  integração e homologação. Etapas puladas ou canceladas não viram aprovação.
 
-PostgreSQL e integração continuam em paralelo depois da etapa rápida.
-Os três checkouts usam explicitamente o mesmo `github.sha` (merge de teste em
-PR), com proveniência e árvore limpa; o smoke rejeita um SHA diferente do esperado.
-O workflow só fica aprovado quando todas as etapas obrigatórias passam. O cache
-Maven usa o recurso nativo de `setup-java`, com chave ligada ao `pom.xml`; guarda
-dependências, não resultados, JARs de `target` ou aprovação de testes. O perfil
-PostgreSQL mantém seu `user.home` isolado e usa o repositório Maven habitual,
-compatível com esse cache. Não há publicação de imagens, implantação ou upload de logs brutos. Um `mvnw test`
-isolado que tenha testes pulados não substitui o gate.
+Todos os checkouts usam `github.sha` (merge de teste no PR). A ação local
+`receive-backend` exige ID único desta execução, SHA compatível com o checkout,
+checksum calculado pelo produtor e somente `backend.jar` no artefato. Não há
+busca pela última compilação de outra branch. O cache Maven guarda dependências,
+não resultados de testes ou aprovação. O `user.home` isolado e os locks da
+matriz PostgreSQL continuam preservados.
 
-As invocações Maven dos gates usam `-ntp` para omitir progresso de transferência
-de dependências, mantendo resultados, erros e saída dos testes. O workflow de
-homologação também espera os testes do auxiliar em Windows/Linux e confere
-regras estáticas e receitas antes de empacotar a API. Não omitir a etapa rápida
-ao reproduzir manualmente a validação completa.
+A homologação deixou de disparar outro workflow independente para cada mudança.
+Seu disparo manual agora é pelo workflow **Backend e integração sintética**,
+que produz o candidato e executa todos os consumidores. Os paths anteriores
+foram incorporados ao caller. Antes da integração no GitHub, conferir os checks
+exigidos pela proteção da branch, pois os nomes da homologação passam a ser aninhados.
 
-O build Docker padrão por fontes continua disponível; `tested-jar` é a rota
-da CI. A homologação técnica ainda empacota seu JAR em outro workflow: o
-compartilhamento entre workflows é uma etapa posterior. Esta mudança elimina
-somente a recompilação dentro da imagem e não altera a imagem hospedada.
+O backend continua com duas compilações (suíte e candidato), mas um único JAR
+empacotado. PostgreSQL e as integrações permanecem obrigatórios. Não há publicação
+de imagem, implantação, uso de WhatsApp real ou upload de logs brutos.
+Maven usa `-ntp` sem ocultar saída de falhas. O build Docker padrão por fontes
+continua disponível para os consumidores existentes.
+
+A jornada 130 já executa integralmente a 110. O smoke agora a executa uma vez,
+com cinco execuções e seis conjuntos de verificações. O recibo V2 identifica
+os checks 110 como executados dentro de 130; os recibos históricos V1 continuam
+validados no formato original. Quotas, espera de frescor do GPS e viradas de
+minuto de presença não foram encurtadas artificialmente.
 
 `bash scripts/check_backend.sh --integration-only` é essa checagem parcial de
 package e jornada; não equivale ao gate completo. O comando local sem flags

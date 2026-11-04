@@ -10,6 +10,8 @@ PROFILE = 'MONOREPO_WA120_V1'
 REPOSITORY = 'mathwidu/Vanrides-Projeto-Inovacao'
 WORKFLOW = '.github/workflows/laboratorio-whatsapp.yml'
 SCENARIOS = ('070', '080', '100', '110', '120', '130')
+EXECUTION_COVERAGE_V2 = {'070': ('070',), '080': ('080',), '100': ('100',),
+                         '120': ('120',), '130': ('110', '130')}
 MAX_JSON_BYTES = 1000000
 POLICY = {'maximumWindowSeconds': 1800, 'minimumHostAvailableMiB': 2048,
           'publicPorts': [], 'testCohortOnly': False, 'modelMode': 'disabled',
@@ -30,6 +32,14 @@ REQUIRED_CHECKS = {
             'owner_driver_can_query_its_own_active_vehicle_without_selecting_another_run',
             'passenger_removed_from_run_snapshot_cannot_query_the_vehicle',
             'stopped_device_session_returns_unavailability_instead_of_its_last_pin'},
+}
+TRACKING_CHECKS = {
+    'driver_routines_and_two_passengers_from_chat_device_bound_by_pkce_and_dpop',
+    'driver_correction_preserves_personal_attendance_and_delivered_link_does_not_start_a_run',
+    'reviewed_snapshot_activated_once_by_bound_device_without_early_gps_confirmation',
+    'first_valid_acquisition_confirms_driver_once_and_ack_replay_preserves_partial_results',
+    'api_watchdog_degrades_in_silence_without_n8n_and_replay_does_not_restore_freshness',
+    'new_acquisition_recovers_same_run_and_stop_requires_distinct_device_ack',
 }
 COUNT_FIELDS = {'uniqueEvents', 'duplicateEvents', 'commandReceipts', 'outbox', 'supportCases',
                 'providerRequests', 'submittedAttempts', 'workerStarts', 'modelCalls', 'controlledBusinessRejections',
@@ -151,8 +161,12 @@ def gate(value):
 def smoke(value):
     require(exact(value, ('schemaVersion', 'profile', 'status', 'sourceSha', 'sourceTree', 'jar', 'checks',
                           'scenarios', 'cleanup', 'boundaries', 'runtime'))
-            and type(value['schemaVersion']) is int and value['schemaVersion'] == 1 and value['profile'] == 'VANRIDES_ACADEMIC_INTEGRATION_V1'
+            and type(value['schemaVersion']) is int
+            and (value['schemaVersion'], value['profile']) in (
+                (1, 'VANRIDES_ACADEMIC_INTEGRATION_V1'), (2, 'VANRIDES_ACADEMIC_INTEGRATION_V2'))
             and value['status'] == 'PASS' and sha(value['sourceSha'], 40) and sha(value['sourceTree'], 40), 'MONOREPO_SMOKE_INVALID')
+    consolidated = value['schemaVersion'] == 2
+    executions = tuple(EXECUTION_COVERAGE_V2) if consolidated else SCENARIOS
     binary(value['jar'])
     require(value['cleanup'] == {'status': 'OWNED_RESOURCES_REMOVED', 'errors': []}
             and value['boundaries'] == {'realWhatsApp': False, 'physicalDevices': False,
@@ -165,26 +179,34 @@ def smoke(value):
         'database': 'OWNED_POSTGRES_CONTAINER'}, 'MONOREPO_SMOKE_RUNTIME_INVALID')
     checks, scenarios = value['checks'], value['scenarios']
     require(isinstance(checks, list) and 6 <= len(checks) <= 300 and isinstance(scenarios, list)
-            and len(scenarios) == len(SCENARIOS), 'MONOREPO_SMOKE_SCENARIOS_INVALID')
+            and len(scenarios) == len(executions), 'MONOREPO_SMOKE_SCENARIOS_INVALID')
     pairs, checked = set(), set()
     for row in checks:
-        require(exact(row, ('scenario', 'check', 'status')) and row['scenario'] in SCENARIOS
+        keys = ('scenario', 'execution', 'check', 'status') if consolidated else ('scenario', 'check', 'status')
+        require(exact(row, keys) and row['scenario'] in SCENARIOS
                 and isinstance(row['check'], str) and re.fullmatch('[a-z0-9_]{1,160}', row['check'])
                 and row['status'] == 'PASS', 'MONOREPO_SMOKE_CHECK_INVALID')
+        if consolidated:
+            require(row['execution'] in executions
+                    and row['scenario'] in EXECUTION_COVERAGE_V2[row['execution']], 'MONOREPO_SMOKE_CHECK_INVALID')
         pair = row['scenario'], row['check']
         require(pair not in pairs, 'MONOREPO_SMOKE_CHECK_INVALID')
         pairs.add(pair); checked.add(row['scenario'])
-    require(checked == set(SCENARIOS) and all(isinstance(row, dict) and row.get('scenario') in SCENARIOS for row in scenarios)
-            and {row['scenario'] for row in scenarios} == set(SCENARIOS), 'MONOREPO_SMOKE_SCENARIOS_INVALID')
+    require(checked == set(SCENARIOS) and all(isinstance(row, dict) and row.get('scenario') in executions for row in scenarios)
+            and {row['scenario'] for row in scenarios} == set(executions), 'MONOREPO_SMOKE_SCENARIOS_INVALID')
+    required_checks = {**REQUIRED_CHECKS, **({'110': TRACKING_CHECKS} if consolidated else {})}
     require(all(all((scenario, check) in pairs for check in required)
-                for scenario, required in REQUIRED_CHECKS.items()), 'MONOREPO_SMOKE_CHECK_INVALID')
+                for scenario, required in required_checks.items()), 'MONOREPO_SMOKE_CHECK_INVALID')
     for row in scenarios:
-        require(set(row) <= COUNT_FIELDS | TRUE_FIELDS | {'scenario', 'realWhatsApp', 'physicalDevices', 'modelMode', 'pacing'}
+        allowed = {'scenario', 'realWhatsApp', 'physicalDevices', 'modelMode', 'pacing'} | ({'covers'} if consolidated else set())
+        require(set(row) <= COUNT_FIELDS | TRUE_FIELDS | allowed
                 and all(type(row[key]) is int and 0 <= row[key] <= 1000000000 for key in set(row) & COUNT_FIELDS)
                 and all(row[key] is True for key in set(row) & TRUE_FIELDS)
                 and row.get('realWhatsApp', False) is False and row.get('physicalDevices', False) is False
                 and row.get('modelMode', 'disabled') == 'disabled' and row.get('modelCalls', 0) == 0,
                 'MONOREPO_SMOKE_SCENARIOS_INVALID')
+        if consolidated:
+            require(row.get('covers') == list(EXECUTION_COVERAGE_V2[row['scenario']]), 'MONOREPO_SMOKE_SCENARIOS_INVALID')
         if row['scenario'] in ('110', '120', '130'):
             require(row.get('syntheticFixtures') is True and row.get('realWhatsApp') is False
                     and row.get('physicalDevices') is False, 'MONOREPO_SMOKE_SCENARIOS_INVALID')

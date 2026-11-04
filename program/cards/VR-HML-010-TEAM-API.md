@@ -61,6 +61,23 @@ revisão e binário divergentes, mais montagem Docker local sem iniciar a API.
 Reversão: reverter os commits locais desta etapa; não há alteração de schema,
 contrato público ou VPS. A publicação GitHub e a CI remota permanecem pendentes.
 
+### Compartilhamento do candidato e redução de repetição
+
+Continuação autorizada: um JAR candidato na execução principal, compartilhado
+por ID imutável e checksum com integração e homologação reutilizável. A suíte
+PostgreSQL roda independentemente e continua obrigatória. O resumo exige todos
+os consumidores aprovados. Não procurar builds de outra execução/branch.
+
+O teste 130 já inclui a jornada 110 completa: remover a segunda execução dessa
+mesma jornada, preservando suas seis asserções e as cinco de localização.
+Recibo V2 distingue cinco execuções e seis conjuntos de checks; V1 histórico
+permanece estrito. Sem mudança de quota, relógio de produção ou dados de envio.
+Impacto: workflows, auxiliares e recibos de laboratório. Runtime/contratos da
+API permanecem. Validação: casos negativos de artefato/recibo, actionlint,
+testes dos auxiliares e um ensaio JAR/PostgreSQL completo da nova sequência.
+Rollback: reverter esta etapa restaura workflows e execução duplicada, sem
+migração ou alteração da VPS. Não remover validações para obter aprovação.
+
 ## Impact Analysis da preparação inicial
 
 A base local f85ec3e contém o mesmo runtime de dd12cf0, aprovado nas seis jornadas. A primeira fatia muda o perfil público do backend, o comando de teste para o colega e a receita de implantação. O domínio vanrides-inovacao-api.matheusduarte.dev.br resolve para a VPS. O serviço publicado ainda precisa de configuração, certificado válido e teste funcional. PostgreSQL e credenciais serão específicos da nova stack.
