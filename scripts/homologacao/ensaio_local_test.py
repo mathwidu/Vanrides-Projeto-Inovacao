@@ -1,10 +1,33 @@
 import os
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 import tempfile
 import unittest
 from unittest.mock import patch
 
-from ensaio_local import CheckFailed, database, source_check
+from ensaio_local import CheckFailed, database, source_check, utc
+
+
+class UtcTest(unittest.TestCase):
+    def assert_future_utc(self, seconds, expected):
+        now = datetime(2030, 1, 1, 23, 50, 0, 123456, tzinfo=timezone.utc)
+        with patch("ensaio_local.datetime") as clock:
+            clock.now.return_value = now
+            value = utc(seconds)
+            clock.now.assert_called_once_with(timezone.utc)
+        # WaOperatorRequest requires canonical Z for both request fields.
+        self.assertTrue(value.endswith("Z"), "O prazo da CLI deve terminar em Z")
+        self.assertEqual(value, expected)
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        self.assertEqual(parsed.utcoffset(), timedelta(0))
+        self.assertGreater(parsed, now)
+        self.assertEqual(parsed - now, timedelta(seconds=seconds))
+
+    def test_credential_expires_at_is_utc_z_with_its_future_offset(self):
+        self.assert_future_utc(1800, "2030-01-02T00:20:00.123456Z")
+
+    def test_fixture_lease_expires_at_is_utc_z_with_its_future_offset(self):
+        self.assert_future_utc(45, "2030-01-01T23:50:45.123456Z")
 
 
 class OwnershipTest(unittest.TestCase):

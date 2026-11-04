@@ -43,7 +43,7 @@ def source_check(jar, expected_sha, expected_digest):
 
 
 def utc(seconds=0):
-    return (datetime.now(timezone.utc) + timedelta(seconds=seconds)).isoformat()
+    return (datetime.now(timezone.utc) + timedelta(seconds=seconds)).isoformat().replace("+00:00", "Z")
 
 
 @contextmanager
