@@ -175,7 +175,9 @@ final class WaPassengerSetup {
                     Timestamp.from(clock.now()));
         }
         try {
-            draft = wizard.advance(actor, event, draft);
+            var step = wizard.advance(actor, event, draft);
+            draft = step.draft();
+            String lead = step.understood() ? "" : WaPassengerTexts.NOT_UNDERSTOOD;
             String response = WaPassengerTexts.prompt(draft);
             if (draft.path("stage").asText().equals("REVIEW")) {
                 String target = data.snapshot(actor.identityId(), draft, event);
@@ -184,13 +186,14 @@ final class WaPassengerSetup {
                 response = WaPassengerTexts.review(draft, marker);
                 if (response.codePointCount(0, response.length()) > 1900) {
                     draft.remove("confirmation");
+                    lead = "";
                     response =
                             "O resumo excedeu o tamanho seguro desta conversa. Nenhuma confirmação"
                                     + " foi oferecida. Peça suporte para revisar o cadastro.";
                 }
             }
             store.save(actor, event, draft);
-            return new Result(WaDecision.ok(Map.of("changed", true)), response, null);
+            return new Result(WaDecision.ok(Map.of("changed", true)), lead + response, null);
         } catch (WaProblem failure) {
             return recover(actor, event, draft, failure);
         }
@@ -276,7 +279,7 @@ final class WaPassengerSetup {
             draft = WaPassengerDraftStore.json();
         } else {
             if (actor.role().equals("DRIVER")) {
-                draft = wizard.advance(actor, event, WaPassengerDraftStore.json());
+                draft = wizard.advance(actor, event, WaPassengerDraftStore.json()).draft();
             } else {
                 if (draft.has("linkId")) {
                     draft.put("stage", "POINT");
