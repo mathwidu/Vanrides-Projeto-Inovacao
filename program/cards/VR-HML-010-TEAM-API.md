@@ -28,6 +28,23 @@ nenhuma nova funcionalidade ou promoção do piloto foi autorizada por isso.
 A conferência da CI também inclui alinhar o texto esperado no ensaio
 `070-worker-scenarios.mjs` ao comportamento publicado, mantendo os checks.
 
+### Simplificação da CI autorizada em 04/11
+
+Prioridade atual: antecipar verificações rápidas e reduzir ruído de logs,
+conforme a [revisão da CI](../../docs/desenvolvimento/revisao-ci-e-testes.md).
+Impacto restrito aos workflows e auxiliares de validação: o gate local completo
+mantém todos os checks; na CI, a fase rápida é pré-requisito da matriz PostgreSQL
+e das seis jornadas. Contratos, runtime, limites de memória, contagens, skips,
+locks e proveniência permanecem inalterados. O limite de 350 linhas continua
+vigente, inclusive sua reprovação já conhecida de `WaPassengerSetup.java`.
+
+Validação desta etapa: execução dos scripts com processos simulados para provar
+ordem e propagação de falhas; lint dos workflows; fixtures de sucesso/falha para
+os reporters; gate rápido real. Não repetir a suíte Java ou acessar a VPS para
+uma mudança apenas de orquestração e apresentação. Reverter os commits desta
+etapa restaura a ordem e o formato anteriores. Sem push, merge ou deploy nesta
+autorização; sem novo card vertical concorrente.
+
 ## Impact Analysis da preparação inicial
 
 A base local f85ec3e contém o mesmo runtime de dd12cf0, aprovado nas seis jornadas. A primeira fatia muda o perfil público do backend, o comando de teste para o colega e a receita de implantação. O domínio vanrides-inovacao-api.matheusduarte.dev.br resolve para a VPS. O serviço publicado ainda precisa de configuração, certificado válido e teste funcional. PostgreSQL e credenciais serão específicos da nova stack.

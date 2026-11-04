@@ -12,8 +12,21 @@ concurrency:
   group: backend-${{ github.ref }}
   cancel-in-progress: true
 jobs:
+  quick:
+    name: Verificações rápidas do backend
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          fetch-depth: 1
+      - name: Regras estáticas e testes dos auxiliares, sem Maven ou Docker
+        run: bash scripts/check_backend.sh --light
   test:
     name: Suíte canônica PostgreSQL
+    needs: quick
     runs-on: ubuntu-latest
     timeout-minutes: 40
     env:
@@ -32,11 +45,12 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-      - name: Gate canônico com toda a matriz PostgreSQL obrigatória
+      - name: Parte PostgreSQL do gate, após as verificações rápidas obrigatórias
         working-directory: src/backend
-        run: ./scripts/ci_quality_gate.sh
+        run: ./scripts/qa_integration_profile.sh --all-tests
   integration:
     name: Integração HTTP e imagem
+    needs: quick
     runs-on: ubuntu-latest
     # Seis jornadas levaram 24 min no Mac. O job inclui também setup, empacotamento e imagem.
     timeout-minutes: 35
@@ -68,3 +82,26 @@ jobs:
           SOURCE_SHA: ${{ github.sha }}
         run: |
           printf 'Integração HTTP e imagem avaliadas em %s. PostgreSQL isolado e provedor sintético em loopback; sem WhatsApp, IA ao vivo ou dispositivos. Suíte canônica em job independente igualmente obrigatório. Nenhuma implantação.\n' "$SOURCE_SHA" >> "$GITHUB_STEP_SUMMARY"
+  result:
+    name: Resultado do backend
+    needs: [quick, test, integration]
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Resumo das etapas e resultado conjunto
+        env:
+          SOURCE_SHA: ${{ github.sha }}
+          QUICK: ${{ needs.quick.result }}
+          TESTS: ${{ needs.test.result }}
+          INTEGRATION: ${{ needs.integration.result }}
+        run: |
+          {
+            printf '### Backend\n\nRevisão: %s\n\n' "$SOURCE_SHA"
+            printf '| Etapa | Resultado |\n|---|---|\n'
+            printf '| Verificações rápidas | %s |\n' "$QUICK"
+            printf '| PostgreSQL | %s |\n' "$TESTS"
+            printf '| Jornadas HTTP e imagem | %s |\n' "$INTEGRATION"
+            printf '\nDetalhes no job que falhou. Sem serviços reais ou implantação.\n'
+          } >> "$GITHUB_STEP_SUMMARY"
+          [[ "$QUICK" == success && "$TESTS" == success && "$INTEGRATION" == success ]]

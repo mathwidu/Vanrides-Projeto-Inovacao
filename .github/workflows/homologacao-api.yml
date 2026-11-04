@@ -31,6 +31,7 @@ jobs:
         run: python -B -m unittest discover -s scripts/homologacao -p '*_test.py'
   api:
     name: Cadastro e isolamento no perfil homolog
+    needs: colega
     runs-on: ubuntu-latest
     timeout-minutes: 18
     steps:
@@ -38,15 +39,17 @@ jobs:
         with:
           ref: ${{ github.sha }}
           persist-credentials: false
+      - name: Regras estáticas antes de preparar Java e banco
+        run: bash src/backend/scripts/quality_gate.sh
+      - name: Testar receitas da stack e da restauração
+        run: python3 -B -m unittest discover -s deploy/homologacao -p '*_test.py'
       - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
         with:
           distribution: temurin
           java-version: '17'
-      - name: Testar receitas da stack e da restauração
-        run: python3 -B -m unittest discover -s deploy/homologacao -p '*_test.py'
       - name: Empacotar o checkout da CI
         working-directory: src/backend
-        run: ./mvnw -B -DskipTests package
+        run: ./mvnw -B -ntp -DskipTests package
       - name: Exercitar o JAR com duas credenciais sintéticas em loopback
         run: |
           shopt -s nullglob

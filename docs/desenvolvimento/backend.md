@@ -21,27 +21,42 @@ bash scripts/check_backend.sh --light
 bash scripts/check_backend.sh
 ```
 
-`--light` executa contratos dos gates, isolamento/proveniência/locks e ratchet,
-sem Maven, containers ou rede. O comando completo exige Docker local: roda
+`--light` executa primeiro o ratchet e depois os testes dos gates,
+isolamento/proveniência/locks, sem Maven, containers ou rede. Usa a mesma
+definição de checks de `src/backend/scripts/ci_quality_gate.sh --quick`.
+É uma validação parcial, não aprovação do backend. O comando completo exige Docker local: roda
 uma vez o gate canônico com toda a matriz PostgreSQL, empacota o mesmo código
 e executa a jornada HTTP sintética com Spring/PostgreSQL/worker Node reais e
 um provedor Evolution simulado em loopback. Não requer número, WhatsApp, IA
 paga nem credencial externa. Os recursos temporários pertencem à execução.
 
-CI: [backend.yml](../../.github/workflows/backend.yml), com dois jobs paralelos
-obrigatórios, Ubuntu padrão e permissão `contents: read`:
+CI: [backend.yml](../../.github/workflows/backend.yml), Ubuntu padrão e
+permissão `contents: read`:
 
-- **Suíte canônica PostgreSQL**: executa o gate completo, toda a matriz e os
-  contratos, sem reduzir testes nem aceitar skips.
+- **Verificações rápidas do backend**: ratchet e testes dos auxiliares. Uma
+  falha impede a execução dos dois jobs pesados seguintes.
+- **Suíte canônica PostgreSQL**: após a etapa rápida, executa toda a matriz
+  com `qa_integration_profile.sh --all-tests`, sem reduzir testes nem aceitar
+  skips. As duas etapas compõem o mesmo gate canônico do comando local.
 - **Integração HTTP e imagem**: empacota o mesmo checkout com testes pulados
   somente nesse empacotamento, executa as seis jornadas reais sintéticas e
   constrói a imagem local. A aprovação da suíte canônica continua obrigatória.
+- **Resultado do backend**: apresenta a revisão e os resultados de cada etapa;
+  só aprova se rápida, PostgreSQL e integração tiverem sucesso. Falha,
+  cancelamento ou etapa não executada não viram aprovação.
 
-Os dois checkouts usam explicitamente o mesmo `github.sha` (merge de teste em
+PostgreSQL e integração continuam em paralelo depois da etapa rápida.
+Os três checkouts usam explicitamente o mesmo `github.sha` (merge de teste em
 PR), com proveniência e árvore limpa; o smoke rejeita um SHA diferente do esperado.
-O workflow só fica aprovado quando ambos os jobs passam. Não há cache Maven,
+O workflow só fica aprovado quando todas as etapas obrigatórias passam. Não há cache Maven,
 publicação de imagens, implantação ou upload de logs brutos. Um `mvnw test`
 isolado que tenha testes pulados não substitui o gate.
+
+As invocações Maven dos gates usam `-ntp` para omitir progresso de transferência
+de dependências, mantendo resultados, erros e saída dos testes. O workflow de
+homologação também espera os testes do auxiliar em Windows/Linux e confere
+regras estáticas e receitas antes de empacotar a API. Não omitir a etapa rápida
+ao reproduzir manualmente a validação completa.
 
 `bash scripts/check_backend.sh --integration-only` é essa checagem parcial de
 package e jornada; não equivale ao gate completo. O comando local sem flags

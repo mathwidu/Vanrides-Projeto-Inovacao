@@ -431,6 +431,7 @@ done
 log "Docker OK; running $PROFILE_SCOPE integration profile with Docker API $TESTCONTAINERS_API_VERSION (server range $DOCKER_MIN_API_VERSION..$DOCKER_MAX_API_VERSION)"
 FAILURE_STAGE="maven"
 maven_args=(
+  -ntp
   -Dapi.version="$TESTCONTAINERS_API_VERSION"
   -Duser.home="$MAVEN_ISOLATED_HOME"
   -Dmaven.repo.local="$MAVEN_REPOSITORY"

@@ -1,11 +1,53 @@
 # Revisão da CI e dos testes
 
-**04/11/2026 — diagnóstico concluído; mudanças na esteira ainda não implementadas.**
+**04/11/2026 — primeira etapa implementada e verificada localmente; publicação pendente.**
 
 O objetivo é reduzir o tempo de retorno e o trabalho de manutenção sem perder
 as verificações que protegem o MVP. Esta revisão interrompe a continuação do
 PR #107 para organizar a validação antes de publicar mais ajustes. Não muda
 o ambiente hospedado, os critérios de aceite físico nem as contribuições dos colegas.
+
+## Primeira etapa implementada
+
+Na branch local `codex/ci-verificacoes-rapidas`, derivada de `039aeae`:
+
+- O ratchet executa antes dos testes dos auxiliares, Maven e PostgreSQL.
+  O modo `--quick` do gate concentra a lista rápida usada também por `--light`.
+- A CI exige essa etapa antes de iniciar PostgreSQL e jornadas HTTP, que
+  continuam em paralelo. Um job final resume os três resultados e reprova
+  se qualquer etapa falhar, for cancelada ou não for executada.
+- A homologação espera os testes do auxiliar Windows/Linux e confere regras
+  estáticas e receitas antes de preparar Java e empacotar a API.
+- Maven usa `-ntp`, sem modo silencioso e sem esconder saída de falhas. O
+  runner WhatsApp usa o reporter nativo `spec` do Node e unittest sem `-v`.
+  Não foram retiradas suítes de produto, mudadas contagens obrigatórias,
+  quotas ou limites de memória. O teste textual da composição do gate foi
+  substituído por execução com processos simulados, verificando a ordem e os erros.
+
+| Verificação local | Resultado |
+|---|---|
+| Testes do gate e do perfil PostgreSQL com processos simulados | 44 aprovados, em 30,575 s; incluem parada antecipada, propagação de erro e resumo sem aprovação de etapas puladas. |
+| `bash scripts/check_backend.sh --light` no checkout real | Reprovou em 0,468 s pelo limite já existente: `WaPassengerSetup.java`, 362 linhas, máximo 350. Não iniciou Maven ou banco. Esse tempo local não é medição de runner GitHub. |
+| Fixtures do runner WhatsApp, antes/depois | Mesmos 14 casos Node e 16 Python; sucesso e falhas preservados. Saída aprovada caiu de 133 para 59 linhas e de 2.558 para 1.445 bytes. Medição da fixture, não da suíte completa. |
+| Seleção do runner WhatsApp | Mesmos 49 arquivos Node, 9 comandos e concorrência 2. |
+| Sintaxe Bash e actionlint dos dois workflows alterados | Aprovados. |
+| Auxiliar de homologação e receitas de implantação, somente testes locais | 11 e 20 testes aprovados, respectivamente; sem executar implantação. |
+
+Revisão independente dos scripts e workflows concluída sem achados pendentes.
+Antes de publicar/integrar, conferir quais checks a proteção da branch exige:
+o novo `Resultado do backend` não foi configurado remotamente como obrigatório
+nesta etapa. Não presumir que um job pulado bloqueie sozinho o merge.
+
+A execução real da CI desta branch ainda não ocorreu. O gate completo não
+está aprovado: permanece a reprovação estática conhecida. A matriz Java e
+as seis jornadas não foram repetidas nesta etapa, que altera apenas a
+orquestração e a apresentação. Nenhuma alteração na VPS, push ou merge.
+
+Retorno: reverter a alteração desta etapa restaura os workflows, os gates e
+os reporters anteriores; não há migração de banco nem troca do runtime.
+Compartilhamento de JAR, cache, esperas, seleção de suítes e redirecionamento
+de logs de aplicação continuam nas próximas etapas. A saída detalhada de
+Spring/PostgreSQL permanece disponível para diagnóstico.
 
 ## O que foi medido
 
@@ -71,7 +113,7 @@ flowchart TD
     K --> L[Implantação e verificação do ambiente]
 ```
 
-Esse desenho é o destino, não a configuração já instalada. No início, a
+Esse desenho é o destino completo, não a configuração já instalada. No início, a
 suíte completa permanece obrigatória. A seleção parcial só entra após
 comparação com a completa e revisão das dependências. Contratos compartilhados,
 banco, autenticação e seleção desconhecida exigem a cobertura completa pertinente.
@@ -94,7 +136,7 @@ verificação e retorno. Não é necessário automatizar deploy para corrigir a 
 
 ## Ordem de implementação e aceite
 
-1. **Retorno rápido e diagnóstico.** Antecipar checagens estáticas e reduzir
+1. **Retorno rápido e diagnóstico — primeira fatia local acima.** Antecipar checagens estáticas e reduzir
    saída de dependências e casos aprovados. Acrescentar resumo com revisão,
    duração, suítes, falhas e links para relatórios. Aceite: uma falha estática
    termina antes do Maven; uma falha real de teste continua bloqueando e
@@ -158,6 +200,8 @@ porque aparecem em níveis diferentes; cada nível deve ter uma finalidade clara
 - [GitHub: compartilhar artefatos entre jobs](https://docs.github.com/en/actions/tutorials/store-and-share-data).
 - [GitHub: cache de dependências](https://docs.github.com/en/actions/reference/workflows-and-actions/dependency-caching).
 - [Maven Surefire: configuração de logs](https://maven.apache.org/surefire/maven-surefire-plugin/examples/logging.html).
+- [Maven 3.9.9: opção `-ntp`](https://maven.apache.org/ref/3.9.9/maven-embedder/cli.html).
+- [Node 22.23.2: reporters nativos de testes](https://nodejs.org/download/release/v22.23.2/docs/api/test.html#test-reporters).
 - [Testcontainers: controle de ciclo de vida](https://java.testcontainers.org/test_framework_integration/manual_lifecycle_control/).
 
 As opções exatas devem respeitar as versões usadas no projeto. O experimento

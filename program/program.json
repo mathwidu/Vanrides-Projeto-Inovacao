@@ -5922,7 +5922,10 @@
           "docs/02-arquitetura-e-decisoes.md",
           "docs/03-testes-e-resultados.md",
           "docs/04-plano-de-entrega.md",
-          "src/whatsapp/scripts/070-worker-scenarios.mjs"
+          "src/whatsapp/scripts/070-worker-scenarios.mjs",
+          ".github/workflows/backend.yml",
+          "scripts/check_backend.sh",
+          "scripts/check_whatsapp.py"
         ],
         "backend": [
           "src/main/",

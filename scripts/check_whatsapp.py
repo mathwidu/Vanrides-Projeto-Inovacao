@@ -17,9 +17,9 @@ def main():
                    for p in (MODULE / folder).glob('*.test.mjs'))
     if not tests:
         raise SystemExit('Nenhum teste Node encontrado')
-    run('node', '--test', '--test-concurrency=2', *(str(p.relative_to(ROOT)) for p in tests))
+    run('node', '--test', '--test-reporter=spec', '--test-concurrency=2', *(str(p.relative_to(ROOT)) for p in tests))
     run(sys.executable, 'src/whatsapp/scripts/070-n8n-smoke-test.py')
-    run(sys.executable, '-m', 'unittest', 'discover', '-s', 'tests', '-v', cwd=MODULE / 'gps-spike')
+    run(sys.executable, '-m', 'unittest', 'discover', '-s', 'tests', cwd=MODULE / 'gps-spike')
     run(sys.executable, '-m', 'unittest', 'discover', '-s', '.', '-p', '*_test.py', cwd=MODULE / 'gps-spike/ios-ui-lab')
     for folder in ('lab/live-runtime', 'scripts/vps110', 'scripts/vps110/server'):
         run(sys.executable, '-m', 'unittest', 'discover', '-s', '.', '-p', '*_test.py', cwd=MODULE / folder)
