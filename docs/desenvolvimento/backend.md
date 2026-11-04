@@ -40,7 +40,10 @@ permissão `contents: read`:
   skips. As duas etapas compõem o mesmo gate canônico do comando local.
 - **Integração HTTP e imagem**: empacota o mesmo checkout com testes pulados
   somente nesse empacotamento, executa as seis jornadas reais sintéticas e
-  constrói a imagem local. A aprovação da suíte canônica continua obrigatória.
+  constrói a imagem local com esse JAR, sem recompilar no Docker. O recibo das
+  jornadas deve confirmar revisão, árvore, limpeza, checksum e tamanho do
+  arquivo. O target `tested-jar` do Dockerfile confere novamente o checksum
+  ao copiar o JAR. A aprovação da suíte canônica continua obrigatória.
 - **Resultado do backend**: apresenta a revisão e os resultados de cada etapa;
   só aprova se rápida, PostgreSQL e integração tiverem sucesso. Falha,
   cancelamento ou etapa não executada não viram aprovação.
@@ -48,8 +51,11 @@ permissão `contents: read`:
 PostgreSQL e integração continuam em paralelo depois da etapa rápida.
 Os três checkouts usam explicitamente o mesmo `github.sha` (merge de teste em
 PR), com proveniência e árvore limpa; o smoke rejeita um SHA diferente do esperado.
-O workflow só fica aprovado quando todas as etapas obrigatórias passam. Não há cache Maven,
-publicação de imagens, implantação ou upload de logs brutos. Um `mvnw test`
+O workflow só fica aprovado quando todas as etapas obrigatórias passam. O cache
+Maven usa o recurso nativo de `setup-java`, com chave ligada ao `pom.xml`; guarda
+dependências, não resultados, JARs de `target` ou aprovação de testes. O perfil
+PostgreSQL mantém seu `user.home` isolado e usa o repositório Maven habitual,
+compatível com esse cache. Não há publicação de imagens, implantação ou upload de logs brutos. Um `mvnw test`
 isolado que tenha testes pulados não substitui o gate.
 
 As invocações Maven dos gates usam `-ntp` para omitir progresso de transferência
@@ -57,6 +63,11 @@ de dependências, mantendo resultados, erros e saída dos testes. O workflow de
 homologação também espera os testes do auxiliar em Windows/Linux e confere
 regras estáticas e receitas antes de empacotar a API. Não omitir a etapa rápida
 ao reproduzir manualmente a validação completa.
+
+O build Docker padrão por fontes continua disponível; `tested-jar` é a rota
+da CI. A homologação técnica ainda empacota seu JAR em outro workflow: o
+compartilhamento entre workflows é uma etapa posterior. Esta mudança elimina
+somente a recompilação dentro da imagem e não altera a imagem hospedada.
 
 `bash scripts/check_backend.sh --integration-only` é essa checagem parcial de
 package e jornada; não equivale ao gate completo. O comando local sem flags

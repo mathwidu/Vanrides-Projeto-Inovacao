@@ -1,6 +1,6 @@
 # Revisão da CI e dos testes
 
-**04/11/2026 — primeira etapa implementada e verificada localmente; publicação pendente.**
+**04/11/2026 — verificações rápidas, refatoração do cadastro e primeira redução de builds implementadas localmente; publicação pendente.**
 
 O objetivo é reduzir o tempo de retorno e o trabalho de manutenção sem perder
 as verificações que protegem o MVP. Esta revisão interrompe a continuação do
@@ -38,16 +38,55 @@ Antes de publicar/integrar, conferir quais checks a proteção da branch exige:
 o novo `Resultado do backend` não foi configurado remotamente como obrigatório
 nesta etapa. Não presumir que um job pulado bloqueie sozinho o merge.
 
-A execução real da CI desta branch ainda não ocorreu. O gate completo não
-está aprovado: permanece a reprovação estática conhecida. A matriz Java e
-as seis jornadas não foram repetidas nesta etapa, que altera apenas a
+Na conclusão da primeira etapa, a CI remota ainda não havia ocorrido e
+permanecia a reprovação estática de 362 linhas, tratada abaixo. A matriz Java e
+as seis jornadas não foram repetidas naquela etapa, que alterou apenas a
 orquestração e a apresentação. Nenhuma alteração na VPS, push ou merge.
 
 Retorno: reverter a alteração desta etapa restaura os workflows, os gates e
 os reporters anteriores; não há migração de banco nem troca do runtime.
-Compartilhamento de JAR, cache, esperas, seleção de suítes e redirecionamento
-de logs de aplicação continuam nas próximas etapas. A saída detalhada de
+Esperas, seleção de suítes e redirecionamento de logs de aplicação continuam
+nas próximas etapas. A saída detalhada de
 Spring/PostgreSQL permanece disponível para diagnóstico.
+
+## Continuação: cadastro e imagem da CI
+
+A refatoração extraiu a montagem do resumo de confirmação para
+`WaPassengerReview`, com 75 linhas. `WaPassengerSetup` passou de 362 para 303
+linhas físicas. O limite de 350 não foi alterado. SQL, ordem das operações e
+alterações no rascunho foram mantidos; o tratamento `Step.draft()/understood()`
+do colega, a mensagem de resposta não entendida e a orientação de convite/AJUDA
+continuam presentes. Não foi necessário criar outra suíte para essa extração.
+
+Na CI, o job de integração passa a construir a imagem pelo target `tested-jar`
+do mesmo Dockerfile. Ele reutiliza o JAR das seis jornadas. O auxiliar
+`check_backend_image.py` recusa recibo de outra revisão/árvore, limpeza incompleta,
+binário alterado, mais de um JAR ou link simbólico. O Docker valida o checksum
+do arquivo copiado. A base, o entrypoint e o build padrão por fontes permanecem.
+
+Também foi configurado cache de dependências nos três passos `setup-java`
+dos workflows backend e homologação, ligado ao `src/backend/pom.xml`. Não se
+reutilizam resultados de testes nem `target`. O isolamento do Maven e os locks
+não mudaram. O efeito do cache e o tempo economizado no GitHub ainda precisam
+ser medidos em execução remota.
+
+Esta fatia reduz quatro compilações para três e três empacotamentos para dois
+nos workflows automáticos de uma alteração do backend. Ainda não é um único
+JAR entre integração e homologação: isso depende de reorganizar os workflows
+e o transporte do artefato. Não foi incluída essa mudança maior nesta fatia.
+
+Verificação local: os cinco testes de classe existentes selecionados para o
+cadastro totalizaram **39 casos aprovados**, sendo 29 com PostgreSQL real e
+10 unitários, sem falhas, erros ou skips. Compilação e empacotamento terminaram
+em 1 min 26 s, com Maven limitado a 512 MiB e dois processadores. O gate rápido
+completo também passou, incluindo a regra de tamanho. Isso não equivale à
+matriz Java completa, às seis jornadas ou à aprovação remota do PR.
+
+O teste local de montagem Docker passou em 31,187 s: o JAR extraído da imagem
+é idêntico ao empacotado, o entrypoint foi preservado, um checksum incorreto
+foi rejeitado e a etapa Maven não apareceu no build. O teste não iniciou a API
+nem substituiu as seis jornadas. Contêiner de inspeção e tag temporária foram
+removidos. A revisão independente da extração e da CI terminou sem achados.
 
 ## O que foi medido
 
@@ -61,7 +100,7 @@ de percentil nem uma promessa de desempenho.
 | [Execução aprovada do PR anterior](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/actions/runs/41743317610) | Suíte canônica: 24 min 52 s | Uma segunda amostra confirma a ordem de grandeza. |
 | Integração da primeira amostra | Empacotamento e quatro jornadas: 21 min 03 s; 20 esperas explícitas por quota somaram 10 min 06 s | Cerca de 48% desse passo foi espera deliberada. A versão atual tem seis jornadas; não extrapolar esse tempo para ela. |
 | Log da suíte canônica aprovada | 6.967 linhas; 1.051.209 bytes; 71 registros de criação de PostgreSQL | Há ruído de dependências e inicialização repetida. Não são 71 falhas. |
-| Workflows atuais para mudança no backend | Quatro compilações independentes e três empacotamentos | A integração testa um JAR; o Docker recompila outro. Falta reaproveitar o candidato testado. |
+| Workflows na auditoria inicial para mudança no backend | Quatro compilações independentes e três empacotamentos | A integração testava um JAR; o Docker recompilava outro. |
 | [Execução do PR #107](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/actions/runs/41870438506) | 1.769 testes Java passaram, sem falhas, erros ou skips; depois o gate reprovou `WaPassengerSetup.java`, com 362 linhas diante do limite de 350 | A CI não está aprovada. Uma verificação estática barata foi executada depois de quase 27 minutos. |
 
 O inventário de arquivos versionados encontrou 36.262 linhas não vazias em
@@ -199,6 +238,8 @@ porque aparecem em níveis diferentes; cada nível deve ter uma finalidade clara
 
 - [GitHub: compartilhar artefatos entre jobs](https://docs.github.com/en/actions/tutorials/store-and-share-data).
 - [GitHub: cache de dependências](https://docs.github.com/en/actions/reference/workflows-and-actions/dependency-caching).
+- [setup-java: cache de dependências](https://github.com/actions/setup-java#caching-packages-dependencies).
+- [Docker: estágios e seleção de target no BuildKit](https://docs.docker.com/build/building/multi-stage/).
 - [Maven Surefire: configuração de logs](https://maven.apache.org/surefire/maven-surefire-plugin/examples/logging.html).
 - [Maven 3.9.9: opção `-ntp`](https://maven.apache.org/ref/3.9.9/maven-embedder/cli.html).
 - [Node 22.23.2: reporters nativos de testes](https://nodejs.org/download/release/v22.23.2/docs/api/test.html#test-reporters).

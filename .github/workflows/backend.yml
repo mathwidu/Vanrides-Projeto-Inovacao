@@ -1,10 +1,10 @@
 name: Backend e integração sintética
 'on':
   pull_request:
-    paths: ['src/backend/**', 'src/whatsapp/**', 'scripts/check_backend.sh', '.github/workflows/backend.yml']
+    paths: ['src/backend/**', 'src/whatsapp/**', 'scripts/check_backend.sh', 'scripts/check_backend_image.py', '.github/workflows/backend.yml']
   push:
     branches: [main]
-    paths: ['src/backend/**', 'src/whatsapp/**', 'scripts/check_backend.sh', '.github/workflows/backend.yml']
+    paths: ['src/backend/**', 'src/whatsapp/**', 'scripts/check_backend.sh', 'scripts/check_backend_image.py', '.github/workflows/backend.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -45,6 +45,8 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
+          cache: maven
+          cache-dependency-path: src/backend/pom.xml
       - name: Parte PostgreSQL do gate, após as verificações rápidas obrigatórias
         working-directory: src/backend
         run: ./scripts/qa_integration_profile.sh --all-tests
@@ -69,14 +71,20 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
+          cache: maven
+          cache-dependency-path: src/backend/pom.xml
       - name: Node 22 do worker
         uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: '22.23.2'
       - name: Empacotar e executar seis jornadas HTTP no mesmo checkout
+        env:
+          VANRIDES_ACADEMIC_RECEIPT_PATH: ${{ runner.temp }}/vanrides-integration.json
         run: bash scripts/check_backend.sh --integration-only
-      - name: Construir imagem local sem publicação
-        run: docker build -t vanrides-backend:ci src/backend
+      - name: Construir imagem local com o JAR aprovado pelas jornadas
+        env:
+          VANRIDES_ACADEMIC_RECEIPT_PATH: ${{ runner.temp }}/vanrides-integration.json
+        run: python3 scripts/check_backend_image.py --receipt "$VANRIDES_ACADEMIC_RECEIPT_PATH"
       - name: Identificar a fonte e os limites
         env:
           SOURCE_SHA: ${{ github.sha }}

@@ -47,6 +47,8 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
+          cache: maven
+          cache-dependency-path: src/backend/pom.xml
       - name: Empacotar o checkout da CI
         working-directory: src/backend
         run: ./mvnw -B -ntp -DskipTests package

@@ -3,6 +3,9 @@ from __future__ import annotations
 
 import errno
 import fcntl
+import hashlib
+import importlib.util
+import json
 import os
 import re
 import shutil
@@ -629,8 +632,8 @@ class BackendCiQualityGateWiringTest(unittest.TestCase):
         self.assertEqual(3, workflow.count("persist-credentials: false"))
         self.assertEqual(3, workflow.count("ref: ${{ github.sha }}"))
         self.assertIn("  push:\n    branches: [main]", workflow)
-        self.assertNotIn("cache: maven", workflow)
-        self.assertNotIn("cache-dependency-path:", workflow)
+        self.assertEqual(2, workflow.count("cache: maven"))
+        self.assertEqual(2, workflow.count("cache-dependency-path: src/backend/pom.xml"))
 
     def test_parallel_integration_is_required_and_builds_the_same_clean_revision(self) -> None:
         workflow = WORKFLOW.read_text(encoding="utf-8")
@@ -643,8 +646,52 @@ class BackendCiQualityGateWiringTest(unittest.TestCase):
         self.assertIn("VANRIDES_EXPECTED_SOURCE_SHA: ${{ github.sha }}", integration)
         self.assertEqual(1, integration.count("run: bash scripts/check_backend.sh --integration-only"))
         self.assertNotIn("ci_quality_gate.sh", integration)
+        self.assertIn("VANRIDES_ACADEMIC_RECEIPT_PATH: ${{ runner.temp }}/vanrides-integration.json", integration)
         self.assertLess(integration.index("run: bash scripts/check_backend.sh --integration-only"),
-                        integration.index("docker build -t vanrides-backend:ci src/backend"))
+                        integration.index('python3 scripts/check_backend_image.py --receipt "$VANRIDES_ACADEMIC_RECEIPT_PATH"'))
+
+    def test_image_requires_the_unchanged_jar_and_receipt_of_this_revision(self) -> None:
+        spec = importlib.util.spec_from_file_location(
+            "backend_image", ROOT.parents[1] / "scripts/check_backend_image.py")
+        image = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(image)
+        with tempfile.TemporaryDirectory() as temporary:
+            backend = Path(temporary)
+            (backend / "target").mkdir()
+            jar = backend / "target/backend.jar"
+            original = b"synthetic packaging fixture"
+            jar.write_bytes(original)
+            digest = hashlib.sha256(original).hexdigest()
+            receipt = backend / "smoke.json"
+            valid = {"schemaVersion": 1, "profile": "VANRIDES_ACADEMIC_INTEGRATION_V1",
+                     "status": "PASS", "sourceSha": "a" * 40, "sourceTree": "b" * 40,
+                     "cleanup": {"status": "OWNED_RESOURCES_REMOVED", "errors": []},
+                     "jar": {"sha256": digest, "bytes": len(original)}}
+            def verify(value):
+                receipt.write_text(json.dumps(value))
+                return image.tested_jar(backend, receipt, "a" * 40, "b" * 40)
+            self.assertEqual(digest, verify(valid))
+            for field, value in (("status", "FAIL"), ("sourceSha", "c" * 40),
+                                 ("sourceTree", "c" * 40), ("schemaVersion", 2),
+                                 ("cleanup", {"status": "OWNED_RESOURCES_REMOVED", "errors": ["failure"]}),
+                                 ("jar", {"sha256": digest, "bytes": len(original) + 1})):
+                with self.subTest(field=field):
+                    with self.assertRaises(ValueError):
+                        verify({**valid, field: value})
+            receipt.write_text(json.dumps(valid))
+            jar.write_bytes(b"x" * len(original))
+            with self.assertRaisesRegex(ValueError, "JAR mudou"):
+                image.tested_jar(backend, receipt, "a" * 40, "b" * 40)
+            jar.write_bytes(original)
+            extra = jar.with_name("other.jar")
+            extra.write_bytes(original)
+            with self.assertRaisesRegex(ValueError, "exatamente um JAR"):
+                image.tested_jar(backend, receipt, "a" * 40, "b" * 40)
+            extra.unlink()
+            jar.unlink()
+            jar.symlink_to(receipt)
+            with self.assertRaisesRegex(ValueError, "JAR regular"):
+                image.tested_jar(backend, receipt, "a" * 40, "b" * 40)
 
     def test_local_team_gate_preserves_full_sequence_and_explicit_partial_mode(self) -> None:
         wrapper = ROOT.parents[1] / "scripts/check_backend.sh"

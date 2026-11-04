@@ -45,6 +45,22 @@ uma mudança apenas de orquestração e apresentação. Reverter os commits dest
 etapa restaura a ordem e o formato anteriores. Sem push, merge ou deploy nesta
 autorização; sem novo card vertical concorrente.
 
+### Continuação: refatoração do cadastro e reaproveitamento do JAR
+
+O proprietário autorizou resolver a reprovação de 362 linhas sem perder as
+melhorias do colega e continuar a simplificação. `WaPassengerReview` recebe
+a montagem do resumo anteriormente em `WaPassengerSetup`, com corpo e ordem
+preservados. O limite de 350 linhas permanece; Setup passa a 303 linhas.
+Impacto funcional esperado: nenhum. Testar Wizard/Help e integrações de
+cadastro, negócio e isolamento/versionamento; preservar as provas da API instalada.
+
+CI: cache nativo de dependências Maven e target Docker que copia o JAR já
+ensaiado, conferido pelo recibo das jornadas e pelo checksum durante o build.
+O build padrão por fontes permanece disponível. Testar rejeição de recibo,
+revisão e binário divergentes, mais montagem Docker local sem iniciar a API.
+Reversão: reverter os commits locais desta etapa; não há alteração de schema,
+contrato público ou VPS. A publicação GitHub e a CI remota permanecem pendentes.
+
 ## Impact Analysis da preparação inicial
 
 A base local f85ec3e contém o mesmo runtime de dd12cf0, aprovado nas seis jornadas. A primeira fatia muda o perfil público do backend, o comando de teste para o colega e a receita de implantação. O domínio vanrides-inovacao-api.matheusduarte.dev.br resolve para a VPS. O serviço publicado ainda precisa de configuração, certificado válido e teste funcional. PostgreSQL e credenciais serão específicos da nova stack.

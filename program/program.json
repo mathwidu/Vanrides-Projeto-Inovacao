@@ -5925,14 +5925,16 @@
           "src/whatsapp/scripts/070-worker-scenarios.mjs",
           ".github/workflows/backend.yml",
           "scripts/check_backend.sh",
-          "scripts/check_whatsapp.py"
+          "scripts/check_whatsapp.py",
+          "scripts/check_backend_image.py"
         ],
         "backend": [
           "src/main/",
           "src/test/",
           "scripts/",
           "contracts/whatsapp-mvp/",
-          "docs/"
+          "docs/",
+          "Dockerfile"
         ]
       },
       "blockers": [],
