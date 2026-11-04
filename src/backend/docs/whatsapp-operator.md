@@ -1,7 +1,8 @@
 # Operação local do WhatsApp MVP — card 040
 
-Esta CLI opera somente o contexto `wa` em ambiente local não produtivo e lote
-sintético explícito. Não publica administração HTTP, recebe eventos de canal,
+Esta CLI opera somente o contexto `wa` em ambiente não produtivo e lote
+explícito. O laboratório exige lote sintético; a admissão de participantes reais
+é restrita ao modo online de homologação descrito abaixo. Não publica administração HTTP, recebe eventos de canal,
 aciona n8n/Evolution nem comprova app/dispositivo. O backend web continua com o
 mesmo fluxo quando `vanrides.wa.operator.request-file` não está definido.
 
@@ -88,9 +89,11 @@ segredo. A identidade do operador não é um perfil humano.
 | `operation` | Campos adicionais obrigatórios | Efeito |
 |---|---|---|
 | `create-test-cohort` | `synthetic:true` | Cria o cohort do `batchId` no ambiente exato; existente compatível é preservado; `false` nunca é promovido. |
+| `create-authorized-cohort` | `reasonCode:AUTHORIZED_HOMOLOGATION_GROUP` | Somente MVP online/homolog: cria o lote autorizado com `synthetic:false`; replay preserva o lote, sem converter coorte sintética ou outro ambiente. |
+| `admit-participant` | `identityId`, `allowedInstanceId`, `phoneNumber`, `phoneVerification:PARTICIPANT_CONFIRMED` | Somente lote real do modo online: reserva alias EVOLUTION/PN do participante confirmado privadamente, sem perfil ou papel. CHANNEL válido da instância já deve existir. |
 | `provision-service-credential` | `principal`, `allowedInstanceId`, `expiresAt` UTC | Gera segredo CSPRNG exclusivo e persiste somente SHA256; principal é CHANNEL/CONVERSATION_WORKER/DELIVERY_WORKER/SYSTEM_JOB; expira em até 30 dias. |
 | `revoke-service-credential` | `credentialId`, `reasonCode` | Revoga somente credencial técnica do ambiente; não aceita OPERATOR como alvo. |
-| `driver-bootstrap` | `identityId`, `expiresAt` UTC | Identidade já precisa pertencer ao lote; gera convite de 43 caracteres, até 24h, ligado à identidade e ao operador; não cria perfil nem concede papel. |
+| `driver-bootstrap` | `identityId`, `expiresAt` UTC; `inviteId` UUID obrigatório no lote real | Identidade já precisa pertencer ao lote; emite convite de 43 caracteres, até 24h, ligado à identidade e ao operador. No lote real, `inviteId` fixa o replay; não cria perfil nem concede papel. |
 | `seed-test-data` | `identityId`, `inboxEventId`, `workerCredentialId`, `leaseExpiresAt` UTC | Cria/reutiliza identidade do lote e alias sintético; cria inbox CLAIMED com lease gerado de até 60s para worker existente e vigente. |
 | `complete-test-inbox` | `inboxEventId` | Conclui somente inbox SYNTHETIC/MESSAGE/CLAIMED do lote que já possui command_receipt durável; limpa o lease para preparar a próxima etapa sintética. |
 | `reset-test-data` | Nenhum | Remove somente o grafo das identidades do lote após verificar isolamento; preserva cohort/credenciais e auditoria de operador. |
@@ -112,13 +115,74 @@ resolve caso, recupera ID desconhecido ou fornece administração HTTP.
 concatenados, chaves duplicadas e secrets escolhidos para credential/lease/
 bootstrap são recusados. A saída privada devolve IDs e, quando necessário,
 `credential`, `driverInviteCode` ou `leaseToken` recém-gerados pelo serviço.
-Não há operação que aceite SQL, nome de tabela/schema, URL, GPS, alias real,
+Não há operação que aceite SQL, nome de tabela/schema, URL, GPS, alias livre,
 ator, papel humano ou texto arbitrário de auditoria.
 
-Todas as operações desta fatia exigem cohort previamente criado explicitamente,
+As operações do laboratório exigem cohort previamente criado explicitamente,
 `synthetic=true` e ambiente exato, exceto a própria criação. `prod` e
 `production` são recusados, inclusive quando a credencial do operador confere.
 Esse limite local é deliberado; operação produtiva exige outro escopo/gate.
+
+## Admissão de participantes autorizados — MVP online / issue91
+
+A admissão usa a mesma CLI de arquivo privado, autenticação OPERATOR, transação,
+auditoria e saída PREPARED/COMMITTED. Não há rota HTTP de cadastro administrativo,
+autoadmissão por mensagem ou criação automática de identidade desconhecida. Exige
+`SPRING_PROFILES_ACTIVE=homolog` exclusivo, `WA_MVP_ONLINE=true`, sandbox desligado
+e `WA_ENVIRONMENT=vanrides-mvp-hml`, com todas as demais proteções do modo online.
+Executar sem servidor web, por `spring.main.web-application-type=none`, usando o
+JAR/digest e o banco do ambiente autorizado. Preparar pedidos/saídas em diretório
+privado fora de Git; não colocar telefone, código ou credencial em argv/chat/log.
+O agendamento automático do watchdog fica restrito ao processo web; a CLI não
+reconcilia sessões ou expira dados de outras coortes durante esperas por locks.
+
+1. Manter um `batchId` técnico **sintético** para provisionar/revogar CHANNEL,
+   CONVERSATION_WORKER, DELIVERY_WORKER e SYSTEM_JOB, com instância/ambiente exatos.
+   A admissão não provisiona credenciais e não conecta uma conta WhatsApp.
+2. Escolher outro `batchId` UUID estável para o grupo de participantes e executar
+   `create-authorized-cohort` com `reasonCode=AUTHORIZED_HOMOLOGATION_GROUP`.
+   O lote nasce `synthetic=false`. Um UUID existente com tipo/ambiente diferente
+   é recusado; não há promoção/reassociação de dados.
+3. Confirmar privadamente com cada participante a autorização para o ensaio e o
+   PN completo da sua conta WhatsApp. No pedido `admit-participant`, usar um
+   `identityId` UUID estável, `allowedInstanceId` da instância já provisionada,
+   `phoneNumber` E.164 canônico (`+`, DDI e dígitos, máximo15) e
+   `phoneVerification=PARTICIPANT_CONFIRMED`. Essa marca registra a declaração
+   do operador; **não é OTP nem verificação automática de posse pelo WhatsApp**.
+   Não inferir PN pelo nome, por mensagem de desconhecido ou por um LID.
+4. A operação reserva somente `EVOLUTION`/`PN`, usando o JID canônico derivado
+   do número e a mesma trava de alias do ingresso. Repetir o mesmo pedido é
+   seguro. Trocar telefone/instância de uma identidade, usar identidade de outro
+   lote ou reservar o PN já ligado a outra identidade é recusado. LIDs já
+   associados pelo ingresso autenticado permanecem preservados. Admissão não
+   cria inbox, perfil, consentimento, papel de motorista ou habilitação.
+5. Para o motorista desse lote, usar `driver-bootstrap` com `identityId`,
+   `inviteId` UUID estável e `expiresAt` UTC fixo em até24h. O código de43
+   caracteres fica somente na saída privada. No modo real ele é derivado por
+   HMAC-SHA256 do servidor com propósito separado e contexto
+   ambiente/coorte/identidade/inviteId; não há segredo escolhido pelo cliente,
+   código bruto persistido ou migration adicional. O mesmo pedido recupera o
+   mesmo código e uma única linha. Trocar identidade/TTL sob o mesmo `inviteId`,
+   renovar convite expirado ou reabrir convite consumido/revogado é recusado.
+   Uma rotação da chave de hash não recupera o código antigo; coordenar rotação
+   separadamente, sem substituir silenciosamente o convite existente.
+6. Encaminhar o código somente ao participante autorizado por canal privado.
+   O fluxo normal de onboarding, aviso/aceite, convite, pareamento e permissões
+   continua obrigatório. A emissão do convite não equivale a cadastro completo,
+   consentimento, sensor ativo ou aceite de demonstração.
+
+O PN necessário ao roteamento fica no armazenamento operacional restrito
+`wa.identity_alias`; não é devolvido no recibo da CLI, contexto LLM ou auditoria.
+O campo `verified_phone` não é preenchido para inventar uma verificação do
+provider. Não ativar logs de SQL/argumentos/corpos. Resultados usam somente IDs,
+instância e estado; falhas da CLI continuam sanitizadas.
+
+Coortes reais **não** aceitam `seed-test-data`, `complete-test-inbox`,
+`reset-test-data`, provisionamento técnico ou `create-test-cohort`. Semântica e
+reset dos laboratórios sintéticos permanecem iguais. Retirada de participante,
+retenção e operação assistida exigem seu fluxo próprio; nunca usar reset de teste
+como apagamento de dados reais. Esta preparação local não executa admissão de
+pessoas, conexão do número, operação na VPS ou publicação.
 
 ## Seed e jornada fundacional
 

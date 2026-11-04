@@ -28,6 +28,7 @@ EXPECTED_TEST_CLASSES=(
   "com.vanrides.vanrides.whatsapp.auth.WaHttpIntegrationTest=9"
   "com.vanrides.vanrides.whatsapp.auth.WaTeamApiHttpIntegrationTest=7"
   "com.vanrides.vanrides.whatsapp.operator.WaOperatorPostgresIntegrationTest=15"
+  "com.vanrides.vanrides.whatsapp.operator.WaOperatorAdmissionPostgresIntegrationTest=8"
   "com.vanrides.vanrides.whatsapp.operator.WaOperatorEmptyCohortPostgresIntegrationTest=1"
   "com.vanrides.vanrides.whatsapp.transport.WaEvolutionIngressIntegrationTest=16"
   "com.vanrides.vanrides.whatsapp.transport.WaInboxTransportIntegrationTest=19"
