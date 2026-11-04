@@ -5,6 +5,11 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 
 final class WaPassengerTexts {
     static final String NOT_UNDERSTOOD = "Não entendi sua resposta. ";
+    static final String NOTICE_RENEWED =
+            "O prazo para aceitar o aviso terminou. Enviamos o aviso novamente. ";
+    static final String NAVIGATION_HINT =
+            " A qualquer momento do cadastro, envie VOLTAR para voltar uma etapa ou ABANDONAR para"
+                    + " cancelar.";
     static final WaPrompt APPROACH =
             WaPrompt.yesNo("Você deseja receber mensagens quando a van estiver se aproximando?");
     static final WaPrompt REMINDER =
@@ -12,14 +17,18 @@ final class WaPassengerTexts {
 
     private WaPassengerTexts() {}
 
+    static WaPrompt driverConfirm(String driverName) {
+        return WaPrompt.yesNo(
+                "Seu convite é do motorista "
+                        + driverName
+                        + ". Você quer se cadastrar com este motorista?");
+    }
+
     static String prompt(ObjectNode draft) {
         String stage = draft.path("stage").asText();
         return switch (stage) {
             case "DRIVER_CONFIRM" ->
-                    "Seu convite é do motorista "
-                            + draft.path("driverName").asText()
-                            + ". Você quer se cadastrar com este motorista? Responda CONTINUAR ou"
-                            + " ABANDONAR.";
+                    driverConfirm(draft.path("driverName").asText()).text() + NAVIGATION_HINT;
             case "NAME" -> "Como você prefere ser chamado?";
             case "NOTICE" ->
                     "Usaremos seu nome, conversa, ponto de embarque e participação nas rotinas para"
@@ -29,19 +38,7 @@ final class WaPassengerTexts {
             case "PREF_APPROACH" -> APPROACH.text();
             case "PREF_REMINDER" -> REMINDER.text();
             case "ROUTINES" -> routines(draft);
-            case "DAYS" ->
-                    "Para "
-                            + draft.path("selections")
-                                    .path(draft.path("dayIndex").asInt())
-                                    .path("name")
-                                    .asText()
-                            + ", em quais dias você participa? Use 1=segunda até 7=domingo,"
-                            + " separados por vírgula, ou SEGUNDA A SEXTA. Dias disponíveis: "
-                            + draft.path("selections")
-                                    .path(draft.path("dayIndex").asInt())
-                                    .path("weekdays")
-                                    .toString()
-                            + ".";
+            case "DAYS" -> days(draft);
             case "POINT" -> points(draft);
             case "REFERENCE" ->
                     "É na entrada principal, portão lateral ou outro acesso? Envie uma referência"
@@ -81,7 +78,7 @@ final class WaPassengerTexts {
                             .append(" às ")
                             .append(selection.path("local_time").asText())
                             .append(", dias ")
-                            .append(selection.path("selectedDays"))
+                            .append(WaPassengerAnswers.dayNames(selection.path("selectedDays")))
                             .append(". ");
                 }
                 text.append("Avisos de aproximação: ")
@@ -139,6 +136,18 @@ final class WaPassengerTexts {
                 .append(marker)
                 .append(". Use CORRIGIR ou ABANDONAR para revisar.")
                 .toString();
+    }
+
+    private static String days(ObjectNode draft) {
+        JsonNode routine = draft.path("selections").path(draft.path("dayIndex").asInt());
+        return WaPassengerAnswers.dayPrompt(
+                                "Para "
+                                        + routine.path("name").asText()
+                                        + ", em quais dias você participa?",
+                                routine.path("weekdays"))
+                        .text()
+                + " Você pode enviar vários dias separados por vírgula, por exemplo: Segunda,"
+                + " Quarta.";
     }
 
     private static String routines(ObjectNode draft) {

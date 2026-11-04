@@ -60,7 +60,7 @@ class WaPassengerWizardIntegrationTest {
                 fixture.conversation.string(
                         "SELECT preferences_json::text FROM wa.profile WHERE identity_id=?",
                         passenger));
-        assertTrue(review.text().contains("dias [1,3,5]"));
+        assertTrue(review.text().contains("dias segunda, quarta e sexta"));
         var request = fixture.confirm(passenger, review);
         assertEquals("REQUEST_LINK", request.body().path("commandType").asText());
         assertEquals(2, request.response().path("responseIds").size());
@@ -139,18 +139,84 @@ class WaPassengerWizardIntegrationTest {
         assertNull(
                 fixture.conversation.string(
                         "SELECT notice_version FROM wa.profile WHERE identity_id=?", passenger));
-        fixture.transport.time.advance(301);
+        fixture.transport.time.advance(601);
         var expired = fixture.send(passenger, "ACEITO");
-        assertFalse(expired.text().startsWith("Não entendi"), expired.text());
+        assertTrue(expired.text().startsWith("O prazo para aceitar o aviso terminou."), expired.text());
+        assertTrue(expired.text().contains("Você aceita o aviso de privacidade"), expired.text());
         assertNull(
                 fixture.conversation.string(
                         "SELECT notice_version FROM wa.profile WHERE identity_id=?", passenger));
-        fixture.send(passenger, "CONTINUAR");
         fixture.send(passenger, "ACEITO");
         assertEquals(
                 "wa-mvp-v1",
                 fixture.conversation.string(
                         "SELECT notice_version FROM wa.profile WHERE identity_id=?", passenger));
+    }
+
+    @Test
+    void noticeStaysAcceptableForTenMinutesAndAnyLaterMessageRenewsItWithoutNewInvite() {
+        UUID passenger = fixture.passenger();
+        fixture.open(passenger, code);
+        fixture.send(passenger, "CONTINUAR");
+        fixture.send(passenger, "Passageiro Sintético");
+        fixture.transport.time.advance(599);
+        var accepted = fixture.send(passenger, "aceito!");
+        assertEquals("PREF_APPROACH", fixture.draft(passenger).path("stage").asText());
+        assertFalse(accepted.text().startsWith("O prazo"), accepted.text());
+
+        UUID late = fixture.passenger();
+        fixture.open(late, fixture.invite(driver, 10));
+        fixture.send(late, "CONTINUAR");
+        fixture.send(late, "Outro Passageiro");
+        fixture.transport.time.advance(601);
+        var renewed = fixture.send(late, "oi");
+        assertTrue(renewed.text().startsWith("O prazo para aceitar o aviso terminou."), renewed.text());
+        assertEquals("NOTICE", fixture.draft(late).path("stage").asText());
+        fixture.send(late, "Aceito");
+        assertEquals("PREF_APPROACH", fixture.draft(late).path("stage").asText());
+    }
+
+    @Test
+    void firstMessageAsksYesOrNoExplainsNavigationAndToleratesSloppyAnswers() {
+        UUID passenger = fixture.passenger();
+        var opened = fixture.open(passenger, code);
+        assertTrue(opened.text().contains("Você quer se cadastrar com este motorista?"), opened.text());
+        assertTrue(opened.text().contains("Responda Sim ou Não."), opened.text());
+        assertTrue(opened.text().contains("VOLTAR"), opened.text());
+        assertTrue(opened.text().contains("ABANDONAR"), opened.text());
+        var unclear = fixture.send(passenger, "talvez");
+        assertTrue(unclear.text().startsWith("Não entendi sua resposta. "), unclear.text());
+        assertEquals("DRIVER_CONFIRM", fixture.draft(passenger).path("stage").asText());
+        fixture.send(passenger, "  SÍM!!  ");
+        assertEquals("NAME", fixture.draft(passenger).path("stage").asText());
+    }
+
+    @Test
+    void answeringNoToTheDriverInviteCancelsTheRegistration() {
+        UUID passenger = fixture.passenger();
+        fixture.open(passenger, code);
+        var refused = fixture.send(passenger, "nao");
+        assertTrue(fixture.draft(passenger).isEmpty());
+        assertFalse(refused.text().startsWith("Não entendi"), refused.text());
+        assertEquals(0, fixture.count("driver_passenger_link"));
+    }
+
+    @Test
+    void dayQuestionListsNamedDaysAndAcceptsNamesRangesAndAbbreviations() {
+        UUID passenger = fixture.passenger();
+        fixture.open(passenger, code);
+        fixture.send(passenger, "CONTINUAR");
+        fixture.send(passenger, "Passageiro Sintético");
+        fixture.send(passenger, "ACEITO");
+        fixture.send(passenger, "SIM");
+        fixture.send(passenger, "NÃO");
+        var question = fixture.send(passenger, "1");
+        assertTrue(question.text().contains("Opções: Segunda, Terça, Quarta, Quinta, Sexta"), question.text());
+        assertTrue(question.text().contains("Segunda a sexta"), question.text());
+        assertFalse(question.text().contains("["), question.text());
+        fixture.send(passenger, "Seg, QUA e sex-feira");
+        assertEquals("POINT", fixture.draft(passenger).path("stage").asText());
+        assertEquals("[1,3,5]", fixture.draft(passenger).path("selections").path(0).path("selectedDays").toString());
     }
 
     @Test
@@ -228,7 +294,7 @@ class WaPassengerWizardIntegrationTest {
             var retry = fixture.send(passenger, unclear);
             assertEquals("PREF_APPROACH", fixture.draft(passenger).path("stage").asText());
             assertTrue(retry.text().startsWith("Não entendi sua resposta. "), retry.text());
-            assertTrue(retry.text().endsWith("Responda SIM ou NÃO."), retry.text());
+            assertTrue(retry.text().contains("Responda Sim ou Não."), retry.text());
         }
         assertEquals(
                 "{}",
@@ -243,10 +309,10 @@ class WaPassengerWizardIntegrationTest {
         assertTrue(routines.text().startsWith("Não entendi sua resposta. "), routines.text());
         assertEquals("ROUTINES", fixture.draft(passenger).path("stage").asText());
         fixture.send(passenger, "1");
-        var days = fixture.send(passenger, "segunda e quarta");
+        var days = fixture.send(passenger, "dia útil");
         assertTrue(days.text().startsWith("Não entendi sua resposta. "), days.text());
         assertEquals("DAYS", fixture.draft(passenger).path("stage").asText());
-        fixture.send(passenger, "1,3,5");
+        fixture.send(passenger, "Segunda, Quarta e Sexta");
         var address = fixture.send(passenger, "Rua das Flores 123, perto da padaria");
         assertTrue(address.text().startsWith("Não entendi sua resposta. "), address.text());
         assertTrue(address.text().contains("pin estático"), address.text());
@@ -311,13 +377,13 @@ class WaPassengerWizardIntegrationTest {
         assertEquals("ROUTINES", fixture.draft(passenger).path("stage").asText());
         fixture.send(passenger, "1,2");
         fixture.send(passenger, "1,3,5");
-        fixture.send(passenger, "2,4");
+        fixture.send(passenger, "terça e quinta");
         fixture.pin(passenger);
         var review = fixture.send(passenger, "PULAR");
         assertTrue(review.text().contains("(ida)"), review.text());
         assertTrue(review.text().contains("(volta)"), review.text());
-        assertTrue(review.text().contains("[1,3,5]"), review.text());
-        assertTrue(review.text().contains("[2,4]"), review.text());
+        assertTrue(review.text().contains("segunda, quarta e sexta"), review.text());
+        assertTrue(review.text().contains("terça e quinta"), review.text());
     }
 
     @Test

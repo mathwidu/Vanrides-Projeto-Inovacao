@@ -24,7 +24,7 @@ final class WaPassengerWizard {
     }
 
     static String text(WaInboxAccess.Context event) {
-        return WaDriverWizard.text(event);
+        return WaPassengerAnswers.loose(WaDriverWizard.text(event));
     }
 
     static boolean starts(String text) {
@@ -39,10 +39,12 @@ final class WaPassengerWizard {
                 .contains(text);
     }
 
-    record Step(ObjectNode draft, boolean understood) {}
+    private static final long NOTICE_WINDOW_SECONDS = 600;
+
+    record Step(ObjectNode draft, String lead) {}
 
     private static Step ok(ObjectNode draft) {
-        return new Step(draft, true);
+        return new Step(draft, "");
     }
 
     Step advance(WaProfileState actor, WaInboxAccess.Context event, ObjectNode old) {
@@ -163,7 +165,19 @@ final class WaPassengerWizard {
             return ok(draft);
         }
         JsonNode dayBefore = draft.path("dayIndex");
+        String lead = "";
         switch (stage) {
+            case "DRIVER_CONFIRM" -> {
+                var answer =
+                        WaPassengerTexts.driverConfirm(draft.path("driverName").asText())
+                                .answer(text);
+                if (answer.isPresent()) {
+                    if (answer.get().id().equals("NO")) {
+                        return ok(WaPassengerDraftStore.json());
+                    }
+                    afterIdentity(actor, draft);
+                }
+            }
             case "NAME" -> {
                 String value = clean(event.normalizedPayload().path("text").asText(), 80);
                 if (value != null) {
@@ -189,6 +203,9 @@ final class WaPassengerWizard {
                             Timestamp.from(data.clock.now()),
                             actor.identityId());
                     draft.put("stage", "PREF_APPROACH");
+                } else if (noticeExpired(draft)) {
+                    notice(draft);
+                    lead = WaPassengerTexts.NOTICE_RENEWED;
                 }
             }
             case "PREF_APPROACH", "PREF_REMINDER" -> {
@@ -265,11 +282,11 @@ final class WaPassengerWizard {
                 /* Invalid or stale marker re-emits the current question and a fresh review. */
             }
         }
-        return new Step(
-                draft,
+        boolean understood =
                 !draft.path("stage").asText().equals(stage)
                         || !draft.path("dayIndex").equals(dayBefore)
-                        || stage.equals("NOTICE") && text.equals("aceito"));
+                        || stage.equals("NOTICE") && text.equals("aceito");
+        return new Step(draft, understood || !lead.isEmpty() ? lead : WaPassengerTexts.NOT_UNDERSTOOD);
     }
 
     private void afterIdentity(WaProfileState actor, ObjectNode draft) {
@@ -294,9 +311,18 @@ final class WaPassengerWizard {
             Instant issued = Instant.parse(draft.path("noticeEmittedAt").asText());
             Instant received = Instant.parse(event.normalizedPayload().path("occurredAt").asText());
             return !received.isBefore(issued.truncatedTo(ChronoUnit.SECONDS))
-                    && issued.plusSeconds(300).isAfter(data.clock.now());
+                    && issued.plusSeconds(NOTICE_WINDOW_SECONDS).isAfter(data.clock.now());
         } catch (java.time.DateTimeException invalid) {
             return false;
+        }
+    }
+
+    private boolean noticeExpired(ObjectNode draft) {
+        try {
+            Instant issued = Instant.parse(draft.path("noticeEmittedAt").asText());
+            return !issued.plusSeconds(NOTICE_WINDOW_SECONDS).isAfter(data.clock.now());
+        } catch (java.time.DateTimeException invalid) {
+            return true;
         }
     }
 

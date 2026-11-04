@@ -170,7 +170,7 @@ final class WaPassengerSetup {
         try {
             var step = wizard.advance(actor, event, draft);
             draft = step.draft();
-            String lead = step.understood() ? "" : WaPassengerTexts.NOT_UNDERSTOOD;
+            String lead = step.lead();
             String response = WaPassengerTexts.prompt(draft);
             if (draft.path("stage").asText().equals("REVIEW")) {
                 String target = data.snapshot(actor.identityId(), draft, event);
