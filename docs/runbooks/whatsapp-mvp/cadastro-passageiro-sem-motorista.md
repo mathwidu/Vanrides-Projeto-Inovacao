@@ -55,3 +55,17 @@ encerrar sua seleção vazia, permitindo outras intenções em seguida.
 A prova acima é da versão já publicada. Testes locais e a publicação das
 correções devem ser registrados separadamente; não apresentar a melhoria como
 validada no WhatsApp antes da nova instalação e repetição.
+
+Validação local da correção `acc572f`: 26 testes passaram, zero falhas, erros ou
+skips, em 59 segundos. Foram 19 testes unitários e 7 com PostgreSQL em contêiner
+isolado. Os cenários de interrupção agora usam ocorrências elegíveis para testar
+um menu com opções; o menu vazio é coberto separadamente. O teste de regressão
+unitário do menu vazio falhou antes da alteração e passou depois. A revisão
+independente conferiu preservação de autorização e de drafts anteriores.
+
+O JAR foi empacotado com JDK17 e conferido dentro da imagem linux/amd64 preparada.
+A receita de atualização conserva os configs, banco, secrets e serviços do canal;
+somente a imagem da API e seu hash de JAR serão substituídos após autorização.
+A suíte canônica completa e a CI não foram repetidas nesta etapa. A publicação e
+a repetição real das correções ainda estão pendentes; o perfil já concluído não
+precisa ser cadastrado novamente.
