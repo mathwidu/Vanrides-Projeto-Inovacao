@@ -4,6 +4,12 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 final class WaPassengerTexts {
+    static final String NOT_UNDERSTOOD = "Não entendi sua resposta. ";
+    static final WaPrompt APPROACH =
+            WaPrompt.yesNo("Você deseja receber mensagens quando a van estiver se aproximando?");
+    static final WaPrompt REMINDER =
+            WaPrompt.yesNo("Você deseja receber lembretes para informar sua presença?");
+
     private WaPassengerTexts() {}
 
     static String prompt(ObjectNode draft) {
@@ -20,12 +26,8 @@ final class WaPassengerTexts {
                         + " organizar seu transporte. Os avisos serão escolhidos separadamente."
                         + " Você aceita o aviso de privacidade VanRides wa-mvp-v1? Responda ACEITO"
                         + " para continuar.";
-            case "PREF_APPROACH" ->
-                    "Você deseja receber mensagens quando a van estiver se aproximando? Responda"
-                            + " SIM ou NÃO.";
-            case "PREF_REMINDER" ->
-                    "Você deseja receber lembretes para informar sua presença? Responda SIM ou"
-                            + " NÃO.";
+            case "PREF_APPROACH" -> APPROACH.text();
+            case "PREF_REMINDER" -> REMINDER.text();
             case "ROUTINES" -> routines(draft);
             case "DAYS" ->
                     "Para "

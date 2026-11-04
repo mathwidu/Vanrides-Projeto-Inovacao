@@ -39,15 +39,21 @@ final class WaPassengerWizard {
                 .contains(text);
     }
 
-    ObjectNode advance(WaProfileState actor, WaInboxAccess.Context event, ObjectNode old) {
+    record Step(ObjectNode draft, boolean understood) {}
+
+    private static Step ok(ObjectNode draft) {
+        return new Step(draft, true);
+    }
+
+    Step advance(WaProfileState actor, WaInboxAccess.Context event, ObjectNode old) {
         String text = text(event);
         ObjectNode draft = old.deepCopy();
         draft.remove("confirmation");
         if (text.equals("abandonar")) {
-            return WaPassengerDraftStore.json();
+            return ok(WaPassengerDraftStore.json());
         }
         if (actor.role().equals("DRIVER")) {
-            return driver.advance(actor, event, draft, text);
+            return ok(driver.advance(actor, event, draft, text));
         }
         if (event.normalizedPayload().hasNonNull("passengerInviteCodeHash")) {
             ObjectNode invite =
@@ -59,12 +65,12 @@ final class WaPassengerWizard {
             if (!data.links(actor.identityId(), false).isEmpty()) {
                 throw new WaProblem(WaProblem.Code.ACTION_NOT_ALLOWED);
             }
-            return WaPassengerDraftStore.json()
+            return ok(WaPassengerDraftStore.json()
                     .put("stage", "DRIVER_CONFIRM")
                     .put("action", "REQUEST_LINK")
                     .put("inviteHash", invite.path("code_hash").asText())
                     .put("driverId", invite.path("driver_id").asText())
-                    .put("driverName", invite.path("driverName").asText());
+                    .put("driverName", invite.path("driverName").asText()));
         }
         if (text.equals("corrigir ponto")
                 && !draft.isEmpty()
@@ -80,7 +86,7 @@ final class WaPassengerWizard {
                             "pointLabel",
                             "mapUrl"));
             draft.put("stage", "POINT");
-            return draft;
+            return ok(draft);
         }
         if (text.equals("corrigir ponto") || draft.isEmpty() && text.equals("continuar cadastro")) {
             ArrayNode links = data.links(actor.identityId(), false);
@@ -93,20 +99,20 @@ final class WaPassengerWizard {
                     draft,
                     "commonChoices",
                     data.commons(UUID.fromString(draft.path("driverId").asText())));
-            return draft;
+            return ok(draft);
         }
         if (text.equals("encerrar") || text.equals("encerrar vinculo")) {
             ArrayNode links = data.links(actor.identityId(), false);
             if (links.size() != 1) {
                 throw new WaProblem(WaProblem.Code.ACTION_NOT_ALLOWED);
             }
-            return baseLink(links.get(0))
+            return ok(baseLink(links.get(0))
                     .put("stage", "REVIEW")
                     .put("action", "CLOSE_LINK")
-                    .put("operation", "CLOSED");
+                    .put("operation", "CLOSED"));
         }
         if (draft.isEmpty()) {
-            return draft;
+            return ok(draft);
         }
         String stage = draft.path("stage").asText();
         if (text.equals("corrigir")) {
@@ -123,7 +129,7 @@ final class WaPassengerWizard {
                     draft.path("action").asText().equals("REQUEST_LINK")
                             ? "PREF_APPROACH"
                             : "POINT");
-            return draft;
+            return ok(draft);
         }
         if (text.equals("voltar")) {
             draft.put(
@@ -139,7 +145,7 @@ final class WaPassengerWizard {
                                         : "POINT";
                         default -> stage;
                     });
-            return draft;
+            return ok(draft);
         }
         if (text.equals("continuar") || text.equals("continuar cadastro")) {
             if (stage.equals("DRIVER_CONFIRM")) {
@@ -154,8 +160,9 @@ final class WaPassengerWizard {
                         "routineChoices",
                         data.routines(UUID.fromString(draft.path("driverId").asText())));
             }
-            return draft;
+            return ok(draft);
         }
+        JsonNode dayBefore = draft.path("dayIndex");
         switch (stage) {
             case "NAME" -> {
                 String value = clean(event.normalizedPayload().path("text").asText(), 80);
@@ -185,14 +192,15 @@ final class WaPassengerWizard {
                 }
             }
             case "PREF_APPROACH", "PREF_REMINDER" -> {
-                Boolean value = yesNo(text);
-                if (value != null) {
+                boolean approach = stage.equals("PREF_APPROACH");
+                var answer =
+                        (approach ? WaPassengerTexts.APPROACH : WaPassengerTexts.REMINDER)
+                                .answer(text);
+                if (answer.isPresent()) {
                     draft.put(
-                            stage.equals("PREF_APPROACH")
-                                    ? "approachMessages"
-                                    : "attendanceReminders",
-                            value);
-                    if (stage.equals("PREF_APPROACH")) {
+                            approach ? "approachMessages" : "attendanceReminders",
+                            answer.get().id().equals("YES"));
+                    if (approach) {
                         draft.put("stage", "PREF_REMINDER");
                     } else {
                         catalogue(
@@ -257,7 +265,11 @@ final class WaPassengerWizard {
                 /* Invalid or stale marker re-emits the current question and a fresh review. */
             }
         }
-        return draft;
+        return new Step(
+                draft,
+                !draft.path("stage").asText().equals(stage)
+                        || !draft.path("dayIndex").equals(dayBefore)
+                        || stage.equals("NOTICE") && text.equals("aceito"));
     }
 
     private void afterIdentity(WaProfileState actor, ObjectNode draft) {

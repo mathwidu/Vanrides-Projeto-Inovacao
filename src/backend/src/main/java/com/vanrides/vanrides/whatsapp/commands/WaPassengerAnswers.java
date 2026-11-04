@@ -20,12 +20,6 @@ final class WaPassengerAnswers {
                 || text.contains("nao e este ponto");
     }
 
-    static Boolean yesNo(String text) {
-        return List.of("sim", "quero receber").contains(text)
-                ? Boolean.TRUE
-                : List.of("nao", "nao quero receber").contains(text) ? Boolean.FALSE : null;
-    }
-
     static String clean(String raw, int max) {
         String value = raw.replaceAll("^[\\s\\p{Z}]+|[\\s\\p{Z}]+$", "");
         return value.isBlank()

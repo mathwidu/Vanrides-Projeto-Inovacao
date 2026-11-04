@@ -23,10 +23,25 @@ class WaPassengerWizardTest {
 
     @Test
     void preferenceRequiresExplicitPositiveOrNegativeAnswer() {
-        assertEquals(Boolean.TRUE, WaPassengerAnswers.yesNo("sim"));
-        assertEquals(Boolean.FALSE, WaPassengerAnswers.yesNo("nao"));
-        assertNull(WaPassengerAnswers.yesNo("continuar"));
-        assertNull(WaPassengerAnswers.yesNo("aceito"));
+        var prompt = WaPassengerTexts.APPROACH;
+        assertEquals("YES", prompt.answer("sim").orElseThrow().id());
+        assertEquals("NO", prompt.answer("nao").orElseThrow().id());
+        assertEquals("YES", prompt.answer("quero receber").orElseThrow().id());
+        assertEquals("NO", prompt.answer("nao quero receber").orElseThrow().id());
+        assertTrue(prompt.answer("continuar").isEmpty());
+        assertTrue(prompt.answer("aceito").isEmpty());
+        assertTrue(prompt.answer("talvez").isEmpty());
+    }
+
+    @Test
+    void yesNoPromptRendersTheQuestionFollowedByItsAcceptedAnswers() {
+        assertEquals(
+                "Você deseja receber mensagens quando a van estiver se aproximando? Responda SIM"
+                        + " ou NÃO.",
+                WaPassengerTexts.APPROACH.text());
+        assertEquals(
+                "Você deseja receber lembretes para informar sua presença? Responda SIM ou NÃO.",
+                WaPassengerTexts.REMINDER.text());
     }
 
     @Test
