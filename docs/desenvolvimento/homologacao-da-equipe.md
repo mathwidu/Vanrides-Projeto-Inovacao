@@ -5,7 +5,7 @@ O endereço da equipe é **https://vanrides-inovacao-api.matheusduarte.dev.br**.
 | Componente | O que temos | O que falta para usar online |
 | --- | --- | --- |
 | API e PostgreSQL | Cadastro, rotinas, presença, vínculo do aparelho, início de viagem, GPS e consulta da van implementados. A aproximação é controlada por configuração. | Publicado. API e PostgreSQL estão na VPS com TLS válido. O grupo pode abrir a saúde pelo link abaixo. As rotas de produto exigem credenciais individuais ou de serviço. |
-| Android do motorista | O aplicativo integrado fala com a API e transmite GPS. O APK do ensaio integrado anterior foi compilado para localhost por USB. | Distribuir o build do motorista compilado para o domínio da equipe, servir os links de vínculo/início e o arquivo de associação da assinatura Android. |
+| Android do motorista | O aplicativo integrado fala com a API e transmite GPS. O APK do ensaio integrado anterior foi compilado para localhost por USB. | [Baixar o APK da equipe](https://vanrides-inovacao-api.matheusduarte.dev.br/motorista/VanRides.apk). APK, associação Android e links de vínculo e início publicados. Falta o vínculo pelo canal e a primeira saída com um integrante como motorista. |
 | Worker do VanRides | Interpreta as solicitações, chama a API e envia respostas. | Publicar o worker em rede privada com credenciais da homologação e destino correto da API/Evolution. |
 | n8n | O serviço já existe na VPS. Os fluxos do projeto estão versionados. | Importar as cópias do VanRides, configurar a credencial de controle e habilitar os fluxos necessários no executor real. |
 | Evolution e número do bot | O serviço compartilhado existe e o número dedicado está ativo no WhatsApp Business do Redmi. | Usar Evolution com configurações isoladas para o VanRides, parear o bot e conectar os eventos e recibos à API. |
@@ -14,6 +14,8 @@ O endereço da equipe é **https://vanrides-inovacao-api.matheusduarte.dev.br**.
 ## Verificação em 3 de novembro de 2026
 
 A [saúde da API](https://vanrides-inovacao-api.matheusduarte.dev.br/actuator/health) respondeu HTTP 200 com `{"status":"UP"}` e o ambiente `vanrides-mvp-hml`. O endpoint do aparelho e a entrada de eventos do WhatsApp responderam 401 sem credencial. O Swarm confirmou uma réplica da API e uma do banco com as imagens esperadas. A imagem usa o backend `57a2ffd`. A receita publicada é `e9fe510`. Na primeira tentativa o Tomcat não iniciou porque a montagem abreviada de /tmp foi descartada. A segunda usou um volume temporário de 64 MiB e manteve o banco exclusivo da equipe.
+
+O download de 68.903.599 bytes foi conferido por HTTPS. É o VanRides Motorista 0.3.0-hml+13. O hash SHA-256 é `c438bb3566f87d3ca836096c2d962963ae5de12edbd6d2c2c67104ff9e0210a9`. O primeiro teste de conversa terá o proprietário como passageiro. A saída com GPS depende de um segundo participante com o papel de motorista.
 
 ## Ordem de publicação
 
