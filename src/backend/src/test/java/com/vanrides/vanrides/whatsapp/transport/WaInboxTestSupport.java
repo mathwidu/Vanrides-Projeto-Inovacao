@@ -34,8 +34,12 @@ final class WaInboxTestSupport {
     private final PostgreSQLContainer<?> postgres;
 
     WaInboxTestSupport(PostgreSQLContainer<?> postgres) {
+        this(postgres, new WaTransportTestSupport(postgres));
+    }
+
+    WaInboxTestSupport(PostgreSQLContainer<?> postgres, WaTransportTestSupport transport) {
         this.postgres = postgres;
-        transport = new WaTransportTestSupport(postgres);
+        this.transport = transport;
         service = transport.proxy(new WaInboxService(transport.jdbc, transport.access, transport.settings, transport.clock));
         worker = transport.principal(WaPrincipal.Kind.CONVERSATION_WORKER);
     }

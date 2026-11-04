@@ -14,6 +14,7 @@ import java.time.ZoneOffset;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.UUID;
+import javax.sql.DataSource;
 import org.flywaydb.core.Flyway;
 import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -43,10 +44,17 @@ final class WaTransportTestSupport {
     }
     WaTransportTestSupport(PostgreSQLContainer<?> postgres) { this(postgres, true); }
     WaTransportTestSupport(PostgreSQLContainer<?> postgres, boolean cohortOnly) {
+        this(rebuild(postgres), cohortOnly);
+    }
+    static DataSource rebuild(PostgreSQLContainer<?> postgres) {
         var source = new DriverManagerDataSource(postgres.getJdbcUrl(), postgres.getUsername(), postgres.getPassword());
-        jdbc = new JdbcTemplate(source); jdbc.execute("DROP SCHEMA IF EXISTS wa CASCADE");
+        new JdbcTemplate(source).execute("DROP SCHEMA IF EXISTS wa CASCADE");
         var flyway = Flyway.configure().dataSource(source).locations("classpath:db/migration").cleanDisabled(false).load();
         flyway.clean(); flyway.migrate();
+        return source;
+    }
+    WaTransportTestSupport(DataSource source, boolean cohortOnly) {
+        jdbc = new JdbcTemplate(source);
         settings = settings(true, cohortOnly); crypto = new WaCrypto(settings);
         access = new WaTransportAccess(jdbc, settings, clock);
         manager = new DataSourceTransactionManager(source); transaction = new TransactionTemplate(manager);

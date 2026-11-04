@@ -4,20 +4,29 @@ import { demand, exact, uuid, token, quote, privateWrite, localJson, summary } f
 const prefix = '/integrations/whatsapp/v1';
 const after = seconds => new Date(Date.now() + seconds * 1000).toISOString();
 
-export async function provision({ input, tools, batch, actor, aliasId, instance, address, peers = [], credentials, attendance = false, interruption }) {
+export async function provision({ input, tools, batch, actor, aliasId, instance, address, peers = [], credentials, attendance = false, interruption, operatorBatch }) {
   // spawnSync cannot dispatch Node signal handlers; yield before every new mutation.
   const checkpoint = async () => { await new Promise(resolve => setImmediate(resolve)); interruption.assertActive(); };
   await checkpoint();
-  tools.operate('create-test-cohort', { synthetic: true });
   const roles = ['CHANNEL', 'CONVERSATION_WORKER', 'DELIVERY_WORKER'];
   if (attendance) roles.push('SYSTEM_JOB');
-  for (const principal of roles) {
-    await checkpoint();
-    const credential = tools.operate('provision-service-credential', { principal,
-      allowedInstanceId: instance, expiresAt: after(3600) });
+  const keep = (credential, principal) => {
     demand(uuid(credential.credentialId) && token(credential.credential) && credential.allowedInstanceId === instance
       && credential.principal === principal, 'SERVICE_CREDENTIAL_INVALID');
     credentials.push(credential);
+  };
+  if (operatorBatch) {
+    await operatorBatch([{ operation: 'create-test-cohort', fields: { synthetic: true } },
+      ...roles.map(principal => ({ operation: 'provision-service-credential',
+        fields: { principal, allowedInstanceId: instance, expiresAt: after(3600) } }))],
+    { signal: interruption.signal, onCommitted: (result, index) => { if (index > 0) keep(result, roles[index - 1]); } });
+  } else {
+    tools.operate('create-test-cohort', { synthetic: true });
+    for (const principal of roles) {
+      await checkpoint();
+      keep(tools.operate('provision-service-credential', { principal,
+        allowedInstanceId: instance, expiresAt: after(3600) }), principal);
+    }
   }
   await checkpoint();
   demand(new Set(credentials.map(value => value.credential)).size === roles.length, 'SERVICE_CREDENTIAL_ROLES_NOT_DISTINCT');

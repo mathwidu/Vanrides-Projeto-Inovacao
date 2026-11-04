@@ -18,6 +18,7 @@ class WaPassengerWizardIntegrationTest {
     @Container
     static final PostgreSQLContainer<?> POSTGRES =
             WaTransportTestSupport.postgres("wa_passenger_wizard");
+    private static final WaTransportTestDatabase DATABASE = new WaTransportTestDatabase(POSTGRES);
 
     WaPassengerTestSupport fixture;
     UUID driver;
@@ -25,7 +26,7 @@ class WaPassengerWizardIntegrationTest {
 
     @BeforeEach
     void setup() {
-        fixture = new WaPassengerTestSupport(POSTGRES);
+        fixture = new WaPassengerTestSupport(DATABASE.fixture());
         driver = fixture.driver();
         fixture.routine(driver);
         code = fixture.invite(driver, 10);

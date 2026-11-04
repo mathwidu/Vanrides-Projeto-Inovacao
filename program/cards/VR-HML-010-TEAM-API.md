@@ -133,3 +133,27 @@ local e imagem Docker usam o mesmo JAR e passaram, com limpeza confirmada.
 Medição e limites em `docs/desenvolvimento/revisao-ci-e-testes.md`.
 Transporte de artefato e composição completa no GitHub ainda pendentes;
 nenhuma publicação, alteração de VPS ou teste físico iPhone nesta etapa.
+
+## Pilotos de preparação — 04/11/2026
+
+Autorizados localmente após a CI aprovada em 6006b1c/merge de teste 92bd115.
+PostgreSQL: opt-in nas classes DriverRoutines, PassengerWizard, PassengerFencing
+e InboxTransport; separar migração inicial de limpeza de dados, sem mudar casos,
+concorrência, triggers, histórico ou sementes. Demais classes mantêm reconstrução.
+Operador: lote limitado na CLI NON-WEB, com autenticação, transação, auditoria e
+recibo individual; parar após falha/cancelamento sem declarar sucesso parcial.
+O ensaio acadêmico agrupa apenas provisionamento/limpeza. Quotas e relógio ficam.
+Comparação antes/depois no mesmo Mac, cargas Java/Docker sequenciais; conferir
+estado limpo, ordem inversa, casos negativos, recuperação e jornada completa.
+Riscos: dados residuais e sequência/seed divergentes no banco; operação posterior
+à falha/interrupção ou recibo anterior ao commit na CLI. Rollback: reverter estes
+pilotos para reconstrução de fixtures e chamadas CLI individuais. Sem push,
+merge, VPS, canal real ou dispositivos nesta autorização de implementação.
+
+Pilotos implementados: 56 casos PostgreSQL aprovados em 78,130 s (antes
+103,449 s), também aprovados com classes invertidas e métodos embaralhados;
+dois novos casos do reset aprovados. Operador: dez operações por rodada,
+média 50,172 s individual e 9,361 s em lote, 40 recibos/auditorias conferidos.
+Gate rápido, 709 testes Node e 303 Python aprovados; revisão independente sem
+achados pendentes. Matriz ampliada para 592 casos PostgreSQL, sem exclusões.
+Regressão canônica completa e jornada integrada desta revisão ainda pendentes.

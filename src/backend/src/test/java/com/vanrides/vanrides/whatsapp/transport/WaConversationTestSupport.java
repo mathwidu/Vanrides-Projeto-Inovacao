@@ -32,7 +32,10 @@ final class WaConversationTestSupport {
     final WaPrincipal channel, worker, delivery;
     int actors;
     WaConversationTestSupport(PostgreSQLContainer<?> postgres) {
-        h = new WaTransportTestSupport(postgres);
+        this(new WaTransportTestSupport(postgres));
+    }
+    WaConversationTestSupport(WaTransportTestSupport transport) {
+        h = transport;
         channel = h.principal(WaPrincipal.Kind.CHANNEL); worker = h.principal(WaPrincipal.Kind.CONVERSATION_WORKER);
         delivery = h.principal(WaPrincipal.Kind.DELIVERY_WORKER);
         pairing = h.proxy(new WaPairingService(h.jdbc, h.settings, h.clock, h.crypto));

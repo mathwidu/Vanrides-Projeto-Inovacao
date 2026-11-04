@@ -5934,7 +5934,11 @@
           "src/whatsapp/scripts/academic-integration-smoke.test.mjs",
           "src/whatsapp/scripts/academic-scenario-plan.mjs",
           "src/whatsapp/lab/live-runtime/monorepo_receipt.py",
-          "src/whatsapp/lab/live-runtime/monorepo_test.py"
+          "src/whatsapp/lab/live-runtime/monorepo_test.py",
+          "src/whatsapp/scripts/070-operator-batch.mjs",
+          "src/whatsapp/scripts/070-operator-batch.test.mjs",
+          "src/whatsapp/scripts/070-worker-lifecycle.mjs",
+          "src/whatsapp/scripts/070-worker-smoke.test.mjs"
         ],
         "backend": [
           "src/main/",

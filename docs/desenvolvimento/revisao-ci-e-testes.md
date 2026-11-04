@@ -1,6 +1,6 @@
 # Revisão da CI e dos testes
 
-**04/11/2026 — verificações rápidas, refatoração do cadastro e primeira redução de builds implementadas localmente; publicação pendente.**
+**04/11/2026 — candidato compartilhado aprovado no GitHub; pilotos locais de preparação do PostgreSQL e do operador em validação.**
 
 O objetivo é reduzir o tempo de retorno e o trabalho de manutenção sem perder
 as verificações que protegem o MVP. Esta revisão interrompe a continuação do
@@ -140,6 +140,89 @@ para o pacote de laboratório. O transporte via GitHub, o cache e a suíte canô
 completa nesta composição ainda dependem de CI remota autorizada. Não houve push,
 merge, alteração de regras de branch ou acesso à VPS. Evidência detalhada fica no
 checkpoint privado `ci-audit-20261104/phase3`; fontes e procedimentos estão no Git.
+
+## Pilotos de preparação do PostgreSQL e do operador
+
+A [CI de `6006b1c`](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/actions/runs/41894412562)
+aprovou a composição anterior em 25 min 40 s. O gate canônico levou 22 min 40 s;
+integração/imagem, 23 min 51 s. Passaram 1.769 testes Java, incluindo 584 com
+PostgreSQL. Integração e homologação receberam o mesmo artefato. Esse é o ponto
+de partida remoto; os pilotos abaixo ainda não foram enviados ao GitHub.
+
+**Banco.** As quatro classes `WaDriverRoutinesIntegrationTest`,
+`WaPassengerWizardIntegrationTest`, `WaPassengerFencingIntegrationTest` e
+`WaInboxTransportIntegrationTest` passam a migrar o banco uma vez por classe.
+Entre cenários, o suporte trunca explicitamente as tabelas `public`/`wa`,
+reinicia sequências, restaura a empresa padrão e cria um novo relógio e serviços.
+O contêiner continua exclusivo de cada classe. Não há compartilhamento global,
+paralelismo novo nem alteração das migrations ou do runtime da aplicação.
+
+O reset preserva e confere histórico Flyway, tabelas e triggers; recusa sementes
+desconhecidas e mudanças no inventário. Usa `RESTRICT`, com limites de espera,
+em vez de apagar dependências inesperadas. Os testes de migração e concorrência
+mantêm sua preparação original. O primeiro ensaio encontrou um trigger de falha
+que um teste deixava instalado: ele agora remove esse trigger e sua função em
+`finally`, mantendo todas as assertivas. Dois testes adicionais cobrem limpeza,
+sequências, sementes, relógio, preservação de triggers e recusa antes de apagar dados.
+
+| Medição local das mesmas quatro classes / 56 casos | Antes | Depois |
+|---|---:|---:|
+| Tempo total da invocação Surefire, sem recompilar | 103,449 s | 78,130 s |
+| Soma dos tempos das classes | 100,641 s | 76,145 s |
+| Falhas, erros e casos pulados | 0 | 0 |
+
+A redução foi de **24,5% no tempo total desse recorte**. A execução adicional
+com as classes em ordem inversa passou em 89,259 s; ela verifica independência,
+não é outra amostra controlada da comparação. Também passaram os mesmos 56
+casos com a ordem dos métodos embaralhada (semente `20261104`), em 80,900 s;
+os XML confirmam ordem diferente nas quatro classes. Máquina e limites Java
+foram mantidos; não há garantia de ganho equivalente nos runners do GitHub.
+As tentativas iniciais com disco da VM Docker cheio e o ensaio que encontrou
+o trigger residual foram descartados da comparação. Foram removidos apenas
+dois registros antigos e regeneráveis do cache de build local, sem apagar
+volumes, bancos ou imagens nem fechar aplicativos do usuário.
+
+**Operador.** Somente o ensaio acadêmico usa o lote da CLI privada NON-WEB.
+Cada jornada agrupa criação de coorte e quatro credenciais em um processo Java,
+e reset/revogação em outro. O conjunto passa de 55 para 15 inicializações de
+JVM: 10 lotes e cinco operações independentes já existentes. Os laboratórios
+históricos continuam com chamadas individuais. Não existe endpoint HTTP novo.
+
+Um lote admite até 16 operações e 16 KiB, no mesmo ambiente, credencial e
+coorte. Reserva todos os arquivos de saída antes do primeiro efeito e mantém
+autorização, transação, auditoria e recibo **por operação**. Uma falha para o
+restante do lote. Um cancelamento permite terminar a transação em andamento,
+mas impede a próxima; a limpeza ainda pode executar. Recibos `COMMITTED`
+anteriores são aproveitados para limpar credenciais, nunca para aprovar um lote
+incompleto. `PREPARED`, saída ausente e falha de processo continuam reprovando.
+
+Não mudaram quotas, expiração, esperas de GPS, conteúdo das jornadas, checksums
+ou exigências do recibo integrado. A matriz PostgreSQL passa de 584 para 592
+casos pelos oito novos testes de proteção; nenhum caso anterior foi removido.
+O benchmark comparou o mesmo JAR em quatro rodadas (individual, lote, lote,
+individual), com migração inicial fora do cronômetro. Cada rodada executou dez
+operações: criar a coorte, quatro credenciais, reset e quatro revogações.
+Asserções SQL e inserção de uma identidade sintética ficaram fora da medição.
+Todos os 40 recibos foram confirmados, com 40 auditorias, exclusão das quatro
+identidades e revogação das 16 credenciais. O banco temporário foi removido.
+
+| Operador — preparação + limpeza por rodada | Chamadas individuais | Dois lotes |
+|---|---:|---:|
+| Primeira amostra | 43,276 s | 10,256 s |
+| Segunda amostra | 57,068 s | 8,465 s |
+| Média | **50,172 s** | **9,361 s** |
+| Processos Java por rodada | 10 | 2 |
+
+Redução local de **81,3% nessa preparação/limpeza**, com variação entre amostras.
+O JAR comum teve SHA-256
+`f10e8a5b76c4ceb17641464407ac67ca6130f152051ccf71a375ee60207e2ebc`.
+Isso não significa reduzir a CI inteira em 81,3%: as esperas de quota e os
+outros testes permanecem. A regressão completa desta revisão está pendente. Fontes, testes e comandos ficam no repositório; XML e logs locais
+ficam no checkpoint privado `ci-pilots-20261104`.
+
+Retorno: reverter os commits desses pilotos restaura a preparação integral de
+fixtures e as chamadas individuais do ensaio. Não há migração de dados,
+publicação, alteração de VPS nem mudança no ambiente do time nesta etapa.
 
 ## O que foi medido
 

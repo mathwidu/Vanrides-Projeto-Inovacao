@@ -22,13 +22,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 class WaInboxTransportIntegrationTest {
     @Container
     static PostgreSQLContainer<?> postgres = postgres("vanrides_wa_inbox_transport");
+    private static final WaTransportTestDatabase DATABASE = new WaTransportTestDatabase(postgres);
     private WaTransportTestSupport h;
     private WaInboxTestSupport inbox;
     private WaPrincipal worker;
 
     @BeforeEach
     void reset() {
-        inbox = new WaInboxTestSupport(postgres);
+        inbox = new WaInboxTestSupport(postgres, DATABASE.fixture());
         h = inbox.transport;
         worker = inbox.worker;
     }

@@ -8,6 +8,7 @@ import crypto from 'node:crypto';
 import { execFileSync, spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { createTools } from './070-worker-preflight.mjs';
+import { createOperatorBatch } from './070-operator-batch.mjs';
 import { provision, connectionEvent } from './070-worker-scenarios.mjs';
 import { academicScenarios, academicCheck, assertTrackingChecks } from './academic-scenario-plan.mjs';
 import { startProvider, createWorkerProcess } from './070-worker-runtime.mjs';
@@ -162,9 +163,10 @@ async function run() {
       const peers = [14, 13].map(length => ({ actor: crypto.randomUUID(), aliasId: crypto.randomUUID(),
         address: '0'.repeat(length) + '@s.whatsapp.net' }));
       const tools = createTools(input, frozen, scenarioWork, batch), credentials = [];
+      const operatorBatch = createOperatorBatch({ java, input, frozen, work: scenarioWork, batch, next: tools.next });
       let worker = null, provider = null, scenarioFailure = null;
       try {
-        await provision({ input, tools, batch, actor, aliasId, instance, address, peers, credentials, attendance: true, interruption });
+        await provision({ input, tools, batch, actor, aliasId, instance, address, peers, credentials, attendance: true, interruption, operatorBatch });
         // Recovery120 proves the UNKNOWN starting state before its own OPEN event.
         if (scenario !== '120') await connectionEvent({ input, instance, credentials, interruption }, 'open');
         const apiKey = 'synthetic-provider-' + crypto.randomBytes(24).toString('hex');
@@ -218,10 +220,12 @@ async function run() {
           try { await resource.stop(); } catch { cleanupErrors.push('SCENARIO_OWNED_PROCESS_CLEANUP_FAILED'); }
         }
         try {
+          const cleanup = [];
           if (tools.count(`SELECT count(*) FROM wa.test_cohort WHERE id=${quote(batch)}`) === 1)
-            tools.operate('reset-test-data');
-          for (const item of credentials) tools.operate('revoke-service-credential',
-            { credentialId: item.credentialId, reasonCode: 'SYNTHETIC_SMOKE_COMPLETED' });
+            cleanup.push({ operation: 'reset-test-data' });
+          for (const item of credentials) cleanup.push({ operation: 'revoke-service-credential',
+            fields: { credentialId: item.credentialId, reasonCode: 'SYNTHETIC_SMOKE_COMPLETED' } });
+          if (cleanup.length) await operatorBatch(cleanup);
           demand(tools.count(`SELECT count(*) FROM wa.identity WHERE test_cohort_id=${quote(batch)}`) === 0,
             'SMOKE_SCOPED_RESET_FAILED');
         } catch { cleanupErrors.push('SCENARIO_SCOPED_RESET_FAILED'); }
