@@ -1,5 +1,6 @@
 import { pn, lid } from './config.mjs';
 import { object, timestamp } from './strict-json.mjs';
+import { isHml } from './hml-config.mjs';
 
 const STATUSES = new Set(['SERVER_ACK', 'DELIVERY_ACK', 'READ', 'PLAYED', 'ERROR']);
 const STATES = new Set(['open', 'connecting', 'close', 'refused']);
@@ -34,18 +35,32 @@ export function filterEvent(envelope, config, now) {
   if (!contact) return null;
   // Accept only the two plain text layouts understood by Evolution2.3.7. Mixed and wrapped content fails closed.
   const message = data.message, keys = Object.keys(message);
-  let content, messageType;
+  let content, messageType, cleanMessage;
   if (keys.length === 1 && keys[0] === 'conversation' && text(message.conversation)) {
     content = message.conversation; messageType = 'conversation';
   } else if (keys.length === 1 && keys[0] === 'extendedTextMessage' && object(message.extendedTextMessage)
       && Object.keys(message.extendedTextMessage).every(field => ['text', 'contextInfo'].includes(field))
       && text(message.extendedTextMessage.text)) {
     content = message.extendedTextMessage.text; messageType = 'extendedTextMessage';
+  } else if (isHml(config) && keys.length === 1 && keys[0] === 'locationMessage' && object(message.locationMessage)) {
+    const location = message.locationMessage;
+    if (!Number.isFinite(location.degreesLatitude) || Math.abs(location.degreesLatitude) > 90
+      || !Number.isFinite(location.degreesLongitude) || Math.abs(location.degreesLongitude) > 180
+      || Object.hasOwn(location, 'isLive') && location.isLive !== false) return null;
+    messageType = 'locationMessage';
+    cleanMessage = { locationMessage: { degreesLatitude: location.degreesLatitude,
+      degreesLongitude: location.degreesLongitude, isLive: false } };
   } else return null;
   if (Object.hasOwn(data, 'messageType') && data.messageType !== messageType) return null;
   const cleanKey = { id: key.id, fromMe: false, remoteJid: key.remoteJid };
   if (Object.hasOwn(key, 'remoteJidAlt')) cleanKey.remoteJidAlt = key.remoteJidAlt;
-  const cleanData = { key: cleanKey, message: { conversation: content } };
+  const cleanData = { key: cleanKey, message: cleanMessage ?? { conversation: content } };
+  if (isHml(config)) {
+    // Same precedence as WaEvolutionNormalizer; quoted bodies/identity metadata never pass.
+    const reply = [data.contextInfo?.stanzaId, message.extendedTextMessage?.contextInfo?.stanzaId,
+      message.locationMessage?.contextInfo?.stanzaId].find(id);
+    if (reply !== undefined) cleanData.contextInfo = { stanzaId: reply };
+  }
   if (Object.hasOwn(data, 'messageTimestamp')) {
     if (!Number.isSafeInteger(data.messageTimestamp) || data.messageTimestamp < 0) return null;
     const time = data.messageTimestamp * 1000;
