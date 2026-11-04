@@ -51,7 +51,10 @@ final class WaPassengerAnswers {
                     Map.entry("dom", 7));
 
     static String loose(String normalized) {
-        return normalized.replaceAll("[^\\p{L}\\p{N}, ]", " ").replaceAll(" +", " ").strip();
+        return normalized
+                .replaceAll("[^\\p{L}\\p{N}, ]", " ")
+                .replaceAll("^[ ,]+|[ ,]+$", "")
+                .replaceAll(" +", " ");
     }
 
     static ArrayNode days(String text) {
@@ -60,6 +63,9 @@ final class WaPassengerAnswers {
         int previous = 0;
         boolean range = false;
         for (String token : list.split("[, ]+")) {
+            if (token.equals("e") && range) {
+                return null;
+            }
             if (token.equals("e") || token.equals("feira")) {
                 continue;
             }
@@ -95,6 +101,9 @@ final class WaPassengerAnswers {
     static String dayNames(JsonNode days) {
         List<Integer> numbers = new ArrayList<>();
         days.forEach(day -> numbers.add(day.asInt()));
+        if (numbers.isEmpty()) {
+            return "";
+        }
         if (numbers.equals(List.of(1, 2, 3, 4, 5, 6, 7))) {
             return "todos os dias";
         }
@@ -123,7 +132,7 @@ final class WaPassengerAnswers {
         if (numbers.containsAll(List.of(1, 2, 3, 4, 5))) {
             options.add(new WaPrompt.Option("1,2,3,4,5", "Segunda a sexta", List.of()));
         }
-        if (numbers.size() == 7) {
+        if (numbers.containsAll(List.of(1, 2, 3, 4, 5, 6, 7))) {
             options.add(new WaPrompt.Option("1,2,3,4,5,6,7", "Todos os dias", List.of()));
         }
         return WaPrompt.list(question, options);

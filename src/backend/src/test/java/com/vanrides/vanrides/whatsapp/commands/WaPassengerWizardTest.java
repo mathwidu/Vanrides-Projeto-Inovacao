@@ -55,6 +55,8 @@ class WaPassengerWizardTest {
         assertEquals("sim", WaPassengerAnswers.loose("  sim 👍 "));
         assertEquals("segunda feira, quarta", WaPassengerAnswers.loose("segunda-feira,   quarta..."));
         assertEquals("ponto 2", WaPassengerAnswers.loose("ponto   2"));
+        assertEquals("sim", WaPassengerAnswers.loose("sim,"));
+        assertEquals("1, 3", WaPassengerAnswers.loose(", 1, 3 ,"));
     }
 
     @Test
@@ -70,6 +72,7 @@ class WaPassengerWizardTest {
         assertNull(WaPassengerAnswers.days("quarta a segunda"));
         assertNull(WaPassengerAnswers.days("segunda segunda"));
         assertNull(WaPassengerAnswers.days("segunda a"));
+        assertNull(WaPassengerAnswers.days("segunda a e sexta"));
         assertNull(WaPassengerAnswers.days("a sexta"));
         assertNull(WaPassengerAnswers.days("feriado"));
         assertNull(WaPassengerAnswers.days(""));
@@ -80,6 +83,7 @@ class WaPassengerWizardTest {
         assertEquals("todos os dias", WaPassengerAnswers.dayNames(array("[1,2,3,4,5,6,7]")));
         assertEquals("segunda a sexta", WaPassengerAnswers.dayNames(array("[1,2,3,4,5]")));
         assertEquals("terça", WaPassengerAnswers.dayNames(array("[2]")));
+        assertEquals("", WaPassengerAnswers.dayNames(array("[]")));
         assertEquals("segunda, quarta e sábado", WaPassengerAnswers.dayNames(array("[1,3,6]")));
     }
 
@@ -101,6 +105,8 @@ class WaPassengerWizardTest {
                     option.label());
         }
         assertTrue(prompt.answer("terca").isPresent());
+        var duplicated = WaPassengerAnswers.dayPrompt("?", array("[1,1,2,3,4,5,6]"));
+        assertFalse(duplicated.text().contains("Todos os dias"), duplicated.text());
         var weekdaysOnly = WaPassengerAnswers.dayPrompt("Quais dias?", array("[1,3]"));
         assertEquals("Quais dias? Opções: Segunda, Quarta.", weekdaysOnly.text());
     }

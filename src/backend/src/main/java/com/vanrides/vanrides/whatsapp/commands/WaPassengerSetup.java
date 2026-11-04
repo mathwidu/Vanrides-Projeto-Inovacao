@@ -59,7 +59,7 @@ final class WaPassengerSetup {
             if (!WaPassengerWizard.starts(text) && draft.isEmpty()) {
                 return null;
             }
-            if (WaDriverWizard.starts(text)) {
+            if (WaDriverWizard.starts(WaDriverWizard.text(event))) {
                 return null;
             }
         } else {

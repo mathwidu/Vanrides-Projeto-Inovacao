@@ -286,7 +286,10 @@ final class WaPassengerWizard {
                 !draft.path("stage").asText().equals(stage)
                         || !draft.path("dayIndex").equals(dayBefore)
                         || stage.equals("NOTICE") && text.equals("aceito");
-        return new Step(draft, understood || !lead.isEmpty() ? lead : WaPassengerTexts.NOT_UNDERSTOOD);
+        if (!understood && lead.isEmpty()) {
+            lead = WaPassengerTexts.NOT_UNDERSTOOD;
+        }
+        return new Step(draft, lead);
     }
 
     private void afterIdentity(WaProfileState actor, ObjectNode draft) {

@@ -3,6 +3,8 @@ package com.vanrides.vanrides.whatsapp.commands;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import java.util.List;
+
 final class WaPassengerTexts {
     static final String NOT_UNDERSTOOD = "Não entendi sua resposta. ";
     static final String NOTICE_RENEWED =
@@ -18,10 +20,14 @@ final class WaPassengerTexts {
     private WaPassengerTexts() {}
 
     static WaPrompt driverConfirm(String driverName) {
-        return WaPrompt.yesNo(
+        return new WaPrompt(
                 "Seu convite é do motorista "
                         + driverName
-                        + ". Você quer se cadastrar com este motorista?");
+                        + ". Você quer se cadastrar com este motorista?",
+                WaPrompt.Kind.BUTTONS,
+                List.of(
+                        new WaPrompt.Option("YES", "Sim", List.of()),
+                        new WaPrompt.Option("NO", "Não", List.of())));
     }
 
     static String prompt(ObjectNode draft) {
