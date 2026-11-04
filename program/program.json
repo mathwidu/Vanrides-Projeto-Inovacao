@@ -5916,7 +5916,12 @@
           "deploy/homologacao/",
           "scripts/homologacao/",
           ".github/workflows/homologacao-api.yml",
-          "docs/plans/2026-10-28-whatsapp-mvp/10-registro-de-decisoes.md"
+          "docs/plans/2026-10-28-whatsapp-mvp/10-registro-de-decisoes.md",
+          "README.md",
+          "CONTRIBUTING.md",
+          "docs/02-arquitetura-e-decisoes.md",
+          "docs/03-testes-e-resultados.md",
+          "docs/04-plano-de-entrega.md"
         ],
         "backend": [
           "src/main/",

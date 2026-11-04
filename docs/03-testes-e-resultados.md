@@ -1,13 +1,14 @@
 # Testes e resultados
 
-Situação atualizada em 03/11/2026 a partir dos registros de desenvolvimento.
+Situação atualizada em 04/11/2026. Resultados são vinculados à versão avaliada;
+`main`, branch de integração e binário da VPS podem ter revisões diferentes.
 
 | Área | O que foi verificado | O que falta |
 |---|---|---|
-| Cadastros | Motorista, passageiro, convite, aprovação e ponto de embarque | Repetir a experiência no WhatsApp real |
-| Presença | Data e sentido corretos, correção, lembretes e ausência de resposta | Testar a conversa completa com o número dedicado |
-| Atendimento | Interpretação de pedidos e tratamento de ambiguidades em uma amostra de mensagens | Avaliar conversas reais e corrigir novas dificuldades |
-| Envio de mensagens | Repetições, expiração e recuperação com um receptor de teste | Confirmar envio e recebimento pelo WhatsApp |
+| Cadastros | Motorista, convite e ponto em laboratório; perfil básico do passageiro com nome e aceite no WhatsApp real | Validar motorista, vínculo, dias e aprovação do ponto no canal real |
+| Presença | Regras de data/sentido, correção e silêncio em laboratório; consulta sem rotina libera a conversa no WhatsApp real | Validar presença efetiva de ida e volta com motorista e rotina |
+| Atendimento | Ajuda e retomada de passageiro sem vínculo validadas no WhatsApp real; IA desligada na homologação | Avaliar a jornada completa; melhorias do PR #105 ainda não publicadas na API |
+| Envio de mensagens | Regras de repetição em laboratório; 15 respostas DELIVERED acumuladas no canal real, quatro no reteste da API acc572f | Ampliar cenários reais de falha e recuperação |
 | Localização Android | Vínculo do aparelho, primeira posição e parada com recuperação de conexão | Percurso, tela bloqueada e bateria sem USB |
 | Localização iPhone | Instalação e ensaios iniciais de localização | Retomar os testes físicos e validar o fluxo completo |
 | Consulta de localização | Motorista e passageiro elegível recebem pin recente no canal simulado. A API revalida respostas atrasadas | Conferir o pin no WhatsApp real |
@@ -26,15 +27,21 @@ marcada como implementada pode ainda depender da validação no canal real;
 uma parte implementada não conclui todo o objetivo da funcionalidade. O link
 inicia a coleta no aplicativo do motorista; navegação externa está fora do MVP.
 
+A [evidência do passageiro](runbooks/whatsapp-mvp/cadastro-passageiro-sem-motorista.md)
+registra a publicação `acc572f`, os 26 testes direcionados anteriores a ela e a
+repetição no WhatsApp. A [homologação da equipe](desenvolvimento/homologacao-da-equipe.md)
+informa os acessos e as restrições atuais. Não aplicar resultados de uma versão
+a outra sem nova validação.
+
 ## Próximos testes completos
 
 1. Cadastrar motorista e passageiro pelo WhatsApp.
 2. Confirmar e corrigir a presença para uma ida e uma volta.
 3. Iniciar o trajeto e confirmar o compartilhamento da localização.
-4. Receber o aviso de aproximação no passageiro correto.
+4. Após calibração e ativação autorizada, receber o aviso de aproximação no passageiro correto.
 5. Interromper e restabelecer a internet, verificando recuperação e duplicidade.
-6. Encerrar o trajeto e confirmar que a localização deixou de ser compartilhada.
-7. Repetir no Android e no iPhone, com tela bloqueada e medição de bateria.
+6. Validar parada técnica; depois da implementação pendente, confirmar encerramento automático do trajeto.
+7. Repetir no Android e, quando o proprietário retomar os testes físicos, no iPhone, com tela bloqueada e medição de bateria.
 
 ## Como registrar novos resultados
 

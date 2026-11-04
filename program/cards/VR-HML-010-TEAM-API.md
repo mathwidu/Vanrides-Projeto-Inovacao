@@ -12,7 +12,21 @@ Todos os integrantes podem usar a API implementada do MVP no mesmo endereço HTT
 
 Publicar a API completa do MVP primeiro. O cenário de cadastro restrito abaixo é uma prova opcional da etapa anterior. A publicação usará o modo online da API com autenticação normal dos atores e acesso para toda a equipe. Worker, n8n/Evolution e APK do domínio entram após a API. A pedido do proprietário, limitar as verificações operacionais a artefato, destino, startup/HTTPS e fronteira de acesso.
 
-## Impact Analysis
+## Atualização de 04/11/2026
+
+API, PostgreSQL, APK e canal publicados em homologação. Saúde e download
+reconferidos; perfil básico e quatro interações após a correção validados no
+WhatsApp real. [Guia atual da equipe](../../docs/desenvolvimento/homologacao-da-equipe.md).
+A prova real do canal está na issue #91; não altera retroativamente o escopo
+restrito descrito neste card. Faltam motorista participante, jornada completa
+e revisão/aceite do colega. O card permanece em andamento. A integração local
+com main/PR #105 não substitui a API acc572f ainda instalada na VPS.
+O pedido de 04/11 inclui integrar as melhorias do colega e atualizar README,
+CONTRIBUTING, arquitetura, resultados e plano de entrega para orientar o time.
+Esses caminhos foram acrescentados ao escopo documental deste mesmo card;
+nenhuma nova funcionalidade ou promoção do piloto foi autorizada por isso.
+
+## Impact Analysis da preparação inicial
 
 A base local f85ec3e contém o mesmo runtime de dd12cf0, aprovado nas seis jornadas. A primeira fatia muda o perfil público do backend, o comando de teste para o colega e a receita de implantação. O domínio vanrides-inovacao-api.matheusduarte.dev.br resolve para a VPS. O serviço publicado ainda precisa de configuração, certificado válido e teste funcional. PostgreSQL e credenciais serão específicos da nova stack.
 

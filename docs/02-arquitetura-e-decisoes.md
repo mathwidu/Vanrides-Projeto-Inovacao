@@ -7,12 +7,27 @@ como etapas planejadas.
 
 ## Componentes e trocas
 
-![Componentes e direções das mensagens e dos dados](assets/arquitetura-fluxo.png)
+```mermaid
+flowchart LR
+    U[WhatsApp dos participantes] <--> E[Evolution dedicada]
+    E -->|Webhook e recibos| R[Receptor: valida contato e formato]
+    R -->|Eventos autenticados| A[API VanRides]
+    N[n8n: agendas ativas] -.->|Controle sem conversa ou GPS| B[Bot VanRides / Node.js]
+    B <-->|Contexto, comandos e fila de saída| A
+    B -->|Envio autorizado| E
+    A <--> D[(PostgreSQL)]
+    APP[App do motorista] -->|GPS autenticado| A
+    B -.->|Desabilitada na homologação| IA[Interpretação OpenAI]
+```
 
-[Abrir o desenho em SVG editável](assets/arquitetura-fluxo.svg)
+O desenho representa o ambiente de homologação conferido em 04/11/2026. Os
+arquivos gráficos da entrega acadêmica anterior permanecem em `docs/assets/`
+como registro daquele momento; para operação atual use este fluxo e o
+[guia da equipe](desenvolvimento/homologacao-da-equipe.md).
 
 1. O WhatsApp entrega a mensagem à Evolution API. A Evolution envia a entrada
-   e as atualizações de entrega à API do VanRides, que registra os eventos.
+   e as atualizações de entrega ao receptor dedicado. Ele verifica a instância,
+   o contato autorizado e o formato antes de encaminhar à API, que registra os eventos.
 2. O n8n agenda e aciona o **Bot VanRides (Node.js)**, programa que processa
    conversas e envios. A seta tracejada no desenho representa esse controle;
    as demais setas representam dados e mensagens. O n8n recebe apenas resultados
@@ -20,6 +35,7 @@ como etapas planejadas.
 3. O Bot VanRides lê a mensagem e o contexto na API. As regras conhecidas são
    tratadas diretamente; a OpenAI pode interpretar somente texto elegível.
    A API confere a pessoa, a ação e a autorização antes de alterar dados.
+   Na homologação atual a OpenAI está desligada: são usados comandos determinísticos.
 4. A API registra a resposta e autoriza o envio. O bot a envia pela
    Evolution ao WhatsApp e devolve o resultado à API. Uma atualização de entrega
    recebida depois também volta à API.
@@ -36,17 +52,35 @@ A integração com aplicativos de navegação foi retirada do recorte em 02/11/2
 
 ## Jornada de cadastro e transporte
 
-![Jornada numerada de cadastro e presença até GPS e etapas planejadas](assets/jornada-fluxo.png)
+```mermaid
+flowchart TD
+    A[Operador admite contato e fornece convite do motorista] --> B[Motorista: nome, aceite e rotinas]
+    B --> C[Convite de passageiro]
+    C --> D[Passageiro: perfil, preferências, dias e ponto estático]
+    D --> E[Motorista aprova vínculo e ponto]
+    E --> F[Ocorrência de ida ou volta e confirmação de presença]
+    B --> G[Instalar APK e vincular celular pelo código]
+    F --> H[Revisar ordem e confirmar saída no WhatsApp]
+    G --> H
+    H --> I[Link abre o app; motorista confirma coleta]
+    I --> J[API recebe posição válida]
+    J --> K[Consulta da van pelo passageiro elegível]
+    J -.-> L[Aviso de aproximação: desligado, aguarda percurso]
+    J --> M[Parar localização: encerra coleta técnica]
+    M -.-> O[Finalizar viagem automaticamente: pendente]
+```
 
-[Abrir a jornada em SVG editável](assets/jornada-fluxo.svg)
+O perfil básico do passageiro também pode ser concluído antes de receber o
+convite. Para avançar a dias, ponto e aprovação, o vínculo exige um motorista.
+Parar a coleta não equivale a concluir a viagem na API.
 
 | Momento | Como funciona | Situação |
 |---|---|---|
-| Cadastro e ponto | O passageiro usa o convite, informa o ponto e aguarda a aprovação do motorista. | Implementado e ensaiado em laboratório |
+| Cadastro e ponto | O passageiro usa o convite, informa o ponto e aguarda a aprovação do motorista. | Perfil básico validado no WhatsApp real; vínculo e ponto ainda em laboratório |
 | Rotina e presença | O motorista organiza dias e horários; o passageiro responde por data e sentido. O silêncio mantém a presença pendente. | Implementado e ensaiado em laboratório |
 | Início | A API prepara o link enviado pelo WhatsApp. Ele abre o aplicativo já vinculado; o motorista confirma a coleta. | Implementado e ensaiado em laboratório |
 | GPS | O aplicativo coleta a localização com Google FLP no Android ou Core Location no iPhone e a envia à API. A confirmação de início depende de posição válida recebida, não apenas da abertura do link. | Integração ensaiada no Android; percurso completo pendente |
-| Aproximação | A API avalia posição recente, ponto, ordem e sentido para avisar o passageiro elegível. | Regra testada em PostgreSQL; aceite de utilidade em percurso pendente |
+| Aproximação | A API avalia posição recente, ponto, ordem e sentido para avisar o passageiro elegível. | Regra testada em PostgreSQL, desligada na homologação; aceite em percurso pendente |
 | Encerramento | A API deverá reconhecer o fim e coordenar a parada do aplicativo; a finalização manual será contingência. | Fim automático planejado; parada técnica tem ensaio próprio |
 
 ## Dúvidas e indisponibilidade
@@ -81,7 +115,8 @@ o bot exigiria transferir e testar sua lógica. A comparação deve considerar
 o esforço de operação e o valor dos fluxos visuais para a equipe.
 
 As versões estão na STACK e os resultados no [relatório de testes](03-testes-e-resultados.md).
-Os fluxos desenhados representam implementação e planejamento, com ensaios de
-laboratório. As oito automações do n8n estão preparadas e permanecem inativas
-no ambiente conferido. O canal real, o percurso completo e o fim automático ainda não
-constituem uma operação validada com usuários.
+Os fluxos representam a implementação publicada e as etapas ainda pendentes.
+As quatro agendas e o tratamento de erros estão publicados no n8n; os três
+subfluxos não têm agenda própria. Perfil básico e respostas já foram validados
+no WhatsApp real. Jornada com motorista, percurso completo e fim automático
+ainda não constituem uma operação validada com usuários.
