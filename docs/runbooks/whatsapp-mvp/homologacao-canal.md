@@ -70,6 +70,30 @@ instalação dos serviços com aceite de todas as funcionalidades do MVP.
    independentemente do umask. Solicitações, recibos, tokens e QR permanecem
    privados e fora do Git. O operador também trata a precisão do timestamp Java.
 
+## Ajuste de horário e pareamento pela interface
+
+Na tentativa de pareamento de 04/11, o Redmi informou que não foi possível
+conectar o aparelho. O servidor permaneceu `connecting`, sem código de
+encerramento persistido. Esse estado não comprova conexão nem identifica a
+causa da recusa no telefone.
+
+Foi identificado separadamente um erro de horário na Evolution 2.3.7: ela
+subtrai o offset local e usa o sufixo UTC no timestamp. A imagem estava com
+`TZ=America/Sao_Paulo` e offset de 180 minutos, fazendo o receptor descartar
+os primeiros callbacks como anteriores ao início da janela. Foi aplicado
+`TZ=UTC` apenas ao serviço Evolution dedicado, mantendo imagem e volumes.
+A tarefa nova confirmou offset zero. Após o ajuste, dois callbacks de conexão
+foram encaminhados à API (`FORWARDED`). Os filtros de horário e identidade
+foram preservados. A correção desse erro não comprova resolução do pareamento.
+
+Para a tentativa solicitada pelo proprietário, o Evolution Manager foi aberto
+no Chrome por túnel SSH restrito a `127.0.0.1` no Mac. Nenhuma porta do painel
+foi publicada na internet. A instância exibida é `vanrides-hml`; o QR foi
+aberto na interface. A credencial de login não integra documentação ou Git.
+Os quatro agendamentos continuam desligados até a confirmação de conexão OPEN.
+
+Fonte do erro de horário: [serviço de canal da versão fixada](https://github.com/EvolutionAPI/evolution-api/blob/cd800f2976e1e5b682fbf86a01ee4d85ae61f370/src/api/services/channel.service.ts#L414-L427).
+
 ## Proveniência
 
 - Fontes do canal: SHA-256

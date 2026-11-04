@@ -33,6 +33,8 @@ services:
     volumes: [instances:/evolution/instances]
     logging: {driver: none}
     environment:
+      # Evolution 2.3.7 emits local wall time with a Z suffix; UTC keeps callbacks correct.
+      TZ: UTC
       SERVER_TYPE: http
       SERVER_PORT: '8080'
       SERVER_URL: https://evolution-hml:8443
