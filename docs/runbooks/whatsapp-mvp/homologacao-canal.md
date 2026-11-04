@@ -47,7 +47,7 @@ os serviços temporários foram removidos.
 | Pareamento WhatsApp | Confirmado no Redmi pelo proprietário e OPEN no servidor |
 | Agendamentos W01/W04/W06/W08 | Publicados, com estados e versões dos outros fluxos preservados |
 | Execução real dos agendamentos | W01/W06 com execuções success; W04/W08 também executaram após correção do intervalo |
-| Conversa real, envio e recibo | Ainda não verificados |
+| Conversa real, envio e recibo | 2 mensagens COMPLETED, 2 respostas DELIVERED, 4 callbacks STATUS COMPLETED; respostas visíveis no WhatsApp do Mac |
 | GPS pelo canal publicado | Ainda não verificado; requer participante motorista |
 
 Os testes físicos do iPhone continuam pausados. Os avisos de aproximação
@@ -131,9 +131,26 @@ conteúdo bruto. A repetição observada não apresentou erro de descriptografia
 webhook. Não houve atualização de versão da Evolution ou Baileys. O diagnóstico
 do receptor dispensa novas janelas de captura de 90 segundos.
 
-O próximo teste é uma nova mensagem do passageiro. Ainda não há evidência de
-resposta entregue. Um eventual LID exige verificação própria; a consulta de
-existência de número não comprova PN→LID.
+A nova mensagem passou pela identificação, mas retornou `HML_DROP_MESSAGE_SHAPE`.
+A reprodução autorizada no WhatsApp do Mac confirmou o mesmo resultado. A captura
+restrita em memória encontrou os campos `conversation` e `messageContextInfo`, sem
+erro de descriptografia ou webhook. O filtro exigia um único campo no corpo.
+
+A correção aceita, somente em HML, `messageContextInfo` objeto junto de um único
+conteúdo suportado e descarta essa metadata integralmente. Ela não participa da
+identificação, resposta ou localização. Conteúdos mistos, wrappers, metadata
+inválida e aliases desconhecidos continuam rejeitados; o modo legado foi
+preservado. Teste de regressão falhou antes da correção e passou depois; suíte
+direcionada 26/26, revisão independente sem bloqueadores. O retorno operacional
+é `ingress-before-canonical/policy-before-metadata.mjs` e reinício apenas do receptor.
+
+Após o ajuste, o teste autorizado no WhatsApp do Mac confirmou a resposta de ajuda
+e a pergunta inicial do cadastro. A API confirmou 2 mensagens COMPLETED,
+2 respostas DELIVERED e 4 callbacks STATUS COMPLETED. O cadastro ficou na pergunta
+do nome; não houve aceite de aviso, vínculo com motorista ou GPS nessa rodada.
+Não confundir esta prova do canal com a validação completa das jornadas do MVP.
+Um eventual LID exige verificação própria; a consulta de existência de número
+não comprova PN→LID.
 
 ## Proveniência
 
@@ -146,7 +163,7 @@ existência de número não comprova PN→LID.
 - Ajuste de W04/W08 aplicado: SHA-256
   `4fa8c72e2609caf820b44d21d69dd24b5dbfc6819bbd318dc69f9ca805b78822`.
 - Receptor atualizado: `policy.mjs` SHA-256
-  `961681610bbb2203f031e975c522698fdbfd3fba41610b58e484f63102e94930`;
+  `4016a1baddbbd1029b24da6f6bbd0ce550b688d083906955fdf2cf16c0da8fb6`;
   `server.mjs` SHA-256
   `6a9a595de91a25bea067dd33a0ecdf25031cbd37933ad3eeb4cab2319a58bae4`.
 - Namespace dos fluxos: `vrHml6dffaf010805` (W01 a W08).
@@ -155,10 +172,10 @@ existência de número não comprova PN→LID.
 
 ## Continuação e retorno
 
-Com OPEN e os quatro agendamentos confirmados, pedir que o
-passageiro autorizado envie uma mensagem ao número do bot. Conferir ingestão,
-processamento, resposta recebida e recibo correlacionado sem guardar a conversa
-na evidência pública. A inclusão dos colegas exige confirmação dos contatos e
+Com OPEN, agendamentos e primeira conversa confirmados, continuar o cadastro
+do passageiro a partir da pergunta do nome. Depois validar vínculo, presença
+e GPS com um participante motorista. Registrar estados e contagens sem guardar
+a conversa na evidência pública. A inclusão dos colegas exige confirmação dos contatos e
 admissão na mesma homologação, sem compartilhar credenciais administrativas.
 
 Se necessário suspender o canal, despublicar somente os quatro agendamentos

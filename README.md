@@ -26,7 +26,7 @@ Cadastros, vínculos, rotinas e presença possuem implementação e ensaios de
 laboratório. O aplicativo de localização está implementado para Android/iPhone;
 a integração recente foi ensaiada no Android, com o aparelho parado.
 
-A consulta da van passou no ensaio integrado com canal simulado. A regra de aproximação passou nos testes de banco e aguarda avaliação em percurso. Faltam a troca de mensagens no WhatsApp real, o encerramento automático e a publicação da API de homologação.
+A consulta da van passou no ensaio integrado com canal simulado. A regra de aproximação passou nos testes de banco e aguarda avaliação em percurso. A API, o APK e o canal estão publicados em homologação; ajuda e início de cadastro já responderam no WhatsApp real. Faltam validar as jornadas completas nesse canal e concluir o encerramento automático.
 Os testes físicos do iPhone estão pausados. **O piloto ainda não está liberado.**
 CI aprovada comprova os testes declarados, não WhatsApp real ou percurso.
 

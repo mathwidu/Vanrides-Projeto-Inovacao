@@ -46,8 +46,12 @@ function evaluateEvent(envelope, config, now, onDrop) {
       return drop('HML_DROP_ALIAS_CONFLICT');
     return drop('HML_DROP_CONTACT_NOT_ADMITTED');
   }
-  // Accept only the two plain text layouts understood by Evolution2.3.7. Mixed and wrapped content fails closed.
-  const message = data.message, keys = Object.keys(message);
+  // HML may carry provider metadata beside one supported content. Never forward
+  // that metadata or use it to resolve identity/reply; mixed/wrapped content fails closed.
+  const message = data.message;
+  const metadata = isHml(config) && Object.hasOwn(message, 'messageContextInfo');
+  if (metadata && !object(message.messageContextInfo)) return drop('HML_DROP_MESSAGE_SHAPE');
+  const keys = Object.keys(message).filter(field => !metadata || field !== 'messageContextInfo');
   let content, messageType, cleanMessage;
   if (keys.length === 1 && keys[0] === 'conversation' && text(message.conversation)) {
     content = message.conversation; messageType = 'conversation';

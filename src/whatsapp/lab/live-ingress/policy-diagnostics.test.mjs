@@ -47,7 +47,7 @@ const cases = [
     value.data.key.remoteJid = '18880001111@s.whatsapp.net'; delete value.data.key.remoteJidAlt;
   }],
   ['HML_DROP_ALIAS_CONFLICT', value => { value.data.key.remoteJidAlt = '27770002222@lid'; }],
-  ['HML_DROP_MESSAGE_SHAPE', value => { value.data.message.messageContextInfo = { secret: PRIVATE }; }],
+  ['HML_DROP_MESSAGE_SHAPE', value => { value.data.message.messageContextInfo = null; }],
   ['HML_DROP_MESSAGE_TYPE', value => { value.data.messageType = PRIVATE; }],
   ['HML_DROP_MESSAGE_TIMESTAMP', value => { value.data.messageTimestamp = PRIVATE; }],
   ['HML_DROP_LOCATION_SHAPE', value => {
@@ -58,7 +58,7 @@ const cases = [
   }],
 ];
 
-test('HML diagnostics share rejection points without accepting unknown aliases or messageContextInfo', () => {
+test('HML diagnostics share rejection points without accepting unknown aliases or invalid messageContextInfo', () => {
   const hml = config(), legacy = config(false);
   assert.ok(filterEvent(human(), hml, NOW));
   assert.equal(classifyPolicyDrop(human(), hml, NOW), null);
