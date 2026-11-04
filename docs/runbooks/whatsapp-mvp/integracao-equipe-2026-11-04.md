@@ -73,3 +73,24 @@ Sem merge, deploy, alteração de contatos, secrets, banco, n8n ou Evolution.
 Para desfazer a integração antes do merge remoto, manter as branches originais
 e abandonar a branch/PR de integração; não reescrever a main nem o trabalho do colega.
 A API permanece na imagem publicada até uma atualização separada e autorizada.
+
+
+## Primeira CI e ajustes dos ensaios
+
+PR #107 aberto em `2a96424`, sem conflitos com a main. Documentação, programa e
+WhatsApp passaram. Dois ensaios apontaram expectativas desatualizadas; a VPS
+permaneceu inalterada:
+
+- O auxiliar de homologação emitia `+00:00`; o parser do operador exige `Z`.
+  Corrigido somente o formato do auxiliar, com dois testes que falharam antes e
+  passaram depois (5/5 no arquivo). O ensaio real do JAR com PostgreSQL
+  descartável passou em `055a1d9`, incluindo duas credenciais, isolamento,
+  revogação, replay e persistência após reinício. Limpeza concluída.
+- A jornada de conversa ainda esperava a ajuda genérica anterior à correção
+  `acc572f`. Atualizado somente o literal esperado para passageiro ativo sem
+  vínculo; mantidas igualdade exata, unicidade, autorização e checks posteriores.
+  O cenário de texto desconhecido já passara na CI. Suporte, envio e reinício
+  posteriores precisam da reexecução completa, não são aprovados pelo ajuste textual.
+
+As correções de teste não alteram runtime, contratos da API ou comportamento
+publicado. A segunda execução da CI deve ser registrada no PR antes do aceite.

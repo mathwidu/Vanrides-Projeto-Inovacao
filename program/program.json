@@ -5921,7 +5921,8 @@
           "CONTRIBUTING.md",
           "docs/02-arquitetura-e-decisoes.md",
           "docs/03-testes-e-resultados.md",
-          "docs/04-plano-de-entrega.md"
+          "docs/04-plano-de-entrega.md",
+          "src/whatsapp/scripts/070-worker-scenarios.mjs"
         ],
         "backend": [
           "src/main/",

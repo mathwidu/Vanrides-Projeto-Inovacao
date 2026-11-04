@@ -105,7 +105,7 @@ export async function runScenarios({ input, tools, actor, instance, address, cre
     if (i === 3 || i === 4) {
       const response = i === 3
         ? 'Não consegui identificar o que você deseja. Escreva AJUDA para ver a próxima etapa ou FALAR COM SUPORTE para atendimento.'
-        : 'Seu cadastro está preparado. As demais funções serão liberadas nas próximas etapas do teste. Para atendimento, escreva FALAR COM SUPORTE.';
+        : 'Seu perfil de passageiro está pronto, mas você ainda não tem vínculo com um motorista. Peça ao seu motorista um convite de passageiro do VanRides e envie esse convite aqui. Você vai revisar o motorista, as rotinas e o ponto de embarque; o vínculo depende da aprovação do motorista. Para atendimento, escreva FALAR COM SUPORTE.';
       demand(tools.count(`SELECT count(*) FROM wa.message_outbox o JOIN wa.command_receipt r ON r.command_id=o.command_id
         WHERE r.inbox_event_id=${quote(id)} AND o.payload_json->>'text'=${quote(response)};`) === 1, 'FIXED_ORIENTATION_NOT_GENERATED');
     }

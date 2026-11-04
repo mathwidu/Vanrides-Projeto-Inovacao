@@ -25,6 +25,8 @@ O pedido de 04/11 inclui integrar as melhorias do colega e atualizar README,
 CONTRIBUTING, arquitetura, resultados e plano de entrega para orientar o time.
 Esses caminhos foram acrescentados ao escopo documental deste mesmo card;
 nenhuma nova funcionalidade ou promoção do piloto foi autorizada por isso.
+A conferência da CI também inclui alinhar o texto esperado no ensaio
+`070-worker-scenarios.mjs` ao comportamento publicado, mantendo os checks.
 
 ## Impact Analysis da preparação inicial
 
