@@ -43,6 +43,7 @@ final class WaPassengerSetup {
     private final WaPassengerDraftStore store;
     private final WaPassengerData data;
     private final WaPassengerWizard wizard;
+    private final WaPassengerReview review;
     private final WaPassengerMutations mutations;
 
     WaPassengerSetup(JdbcTemplate jdbc, WaClock clock, WaCrypto crypto, WaSettings settings) {
@@ -51,6 +52,7 @@ final class WaPassengerSetup {
         store = new WaPassengerDraftStore(jdbc, clock, crypto);
         data = new WaPassengerData(jdbc, clock, settings);
         wizard = new WaPassengerWizard(data);
+        review = new WaPassengerReview(data);
         mutations = new WaPassengerMutations(data);
     }
 
@@ -181,7 +183,7 @@ final class WaPassengerSetup {
             String response = WaPassengerTexts.prompt(draft);
             if (draft.path("stage").asText().equals("REVIEW")) {
                 String target = data.snapshot(actor.identityId(), draft, event);
-                reviewPoint(actor, event, draft);
+                review.enrich(actor, event, draft);
                 String marker = store.marker(actor, event, draft, outbox, target);
                 response = WaPassengerTexts.review(draft, marker);
                 if (response.codePointCount(0, response.length()) > 1900) {
@@ -196,67 +198,6 @@ final class WaPassengerSetup {
             return new Result(WaDecision.ok(Map.of("changed", true)), lead + response, null);
         } catch (WaProblem failure) {
             return recover(actor, event, draft, failure);
-        }
-    }
-
-    private void reviewPoint(WaProfileState actor, WaInboxAccess.Context event, ObjectNode draft) {
-        ObjectNode pin = null;
-        if (draft.has("linkId")) {
-            StringBuilder summary = new StringBuilder();
-            var rows =
-                    data.array(
-                            """
-                            SELECT jsonb_build_object('name',r.name,'direction',r.direction,'time',r.local_time::text,'days',s.weekdays)::text
-                            FROM wa.passenger_link_routine s JOIN wa.routine r ON r.id=s.routine_id WHERE s.link_id=? ORDER BY r.created_at,r.id
-                            """,
-                            UUID.fromString(draft.path("linkId").asText()));
-            for (var selection : rows) {
-                summary.append(selection.path("name").asText())
-                        .append(
-                                selection.path("direction").asText().equals("OUTBOUND")
-                                        ? " (ida)"
-                                        : " (volta)")
-                        .append(" às ")
-                        .append(selection.path("time").asText())
-                        .append(", dias ")
-                        .append(selection.path("days"))
-                        .append(". ");
-            }
-            draft.put("selectionSummary", summary.toString().strip());
-        }
-        if (draft.has("sourceEvent")) {
-            pin = data.pin(actor.identityId(), draft.path("sourceEvent").asText(), event.eventId());
-        } else {
-            if (draft.has("pickupId")) {
-                pin =
-                        data.point(
-                                UUID.fromString(draft.path("linkId").asText()),
-                                UUID.fromString(draft.path("pickupId").asText()),
-                                false);
-                if (pin.hasNonNull("reference_text")) {
-                    draft.put("reference", pin.path("reference_text").asText());
-                }
-                if (pin.hasNonNull("label")) {
-                    draft.put("pointLabel", pin.path("label").asText());
-                }
-            } else {
-                if (draft.has("commonId")) {
-                    var values = data.commons(UUID.fromString(draft.path("driverId").asText()));
-                    for (var value : values) {
-                        if (value.path("id").asText().equals(draft.path("commonId").asText())) {
-                            pin = (ObjectNode) value;
-                        }
-                    }
-                }
-            }
-        }
-        if (pin != null) {
-            draft.put(
-                    "mapUrl",
-                    "https://www.google.com/maps?q="
-                            + pin.path("latitude").asDouble()
-                            + ","
-                            + pin.path("longitude").asDouble());
         }
     }
 
