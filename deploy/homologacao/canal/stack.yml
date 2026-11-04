@@ -133,7 +133,7 @@ secrets:
   tls_crt: {external: true, name: vanrides-hml-canal-tls_crt-v1}
   tls_key: {external: true, name: vanrides-hml-canal-tls_key-v1}
   tls_ca: {external: true, name: vanrides-hml-canal-tls_ca-v1}
-  ingress: {external: true, name: vanrides-hml-canal-ingress-v1}
+  ingress: {external: true, name: vanrides-hml-canal-ingress-v2}
   conversation: {external: true, name: vanrides-hml-canal-conversation-v1}
   delivery: {external: true, name: vanrides-hml-canal-delivery-v1}
   control: {external: true, name: vanrides-hml-canal-control-v1}

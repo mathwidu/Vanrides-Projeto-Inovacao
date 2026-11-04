@@ -21,13 +21,14 @@ e preparação do QR no Redmi. Nenhum serviço pago ou modelo de IA foi ativado.
 - Lote técnico separado dos participantes reais. Um passageiro admitido com
   confirmação do proprietário, sem preencher automaticamente perfil ou papel.
 - Oito fluxos novos no projeto pessoal autorizado do n8n. Uma Header Auth
-  exclusiva controla o worker. W07 publicado. W01/W04/W06/W08 aguardam conexão
-  OPEN do bot para ativação. W02/W03/W05 permanecem subfluxos inativos.
+  exclusiva controla o worker. W07 e W01/W04/W06/W08 publicados após conexão OPEN do bot.
+  W02/W03/W05 permanecem subfluxos inativos.
 
 A API publicada continua no backend `57a2ffd`; o aplicativo continua
 `0.3.0-hml+13`. O JAR administrativo é executado em serviços temporários
-não web, sem reiniciar a API nem executar migração. Todos os sete pedidos
-administrativos retornaram COMMITTED e os serviços temporários foram removidos.
+não web, sem reiniciar a API nem executar migração. Os sete pedidos
+administrativos iniciais e a correção posterior da admissão retornaram COMMITTED;
+os serviços temporários foram removidos.
 
 ## Evidências e limites
 
@@ -43,7 +44,9 @@ administrativos retornaram COMMITTED e os serviços temporários foram removidos
 | n8n: importação | 8 fluxos próprios, inicialmente inativos |
 | n8n: publicação de W07 | Publicado, confirmado também no editor |
 | Fluxos preexistentes do n8n | Estados e versões preservados |
-| Pareamento WhatsApp | QR preparado privadamente; aguardando leitura no Redmi |
+| Pareamento WhatsApp | Confirmado no Redmi pelo proprietário e OPEN no servidor |
+| Agendamentos W01/W04/W06/W08 | Publicados, com estados e versões dos outros fluxos preservados |
+| Execução real dos agendamentos | W01/W06 com execuções success; W04/W08 também executaram após correção do intervalo |
 | Conversa real, envio e recibo | Ainda não verificados |
 | GPS pelo canal publicado | Ainda não verificado; requer participante motorista |
 
@@ -90,9 +93,47 @@ Para a tentativa solicitada pelo proprietário, o Evolution Manager foi aberto
 no Chrome por túnel SSH restrito a `127.0.0.1` no Mac. Nenhuma porta do painel
 foi publicada na internet. A instância exibida é `vanrides-hml`; o QR foi
 aberto na interface. A credencial de login não integra documentação ou Git.
-Os quatro agendamentos continuam desligados até a confirmação de conexão OPEN.
+Após o proprietário confirmar o pareamento pela interface, a API retornou OPEN.
+Foram publicados os quatro agendamentos próprios, sem reiniciar o n8n.
+O primeiro AJUDA foi confirmado no aparelho do bot. Uma repetição chegou ao
+receptor, mas foi descartada pela política antes da API; a resposta ainda depende
+da repetição após os ajustes abaixo.
 
 Fonte do erro de horário: [serviço de canal da versão fixada](https://github.com/EvolutionAPI/evolution-api/blob/cd800f2976e1e5b682fbf86a01ee4d85ae61f370/src/api/services/channel.service.ts#L414-L427).
+
+## Ajustes após a primeira mensagem real
+
+W04 e W08 usavam 60 no campo de segundos do Schedule Trigger 1.4. Essa versão
+aceita de 1 a 59; o estado publicado não significava acionador registrado.
+Os dois fluxos passaram a usar um minuto, preservando a cadência pretendida.
+Somente esses IDs foram republicados. A consulta de execuções confirmou sucesso
+nos quatro agendamentos; os outros fluxos e o n8n compartilhado foram preservados.
+O teste dos exports passou em 10 verificações.
+
+A consulta autenticada de existência do contato retornou para o passageiro um
+JID telefônico diferente do número digitado, sem o nono dígito. Foi usado
+exclusivamente o retorno dessa consulta individual; não foi criada regra global
+para remover dígitos. A admissão anterior não tinha perfil, mensagens, comandos
+ou respostas. Uma nova identidade admitida passou a representar o JID confirmado,
+com vínculo de auditoria privado à admissão anterior. Esta foi preservada; não
+houve edição direta de aliases ou migração de dados.
+
+O receptor recebeu uma nova versão do secret (`ingress-v2`), alterando somente
+o identificador desse contato. Tokens, prazo e limites foram preservados. Os
+arquivos `policy.mjs` e `server.mjs` passaram a registrar motivos fixos de descarte,
+sem mensagem, número, LID, GPS ou credenciais. Os critérios de aceitação e o
+HTTP 204 de descarte permanecem iguais. Validação: 24 testes direcionados e
+revisão independente sem achados bloqueadores. Somente o receptor reiniciou;
+voltou a READY e a instância continuou OPEN.
+
+A captura temporária de stdout da Evolution foi filtrada em memória, sem salvar
+conteúdo bruto. A repetição observada não apresentou erro de descriptografia ou
+webhook. Não houve atualização de versão da Evolution ou Baileys. O diagnóstico
+do receptor dispensa novas janelas de captura de 90 segundos.
+
+O próximo teste é uma nova mensagem do passageiro. Ainda não há evidência de
+resposta entregue. Um eventual LID exige verificação própria; a consulta de
+existência de número não comprova PN→LID.
 
 ## Proveniência
 
@@ -102,13 +143,19 @@ Fonte do erro de horário: [serviço de canal da versão fixada](https://github.
   `29dd480124e7e515cd47aac30b4eeea46a56bfdf134e91f62b343aa4b91f9773`.
 - Bundle n8n inativo aplicado, com ajuste restrito do W07: SHA-256
   `ecd5aad4cbd9584696e0f1f0ba9decbc2c21294f88410a69a59858fd3830dfcc`.
+- Ajuste de W04/W08 aplicado: SHA-256
+  `4fa8c72e2609caf820b44d21d69dd24b5dbfc6819bbd318dc69f9ca805b78822`.
+- Receptor atualizado: `policy.mjs` SHA-256
+  `961681610bbb2203f031e975c522698fdbfd3fba41610b58e484f63102e94930`;
+  `server.mjs` SHA-256
+  `6a9a595de91a25bea067dd33a0ecdf25031cbd37933ad3eeb4cab2319a58bae4`.
 - Namespace dos fluxos: `vrHml6dffaf010805` (W01 a W08).
 - Recibos administrativos e de importação ficam no diretório privado do operador
   na VPS, dentro de `homologacao/canal-c7cbe3d`. Não copiar seu conteúdo para issues.
 
 ## Continuação e retorno
 
-Após a leitura do QR, confirmar OPEN, publicar W01/W04/W06/W08 e pedir que o
+Com OPEN e os quatro agendamentos confirmados, pedir que o
 passageiro autorizado envie uma mensagem ao número do bot. Conferir ingestão,
 processamento, resposta recebida e recibo correlacionado sem guardar a conversa
 na evidência pública. A inclusão dos colegas exige confirmação dos contatos e

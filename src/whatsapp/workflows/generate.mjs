@@ -19,7 +19,7 @@ const names = { W01: 'Conversa', W02: 'Motorista', W03: 'Passageiro', W04: 'Pres
 const node = (flow, type, name, parameters, index = 0) => ({ id: `${flow}-${index}-${type}`, name,
   type: `n8n-nodes-base.${type}`, typeVersion: versions[type], position: [index * 260, 0], parameters });
 const schedule = (flow, seconds) => node(flow, 'scheduleTrigger', 'Agendar', {
-  rule: { interval: [{ field: 'seconds', secondsInterval: seconds }] },
+  rule: { interval: [seconds === 60 ? { field: 'minutes', minutesInterval: 1 } : { field: 'seconds', secondsInterval: seconds }] },
 });
 const trigger = flow => node(flow, 'executeWorkflowTrigger', 'Subfluxo', { inputSource: 'passthrough' });
 const http = (flow, path, method = 'POST') => ({ ...node(flow, 'httpRequest', 'Executar operação privada', {

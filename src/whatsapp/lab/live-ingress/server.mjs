@@ -1,7 +1,7 @@
 import { createServer } from 'node:http';
 import { timingSafeEqual } from 'node:crypto';
 import { strictJson } from './strict-json.mjs';
-import { filterEvent } from './policy.mjs';
+import { filterEvent, classifyPolicyDrop } from './policy.mjs';
 import { startPost } from './post.mjs';
 import { isHml } from './hml-config.mjs';
 import { createMinuteLimit } from './minute-limit.mjs';
@@ -92,10 +92,11 @@ export function createLiveIngressServer({ config, fetchImpl = fetch, now = Date.
     catch (status) { return invalid(response, status === 413 ? 413 : 400); }
     finally { reading--; }
     if (request.aborted || response.destroyed) return;
-    const event = filterEvent(envelope, config, now());
+    const eventNow = now();
+    const event = filterEvent(envelope, config, eventNow);
     if (!event || !hml && (counters[event.kind] >= LIMITS[event.kind]
         || event.kind === 'human' && counters['contact' + event.contact] >= 8))
-      return reply(response, 204, null, 'POLICY_DROP', 'dropped');
+      return reply(response, 204, null, hml ? classifyPolicyDrop(envelope, config, eventNow) ?? 'POLICY_DROP' : 'POLICY_DROP', 'dropped');
     if (stopped || active[event.lane]) return busy(response);
     if (hml) {
       const capacity = minuteLimit.take(event, now());
