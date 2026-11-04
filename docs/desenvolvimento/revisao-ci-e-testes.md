@@ -122,10 +122,24 @@ paralelizar jornadas no mesmo processo: há porta TLS compartilhada e operaçõe
 sincrônicas que poderiam interferir nos prazos de ACK/GPS. Não introduzimos
 outro endpoint de teste ou controle de relógio na API de produção.
 
-Testes locais de contrato e casos negativos passaram; actionlint aprovou a
-composição. A validação integrada da sequência consolidada será registrada
-abaixo após sua execução. O transporte via GitHub e o efeito do cache ainda
-dependem da execução remota autorizada. Não houve push, merge ou acesso à VPS.
+Validação local em `657f343`, em 04/11/2026:
+
+| Verificação | Resultado |
+|---|---|
+| Contratos e casos negativos | Composição, identidade do artefato, checksum, cobertura V2 e compatibilidade V1 aprovados; actionlint e consistência documental aprovados. |
+| Integração JAR/PostgreSQL | 42 checks aprovados nos seis conjuntos, em cinco execuções; API, banco e recursos temporários removidos. Duração local: 18 min 7 s; 19 esperas de quota somaram 10 min 0 s. |
+| Homologação local com duas credenciais | Aprovada com o mesmo JAR, em 81 s; isolamento e limpeza preservados. |
+| Imagem Docker | Construída sem recompilar; JAR extraído da imagem idêntico ao aprovado, revisão e checksum conferidos; contêiner e tag temporários removidos. |
+
+O JAR teve SHA-256
+`2a256b6808c89b71bb42bf9683f1b2b031013b5aa49f5ebbf81899842e45ad1b`.
+Esses tempos são uma amostra no Mac; não permitem calcular ganho percentual
+contra a execução histórica do GitHub, que tinha outro conjunto de jornadas.
+O recibo local registra macOS/ARM64 e não substitui a evidência Linux/x64 exigida
+para o pacote de laboratório. O transporte via GitHub, o cache e a suíte canônica
+completa nesta composição ainda dependem de CI remota autorizada. Não houve push,
+merge, alteração de regras de branch ou acesso à VPS. Evidência detalhada fica no
+checkpoint privado `ci-audit-20261104/phase3`; fontes e procedimentos estão no Git.
 
 ## O que foi medido
 

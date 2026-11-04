@@ -126,3 +126,10 @@ Preparar em branch própria, revisar o PR pelo grupo e testar. A promoção exig
 ## Rollback
 
 Revogar as credenciais da rodada e retirar a nova rota. No primeiro deploy, parar os novos serviços preservando o volume próprio. Em atualização, voltar ao digest anterior apenas se o schema for compatível; quando necessário, restaurar o banco isolado previamente ensaiado.
+
+Validação da consolidação em `657f343` (04/11/2026): 42 verificações integradas
+JAR/PostgreSQL aprovadas; cinco execuções cobrem seis conjuntos. Homologação
+local e imagem Docker usam o mesmo JAR e passaram, com limpeza confirmada.
+Medição e limites em `docs/desenvolvimento/revisao-ci-e-testes.md`.
+Transporte de artefato e composição completa no GitHub ainda pendentes;
+nenhuma publicação, alteração de VPS ou teste físico iPhone nesta etapa.
