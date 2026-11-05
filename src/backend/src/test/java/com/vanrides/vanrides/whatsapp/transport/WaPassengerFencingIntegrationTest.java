@@ -12,6 +12,7 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import java.time.Instant;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
@@ -91,21 +92,25 @@ class WaPassengerFencingIntegrationTest {
     }
 
     @Test
-    void passengerConfirmationNeedsTheSummarySubmittedAndNotTypedBeforeItWasIssued() {
+    void passengerConfirmationNeedsTheSummarySubmittedAndNotTypedBeforeItsIssueSecond() {
         fixture.review(passenger, code);
         fixture.send(passenger, "CONFIRMAR");
         assertEquals(0, fixture.count("driver_passenger_link"));
-        fixture.deliverSummary(passenger);
-        var early =
-                fixture.conversation.textAt(
-                        passenger,
-                        "CONFIRMAR",
-                        fixture.transport.clock.now().minusSeconds(5));
-        fixture.execute(early, true);
+
+        fixture.markSummarySubmitted(passenger);
+        var before = fixture.conversation.textAt(passenger, "CONFIRMAR", issuedAt().minusMillis(1));
+        fixture.execute(before, true);
         assertEquals(0, fixture.count("driver_passenger_link"));
-        fixture.deliverSummary(passenger);
-        fixture.send(passenger, "CONFIRMAR");
+
+        fixture.markSummarySubmitted(passenger);
+        var sameSecond = fixture.conversation.textAt(passenger, "CONFIRMAR", issuedAt());
+        fixture.execute(sameSecond, true);
         assertEquals(1, fixture.count("driver_passenger_link"));
+    }
+
+    private Instant issuedAt() {
+        return Instant.parse(
+                fixture.draft(passenger).path("confirmation").path("issuedAt").asText());
     }
 
     @Test
