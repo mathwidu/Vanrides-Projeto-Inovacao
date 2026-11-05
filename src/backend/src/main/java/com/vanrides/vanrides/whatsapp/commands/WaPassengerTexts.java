@@ -57,8 +57,10 @@ final class WaPassengerTexts {
                     "Envie um pin estático para esse ponto comum. Localização ao vivo não serve"
                             + " para o cadastro.";
             case "REVIEW" ->
-                    "Revise o resumo. Envie CONTINUAR para receber uma confirmação nova, CORRIGIR"
-                            + " ou ABANDONAR.";
+                    "Para confirmar, responda CONFIRMAR com o código do último resumo que enviei."
+                            + " Se o código expirou ou você não o encontra, envie CONTINUAR para"
+                            + " receber um resumo novo. Use CORRIGIR para mudar algo ou ABANDONAR"
+                            + " para cancelar.";
             default ->
                     "Envie seu convite para iniciar ou CONTINUAR CADASTRO para retomar. Para ajuda,"
                             + " envie AJUDA.";

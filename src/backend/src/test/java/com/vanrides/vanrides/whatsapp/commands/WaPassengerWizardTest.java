@@ -135,6 +135,14 @@ class WaPassengerWizardTest {
     }
 
     @Test
+    void helpAtTheReviewExplainsHowToConfirmOrGetANewCodeInOneMessage() {
+        String text = WaPassengerTexts.prompt(WaJson.object("{\"stage\":\"REVIEW\"}"));
+        assertTrue(text.startsWith("Para confirmar, responda CONFIRMAR"), text);
+        assertTrue(text.contains("CONTINUAR para receber um resumo novo"), text);
+        assertTrue(text.contains("CORRIGIR") && text.contains("ABANDONAR"), text);
+    }
+
+    @Test
     void menuHasNoSelectableEntriesWhenTheVisibleCatalogueIsBlocked() {
         var draft = WaJson.object("{\"stage\":\"DRIVER_MENU\",\"catalogBlocked\":true}");
         String text = WaPassengerTexts.prompt(draft);
