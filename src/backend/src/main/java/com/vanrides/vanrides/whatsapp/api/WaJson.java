@@ -34,7 +34,10 @@ public final class WaJson {
     public static String text(JsonNode node, String name, int min, int max) {
         return text(node, name, min, max, false);
     }
-    public static String text(JsonNode node, String name, int min, int max, boolean lineBreaks) {
+    public static String multilineText(JsonNode node, String name, int min, int max) {
+        return text(node, name, min, max, true);
+    }
+    private static String text(JsonNode node, String name, int min, int max, boolean lineBreaks) {
         JsonNode value = node.get(name);
         if (value == null || !value.isTextual()) throw WaProblem.invalid();
         String result = value.textValue();

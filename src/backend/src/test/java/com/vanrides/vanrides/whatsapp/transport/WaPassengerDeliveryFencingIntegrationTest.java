@@ -231,6 +231,16 @@ class WaPassengerDeliveryFencingIntegrationTest {
         var reservation = f.authorize(f.claim(box));
         assertThat(reservation.path("content").path("text").asText())
                 .startsWith("Primeiro bloco.\n\nSegundo bloco.");
+
+        var other = f.pair("REQUESTED");
+        UUID rejected = f.peer(other, "REQUESTED");
+        f.h.jdbc.update(
+                "UPDATE wa.message_outbox SET payload_json=jsonb_set(payload_json,'{text}',"
+                        + "to_jsonb(?::text)) WHERE id=?",
+                "Primeiro bloco.\rSegundo bloco.",
+                rejected);
+        var lease = f.claim(rejected);
+        assertThatThrownBy(() -> f.authorize(lease)).isInstanceOf(WaProblem.class);
     }
 
     private void pause(UUID actor) {
