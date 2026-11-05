@@ -8,8 +8,6 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.vanrides.vanrides.whatsapp.api.WaProblem;
 
 import java.sql.Timestamp;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
 
@@ -17,10 +15,12 @@ import java.util.UUID;
 final class WaPassengerWizard {
     private final WaPassengerData data;
     private final WaPassengerDriverWizard driver;
+    private final WaPassengerNotice notice;
 
     WaPassengerWizard(WaPassengerData data) {
         this.data = data;
         this.driver = new WaPassengerDriverWizard(data);
+        this.notice = new WaPassengerNotice(data.clock);
     }
 
     static String text(WaInboxAccess.Context event) {
@@ -38,8 +38,6 @@ final class WaPassengerWizard {
                         "encerrar vinculo")
                 .contains(text);
     }
-
-    private static final long NOTICE_WINDOW_SECONDS = 600;
 
     record Step(ObjectNode draft, String lead) {}
 
@@ -154,7 +152,7 @@ final class WaPassengerWizard {
                 afterIdentity(actor, draft);
             }
             if (stage.equals("NOTICE")) {
-                notice(draft);
+                notice.open(draft);
             }
             if (stage.equals("ROUTINES")) {
                 catalogue(
@@ -189,12 +187,12 @@ final class WaPassengerWizard {
                     if (WaOnboardingCommands.NOTICE_VERSION.equals(actor.noticeVersion())) {
                         draft.put("stage", "PREF_APPROACH");
                     } else {
-                        notice(draft);
+                        notice.open(draft);
                     }
                 }
             }
             case "NOTICE" -> {
-                if (text.equals("aceito") && noticeAnswer(event, draft)) {
+                if (text.equals("aceito") && notice.accepts(event, draft)) {
                     data.jdbc.update(
                             "UPDATE wa.profile SET"
                                     + " notice_version=?,notice_accepted_at=?,status='ACTIVE' WHERE"
@@ -203,8 +201,8 @@ final class WaPassengerWizard {
                             Timestamp.from(data.clock.now()),
                             actor.identityId());
                     draft.put("stage", "PREF_APPROACH");
-                } else if (noticeExpired(draft)) {
-                    notice(draft);
+                } else if (notice.expired(draft)) {
+                    notice.open(draft);
                     lead = WaPassengerTexts.NOTICE_RENEWED;
                 }
             }
@@ -300,32 +298,8 @@ final class WaPassengerWizard {
             if (WaOnboardingCommands.NOTICE_VERSION.equals(actor.noticeVersion())) {
                 draft.put("stage", "PREF_APPROACH");
             } else {
-                notice(draft);
+                notice.open(draft);
             }
-        }
-    }
-
-    private void notice(ObjectNode draft) {
-        draft.put("stage", "NOTICE").put("noticeEmittedAt", data.clock.now().toString());
-    }
-
-    private boolean noticeAnswer(WaInboxAccess.Context event, ObjectNode draft) {
-        try {
-            Instant issued = Instant.parse(draft.path("noticeEmittedAt").asText());
-            Instant received = Instant.parse(event.normalizedPayload().path("occurredAt").asText());
-            return !received.isBefore(issued.truncatedTo(ChronoUnit.SECONDS))
-                    && issued.plusSeconds(NOTICE_WINDOW_SECONDS).isAfter(data.clock.now());
-        } catch (java.time.DateTimeException invalid) {
-            return false;
-        }
-    }
-
-    private boolean noticeExpired(ObjectNode draft) {
-        try {
-            Instant issued = Instant.parse(draft.path("noticeEmittedAt").asText());
-            return !issued.plusSeconds(NOTICE_WINDOW_SECONDS).isAfter(data.clock.now());
-        } catch (java.time.DateTimeException invalid) {
-            return true;
         }
     }
 

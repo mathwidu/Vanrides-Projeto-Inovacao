@@ -23,7 +23,7 @@ export async function registerCohort(chat, schedules = [['Ida escolar','IDA','06
   demand(invite, 'ATTENDANCE_INVITE_MISSING');
   for (const [person, name, reminders] of [[passenger,'Lia Exemplo',remindersForFirst ? 'SIM' : 'NÃO'],[second,'Cris Exemplo','NÃO']]) {
     const step = msg => send(person, msg, setup);
-    for (const msg of ['PASSAGEIRO '+invite,'CONTINUAR',name,'ACEITO','SIM',reminders])
+    for (const msg of ['PASSAGEIRO '+invite,'SIM',name,'ACEITO','SIM',reminders])
       await step(msg);
     let question = await step('1,2');
     for (const routine of ['Ida escolar', 'Volta escolar']) {
