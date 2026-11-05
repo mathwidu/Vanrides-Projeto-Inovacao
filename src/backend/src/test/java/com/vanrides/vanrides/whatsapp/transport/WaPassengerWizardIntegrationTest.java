@@ -60,7 +60,7 @@ class WaPassengerWizardIntegrationTest {
                 fixture.conversation.string(
                         "SELECT preferences_json::text FROM wa.profile WHERE identity_id=?",
                         passenger));
-        assertTrue(review.text().contains("dias [1,3,5]"));
+        assertTrue(review.text().contains("dias segunda, quarta e sexta"));
         var request = fixture.confirm(passenger, review);
         assertEquals("REQUEST_LINK", request.body().path("commandType").asText());
         assertEquals(2, request.response().path("responseIds").size());
@@ -139,13 +139,13 @@ class WaPassengerWizardIntegrationTest {
         assertNull(
                 fixture.conversation.string(
                         "SELECT notice_version FROM wa.profile WHERE identity_id=?", passenger));
-        fixture.transport.time.advance(301);
+        fixture.transport.time.advance(601);
         var expired = fixture.send(passenger, "ACEITO");
-        assertFalse(expired.text().startsWith("Não entendi"), expired.text());
+        assertTrue(expired.text().startsWith("O prazo para aceitar o aviso terminou."), expired.text());
+        assertTrue(expired.text().contains("Você aceita o aviso de privacidade"), expired.text());
         assertNull(
                 fixture.conversation.string(
                         "SELECT notice_version FROM wa.profile WHERE identity_id=?", passenger));
-        fixture.send(passenger, "CONTINUAR");
         fixture.send(passenger, "ACEITO");
         assertEquals(
                 "wa-mvp-v1",
@@ -218,49 +218,6 @@ class WaPassengerWizardIntegrationTest {
     }
 
     @Test
-    void unclearAnswersExplainTheExpectedReplyAndNeverAdvanceOrSaveAnything() {
-        UUID passenger = fixture.passenger();
-        fixture.open(passenger, code);
-        fixture.send(passenger, "CONTINUAR");
-        fixture.send(passenger, "Passageiro Sintético");
-        fixture.send(passenger, "ACEITO");
-        for (String unclear : new String[] {"talvez", "claro que sim", "sim aceito"}) {
-            var retry = fixture.send(passenger, unclear);
-            assertEquals("PREF_APPROACH", fixture.draft(passenger).path("stage").asText());
-            assertTrue(retry.text().startsWith("Não entendi sua resposta. "), retry.text());
-            assertTrue(retry.text().endsWith("Responda SIM ou NÃO."), retry.text());
-        }
-        assertEquals(
-                "{}",
-                fixture.conversation.string(
-                        "SELECT preferences_json::text FROM wa.profile WHERE identity_id=?",
-                        passenger));
-        var accepted = fixture.send(passenger, "SIM");
-        assertFalse(accepted.text().startsWith("Não entendi"), accepted.text());
-        assertEquals("PREF_REMINDER", fixture.draft(passenger).path("stage").asText());
-        fixture.send(passenger, "NÃO");
-        var routines = fixture.send(passenger, "3");
-        assertTrue(routines.text().startsWith("Não entendi sua resposta. "), routines.text());
-        assertEquals("ROUTINES", fixture.draft(passenger).path("stage").asText());
-        fixture.send(passenger, "1");
-        var days = fixture.send(passenger, "segunda e quarta");
-        assertTrue(days.text().startsWith("Não entendi sua resposta. "), days.text());
-        assertEquals("DAYS", fixture.draft(passenger).path("stage").asText());
-        fixture.send(passenger, "1,3,5");
-        var address = fixture.send(passenger, "Rua das Flores 123, perto da padaria");
-        assertTrue(address.text().startsWith("Não entendi sua resposta. "), address.text());
-        assertTrue(address.text().contains("pin estático"), address.text());
-        assertEquals("POINT", fixture.draft(passenger).path("stage").asText());
-        fixture.pin(passenger);
-        var review = fixture.send(passenger, "PULAR");
-        var wrongMarker = fixture.send(passenger, "CONFIRMAR BCDFGHJK");
-        assertTrue(wrongMarker.text().startsWith("Não entendi sua resposta. "), wrongMarker.text());
-        assertTrue(wrongMarker.text().contains("CONFIRMAR "), wrongMarker.text());
-        assertNotEquals(fixture.marker(review), fixture.marker(wrongMarker));
-        assertEquals(0, fixture.count("driver_passenger_link"));
-    }
-
-    @Test
     void passengerChoosingTheReturnRoutineNeverReceivesTheOutboundOne() {
         fixture.driverFixture.confirm(driver, fixture.driverFixture.review(driver, "VOLTA"));
         UUID passenger = fixture.passenger();
@@ -311,13 +268,13 @@ class WaPassengerWizardIntegrationTest {
         assertEquals("ROUTINES", fixture.draft(passenger).path("stage").asText());
         fixture.send(passenger, "1,2");
         fixture.send(passenger, "1,3,5");
-        fixture.send(passenger, "2,4");
+        fixture.send(passenger, "terça e quinta");
         fixture.pin(passenger);
         var review = fixture.send(passenger, "PULAR");
         assertTrue(review.text().contains("(ida)"), review.text());
         assertTrue(review.text().contains("(volta)"), review.text());
-        assertTrue(review.text().contains("[1,3,5]"), review.text());
-        assertTrue(review.text().contains("[2,4]"), review.text());
+        assertTrue(review.text().contains("segunda, quarta e sexta"), review.text());
+        assertTrue(review.text().contains("terça e quinta"), review.text());
     }
 
     @Test

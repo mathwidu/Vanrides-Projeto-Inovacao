@@ -65,14 +65,14 @@ final class WaPassengerMutations {
                     link,
                     pickup,
                     "POINT_CHANGE",
-                    "Correção de ponto solicitada. Aguarde a aprovação do motorista; o ponto"
+                    "Correção de ponto solicitada.\n\nAguarde a aprovação do motorista; o ponto"
                             + " anterior continua válido.",
                     "Correção de ponto de "
                             + draft.path("passengerName").asText()
-                            + ". "
-                            + selectionSummary(link)
+                            + ".\n\n"
+                            + data.selectionSummary(link)
                             + reference(draft)
-                            + " Envie PASSAGEIROS para revisar.");
+                            + "\n\nEnvie PASSAGEIROS para revisar.");
         }
         UUID pickup =
                 prepared.point() == null
@@ -91,7 +91,7 @@ final class WaPassengerMutations {
                     pickup,
                     "RECTIFY",
                     "Pedido de correção encaminhado ao passageiro.",
-                    "O motorista pediu que você revise o ponto de embarque. Envie CORRIGIR PONTO"
+                    "O motorista pediu que você revise o ponto de embarque.\n\nEnvie CORRIGIR PONTO"
                             + " para propor um pin fixo e uma referência.");
         }
         if (action.equals("CLOSE_LINK")) {
@@ -119,12 +119,12 @@ final class WaPassengerMutations {
                     kind,
                     kind.equals("REJECTED")
                             ? "Solicitação recusada."
-                            : "Vínculo encerrado. O histórico das saídas foi preservado.",
+                            : "Vínculo encerrado.\n\nO histórico das saídas foi preservado.",
                     kind.equals("REJECTED")
-                            ? "O motorista recusou sua solicitação. Você pode pedir orientação ao"
-                                    + " suporte."
-                            : "O vínculo de transporte foi encerrado. Saídas já iniciadas conservam"
-                                    + " o histórico.");
+                            ? "O motorista recusou sua solicitação.\n\nVocê pode pedir orientação"
+                                    + " ao suporte."
+                            : "O vínculo de transporte foi encerrado.\n\nSaídas já iniciadas"
+                                    + " conservam o histórico.");
         }
         // Retire before approving to respect the one-current-approved-point invariant.
         data.jdbc.update(
@@ -173,14 +173,14 @@ final class WaPassengerMutations {
                 pickup,
                 kind,
                 kind.equals("APPROVED")
-                        ? "Vínculo e ponto aprovados. Revise a ordem das rotinas antes da próxima"
-                                + " saída."
-                        : "Novo ponto aprovado. Revise a ordem antes da próxima saída.",
+                        ? "Vínculo e ponto aprovados.\n\nRevise a ordem das rotinas antes da"
+                                + " próxima saída."
+                        : "Novo ponto aprovado.\n\nRevise a ordem antes da próxima saída.",
                 kind.equals("APPROVED")
-                        ? "Cadastro confirmado. "
-                                + selectionSummary(link)
-                                + " Seu ponto foi aprovado pelo motorista."
-                        : "Seu novo ponto foi aprovado. Saídas já iniciadas mantêm o ponto"
+                        ? "Cadastro confirmado.\n\n"
+                                + data.selectionSummary(link)
+                                + "\n\nSeu ponto foi aprovado pelo motorista."
+                        : "Seu novo ponto foi aprovado.\n\nSaídas já iniciadas mantêm o ponto"
                                 + " anterior.");
     }
 
@@ -234,14 +234,14 @@ final class WaPassengerMutations {
                 link,
                 pickup,
                 "REQUESTED",
-                "Solicitação encaminhada ao motorista. Seu cadastro aguarda aprovação do vínculo e"
-                        + " do ponto.",
+                "Solicitação encaminhada ao motorista.\n\nSeu cadastro aguarda aprovação do"
+                        + " vínculo e do ponto.",
                 "Solicitação de "
                         + draft.path("passengerName").asText()
-                        + ". "
-                        + selectionSummary(link)
+                        + ".\n\n"
+                        + data.selectionSummary(link)
                         + reference(draft)
-                        + " Envie PASSAGEIROS para revisar vínculo e ponto.");
+                        + "\n\nEnvie PASSAGEIROS para revisar vínculo e ponto.");
     }
 
     private UUID insertPoint(
@@ -296,33 +296,9 @@ final class WaPassengerMutations {
                 "UPDATE wa.passenger_link_routine SET version=version+1 WHERE link_id=?", link);
     }
 
-    private String selectionSummary(UUID link) {
-        var selections =
-                data.array(
-                        """
-                        SELECT jsonb_build_object('name', r.name, 'direction', r.direction, 'time', r.local_time::text, 'days', s.weekdays)::text
-                        FROM wa.passenger_link_routine s JOIN wa.routine r ON r.id=s.routine_id WHERE s.link_id=? ORDER BY r.created_at,r.id
-                        """,
-                        link);
-        StringBuilder summary = new StringBuilder();
-        for (JsonNode selection : selections) {
-            summary.append(selection.path("name").asText())
-                    .append(
-                            selection.path("direction").asText().equals("OUTBOUND")
-                                    ? " (ida)"
-                                    : " (volta)")
-                    .append(" às ")
-                    .append(selection.path("time").asText())
-                    .append(", dias ")
-                    .append(selection.path("days"))
-                    .append(". ");
-        }
-        return summary.toString().strip();
-    }
-
     private static String reference(ObjectNode draft) {
         return draft.has("reference")
-                ? " Referência: " + draft.path("reference").asText() + "."
+                ? "\n\nReferência: " + draft.path("reference").asText()
                 : "";
     }
 

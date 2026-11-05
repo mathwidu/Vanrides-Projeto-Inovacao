@@ -59,7 +59,7 @@ final class WaPassengerSetup {
             if (!WaPassengerWizard.starts(text) && draft.isEmpty()) {
                 return null;
             }
-            if (WaDriverWizard.starts(text)) {
+            if (WaDriverWizard.starts(WaDriverWizard.text(event))) {
                 return null;
             }
         } else {
@@ -170,7 +170,7 @@ final class WaPassengerSetup {
         try {
             var step = wizard.advance(actor, event, draft);
             draft = step.draft();
-            String lead = step.understood() ? "" : WaPassengerTexts.NOT_UNDERSTOOD;
+            String lead = step.lead();
             String response = WaPassengerTexts.prompt(draft);
             if (draft.path("stage").asText().equals("REVIEW")) {
                 String target = data.snapshot(actor.identityId(), draft, event);
@@ -182,7 +182,7 @@ final class WaPassengerSetup {
                     lead = "";
                     response =
                             "O resumo excedeu o tamanho seguro desta conversa. Nenhuma confirmação"
-                                    + " foi oferecida. Peça suporte para revisar o cadastro.";
+                                    + " foi oferecida.\n\nPeça suporte para revisar o cadastro.";
                 }
             }
             store.save(actor, event, draft);
@@ -195,27 +195,9 @@ final class WaPassengerSetup {
     private void reviewPoint(WaProfileState actor, WaInboxAccess.Context event, ObjectNode draft) {
         ObjectNode pin = null;
         if (draft.has("linkId")) {
-            StringBuilder summary = new StringBuilder();
-            var rows =
-                    data.array(
-                            """
-                            SELECT jsonb_build_object('name',r.name,'direction',r.direction,'time',r.local_time::text,'days',s.weekdays)::text
-                            FROM wa.passenger_link_routine s JOIN wa.routine r ON r.id=s.routine_id WHERE s.link_id=? ORDER BY r.created_at,r.id
-                            """,
-                            UUID.fromString(draft.path("linkId").asText()));
-            for (var selection : rows) {
-                summary.append(selection.path("name").asText())
-                        .append(
-                                selection.path("direction").asText().equals("OUTBOUND")
-                                        ? " (ida)"
-                                        : " (volta)")
-                        .append(" às ")
-                        .append(selection.path("time").asText())
-                        .append(", dias ")
-                        .append(selection.path("days"))
-                        .append(". ");
-            }
-            draft.put("selectionSummary", summary.toString().strip());
+            draft.put(
+                    "selectionSummary",
+                    data.selectionSummary(UUID.fromString(draft.path("linkId").asText())));
         }
         if (draft.has("sourceEvent")) {
             pin = data.pin(actor.identityId(), draft.path("sourceEvent").asText(), event.eventId());
@@ -291,7 +273,7 @@ final class WaPassengerSetup {
         return new Result(
                 WaDecision.error(failure.code()),
                 "Essa proposta não pode mais ser aplicada. Nenhum vínculo ou ponto foi aprovado."
-                        + " Envie PASSAGEIROS para revisar como motorista, CORRIGIR PONTO como"
+                        + "\n\nEnvie PASSAGEIROS para revisar como motorista, CORRIGIR PONTO como"
                         + " passageiro vinculado, ou um novo convite para retomar seu cadastro.",
                 null);
     }
