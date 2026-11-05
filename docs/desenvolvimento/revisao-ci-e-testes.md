@@ -465,7 +465,7 @@ alfabética, um Maven/Docker por vez; repetir em ordem alternativa para detectar
 dependência entre cenários. A validação completa deve exercitar os novos grupos
 e conferir sua união contra os 246 relatórios/1.787 casos da referência, sem
 transformar essa contagem histórica em um segundo cadastro manual de testes.
-As medições e o resultado final desta etapa serão registrados após a execução.
+Resultados desta etapa registrados abaixo; execução remota ainda pendente.
 
 Primeiro recorte local concluído, com os mesmos 97 casos e zero falhas, erros ou
 skips:
@@ -482,6 +482,43 @@ os fontes alterados. Por isso a soma das classes é a comparação principal.
 Uma rodada por condição não isola toda a variação da máquina. A terceira rodada
 é prova de isolamento com outra ordem, não repetição para selecionar um tempo
 melhor. Semente dos métodos: `20261105`.
+
+A revisão `d424c68` passou nos nove grupos reais, executados sequencialmente
+no Mac com checkout limpo, Java 17 e Docker local. Cada grupo foi finalizado
+após a liberação do lock. A agregação conferiu a origem e comparou exatamente
+as classes e contagens com o manifesto completo anterior: **246 classes e
+1.787 casos, incluindo 77 classes/592 casos PostgreSQL**, sem falhas, erros,
+skips, duplicações ou ausências.
+
+| Grupo | Classes | Casos | Tempo local incluindo preparação |
+|---|---:|---:|---:|
+| Java sem PostgreSQL | 169 | 1.195 | 30,336 s |
+| PostgreSQL 1 | 10 | 73 | 94,642 s |
+| PostgreSQL 2 | 10 | 57 | 95,196 s |
+| PostgreSQL 3 | 10 | 70 | 95,444 s |
+| PostgreSQL 4 | 10 | 74 | 96,588 s |
+| PostgreSQL 5 | 9 | 78 | 96,324 s |
+| PostgreSQL 6 | 9 | 74 | 89,055 s |
+| PostgreSQL 7 | 9 | 72 | 115,438 s |
+| PostgreSQL 8 | 10 | 94 | 115,210 s |
+
+O maior grupo levou 1min55s. A rodada **sequencial** completa levou 13min48s,
+incluindo preparação repetida e agregação; isso não é tempo paralelo da CI.
+Não comparar diretamente esses tempos do Mac com os 23min55s do runner Linux.
+A próxima medição remota deve registrar duração até a aprovação da suíte,
+tempo do workflow inteiro, soma dos jobs, cache e filas.
+
+As 220 verificações rápidas, actionlint, sintaxe Bash e consistência do
+repositório/programa passaram. A revisão independente dos opt-ins e da divisão
+não encontrou bloqueios. Preservados os testes de comportamento, as validações
+do gate anterior e o caminho local `--all-tests`; não repetimos a suíte
+monolítica após comprovar a união exata dos grupos. Runtime, candidato, jornadas
+HTTP e aplicativo não mudaram e não foram reensaiados nesta etapa.
+
+Limitação operacional documentada: os artefatos precisam pertencer à mesma
+tentativa. Usar **Re-run all jobs** em retentativas no GitHub; reexecutar só um
+grupo/agregador é rejeitado por cobertura incompleta da tentativa corrente.
+Não há push, merge, nova execução GitHub ou alteração da VPS nesta etapa local.
 
 A meta de cinco minutos para toda a CI não está demonstrada por esse desenho:
 a integração e os builds do aplicativo também precisam de trabalho próprio.

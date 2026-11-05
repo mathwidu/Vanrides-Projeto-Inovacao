@@ -186,3 +186,14 @@ do GitHub. Integração, aplicativo e publicação ficam fora desta alteração.
 Rollback: reverter a divisão e os dez opt-ins restaura a execução sequencial e
 a reconstrução das fixtures. Sem VPS, merge, dispositivos ou publicação nesta
 etapa de implementação; não concluir o card nem liberar o piloto por esta CI.
+
+Implementado em `d424c68`. Os mesmos 97 testes passaram antes/depois e com
+ordem alternativa: soma das classes de 154,127 s para 109,184 s (-29,16%).
+Os nove grupos reais passaram sequencialmente no Mac e recompuseram exatamente
+246 classes/1.787 testes, incluindo 77 classes/592 PostgreSQL, sem falhas,
+erros ou skips. Maior grupo: 115,438 s; rodada sequencial: 828,283 s.
+Também passaram 220 testes rápidos, actionlint, sintaxe Bash, consistência e
+revisão independente. Tempos remotos do novo desenho ainda pendentes; não
+confundir medição local com aprovação da meta de cinco minutos da CI inteira.
+Documentação: `docs/desenvolvimento/revisao-ci-e-testes.md`. Sem publicação,
+VPS ou dispositivos. O card e o aceite do MVP mantêm seus estados anteriores.
