@@ -137,9 +137,14 @@ class WaPassengerWizardTest {
     @Test
     void helpAtTheReviewExplainsHowToConfirmOrGetANewCodeInOneMessage() {
         String text = WaPassengerTexts.prompt(WaJson.object("{\"stage\":\"REVIEW\"}"));
-        assertTrue(text.startsWith("Para confirmar, responda CONFIRMAR"), text);
+        assertTrue(text.startsWith("Para confirmar, responda CONFIRMAR."), text);
         assertTrue(text.contains("CONTINUAR para receber um resumo novo"), text);
         assertTrue(text.contains("CORRIGIR") && text.contains("ABANDONAR"), text);
+        String coded =
+                WaPassengerTexts.prompt(
+                        WaJson.object(
+                                "{\"stage\":\"REVIEW\",\"confirmation\":{\"markerHash\":\"x\"}}"));
+        assertTrue(coded.contains("com o código do último resumo"), coded);
     }
 
     @Test

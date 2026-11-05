@@ -65,6 +65,10 @@ final class WaPassengerDraftStore {
                 actor.identityId());
     }
 
+    private static boolean needsCode(WaProfileState actor) {
+        return actor.role().equals("DRIVER");
+    }
+
     String marker(
             WaProfileState actor,
             WaInboxAccess.Context event,
@@ -72,7 +76,8 @@ final class WaPassengerDraftStore {
             UUID outbox,
             String target) {
         draft.remove("confirmation");
-        String marker = WaCrypto.userCode();
+        boolean coded = needsCode(actor);
+        String marker = coded ? WaCrypto.userCode() : "";
         ObjectNode confirmation =
                 json().put("ref", ref("confirmation", UUID.randomUUID()))
                         .put("profileVersion", actor.version() + 1)
@@ -81,12 +86,13 @@ final class WaPassengerDraftStore {
                         .put("sourceInbox", event.eventId().toString())
                         .put("outboxId", outbox.toString())
                         .put("issuedAt", clock.now().toString())
-                        .put("expiresAt", clock.now().plusSeconds(300).toString())
-                        .put(
-                                "markerHash",
-                                crypto.secretHash(
-                                        "passenger-confirmation",
-                                        actor.identityId() + ":" + marker));
+                        .put("expiresAt", clock.now().plusSeconds(300).toString());
+        if (coded) {
+            confirmation.put(
+                    "markerHash",
+                    crypto.secretHash(
+                            "passenger-confirmation", actor.identityId() + ":" + marker));
+        }
         draft.set("confirmation", confirmation);
         return marker;
     }
@@ -95,9 +101,12 @@ final class WaPassengerDraftStore {
         if (!draft.path("stage").asText().equals("REVIEW") || !draft.has("confirmation")) {
             return false;
         }
+        boolean coded = needsCode(actor);
         String text = WaDriverWizard.text(event);
         var confirmation = draft.path("confirmation");
-        if (!text.matches("confirmar [bcdfghjkmnpqrstvwxyz]{8}")) {
+        if (coded
+                ? !text.matches("confirmar [bcdfghjkmnpqrstvwxyz]{8}")
+                : !WaPassengerAnswers.loose(text).equals("confirmar")) {
             return false;
         }
         try {
@@ -108,13 +117,14 @@ final class WaPassengerDraftStore {
                     && !received.isBefore(issued.truncatedTo(ChronoUnit.SECONDS))
                     && !event.eventId().toString().equals(confirmation.path("sourceInbox").asText())
                     && digest(draft).equals(confirmation.path("draftDigest").asText())
-                    && WaCrypto.same(
-                            confirmation.path("markerHash").asText(),
-                            crypto.secretHash(
-                                    "passenger-confirmation",
-                                    actor.identityId()
-                                            + ":"
-                                            + text.substring(10).toUpperCase(Locale.ROOT)))
+                    && (!coded
+                            || WaCrypto.same(
+                                    confirmation.path("markerHash").asText(),
+                                    crypto.secretHash(
+                                            "passenger-confirmation",
+                                            actor.identityId()
+                                                    + ":"
+                                                    + text.substring(10).toUpperCase(Locale.ROOT))))
                     && Boolean.TRUE.equals(
                             jdbc.queryForObject(
                                     """

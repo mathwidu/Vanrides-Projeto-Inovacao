@@ -183,8 +183,13 @@ final class WaPassengerTestSupport {
         return match.group(1);
     }
 
+    String confirmation(Step review) {
+        var match = Pattern.compile("CONFIRMAR [BCDFGHJKMNPQRSTVWXYZ]{8}").matcher(review.text());
+        return match.find() ? match.group() : "CONFIRMAR";
+    }
+
     Step confirm(UUID actor, Step review) {
-        return send(actor, "CONFIRMAR " + marker(review));
+        return send(actor, confirmation(review));
     }
 
     UUID request(UUID passenger, String code) {

@@ -57,10 +57,14 @@ final class WaPassengerTexts {
                     "Envie um pin estático para esse ponto comum. Localização ao vivo não serve"
                             + " para o cadastro.";
             case "REVIEW" ->
-                    "Para confirmar, responda CONFIRMAR com o código do último resumo que enviei."
-                            + " Se o código expirou ou você não o encontra, envie CONTINUAR para"
-                            + " receber um resumo novo. Use CORRIGIR para mudar algo ou ABANDONAR"
-                            + " para cancelar.";
+                    draft.path("confirmation").has("markerHash")
+                            ? "Para confirmar, responda CONFIRMAR com o código do último resumo"
+                                    + " que enviei. Se o código expirou ou você não o encontra,"
+                                    + " envie CONTINUAR para receber um resumo novo. Use CORRIGIR"
+                                    + " para mudar algo ou ABANDONAR para cancelar."
+                            : "Para confirmar, responda CONFIRMAR. Se passaram mais de 5 minutos,"
+                                    + " envie CONTINUAR para receber um resumo novo. Use CORRIGIR"
+                                    + " para mudar algo ou ABANDONAR para cancelar.";
             default ->
                     "Envie seu convite para iniciar ou CONTINUAR CADASTRO para retomar. Para ajuda,"
                             + " envie AJUDA.";
@@ -140,10 +144,11 @@ final class WaPassengerTexts {
         if (draft.has("mapUrl")) {
             text.append("Confira o pin: ").append(draft.path("mapUrl").asText()).append(". ");
         }
-        return text.append("Para confirmar este resumo em até 5 minutos, responda CONFIRMAR ")
-                .append(marker)
-                .append(". Use CORRIGIR ou ABANDONAR para revisar.")
-                .toString();
+        text.append("Para confirmar este resumo em até 5 minutos, responda CONFIRMAR");
+        if (!marker.isEmpty()) {
+            text.append(' ').append(marker);
+        }
+        return text.append(". Use CORRIGIR ou ABANDONAR para revisar.").toString();
     }
 
     private static String days(ObjectNode draft) {

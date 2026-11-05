@@ -220,6 +220,20 @@ class WaPassengerWizardIntegrationTest {
     }
 
     @Test
+    void passengerConfirmsWithTheWordAloneEvenWithCaseAndPunctuation() {
+        UUID passenger = fixture.passenger();
+        var review = fixture.review(passenger, code);
+        assertTrue(review.text().contains("responda CONFIRMAR."), review.text());
+        assertFalse(
+                java.util.regex.Pattern.compile("CONFIRMAR [A-Z]{8}").matcher(review.text()).find(),
+                review.text());
+        assertEquals(0, fixture.count("driver_passenger_link"));
+        fixture.send(passenger, "  confirmar!! 👍 ");
+        assertEquals(1, fixture.count("driver_passenger_link"));
+        assertTrue(fixture.draft(passenger).isEmpty());
+    }
+
+    @Test
     void initialPointCanBeCorrectedBeforeAnyDurableLinkExists() {
         UUID passenger = fixture.passenger();
         fixture.review(passenger, code);
@@ -319,10 +333,10 @@ class WaPassengerWizardIntegrationTest {
         assertEquals("POINT", fixture.draft(passenger).path("stage").asText());
         fixture.pin(passenger);
         var review = fixture.send(passenger, "PULAR");
-        var wrongMarker = fixture.send(passenger, "CONFIRMAR BCDFGHJK");
-        assertTrue(wrongMarker.text().startsWith("Não entendi sua resposta. "), wrongMarker.text());
-        assertTrue(wrongMarker.text().contains("CONFIRMAR "), wrongMarker.text());
-        assertNotEquals(fixture.marker(review), fixture.marker(wrongMarker));
+        var extra = fixture.send(passenger, "CONFIRMAR BCDFGHJK");
+        assertTrue(extra.text().startsWith("Não entendi sua resposta. "), extra.text());
+        assertTrue(extra.text().contains("responda CONFIRMAR."), extra.text());
+        assertEquals("CONFIRMAR", fixture.confirmation(review));
         assertEquals(0, fixture.count("driver_passenger_link"));
     }
 
