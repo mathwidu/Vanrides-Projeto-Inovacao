@@ -41,11 +41,12 @@ class WaPassengerWizardTest {
     @Test
     void yesNoPromptRendersTheQuestionFollowedByItsAcceptedAnswers() {
         assertEquals(
-                "Você deseja receber mensagens quando a van estiver se aproximando? Responda Sim"
-                        + " ou Não.",
+                "Você deseja receber mensagens quando a van estiver se aproximando?\n\nResponda"
+                        + " Sim ou Não.",
                 WaPassengerTexts.APPROACH.text());
         assertEquals(
-                "Você deseja receber lembretes para informar sua presença? Responda Sim ou Não.",
+                "Você deseja receber lembretes para informar sua presença?\n\nResponda Sim ou"
+                        + " Não.",
                 WaPassengerTexts.REMINDER.text());
     }
 
@@ -91,8 +92,8 @@ class WaPassengerWizardTest {
     void dayListOffersCapitalisedLabelsThatTheParserAccepts() {
         var prompt = WaPassengerAnswers.dayPrompt("Quais dias?", array("[1,2,3,4,5,6,7]"));
         assertEquals(
-                "Quais dias? Opções: Segunda, Terça, Quarta, Quinta, Sexta, Sábado, Domingo,"
-                        + " Segunda a sexta, Todos os dias.",
+                "Quais dias?\n\n• Segunda\n• Terça\n• Quarta\n• Quinta\n• Sexta\n• Sábado\n•"
+                        + " Domingo\n• Segunda a sexta\n• Todos os dias",
                 prompt.text());
         for (var option : prompt.options()) {
             assertEquals(
@@ -108,7 +109,7 @@ class WaPassengerWizardTest {
         var duplicated = WaPassengerAnswers.dayPrompt("?", array("[1,1,2,3,4,5,6]"));
         assertFalse(duplicated.text().contains("Todos os dias"), duplicated.text());
         var weekdaysOnly = WaPassengerAnswers.dayPrompt("Quais dias?", array("[1,3]"));
-        assertEquals("Quais dias? Opções: Segunda, Quarta.", weekdaysOnly.text());
+        assertEquals("Quais dias?\n\n• Segunda\n• Quarta", weekdaysOnly.text());
     }
 
     @Test

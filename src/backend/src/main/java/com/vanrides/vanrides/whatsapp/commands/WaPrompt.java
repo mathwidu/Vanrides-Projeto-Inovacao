@@ -43,8 +43,11 @@ record WaPrompt(String question, Kind kind, List<Option> options) {
     String text() {
         List<String> labels = options.stream().map(Option::label).toList();
         return switch (kind) {
-            case BUTTONS -> question + " Responda " + String.join(" ou ", labels) + ".";
-            case LIST -> question + " Opções: " + String.join(", ", labels) + ".";
+            case BUTTONS -> question + "\n\nResponda " + String.join(" ou ", labels) + ".";
+            case LIST ->
+                    question
+                            + "\n\n"
+                            + String.join("\n", labels.stream().map(label -> "• " + label).toList());
         };
     }
 

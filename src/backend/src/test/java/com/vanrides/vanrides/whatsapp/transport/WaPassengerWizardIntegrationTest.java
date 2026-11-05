@@ -185,7 +185,7 @@ class WaPassengerWizardIntegrationTest {
         assertTrue(opened.text().contains("VOLTAR"), opened.text());
         assertTrue(opened.text().contains("ABANDONAR"), opened.text());
         var unclear = fixture.send(passenger, "talvez");
-        assertTrue(unclear.text().startsWith("Não entendi sua resposta. "), unclear.text());
+        assertTrue(unclear.text().startsWith("Não entendi sua resposta.\n\n"), unclear.text());
         assertEquals("DRIVER_CONFIRM", fixture.draft(passenger).path("stage").asText());
         fixture.send(passenger, "  SÍM!!  ");
         assertEquals("NAME", fixture.draft(passenger).path("stage").asText());
@@ -211,7 +211,7 @@ class WaPassengerWizardIntegrationTest {
         fixture.send(passenger, "SIM");
         fixture.send(passenger, "NÃO");
         var question = fixture.send(passenger, "1");
-        assertTrue(question.text().contains("Opções: Segunda, Terça, Quarta, Quinta, Sexta"), question.text());
+        assertTrue(question.text().contains("• Segunda\n• Terça\n• Quarta\n• Quinta\n• Sexta"), question.text());
         assertTrue(question.text().contains("Segunda a sexta"), question.text());
         assertFalse(question.text().contains("["), question.text());
         fixture.send(passenger, "Seg, QUA e sex-feira");
@@ -308,7 +308,7 @@ class WaPassengerWizardIntegrationTest {
         for (String unclear : new String[] {"talvez", "claro que sim", "sim aceito"}) {
             var retry = fixture.send(passenger, unclear);
             assertEquals("PREF_APPROACH", fixture.draft(passenger).path("stage").asText());
-            assertTrue(retry.text().startsWith("Não entendi sua resposta. "), retry.text());
+            assertTrue(retry.text().startsWith("Não entendi sua resposta.\n\n"), retry.text());
             assertTrue(retry.text().contains("Responda Sim ou Não."), retry.text());
         }
         assertEquals(
@@ -321,21 +321,21 @@ class WaPassengerWizardIntegrationTest {
         assertEquals("PREF_REMINDER", fixture.draft(passenger).path("stage").asText());
         fixture.send(passenger, "NÃO");
         var routines = fixture.send(passenger, "3");
-        assertTrue(routines.text().startsWith("Não entendi sua resposta. "), routines.text());
+        assertTrue(routines.text().startsWith("Não entendi sua resposta.\n\n"), routines.text());
         assertEquals("ROUTINES", fixture.draft(passenger).path("stage").asText());
         fixture.send(passenger, "1");
         var days = fixture.send(passenger, "dia útil");
-        assertTrue(days.text().startsWith("Não entendi sua resposta. "), days.text());
+        assertTrue(days.text().startsWith("Não entendi sua resposta.\n\n"), days.text());
         assertEquals("DAYS", fixture.draft(passenger).path("stage").asText());
         fixture.send(passenger, "Segunda, Quarta e Sexta");
         var address = fixture.send(passenger, "Rua das Flores 123, perto da padaria");
-        assertTrue(address.text().startsWith("Não entendi sua resposta. "), address.text());
+        assertTrue(address.text().startsWith("Não entendi sua resposta.\n\n"), address.text());
         assertTrue(address.text().contains("pin estático"), address.text());
         assertEquals("POINT", fixture.draft(passenger).path("stage").asText());
         fixture.pin(passenger);
         var review = fixture.send(passenger, "PULAR");
         var extra = fixture.send(passenger, "CONFIRMAR BCDFGHJK");
-        assertTrue(extra.text().startsWith("Não entendi sua resposta. "), extra.text());
+        assertTrue(extra.text().startsWith("Não entendi sua resposta.\n\n"), extra.text());
         assertTrue(extra.text().contains("responda CONFIRMAR."), extra.text());
         assertEquals("CONFIRMAR", fixture.confirmationText(review));
         assertEquals(0, fixture.count("driver_passenger_link"));
