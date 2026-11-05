@@ -289,7 +289,7 @@ public class WaOutboxService {
         ObjectNode content = WaJson.object(stored);
         WaJson.fields(content, "type", "text", "referenceTime");
         if (!"TEXT".equals(content.path("type").asText())) throw WaProblem.denied();
-        WaJson.text(content, "text", 1, 2000);
+        WaJson.text(content, "text", 1, 2000, true);
         try { Instant.parse(WaJson.text(content, "referenceTime", 20, 40)); }
         catch (RuntimeException invalid) { throw WaProblem.denied(); }
         return content;

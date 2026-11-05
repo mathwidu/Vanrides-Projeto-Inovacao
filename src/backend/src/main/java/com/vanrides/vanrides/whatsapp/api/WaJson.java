@@ -32,12 +32,15 @@ public final class WaJson {
         for (String name : names) if (!node.hasNonNull(name)) throw WaProblem.invalid();
     }
     public static String text(JsonNode node, String name, int min, int max) {
+        return text(node, name, min, max, false);
+    }
+    public static String text(JsonNode node, String name, int min, int max, boolean lineBreaks) {
         JsonNode value = node.get(name);
         if (value == null || !value.isTextual()) throw WaProblem.invalid();
         String result = value.textValue();
         int length = result.codePointCount(0, result.length());
         if (length < min || length > max || !result.equals(result.strip())
-                || result.codePoints().anyMatch(c -> Character.isISOControl(c))) throw WaProblem.invalid();
+                || result.codePoints().anyMatch(c -> Character.isISOControl(c) && !(lineBreaks && c == '\n'))) throw WaProblem.invalid();
         return result;
     }
     public static UUID uuid(String value) {
