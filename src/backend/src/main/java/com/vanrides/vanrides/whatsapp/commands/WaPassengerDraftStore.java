@@ -114,9 +114,7 @@ final class WaPassengerDraftStore {
             Instant received = Instant.parse(event.normalizedPayload().path("occurredAt").asText());
             return confirmation.path("profileVersion").asLong(-1) == actor.version()
                     && Instant.parse(confirmation.path("expiresAt").asText()).isAfter(clock.now())
-                    && (coded
-                            ? !received.isBefore(issued.truncatedTo(ChronoUnit.SECONDS))
-                            : received.isAfter(issued))
+                    && !received.isBefore(issued.truncatedTo(ChronoUnit.SECONDS))
                     && !event.eventId().toString().equals(confirmation.path("sourceInbox").asText())
                     && digest(draft).equals(confirmation.path("draftDigest").asText())
                     && (!coded

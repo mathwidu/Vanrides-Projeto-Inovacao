@@ -91,12 +91,17 @@ class WaPassengerFencingIntegrationTest {
     }
 
     @Test
-    void passengerConfirmationNeedsTheSummarySubmittedAndTypedAfterItWasIssued() {
+    void passengerConfirmationNeedsTheSummarySubmittedAndNotTypedBeforeItWasIssued() {
         fixture.review(passenger, code);
         fixture.send(passenger, "CONFIRMAR");
         assertEquals(0, fixture.count("driver_passenger_link"));
-        fixture.markSummarySubmitted(passenger);
-        fixture.send(passenger, "CONFIRMAR");
+        fixture.deliverSummary(passenger);
+        var early =
+                fixture.conversation.textAt(
+                        passenger,
+                        "CONFIRMAR",
+                        fixture.transport.clock.now().minusSeconds(5));
+        fixture.execute(early, true);
         assertEquals(0, fixture.count("driver_passenger_link"));
         fixture.deliverSummary(passenger);
         fixture.send(passenger, "CONFIRMAR");
