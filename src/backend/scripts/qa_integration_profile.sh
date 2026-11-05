@@ -3,85 +3,8 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 source "$ROOT_DIR/scripts/qa_maven_evidence_lock.sh"
-EXPECTED_TEST_CLASSES=(
-  "com.vanrides.vanrides.VanridesApplicationContextIntegrationTest=3"
-  "com.vanrides.vanrides.repository.RepositoryIntegrationTest=9"
-  "com.vanrides.vanrides.repository.DeviceTokenRepositoryIntegrationTest=1"
-  "com.vanrides.vanrides.repository.CompanyAdminBootstrapConcurrencyIntegrationTest=1"
-  "com.vanrides.vanrides.repository.RefreshTokenRepositoryIntegrationTest=1"
-  "com.vanrides.vanrides.repository.LegacyCompanyMigrationIntegrationTest=2"
-  "com.vanrides.vanrides.repository.LoginIdentityMigrationIntegrationTest=3"
-  "com.vanrides.vanrides.repository.LoginIdentityMigrationPreflightIntegrationTest=4"
-  "com.vanrides.vanrides.repository.LoginIdentityTriggerIntegrationTest=4"
-  "com.vanrides.vanrides.repository.LoginIdentityConcurrencyIntegrationTest=4"
-  "com.vanrides.vanrides.repository.LoginIdentityDeviceTokenConcurrencyIntegrationTest=4"
-  "com.vanrides.vanrides.repository.DeviceTokenRegistrationConcurrencyIntegrationTest=2"
-  "com.vanrides.vanrides.repository.EmailVerificationConcurrencyIntegrationTest=5"
-  "com.vanrides.vanrides.repository.EmailVerificationConfirmationConcurrencyIntegrationTest=3"
-  "com.vanrides.vanrides.service.PassengerTenantDeleteConcurrencyIntegrationTest=3"
-  "com.vanrides.vanrides.whatsapp.persistence.WhatsappMigrationIntegrationTest=4"
-  "com.vanrides.vanrides.whatsapp.persistence.WhatsappSchemaInvariantIntegrationTest=10"
-  "com.vanrides.vanrides.whatsapp.persistence.WhatsappSchemaConcurrencyIntegrationTest=5"
-  "com.vanrides.vanrides.whatsapp.pairing.WaPairingServiceIntegrationTest=15"
-  "com.vanrides.vanrides.whatsapp.pairing.WaPairingConcurrencyIntegrationTest=7"
-  "com.vanrides.vanrides.whatsapp.auth.WaFoundationIntegrationTest=14"
-  "com.vanrides.vanrides.whatsapp.auth.WaHttpIntegrationTest=9"
-  "com.vanrides.vanrides.whatsapp.auth.WaTeamApiHttpIntegrationTest=7"
-  "com.vanrides.vanrides.whatsapp.operator.WaOperatorPostgresIntegrationTest=15"
-  "com.vanrides.vanrides.whatsapp.operator.WaOperatorBatchPostgresIntegrationTest=6"
-  "com.vanrides.vanrides.whatsapp.operator.WaOperatorAdmissionPostgresIntegrationTest=8"
-  "com.vanrides.vanrides.whatsapp.operator.WaOperatorEmptyCohortPostgresIntegrationTest=1"
-  "com.vanrides.vanrides.whatsapp.transport.WaEvolutionIngressIntegrationTest=16"
-  "com.vanrides.vanrides.whatsapp.transport.WaInboxTransportIntegrationTest=19"
-  "com.vanrides.vanrides.whatsapp.transport.WaOutboxTransportIntegrationTest=19"
-  "com.vanrides.vanrides.whatsapp.transport.WaDeliveryConnectionIntegrationTest=11"
-  "com.vanrides.vanrides.whatsapp.transport.WaDeliveryConnectionFencingIntegrationTest=4"
-  "com.vanrides.vanrides.whatsapp.transport.WaDeliveryRetryIntegrationTest=12"
-  "com.vanrides.vanrides.whatsapp.transport.WaDeliveryRetryFencingIntegrationTest=6"
-  "com.vanrides.vanrides.whatsapp.transport.WaDeliveryRetryPrivateIntegrationTest=5"
-  "com.vanrides.vanrides.whatsapp.transport.WaDeliveryRecoveryIntegrationTest=11"
-  "com.vanrides.vanrides.whatsapp.transport.WaDeliveryRecoveryFencingIntegrationTest=4"
-  "com.vanrides.vanrides.whatsapp.transport.WaDeliveryCaseOperatorIntegrationTest=7"
-  "com.vanrides.vanrides.whatsapp.transport.WaRunGpsDeliveryIntegrationTest=5"
-  "com.vanrides.vanrides.whatsapp.transport.WaRunGpsDeliveryFencingIntegrationTest=6"
-  "com.vanrides.vanrides.whatsapp.transport.WaDeliveryQuotaIntegrationTest=10"
-  "com.vanrides.vanrides.whatsapp.transport.WaDeliveryQuotaFencingIntegrationTest=3"
-  "com.vanrides.vanrides.whatsapp.transport.WaConversationCommandsIntegrationTest=14"
-  "com.vanrides.vanrides.whatsapp.transport.WaConversationFencingIntegrationTest=7"
-  "com.vanrides.vanrides.whatsapp.operator.WaConversationResetIntegrationTest=1"
-  "com.vanrides.vanrides.whatsapp.transport.WaDriverWizardIntegrationTest=16"
-  "com.vanrides.vanrides.whatsapp.transport.WaDriverRoutinesIntegrationTest=16"
-  "com.vanrides.vanrides.whatsapp.transport.WaTransportTestDatabaseIntegrationTest=2"
-  "com.vanrides.vanrides.whatsapp.transport.WaDriverInvitesIntegrationTest=11"
-  "com.vanrides.vanrides.whatsapp.transport.WaDriverFencingIntegrationTest=9"
-  "com.vanrides.vanrides.whatsapp.transport.WaPassengerWizardIntegrationTest=12"
-  "com.vanrides.vanrides.whatsapp.transport.WaPassengerBusinessIntegrationTest=8"
-  "com.vanrides.vanrides.whatsapp.transport.WaPassengerFencingIntegrationTest=9"
-  "com.vanrides.vanrides.whatsapp.transport.WaPassengerIsolationIntegrationTest=4"
-  "com.vanrides.vanrides.whatsapp.transport.WaPassengerSnapshotsIntegrationTest=2"
-  "com.vanrides.vanrides.whatsapp.transport.WaPassengerDeliveryIntegrationTest=13"
-  "com.vanrides.vanrides.whatsapp.transport.WaPassengerDeliveryHistoryIntegrationTest=5"
-  "com.vanrides.vanrides.whatsapp.transport.WaPassengerDeliveryFencingIntegrationTest=10"
-  "com.vanrides.vanrides.whatsapp.operator.WaAttendanceDeliveryResetIntegrationTest=1"
-  "com.vanrides.vanrides.whatsapp.transport.WaAttendanceCalendarIntegrationTest=10"
-  "com.vanrides.vanrides.whatsapp.transport.WaAttendanceCalendarStateIntegrationTest=10"
-  "com.vanrides.vanrides.whatsapp.transport.WaAttendanceConversationIntegrationTest=16"
-  "com.vanrides.vanrides.whatsapp.transport.WaAttendanceCutoffIntegrationTest=8"
-  "com.vanrides.vanrides.whatsapp.transport.WaAttendanceDeliveryFencingIntegrationTest=7"
-  "com.vanrides.vanrides.whatsapp.transport.WaAttendanceDeliveryHistoryIntegrationTest=8"
-  "com.vanrides.vanrides.whatsapp.transport.WaAttendanceDeliveryIntegrationTest=10"
-  "com.vanrides.vanrides.whatsapp.transport.WaAttendanceJobsIntegrationTest=10"
-  "com.vanrides.vanrides.whatsapp.transport.WaAttendanceJobsPagingIntegrationTest=7"
-  "com.vanrides.vanrides.whatsapp.transport.WaAttendanceOwnershipIntegrationTest=7"
-  "com.vanrides.vanrides.whatsapp.transport.WaRunConversationIntegrationTest=8"
-  "com.vanrides.vanrides.whatsapp.transport.WaRunPreparationIntegrationTest=8"
-  "com.vanrides.vanrides.whatsapp.transport.WaTrackingActivationIntegrationTest=6"
-  "com.vanrides.vanrides.whatsapp.transport.WaTrackingSamplesIntegrationTest=7"
-  "com.vanrides.vanrides.whatsapp.transport.WaDriverLocationIntegrationTest=17"
-  "com.vanrides.vanrides.whatsapp.transport.WaApproachIntegrationTest=18"
-  "com.vanrides.vanrides.whatsapp.transport.WaTrackingLifecycleIntegrationTest=6"
-  "com.vanrides.vanrides.whatsapp.transport.WaTrackingEnvironmentIntegrationTest=1"
-)
+EXPECTED_TEST_CLASSES=()
+TEST_GROUP=""
 EVIDENCE_ROOT="${VANRIDES_QA_EVIDENCE_ROOT:-$ROOT_DIR/output/qa-evidence}"
 
 log() {
@@ -152,19 +75,24 @@ api_version_is_less() {
 }
 
 PROFILE_SCOPE="focused"
-if (( $# > 1 )); then
-  fail "Use --all-tests no maximo uma vez; nenhum outro argumento e aceito."
-fi
 case "${1:-}" in
-  "")
+  ""|--all-tests)
+    (( $# <= 1 )) || fail "Use --all-tests no maximo uma vez; nenhum outro argumento e aceito."
+    [[ "${1:-}" != --all-tests ]] || PROFILE_SCOPE="all-tests"
     ;;
-  --all-tests)
-    PROFILE_SCOPE="all-tests"
+  --group)
+    (( $# == 2 )) || fail "Uso: $0 --group pg-1..pg-8|unit"
+    case "$2" in pg-[1-8]|unit) TEST_GROUP="$2" ;; *) fail "Grupo desconhecido: $2" ;; esac
     ;;
-  *)
-    fail "Argumento desconhecido: $1. Uso: $0 [--all-tests]"
-    ;;
+  *) fail "Argumento desconhecido: $1. Uso: $0 [--all-tests | --group pg-1..pg-8|unit]" ;;
 esac
+selection="${TEST_GROUP:-focused}"
+[[ "$selection" != unit ]] || selection="focused"
+expectation_lines="$(python3 "$ROOT_DIR/scripts/qa_test_groups.py" expectations --group "$selection")" \
+  || fail "Manifesto da matriz PostgreSQL invalido."
+while IFS= read -r expectation; do
+  [[ -z "$expectation" ]] || EXPECTED_TEST_CLASSES+=("$expectation")
+done <<< "$expectation_lines"
 
 cd "$ROOT_DIR"
 
@@ -424,7 +352,7 @@ for expectation in "${EXPECTED_TEST_CLASSES[@]}"; do
   if [[ -n "$INTEGRATION_TESTS" ]]; then
     INTEGRATION_TESTS+=","
   fi
-  INTEGRATION_TESTS+="$simple_class_name"
+  INTEGRATION_TESTS+="$class_name"
   rm -f \
     "target/surefire-reports/TEST-${class_name}.xml" \
     "target/surefire-reports/${class_name}.txt"
@@ -440,7 +368,10 @@ maven_args=(
   -Dvanrides.qa.run-id="$RUN_ID"
   -Dvanrides.qa.git-sha="$RUN_GIT_SHA"
 )
-if [[ "$PROFILE_SCOPE" == "focused" ]]; then
+if [[ "$TEST_GROUP" == unit ]]; then
+  python3 scripts/qa_test_groups.py excludes > "$MAVEN_ISOLATED_HOME/postgres-excludes"
+  maven_args+=(-Dsurefire.excludesFile="$MAVEN_ISOLATED_HOME/postgres-excludes")
+elif [[ "$PROFILE_SCOPE" == "focused" ]]; then
   maven_args+=(-Dtest="$INTEGRATION_TESTS")
 fi
 maven_args+=(
@@ -453,6 +384,14 @@ run_maven_and_wait ./mvnw -B "${maven_args[@]}"
 
 log "Checking integration surefire reports"
 FAILURE_STAGE="validation"
+if [[ -n "$TEST_GROUP" ]]; then
+  expectation_lines="$(python3 scripts/qa_test_groups.py expectations --group "$TEST_GROUP" \
+    --reports-dir target/surefire-reports)" || fail "Inventario do grupo incompleto ou inesperado."
+  EXPECTED_TEST_CLASSES=()
+  while IFS= read -r expectation; do
+    [[ -z "$expectation" ]] || EXPECTED_TEST_CLASSES+=("$expectation")
+  done <<< "$expectation_lines"
+fi
 common_evidence_args=(
   --suite integration
   --run-id "$RUN_ID"
@@ -504,5 +443,10 @@ if ! python3 scripts/qa_report_evidence.py \
   fail "Finalizacao pos-lock da evidencia falhou; nenhum PASS elegivel foi publicado."
 fi
 EVIDENCE_ARCHIVED=1
+if [[ -n "${VANRIDES_QA_GROUP_RECEIPT:-}" ]]; then
+  [[ -n "$TEST_GROUP" ]] || fail "Recibo de grupo exige --group."
+  python3 scripts/qa_test_groups.py receipt --group "$TEST_GROUP" \
+    --evidence "$EVIDENCE_ROOT/$RUN_ID/manifest.json" --output "$VANRIDES_QA_GROUP_RECEIPT"
+fi
 
 log "Backend integration profile finalizado com sucesso"

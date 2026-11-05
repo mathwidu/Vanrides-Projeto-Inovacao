@@ -163,3 +163,26 @@ Os 207 testes rápidos e a consistência documental também passaram. Registro d
 método, tempos, limites e hashes em `docs/desenvolvimento/revisao-ci-e-testes.md`.
 Pilotos prontos localmente; nova CI GitHub ainda não executada. Não houve push,
 merge, alteração da VPS ou teste físico. Aceite do MVP continua separado.
+
+## Oito grupos PostgreSQL — 05/11/2026
+
+Continuação autorizada: distribuir a matriz PostgreSQL em oito grupos isolados
+na CI, executar os demais testes Java separadamente e conferir a união completa
+dos resultados antes de aprovar o backend. O gate local completo permanece
+disponível. Ampliar o reset por classe em dez classes compatíveis, com 97 casos,
+sem mudar asserções, concorrência, migrations ou o runtime da API.
+
+Impacto: workflow backend, seleção/agregação dos testes, dez fixtures Java e
+documentação. Riscos: omissão ou duplicação na divisão, aprovação com resultado
+ausente ou de outra revisão e contaminação entre cenários. Verificação: seleção
+exaustiva, casos negativos do agregador, mesmos 97 testes antes/depois e em ordem
+alternativa, matriz completa nos novos grupos e revisão independente. No Mac,
+executar um processo Java/Docker de cada vez; o paralelismo é entre runners CI.
+
+Baseline remoto: execução 41918379045, fonte d471624/merge b1b8baf, 1.787 testes
+Java e 592 PostgreSQL em 77 classes, todos aprovados; etapa Java/PostgreSQL
+23min55s, workflow 24min41s. Medições locais não serão apresentadas como tempo
+do GitHub. Integração, aplicativo e publicação ficam fora desta alteração.
+Rollback: reverter a divisão e os dez opt-ins restaura a execução sequencial e
+a reconstrução das fixtures. Sem VPS, merge, dispositivos ou publicação nesta
+etapa de implementação; não concluir o card nem liberar o piloto por esta CI.

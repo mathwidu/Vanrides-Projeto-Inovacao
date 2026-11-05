@@ -14,8 +14,9 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @Testcontainers(disabledWithoutDocker = true)
 class WaDriverWizardIntegrationTest {
     @Container static final PostgreSQLContainer<?> POSTGRES = WaTransportTestSupport.postgres("wa_driver_wizard");
+    private static final WaTransportTestDatabase DATABASE = new WaTransportTestDatabase(POSTGRES);
     WaDriverTestSupport f;
-    @BeforeEach void setup() { f = new WaDriverTestSupport(POSTGRES); }
+    @BeforeEach void setup() { f = new WaDriverTestSupport(DATABASE.fixture()); }
     @Test void generatedMenuCanBeAuthorizedForDelivery() {
         UUID actor = f.driver(); var menu = f.send(actor, "ROTINAS");
         var items = f.s.outboxClaim().path("items"); assertEquals(1, items.size());

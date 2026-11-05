@@ -25,6 +25,7 @@ import static com.vanrides.vanrides.whatsapp.transport.WaTransportTestSupport.*;
 @Testcontainers(disabledWithoutDocker = true)
 class WaOutboxTransportIntegrationTest {
     @Container static final PostgreSQLContainer<?> POSTGRES = postgres("wa_outbox_transport");
+    private static final WaTransportTestDatabase DATABASE = new WaTransportTestDatabase(POSTGRES);
     private static final AtomicInteger ALIAS = new AtomicInteger();
     private WaTransportTestSupport h;
     private WaOutboxService service;
@@ -32,7 +33,7 @@ class WaOutboxTransportIntegrationTest {
     private record Box(UUID id, UUID actor, UUID event, String address) { }
 
     @BeforeEach void setup() {
-        h = new WaTransportTestSupport(POSTGRES); service = service(h.settings);
+        h = DATABASE.fixture(); service = service(h.settings);
         h.connection(h.principal(WaPrincipal.Kind.CHANNEL), "open", h.clock.now());
         worker = h.principal(WaPrincipal.Kind.DELIVERY_WORKER);
     }

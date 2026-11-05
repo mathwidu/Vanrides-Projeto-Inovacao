@@ -20,11 +20,12 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @Testcontainers(disabledWithoutDocker = true)
 class WaAttendanceOwnershipIntegrationTest {
     @Container static final PostgreSQLContainer<?> POSTGRES = WaTransportTestSupport.postgres("wa_attendance_ownership");
+    private static final WaTransportTestDatabase DATABASE = new WaTransportTestDatabase(POSTGRES);
     private WaPassengerTestSupport f;
     private UUID driver, passenger;
 
     @BeforeEach void setup() {
-        f = new WaPassengerTestSupport(POSTGRES);
+        f = new WaPassengerTestSupport(DATABASE.fixture());
         driver = f.driver();
         f.routine(driver);
         passenger = f.passenger();

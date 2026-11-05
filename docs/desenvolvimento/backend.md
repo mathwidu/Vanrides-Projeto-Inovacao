@@ -34,8 +34,15 @@ CI: [backend.yml](../../.github/workflows/backend.yml), Ubuntu padrão e
 permissão `contents: read`:
 
 - **Verificações rápidas**: ratchet e testes dos auxiliares, antes dos jobs pesados.
-- **Suíte canônica PostgreSQL**: toda a matriz `--all-tests`, sem reduzir casos
-  ou aceitar skips. Roda em paralelo ao empacotamento do candidato.
+- **PostgreSQL em oito grupos**: a mesma matriz obrigatória, distribuída por
+  duração histórica entre runners isolados. Cada grupo executa sequencialmente,
+  com banco próprio; nenhum caso ou skip é dispensado.
+- **Demais testes Java**: descoberta padrão do Surefire, excluindo apenas as
+  classes da matriz PostgreSQL. Novos testes continuam sendo descobertos;
+  não há uma segunda lista manual de testes unitários.
+- **Suíte canônica PostgreSQL**: agrega os oito grupos e os demais testes Java,
+  confere cobertura, revisão e origem dos resultados e reprova ausências,
+  duplicações ou falhas. Roda em paralelo ao empacotamento do candidato.
 - **Empacotar candidato uma vez**: gera um JAR e seu checksum, guarda somente
   esse arquivo como artefato imutável por um dia. Ainda não é aprovação do produto.
 - **Integração HTTP e imagem**: recebe o candidato por ID, verifica revisão e
@@ -61,11 +68,24 @@ que produz o candidato e executa todos os consumidores. Os paths anteriores
 foram incorporados ao caller. Antes da integração no GitHub, conferir os checks
 exigidos pela proteção da branch, pois os nomes da homologação passam a ser aninhados.
 
-O backend continua com duas compilações (suíte e candidato), mas um único JAR
-empacotado. PostgreSQL e as integrações permanecem obrigatórios. Não há publicação
+Cada grupo compila os testes no próprio runner; o candidato continua sendo o
+único JAR empacotado. Essa escolha reduz o tempo de espera, mas pode aumentar o
+trabalho somado dos runners. PostgreSQL e as integrações permanecem obrigatórios. Não há publicação
 de imagem, implantação, uso de WhatsApp real ou upload de logs brutos.
 Maven usa `-ntp` sem ocultar saída de falhas. O build Docker padrão por fontes
 continua disponível para os consumidores existentes.
+
+O comando local completo mantém `qa_integration_profile.sh --all-tests` e
+continua sequencial. A divisão em oito grupos é da CI; não iniciar oito Maven
+simultâneos em um computador de desenvolvimento. Medições locais e remotas,
+incluindo o estado de publicação desta mudança, ficam na
+[revisão da CI](revisao-ci-e-testes.md).
+
+Nesta primeira versão, os recibos precisam pertencer à mesma tentativa da
+execução. No GitHub, uma retentativa deve usar **Re-run all jobs**: reexecutar
+somente um grupo ou o agregador não encontrará os nove recibos dessa tentativa
+e será rejeitado. Reaproveitar grupos de tentativas anteriores fica para uma
+melhoria separada; nenhum resultado incompleto é aprovado por essa restrição.
 
 A jornada 130 já executa integralmente a 110. O smoke agora a executa uma vez,
 com cinco execuções e seis conjuntos de verificações. O recibo V2 identifica

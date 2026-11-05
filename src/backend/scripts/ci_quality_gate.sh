@@ -56,6 +56,9 @@ python3 "$ROOT_DIR/scripts/bootstrap_fixture_contract_test.py"
 log "DEV ops guardrail tests"
 python3 "$ROOT_DIR/scripts/vanrides_dev_ops_test.py"
 
+log "PostgreSQL group selection and compact aggregation tests"
+python3 "$ROOT_DIR/scripts/qa_test_groups_test.py"
+
 if [[ "${1:-}" == --quick ]]; then
   log "Verificações rápidas aprovadas; PostgreSQL e jornadas HTTP não executados"
   exit 0

@@ -275,6 +275,7 @@ class BackendCiQualityGateWiringTest(unittest.TestCase):
         shadow_compgen: bool = False,
         module_relative: str | None = None,
         fake_dirty: bool = False,
+        group_reports: dict[str, int] | None = None,
         lock_observations: list[
             tuple[tuple[str, ...], tuple[str, ...], bool]
         ]
@@ -294,6 +295,8 @@ class BackendCiQualityGateWiringTest(unittest.TestCase):
 
             profile = scripts / "qa_integration_profile.sh"
             shutil.copy2(INTEGRATION_PROFILE_SCRIPT, profile)
+            for helper in ("qa_test_groups.py", "qa_postgres_manifest.json"):
+                shutil.copy2(ROOT / "scripts" / helper, scripts / helper)
             shutil.copy2(
                 MAVEN_EVIDENCE_LOCK_SCRIPT,
                 scripts / "qa_maven_evidence_lock.sh",
@@ -337,6 +340,16 @@ class BackendCiQualityGateWiringTest(unittest.TestCase):
                 "\"$profile_pid\") &\n"
                 "  wait \"$sleeper_pid\"\n"
                 "  exit 91\n"
+                "fi\n"
+                "if [[ -n \"${FAKE_GROUP_REPORTS:-}\" ]]; then\n"
+                "  python3 - <<'PYREPORT'\n"
+                "import json,os,pathlib,xml.etree.ElementTree as E\n"
+                "d=pathlib.Path('target/surefire-reports'); d.mkdir(parents=True,exist_ok=True)\n"
+                "for name,count in json.loads(os.environ['FAKE_GROUP_REPORTS']).items():\n"
+                " r=E.Element('testsuite',name=name,tests=str(count),skipped='0',failures='0',errors='0')\n"
+                " for n in range(count): E.SubElement(r,'testcase',name='template['+str(n)+']',classname=name)\n"
+                " (d/('TEST-'+name+'.xml')).write_bytes(E.tostring(r))\n"
+                "PYREPORT\n"
                 "fi\n"
                 "exit \"${FAKE_MAVEN_EXIT:-0}\"\n",
                 encoding="utf-8",
@@ -455,6 +468,8 @@ class BackendCiQualityGateWiringTest(unittest.TestCase):
                 }
             )
             (temp / "locks").mkdir()
+            if group_reports is not None:
+                environment["FAKE_GROUP_REPORTS"] = json.dumps(group_reports)
             if environment_overrides:
                 environment.update(environment_overrides)
             if lock_release_exit is not None:
@@ -608,17 +623,26 @@ class BackendCiQualityGateWiringTest(unittest.TestCase):
 
     def test_workflow_requires_quick_checks_before_the_full_postgres_matrix(self) -> None:
         workflow = WORKFLOW.read_text(encoding="utf-8")
-        quick = workflow.split("\n  quick:\n", 1)[1].split("\n  test:\n", 1)[0]
+        quick = workflow.split("\n  quick:\n", 1)[1].split("\n  postgres:\n", 1)[0]
+        postgres = workflow.split("\n  postgres:\n", 1)[1].split("\n  java:\n", 1)[0]
+        java = workflow.split("\n  java:\n", 1)[1].split("\n  test:\n", 1)[0]
         canonical = workflow.split("\n  test:\n", 1)[1].split("\n  candidate:\n", 1)[0]
         self.assertIn("run: bash scripts/check_backend.sh --light", quick)
         self.assertNotIn("setup-java", quick)
-        self.assertIn("runs-on: ubuntu-latest", canonical)
-        self.assertIn("needs: quick", canonical)
-        self.assertEqual(1, canonical.count("run: ./scripts/qa_integration_profile.sh --all-tests"))
-        self.assertIn("working-directory: src/backend", canonical)
-        self.assertIn('VANRIDES_QA_REQUIRE_CLEAN: "1"', canonical)
-        self.assertIn('VANRIDES_QA_RETENTION_CLASS: ci', canonical)
-        self.assertNotIn("skipTests", canonical)
+        self.assertIn("group: [pg-1, pg-2, pg-3, pg-4, pg-5, pg-6, pg-7, pg-8]", postgres)
+        self.assertIn("fail-fast: false", postgres)
+        for group in (postgres, java):
+            self.assertIn("needs: quick", group)
+            self.assertIn('VANRIDES_QA_REQUIRE_CLEAN: "1"', group)
+            self.assertIn('VANRIDES_QA_RETENTION_CLASS: ci', group)
+            self.assertIn("working-directory: src/backend", group)
+            self.assertIn("if-no-files-found: error", group)
+            self.assertNotIn("skipTests", group)
+        self.assertIn("--group unit", java)
+        self.assertIn("needs: [postgres, java]", canonical)
+        self.assertIn("if: ${{ always() }}", canonical)
+        self.assertIn("qa_test_groups.py aggregate", canonical)
+        self.assertIn("--require-clean", canonical)
         for forbidden in ("continue-on-error", "target/surefire-reports", "*.txt", "*.dump",
                           "run: ./mvnw -B test", "pull_request_target", "secrets.", "self-hosted"):
             self.assertNotIn(forbidden, workflow)
@@ -629,11 +653,11 @@ class BackendCiQualityGateWiringTest(unittest.TestCase):
         for forbidden in ("packages: write", "contents: write", "build_and_push:", "deploy_swarm:",
                           "docker push", "docker/login-action", "ssh "):
             self.assertNotIn(forbidden, workflow)
-        self.assertEqual(4, workflow.count("persist-credentials: false"))
-        self.assertEqual(4, workflow.count("ref: ${{ github.sha }}"))
+        self.assertEqual(6, workflow.count("persist-credentials: false"))
+        self.assertEqual(6, workflow.count("ref: ${{ github.sha }}"))
         self.assertIn("  push:\n    branches: [main]", workflow)
-        self.assertEqual(2, workflow.count("cache: maven"))
-        self.assertEqual(2, workflow.count("cache-dependency-path: src/backend/pom.xml"))
+        self.assertEqual(3, workflow.count("cache: maven"))
+        self.assertEqual(3, workflow.count("cache-dependency-path: src/backend/pom.xml"))
 
     def test_parallel_consumers_require_one_candidate_and_no_second_package(self) -> None:
         workflow = WORKFLOW.read_text(encoding="utf-8")
@@ -823,7 +847,7 @@ class BackendCiQualityGateWiringTest(unittest.TestCase):
             "qa_rate_limit_trust_smoke_test.py", "qa_email_confirmation_intent_smoke_test.py",
             "quality_metrics_test.py", "dev_fixture_preflight_test.py",
             "seed_operational_service_day_fixture_test.py", "bootstrap_fixture_contract_test.py",
-            "vanrides_dev_ops_test.py",
+            "vanrides_dev_ops_test.py", "qa_test_groups_test.py",
         ]
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
@@ -968,77 +992,10 @@ class BackendCiQualityGateWiringTest(unittest.TestCase):
         self.assertIn('mavenRcSkipped=true', script)
         self.assertIn('--expected-user-home "$MAVEN_ISOLATED_HOME"', script)
         self.assertIn("--all-tests", script)
-        self.assertIn("VanridesApplicationContextIntegrationTest", script)
-        self.assertIn("RepositoryIntegrationTest", script)
-        self.assertIn("CompanyAdminBootstrapConcurrencyIntegrationTest", script)
-        self.assertIn("RefreshTokenRepositoryIntegrationTest", script)
-        self.assertIn("LegacyCompanyMigrationIntegrationTest", script)
-        self.assertIn("LoginIdentityMigrationIntegrationTest", script)
-        self.assertIn("LoginIdentityTriggerIntegrationTest", script)
-        self.assertIn("LoginIdentityConcurrencyIntegrationTest", script)
-        self.assertIn("LoginIdentityDeviceTokenConcurrencyIntegrationTest", script)
-        self.assertIn("EmailVerificationConcurrencyIntegrationTest", script)
-        self.assertIn("EmailVerificationConfirmationConcurrencyIntegrationTest", script)
-        self.assertIn("PassengerTenantDeleteConcurrencyIntegrationTest", script)
+        self.assertIn("qa_test_groups.py", script)
         self.assertIn('for expectation in "${EXPECTED_TEST_CLASSES[@]}"', script)
         self.assertIn('./mvnw -B "${maven_args[@]}"', script)
-        self.assertIn(
-            '"com.vanrides.vanrides.VanridesApplicationContextIntegrationTest=3"',
-            script,
-        )
-        self.assertIn('"com.vanrides.vanrides.repository.RepositoryIntegrationTest=9"', script)
-        self.assertIn(
-            '"com.vanrides.vanrides.repository.DeviceTokenRepositoryIntegrationTest=1"',
-            script,
-        )
-        self.assertIn(
-            '"com.vanrides.vanrides.repository.CompanyAdminBootstrapConcurrencyIntegrationTest=1"',
-            script,
-        )
-        self.assertIn(
-            '"com.vanrides.vanrides.repository.RefreshTokenRepositoryIntegrationTest=1"',
-            script,
-        )
-        self.assertIn(
-            '"com.vanrides.vanrides.repository.LegacyCompanyMigrationIntegrationTest=2"',
-            script,
-        )
-        self.assertIn(
-            '"com.vanrides.vanrides.repository.LoginIdentityMigrationIntegrationTest=3"',
-            script,
-        )
-        self.assertIn(
-            '"com.vanrides.vanrides.repository.LoginIdentityMigrationPreflightIntegrationTest=4"',
-            script,
-        )
-        self.assertIn(
-            '"com.vanrides.vanrides.repository.LoginIdentityTriggerIntegrationTest=4"',
-            script,
-        )
-        self.assertIn(
-            '"com.vanrides.vanrides.repository.LoginIdentityConcurrencyIntegrationTest=4"',
-            script,
-        )
-        self.assertIn(
-            '"com.vanrides.vanrides.repository.LoginIdentityDeviceTokenConcurrencyIntegrationTest=4"',
-            script,
-        )
-        self.assertIn(
-            '"com.vanrides.vanrides.repository.DeviceTokenRegistrationConcurrencyIntegrationTest=2"',
-            script,
-        )
-        self.assertIn(
-            '"com.vanrides.vanrides.repository.EmailVerificationConcurrencyIntegrationTest=5"',
-            script,
-        )
-        self.assertIn(
-            '"com.vanrides.vanrides.repository.EmailVerificationConfirmationConcurrencyIntegrationTest=3"',
-            script,
-        )
-        self.assertIn(
-            '"com.vanrides.vanrides.service.PassengerTenantDeleteConcurrencyIntegrationTest=3"',
-            script,
-        )
+        self.assertIn("surefire.excludesFile", script)
         self.assertIn('-Dvanrides.qa.run-id="$RUN_ID"', script)
         self.assertIn("qa_report_evidence.py", script)
         self.assertIn('output/qa-evidence', script)
@@ -1093,14 +1050,8 @@ class BackendCiQualityGateWiringTest(unittest.TestCase):
         self.assertIn("if (( LOCK_ACQUIRED == 0 )); then", cleanup_body)
 
     def test_integration_matrix_matches_every_docker_optional_test_class(self) -> None:
-        profile = INTEGRATION_PROFILE_SCRIPT.read_text(encoding="utf-8")
-        expected = {
-            class_name: int(count)
-            for class_name, count in re.findall(
-                r'"(com\.vanrides\.vanrides\.[A-Za-z0-9_.]+)=(\d+)"',
-                profile,
-            )
-        }
+        manifest = json.loads((ROOT / "scripts/qa_postgres_manifest.json").read_text())
+        expected = {entry["className"]: entry["tests"] for entry in manifest["classes"]}
         discovered = _discover_docker_optional_test_classes(ROOT / "src/test/java")
 
         self.assertEqual(discovered, set(expected))
@@ -1243,6 +1194,25 @@ class BackendCiQualityGateWiringTest(unittest.TestCase):
         self.assertEqual(2, len(invocations))
         self.assertEqual("prepare", invocations[0][invocations[0].index("--phase") + 1])
         self.assertEqual("finalize", invocations[1][invocations[1].index("--phase") + 1])
+
+    def test_postgres_group_selector_and_expected_reports_use_one_manifest(self) -> None:
+        spec = importlib.util.spec_from_file_location("qa_test_groups", ROOT / "scripts/qa_test_groups.py")
+        helper = importlib.util.module_from_spec(spec); spec.loader.exec_module(helper)
+        expected = helper.plan()[1]["pg-1"]
+        result, maven_args, validator_args, _ = self._run_profile_with_fake_runtime("--group", "pg-1", group_reports=expected)
+        self.assertEqual(0, result.returncode, result.stderr)
+        selector = next(argument for argument in maven_args if argument.startswith("-Dtest="))
+        self.assertEqual(set(expected), set(selector.partition("=")[2].split(",")))
+        self.assertIn("scope=focused", validator_args)
+        for name, count in expected.items(): self.assertIn(f"{name}={count}", validator_args)
+
+    def test_java_group_keeps_default_discovery_and_validates_actual_new_template_cases(self) -> None:
+        result, maven_args, validator_args, _ = self._run_profile_with_fake_runtime(
+            "--group", "unit", group_reports={"example.NewIntegrationTest": 3})
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertFalse(any(argument.startswith("-Dtest=") for argument in maven_args))
+        self.assertTrue(any(argument.startswith("-Dsurefire.excludesFile=") for argument in maven_args))
+        self.assertIn("example.NewIntegrationTest=3", validator_args)
 
     def test_integration_profile_rejects_unknown_argument_before_maven(self) -> None:
         result, maven_args, _, _ = self._run_profile_with_fake_runtime("--unknown")

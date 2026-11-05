@@ -20,9 +20,10 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @Testcontainers(disabledWithoutDocker = true)
 class WaDriverFencingIntegrationTest {
     @Container static final PostgreSQLContainer<?> POSTGRES = WaTransportTestSupport.postgres("wa_driver_fencing");
+    private static final WaTransportTestDatabase DATABASE = new WaTransportTestDatabase(POSTGRES);
     WaDriverTestSupport f;
     record Prepared(UUID actor, UUID routine, WaConversationTestSupport.Lease lease, ObjectNode body) { }
-    @BeforeEach void setup() { f = new WaDriverTestSupport(POSTGRES); }
+    @BeforeEach void setup() { f = new WaDriverTestSupport(DATABASE.fixture()); }
     @Test void concurrentRoutineVersionChangeRejectsAnOtherwiseValidMarker() {
         Prepared p = prepare(); f.h.jdbc.update("UPDATE wa.routine SET version=version+1 WHERE id=?", p.routine());
         assertEquals(WaProblem.Code.VERSION_CONFLICT, assertThrows(WaProblem.class, () -> execute(p)).code());

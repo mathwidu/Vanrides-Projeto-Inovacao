@@ -24,32 +24,107 @@ jobs:
           fetch-depth: 1
       - name: Regras estáticas e testes dos auxiliares, sem Maven ou Docker
         run: bash scripts/check_backend.sh --light
-  test:
-    name: Suíte canônica PostgreSQL
+  postgres:
+    name: PostgreSQL (${{ matrix.group }})
     needs: quick
+    strategy:
+      fail-fast: false
+      matrix:
+        group: [pg-1, pg-2, pg-3, pg-4, pg-5, pg-6, pg-7, pg-8]
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 10
     env:
       VANRIDES_QA_REQUIRE_CLEAN: "1"
       VANRIDES_QA_RETENTION_CLASS: ci
       PYTHONDONTWRITEBYTECODE: "1"
     steps:
-      - name: Checkout da revisão avaliada
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.sha }}
           persist-credentials: false
           fetch-depth: 1
-      - name: Java 17
-        uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
         with:
           distribution: temurin
           java-version: '17'
           cache: maven
           cache-dependency-path: src/backend/pom.xml
-      - name: Parte PostgreSQL do gate, após as verificações rápidas obrigatórias
+      - name: Executar grupo PostgreSQL com locks e evidência canônica
+        env:
+          VANRIDES_QA_GROUP_RECEIPT: ${{ runner.temp }}/backend-test-${{ matrix.group }}.json
         working-directory: src/backend
-        run: ./scripts/qa_integration_profile.sh --all-tests
+        run: ./scripts/qa_integration_profile.sh --group "${{ matrix.group }}"
+      - name: Compartilhar somente o recibo compacto do grupo
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: backend-tests-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.group }}
+          path: ${{ runner.temp }}/backend-test-${{ matrix.group }}.json
+          if-no-files-found: error
+          retention-days: 1
+          compression-level: 0
+  java:
+    name: Java sem PostgreSQL
+    needs: quick
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      VANRIDES_QA_REQUIRE_CLEAN: "1"
+      VANRIDES_QA_RETENTION_CLASS: ci
+      PYTHONDONTWRITEBYTECODE: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          fetch-depth: 1
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+          cache-dependency-path: src/backend/pom.xml
+      - name: Descoberta padrão Surefire excluindo somente o manifest PostgreSQL
+        env:
+          VANRIDES_QA_GROUP_RECEIPT: ${{ runner.temp }}/backend-test-unit.json
+        working-directory: src/backend
+        run: ./scripts/qa_integration_profile.sh --group unit
+      - name: Compartilhar somente o recibo compacto Java
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: backend-tests-${{ github.run_id }}-${{ github.run_attempt }}-unit
+          path: ${{ runner.temp }}/backend-test-unit.json
+          if-no-files-found: error
+          retention-days: 1
+          compression-level: 0
+  test:
+    # Preserve the existing required check name; success now requires every group.
+    name: Suíte canônica PostgreSQL
+    needs: [postgres, java]
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Exigir sucesso de todos os grupos, inclusive Java
+        env:
+          POSTGRES: ${{ needs.postgres.result }}
+          JAVA: ${{ needs.java.result }}
+        run: '[[ "$POSTGRES" == success && "$JAVA" == success ]]'
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          fetch-depth: 1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
+        with:
+          pattern: backend-tests-${{ github.run_id }}-${{ github.run_attempt }}-*
+          path: ${{ runner.temp }}/backend-test-receipts
+          digest-mismatch: error
+      - name: Conferir união exata, origem e ausência de skips
+        env:
+          RECEIPT_DIRECTORY: ${{ runner.temp }}/backend-test-receipts
+        run: |
+          [[ "$(git rev-parse HEAD)" == "$GITHUB_SHA" ]]
+          python3 -B src/backend/scripts/qa_test_groups.py aggregate --directory "$RECEIPT_DIRECTORY" --expected-sha "$GITHUB_SHA" --expected-tree "$(git rev-parse 'HEAD^{tree}')" --ci-run-id "$GITHUB_RUN_ID" --ci-attempt "$GITHUB_RUN_ATTEMPT" --require-clean
   candidate:
     name: Empacotar candidato uma vez
     needs: quick

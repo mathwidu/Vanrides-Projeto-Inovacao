@@ -412,3 +412,77 @@ porque aparecem em níveis diferentes; cada nível deve ter uma finalidade clara
 As opções exatas devem respeitar as versões usadas no projeto. O experimento
 de banco compartilhado não implica habilitar reutilização global de contêineres
 nem usar dados de homologação nos testes.
+
+## Oito grupos PostgreSQL e expansão do reset — 05/11/2026
+
+O pedido desta etapa é implementar a divisão e preservar as validações, sem
+alterar a VPS. A referência remota é a execução
+[41918379045](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/actions/runs/41918379045),
+fonte `d471624`, merge avaliado `b1b8baf`: 1.787 testes Java, incluindo 592
+PostgreSQL em 77 classes, sem falhas, erros ou skips. A etapa Java/PostgreSQL
+levou 23min55s e o workflow 24min41s. As 42 verificações de integração levaram,
+junto à imagem, 18min07s; essa frente não muda nesta implementação.
+
+### Organização e cobertura
+
+Oito grupos PostgreSQL executam em runners separados, sequencialmente dentro
+de cada grupo. O manifest conserva as 77 classes, suas contagens e pesos de
+duração obtidos da execução remota. Os pesos servem apenas ao balanceamento;
+não dispensam testes nem aprovam a meta de desempenho. A distribuição histórica
+estima 169–172 segundos de testes por grupo, sem preparação, compilação ou fila.
+
+O job dos demais testes usa a descoberta padrão do Surefire e exclui somente
+as classes PostgreSQL do manifest. Não se mantém uma lista manual adicional de
+testes unitários. A agregação confere os oito grupos, os demais testes Java,
+revisão, origem e cobertura antes de aprovar o backend. Os artefatos contêm
+somente resultados compactos; não incluem XML bruto, variáveis de ambiente,
+credenciais ou saída da aplicação. O JAR candidato e seus consumidores não mudam.
+
+O gate local completo permanece sequencial. Para validar os grupos no Mac,
+executá-los um por vez; somar essas durações não simula o paralelismo do GitHub.
+Cada runner compila seus testes, opção mais simples que transportar diretórios
+de classes compiladas. Isso pode elevar o trabalho somado dos runners; comparar
+esse custo junto ao tempo até o último resultado obrigatório.
+
+### Preparação do banco
+
+As dez classes adotadas são DriverWizard, DriverInvites, DriverFencing,
+PassengerBusiness, PassengerIsolation, PassengerSnapshots, AttendanceOwnership,
+ConversationCommands, ConversationFencing e OutboxTransport. São 97 casos.
+Cada classe conserva seu contêiner próprio e migra uma vez; o helper existente
+limpa dados, restaura a semente e recria serviços/relógios entre cenários.
+Os corpos dos testes, asserções e concorrência permanecem idênticos.
+
+Não ampliar o opt-in automaticamente: testes de migrations, DDL e mudanças de
+configuração exigem revisão própria. Nenhuma configuração de produção, regra de
+quota, relógio da API ou política de entrega é alterada. Reverter esta etapa
+restaura a suíte sequencial e os dez construtores anteriores.
+
+### Verificação e limites
+
+Medição local antes/depois com Java 17, mesma seleção de 97 casos e ordem
+alfabética, um Maven/Docker por vez; repetir em ordem alternativa para detectar
+dependência entre cenários. A validação completa deve exercitar os novos grupos
+e conferir sua união contra os 246 relatórios/1.787 casos da referência, sem
+transformar essa contagem histórica em um segundo cadastro manual de testes.
+As medições e o resultado final desta etapa serão registrados após a execução.
+
+Primeiro recorte local concluído, com os mesmos 97 casos e zero falhas, erros ou
+skips:
+
+| Execução | Soma das classes | Maven completo |
+|---|---:|---:|
+| Antes, ordem alfabética | 154,127 s | 158,534 s |
+| Depois, ordem alfabética | 109,184 s | 118,461 s |
+| Depois, classes invertidas e métodos embaralhados | 111,595 s | 114,824 s |
+
+O recorte das classes caiu 44,943 s (29,16%). O tempo Maven inclui compilação;
+a primeira rodada reutilizou classes compiladas e a segunda precisou recompilar
+os fontes alterados. Por isso a soma das classes é a comparação principal.
+Uma rodada por condição não isola toda a variação da máquina. A terceira rodada
+é prova de isolamento com outra ordem, não repetição para selecionar um tempo
+melhor. Semente dos métodos: `20261105`.
+
+A meta de cinco minutos para toda a CI não está demonstrada por esse desenho:
+a integração e os builds do aplicativo também precisam de trabalho próprio.
+Não confundir previsão por grupo, teste local e tempo remoto observado.
