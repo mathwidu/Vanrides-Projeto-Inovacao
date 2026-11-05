@@ -57,14 +57,7 @@ final class WaPassengerTexts {
                     "Envie um pin estático para esse ponto comum. Localização ao vivo não serve"
                             + " para o cadastro.";
             case "REVIEW" ->
-                    draft.path("confirmation").has("markerHash")
-                            ? "Para confirmar, responda CONFIRMAR com o código do último resumo"
-                                    + " que enviei. Se o código expirou ou você não o encontra,"
-                                    + " envie CONTINUAR para receber um resumo novo. Use CORRIGIR"
-                                    + " para mudar algo ou ABANDONAR para cancelar."
-                            : "Para confirmar, responda CONFIRMAR. Se passaram mais de 5 minutos,"
-                                    + " envie CONTINUAR para receber um resumo novo. Use CORRIGIR"
-                                    + " para mudar algo ou ABANDONAR para cancelar.";
+                    reviewHelp(draft.path("confirmation"));
             default ->
                     "Envie seu convite para iniciar ou CONTINUAR CADASTRO para retomar. Para ajuda,"
                             + " envie AJUDA.";
@@ -149,6 +142,19 @@ final class WaPassengerTexts {
             text.append(' ').append(marker);
         }
         return text.append(". Use CORRIGIR ou ABANDONAR para revisar.").toString();
+    }
+
+    private static String reviewHelp(JsonNode confirmation) {
+        String how =
+                confirmation.isMissingNode()
+                        ? "Envie CONTINUAR para receber o resumo novamente."
+                        : confirmation.has("markerHash")
+                                ? "Para confirmar, responda CONFIRMAR com o código do último"
+                                        + " resumo que enviei. Se o código expirou ou você não o"
+                                        + " encontra, envie CONTINUAR para receber um resumo novo."
+                                : "Para confirmar, responda CONFIRMAR. Se passaram mais de 5"
+                                        + " minutos, envie CONTINUAR para receber um resumo novo.";
+        return how + " Use CORRIGIR para mudar algo ou ABANDONAR para cancelar.";
     }
 
     private static String days(ObjectNode draft) {

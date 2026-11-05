@@ -101,9 +101,9 @@ final class WaPassengerDraftStore {
         if (!draft.path("stage").asText().equals("REVIEW") || !draft.has("confirmation")) {
             return false;
         }
-        boolean coded = needsCode(actor);
-        String text = WaDriverWizard.text(event);
         var confirmation = draft.path("confirmation");
+        boolean coded = needsCode(actor) || confirmation.has("markerHash");
+        String text = WaDriverWizard.text(event);
         if (coded
                 ? !text.matches("confirmar [bcdfghjkmnpqrstvwxyz]{8}")
                 : !WaPassengerAnswers.loose(text).equals("confirmar")) {
@@ -114,7 +114,9 @@ final class WaPassengerDraftStore {
             Instant received = Instant.parse(event.normalizedPayload().path("occurredAt").asText());
             return confirmation.path("profileVersion").asLong(-1) == actor.version()
                     && Instant.parse(confirmation.path("expiresAt").asText()).isAfter(clock.now())
-                    && !received.isBefore(issued.truncatedTo(ChronoUnit.SECONDS))
+                    && (coded
+                            ? !received.isBefore(issued.truncatedTo(ChronoUnit.SECONDS))
+                            : received.isAfter(issued))
                     && !event.eventId().toString().equals(confirmation.path("sourceInbox").asText())
                     && digest(draft).equals(confirmation.path("draftDigest").asText())
                     && (!coded
@@ -130,8 +132,12 @@ final class WaPassengerDraftStore {
                                     """
                                     SELECT EXISTS(SELECT 1 FROM wa.message_outbox o JOIN wa.command_receipt r ON r.command_id=o.command_id
                                     WHERE o.id=? AND o.recipient_identity_id=? AND r.inbox_event_id=?
-                                    AND o.policy_version='passenger-setup-v1' AND o.state NOT IN ('CANCELED','EXPIRED'))
-                                    """,
+                                    AND o.policy_version='passenger-setup-v1' AND o.state %s)
+                                    """
+                                            .formatted(
+                                                    coded
+                                                            ? "NOT IN ('CANCELED','EXPIRED')"
+                                                            : "IN ('SUBMITTED','DELIVERED','READ')"),
                                     Boolean.class,
                                     UUID.fromString(confirmation.path("outboxId").asText()),
                                     actor.identityId(),

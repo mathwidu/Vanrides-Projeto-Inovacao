@@ -284,6 +284,11 @@ substituído pelo ID da mensagem de confirmação. O draft define recusa, corre�
 ou encerramento no CLOSE_LINK. O contrato reservado anterior com inviteCode,
 reason ou reference livre deixa de ser aceito nesses payloads090.
 
+A confirmação final do passageiro é a palavra CONFIRMAR, sem código. Ela só vale
+com o resumo já enviado (SUBMITTED, DELIVERED ou READ), recebida depois dele, em até
+5 minutos e com rascunho e perfil inalterados. O motorista continua confirmando com
+`CONFIRMAR <código>`.
+
 Ator e dono são sempre derivados do evento autenticado. Aprovações pertencem
 ao motorista elegível em PAIRING/READY, e a API revalida a dupla, etapa e versões.
 O agente copia uma única oferta completa; ofertas conflitantes, referências

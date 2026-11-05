@@ -183,13 +183,33 @@ final class WaPassengerTestSupport {
         return match.group(1);
     }
 
-    String confirmation(Step review) {
+    String confirmationText(Step review) {
         var match = Pattern.compile("CONFIRMAR [BCDFGHJKMNPQRSTVWXYZ]{8}").matcher(review.text());
-        return match.find() ? match.group() : "CONFIRMAR";
+        if (match.find()) {
+            return match.group();
+        }
+        assertTrue(review.text().contains("responda CONFIRMAR."), review.text());
+        return "CONFIRMAR";
+    }
+
+    void markSummarySubmitted(UUID actor) {
+        transport.jdbc.update(
+                "UPDATE wa.message_outbox SET state='SUBMITTED' WHERE id=?::uuid",
+                draft(actor).path("confirmation").path("outboxId").asText());
+    }
+
+    void deliverSummary(UUID actor) {
+        markSummarySubmitted(actor);
+        transport.time.advance(1);
+    }
+
+    String confirmation(UUID actor, Step review) {
+        deliverSummary(actor);
+        return confirmationText(review);
     }
 
     Step confirm(UUID actor, Step review) {
-        return send(actor, confirmation(review));
+        return send(actor, confirmation(actor, review));
     }
 
     UUID request(UUID passenger, String code) {
