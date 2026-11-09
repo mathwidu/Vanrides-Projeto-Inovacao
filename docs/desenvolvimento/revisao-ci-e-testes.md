@@ -523,3 +523,232 @@ Não há push, merge, nova execução GitHub ou alteração da VPS nesta etapa l
 A meta de cinco minutos para toda a CI não está demonstrada por esse desenho:
 a integração e os builds do aplicativo também precisam de trabalho próprio.
 Não confundir previsão por grupo, teste local e tempo remoto observado.
+
+
+## Redesenho para contribuição e publicação — decisão de 09/11/2026
+
+**Direção aprovada; implantação da nova esteira ainda pendente.** O proprietário
+rejeitou publicação manual recorrente e aprovou explicitamente que a `main`
+publique automaticamente após os testes. Branches de trabalho, inclusive `dev`
+se usada, validam alterações e não sobrescrevem o ambiente compartilhado.
+A aprovação desse modelo elimina confirmação do proprietário a cada deploy
+normal feito pelo time. A instalação inicial deve ser preparada e verificada;
+não confundir a decisão com automação já ativa.
+
+Existe um único ambiente de desenvolvimento compartilhado na VPS, aproveitando
+a homologação atual. Não há produção real com usuários operando nem necessidade
+de criar agora outro banco, bot ou domínio. Manter os identificadores técnicos
+`vanrides-mvp-hml` e stacks existentes por compatibilidade; apresentá-lo ao time
+como “Desenvolvimento compartilhado”. Stage e produção separados ficam para v1.0.
+Os oito grupos PostgreSQL permanecem apenas na branch local, sem medição remota.
+A revisão da CI não autoriza eliminar validações de comportamento sem equivalência.
+
+### Conferência e referências
+
+- Checkout `codex/ci-pilotos-preparacao`, base local `8b2e6b9`, inicialmente limpo.
+- `main` remota em `33e6d9f` já incorporou o PR #106: dias nomeados, SIM/NÃO,
+  mensagens com quebras de linha e confirmação do resumo. O PR #107 continua
+  aberto em `d471624`, com conflito indicado pelo GitHub. Integrar essas
+  melhorias antes da substituição; a documentação anterior de PR separado ficou
+  desatualizada. Nenhum merge ou push foi executado nesta análise.
+- A leitura da VPS confirmou nove serviços VanRides com 1/1 réplica e HTTPS
+  `/actuator/health` com `UP`. A imagem nominal da API ainda identifica
+  `passenger-acc572f-df9c642ba993`; não é a versão da main atual.
+- Os sete workflows do checkout não publicam a VPS. O nome “Homologação técnica
+  da API” representa um ensaio no runner, não uma implantação.
+- Referências locais da Testing Company: Ponto API `origin/main` em `cc0c243`
+  usa GHCR/Swarm, staging em develop e promoção manual por digest para produção;
+  website API `a65a6f5` e frontend `7f3ad93` usam gate, imagem GHCR e rollout.
+  São refs locais inspecionados, não uma nova verificação dos remotos da empresa.
+  Ponto MVC usa FTP/cPanel; não existe um único YAML da TC aplicável a todo projeto.
+  Não copiar contas, credenciais, nomes de serviço ou configuração empresarial.
+
+### Organização proposta
+
+Entradas legíveis no Actions, com jobs nomeados por componente; validação e publicação podem ser fases do mesmo workflow:
+
+| Entrada | Disparo proposto | Resultado |
+|---|---|---|
+| Validar alterações | PR; main; execução completa manual/agendada | Backend, canal, documentação e contratos aplicáveis; nenhuma escrita na VPS |
+| Publicar desenvolvimento | Automático no push/merge na `main`, após os testes | Publica o candidato no GHCR, atualiza os componentes alterados e verifica a URL |
+| Gerar aplicativo | Alteração do app ou execução manual | APK com versão/URL conhecidas e artefato para download; iOS conforme assinatura; não altera a API |
+
+Na implementação, distinguir build de candidato de publicação: compilar uma
+vez, testar esse candidato e identificar sua imagem por digest. Uma publicação
+reutiliza o candidato validado; não recompila um conteúdo diferente após os testes.
+Mostrar no resumo: componente, revisão, digest, serviço, URL, resultado e versão
+anterior. Logs detalhados ficam como artefato quando necessários, sem dados reais.
+
+Cada componente deve ter um comando de validação compreensível. A matriz
+PostgreSQL só deve permanecer se reduzir o tempo de forma comprovada e sua
+manutenção ficar simples. Rever a necessidade de recibos e orquestração próprios
+quando o status dos jobs e relatórios padrão do Maven forem suficientes.
+Não retirar a comprovação de cobertura, isolamento, autorização ou idempotência
+sem substituição demonstrada. Não duplicar uma jornada já coberta integralmente.
+
+A proposta admite retorno rápido no PR e regressão completa em momento separado,
+mas exige a regressão do candidato antes de publicá-lo. **Essa mudança de cadência
+precisa ser alinhada:** não equivale a executar todas as etapas em cinco minutos.
+A meta total de cinco minutos permanece não demonstrada, inclusive para APK,
+filas de runners, testes com tempo real e publicação.
+
+### O que uma publicação altera
+
+| Componente selecionado | Destino da atualização |
+|---|---|
+| API | `vanrides-hml-api_api`; migrações precisam de análise e cópia recuperável próprias |
+| Canal | `vanrides-hml-canal_worker` e/ou `vanrides-hml-canal_ingress`, conforme mudança |
+| Automações | Somente os fluxos VanRides do n8n, quando o pacote de fluxos mudar |
+| Aplicativo | APK e páginas da distribuição `vanrides-hml-android_links` |
+
+Banco/volumes, sessão da Evolution, Redis, Traefik e n8n compartilhado permanecem
+infraestrutura existente. A atualização de código não deve recriá-los. A receita
+precisa declarar o componente alterado e manter configuração compatível. Retornar
+a imagem anterior não desfaz uma migração de banco.
+
+### Cadastro e liberação de motorista
+
+A consulta SQL, em transação somente leitura, confirmou um CHANNEL válido na
+instância `vanrides-hml`, um grupo autorizado e zero convites de motorista.
+Nenhum contato ou convite foi criado nesta rodada.
+
+O procedimento solicitado pelo colega é compatível com `operador.py`, mas
+`admit-participant` e `driver-bootstrap` não são o cadastro completo. Além deles:
+
+1. Reutilizar o grupo autorizado e confirmar a identidade canônica WhatsApp do
+   contato, sem presumir que remover ou acrescentar dígito ao telefone é seguro.
+2. Reconciliar admissão existente antes de gerar nova identidade; manter UUIDs
+   estáveis e prazo UTC fixo de até 24 horas para o convite.
+3. Incluir o contato no receptor: `policy.mjs` rejeita contatos ausentes da
+   lista privada antes de encaminhar o evento à API. Preservar os já admitidos.
+4. Entregar o convite de forma privada; o motorista usa-o antes de concluir o
+   cadastro, informa nome e aceita o aviso. Criar rotina para permitir o vínculo
+   do passageiro. Não preencher aceite ou perfil em nome dele.
+5. Validar recebimento/resposta, consumo do convite, perfil, rotina e vínculo.
+   Convite COMMITTED não comprova jornada funcional.
+
+Para a experiência futura, propor uma única ação administrativa “Liberar
+motorista de teste”, que encapsule as operações e gere um convite. Idempotência,
+reconciliação de falhas e entrega privada continuam necessárias. A interface
+inicial pode ser um comando guiado, sem exigir painel novo nem acesso à VPS
+para todos. A lista estática atual tem limite de quatro contatos: atende ao
+grupo inicial, mas precisa ser substituída por uma política de admissão adequada
+antes de ampliar os usuários. Não abrir o bot irrestritamente como atalho.
+
+Passageiro: convite do motorista → identificação/aceite → rotina e dias → pin
+estático e referência → resumo/CONFIRMAR → aprovação do motorista. Aproveitar o
+PR #106. Motorista: convite autorizado → cadastro → rotina → vínculo do app →
+convite aos passageiros. Os IDs técnicos não aparecem nessas conversas.
+
+### Ordem sugerida e critérios de conclusão
+
+1. Liberar o motorista em operação separada, autorizada pelo proprietário em
+   09/11, sem aguardar a migração de CI. O operador cria serviço temporário e grava dados;
+   a atualização da lista reinicia somente o receptor. Preservar recibos e
+   reconciliar resultado incerto; não apagar cadastro como rollback automático.
+2. Integrar a main atual e resolver o PR #107 preservando os comportamentos dos
+   dois lados. Rever as issues existentes, sem encerrar critérios ainda pendentes.
+3. Substituir a orquestração em PR próprio com mapa de equivalência das validações,
+   verificação dos checks exigidos e documentação curta de desenvolvimento.
+4. Preparar publicação automática da `main`, credenciais dedicadas, digest,
+   verificação e retorno; testar a instalação inicial antes de ativar. Serializar
+   atualizações do ambiente e impedir que uma execução antiga publique depois
+   de uma mais recente. Teste falhou: a versão online permanece anterior.
+5. Medir no GitHub e pedir a um colega que valide o fluxo pelo guia: identificar a
+   revisão publicada, localizar o APK, testar cadastro e explicar o que será
+   atualizado no próximo deploy. Comparar tempos sem confundir suíte rápida,
+   regressão completa e implantação.
+
+Fontes: `.github/workflows/`, `deploy/homologacao/canal/OPERADOR.md`,
+`src/whatsapp/lab/live-ingress/hml-config.mjs` e `policy.mjs`,
+`WaOperatorAdmission.java`, guia de homologação e inspeção remota somente leitura.
+Referências de mecanismo: [eventos automáticos do GitHub Actions](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow)
+e [atualização de serviço Swarm](https://docs.docker.com/engine/swarm/swarm-tutorial/rolling-update/).
+
+
+### Autonomia da equipe aprovada
+
+A consulta autenticada da conta proprietária confirmou os quatro integrantes:
+o proprietário com admin e os três colegas com write. Isso já permite trabalhar
+no repositório; não concede acesso administrativo ao produto. Não compartilhar
+conta, senha, chave SSH ou token pessoal para igualar as capacidades do time.
+
+Proposta de experiência: uma área da equipe no mesmo ambiente, com login
+individual pelo GitHub e autorização verificada para os integrantes do
+repositório. Todos os quatro terão as mesmas funções de teste do produto:
+liberar participante, gerar/renovar convite de motorista, consultar o estado do
+cadastro e acessar versões/links de teste. Ações registram o autor; retirar
+permissão precisa retirar também o acesso operacional. Essa interface ainda
+não existe. O mecanismo de autenticação/consulta de permissão precisa ser
+implementado e testado, sem confiar em login ou papel enviados pelo navegador.
+
+O usuário informa telefone e papel, não UUID, coorte, principal ou segredo.
+A área coordena admissão na API e receptor e só mostra concluído após ambos.
+Repetir a ação deve reconciliar o resultado anterior, não criar identidades
+ou convites conflitantes. O motorista/passageiro continua responsável pelo
+próprio cadastro e consentimento. A área administrativa não se transforma em
+SQL, shell remoto ou executor arbitrário. Nenhuma edição manual de secret e
+reinício do receptor deve ser necessária na experiência final de admissão.
+
+O repositório é público. Não usar campos de workflow, issues ou artifacts
+públicos para telefone, convite e outros dados pessoais. A área autenticada é
+preferível a um workflow de administração que exponha essas informações.
+
+### Dependências técnicas verificadas para a primeira publicação automática
+
+- A `main` atual não reúne a API publicada e não contém a V38; integrar o PR #107
+  e as melhorias do #106 antes de torná-la origem do deploy. Preservar histórico
+  de migração e conferir o Flyway do ambiente; não alterar migrations já aplicadas.
+- A API atual usa entrypoint montado e checksum do JAR na especificação do
+  serviço. Atualizar imagem e checksum juntos. O operador também deve reconhecer
+  a versão instalada após cada release, sem continuar preso ao manifest antigo.
+- Worker/receptor usam código montado por bind; trocar só a imagem Node não
+  publica o JavaScript. Preparar distribuição versionada e retorno por componente.
+- O helper n8n atual importa fluxos novos. Preparar atualização idempotente dos
+  IDs VanRides para alterações futuras, preservando fluxos alheios e a sessão do bot.
+- Actions Secrets e Variables estavam vazios na consulta autenticada pessoal.
+  Configurar identidade de deploy dedicada e restrita e host key validada;
+  credenciais de aplicação continuam no Swarm. Não copiar a chave pessoal do Mac.
+- A assinatura Android deve permanecer compatível com os APKs instalados.
+  Publicar o APK quando o app mudar; não exigir recompilar mobile para mudar
+  somente mensagens do backend.
+
+Essas dependências pertencem à preparação inicial. Depois de resolvidas, o
+fluxo diário esperado é issue → branch → PR → main → testes → publicação
+automática → teste do colega na mesma URL. A separação futura dos ambientes
+não é pré-requisito para começar esse fluxo.
+
+
+### Execução da liberação inicial — 09/11/2026
+
+O proprietário autorizou priorizar o motorista solicitado pelo colega. O número
+foi confirmado pela Evolution, com identificador canônico diferente da digitação;
+nenhuma regra genérica de alteração de números foi usada. `admit-participant`
+e `driver-bootstrap` retornaram COMMITTED, na mesma identidade e grupo autorizado,
+e os dois serviços temporários foram removidos. O receptor passou de um para dois
+contatos, preservando o passageiro. O convite foi entregue ao proprietário em
+arquivo privado, fora do Git; não houve mensagem enviada ao colega nem aceite ou
+cadastro preenchido em nome dele.
+
+A primeira aplicação da lista não confirmou a checagem posterior e solicitou
+retorno à versão anterior. Esse retorno foi conferido (receptor READY e um
+contato). A repetição com diagnóstico confirmou a lista nova, receptor READY,
+API UP e nove serviços com 1/1 réplica. A causa da primeira checagem não foi
+isolada; não atribuir o episódio a falha do WhatsApp ou a perda de dados.
+A API e o bot não foram atualizados nesta operação. Convite pronto não comprova
+cadastro de motorista, vínculo com passageiro, presença ou percurso.
+
+A integração local `a8df3c7` preserva a API publicada e incorpora `33e6d9f`,
+resolvendo os quatro conflitos. O manifesto incorpora os testes do colega:
+78 classes PostgreSQL/600 casos; total projetado 247 classes/1.801 casos.
+Essas contagens são inventário até prova da suíte completa. As verificações
+leves de backend (220), WhatsApp offline (709 Node e suítes Python), sintaxe
+Bash e actionlint passaram. Sem push, merge remoto ou ativação da nova CI.
+
+Validação focalizada do merge `a8df3c7`: 54 testes Java em seis classes de cadastro,
+isolamento, entrega e concorrência passaram, sem falhas, erros ou skips, em
+88,5 segundos. Uma única JVM/Maven foi executada, sem fechar aplicativos do usuário.
+O auxiliar privado falhou ao finalizar por falta de import de `sys`, depois de
+salvar os resultados; a correção e a releitura dos seis XMLs confirmaram a saída
+Maven zero. Não repetimos os testes apenas por essa falha de relatório. Essa
+rodada é focalizada e não substitui a suíte completa antes da publicação.

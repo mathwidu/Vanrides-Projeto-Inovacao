@@ -1,8 +1,12 @@
-# Ambiente de testes do VanRides
+# Desenvolvimento compartilhado do VanRides
 
 **Endereço:** <https://vanrides-inovacao-api.matheusduarte.dev.br>
 
-**Situação conferida em 04/11/2026:** API, banco, APK e atendimento WhatsApp publicados. O cadastro básico do passageiro já foi testado no canal real. A jornada com motorista e o percurso ainda precisam de validação. Este é um ambiente compartilhado de homologação; o piloto com usuários ainda não está liberado.
+**Conferência de 09/11/2026:** API respondendo UP e nove serviços com uma réplica em execução. Um passageiro está admitido e um novo motorista recebeu liberação técnica e convite privado; ele ainda precisa concluir o cadastro e criar a rotina. As provas anteriores de cadastro básico do passageiro permanecem registradas; a jornada completa e o percurso ainda precisam de validação.
+
+Usamos um único ambiente de desenvolvimento compartilhado. Os nomes técnicos ainda dizem “hml”; não existe produção real liberada para usuários. Stage e produção separados ficam para a versão 1.0.
+
+**Mudança aprovada, ainda em preparação:** push/merge na `main` deverá testar e publicar automaticamente neste endereço. As outras branches apenas validarão as alterações. Uma área autenticada da equipe deverá permitir aos quatro integrantes liberar participantes e gerar convites sem acesso à VPS. Essas duas automações ainda não estão disponíveis.
 
 ## O que cada integrante pode acessar
 
@@ -10,7 +14,7 @@
 | --- | --- | --- |
 | [Saúde da API](https://vanrides-inovacao-api.matheusduarte.dev.br/actuator/health) | Abrir no navegador; esperado HTTP 200 e `{"status":"UP"}`. | Público, disponível para os quatro integrantes. Não testa uma jornada de negócio. |
 | [APK do motorista](https://vanrides-inovacao-api.matheusduarte.dev.br/motorista/VanRides.apk) | Baixar no Android e instalar o VanRides Motorista **0.3.0-hml+13**. | Download público; já aponta para a API online. Instalar não habilita automaticamente um motorista. |
-| Bot pelo WhatsApp | Pedir a Matheus o contato do bot e a liberação do seu próprio número por canal privado. Depois enviar `AJUDA`. | Bot conectado. **Só um contato de passageiro está liberado nesta conferência.** Os demais precisam ser admitidos antes do teste. |
+| Bot pelo WhatsApp | Pedir a Matheus o contato do bot e a liberação do seu próprio número por canal privado. Depois enviar `AJUDA`. | Bot conectado. Um passageiro admitido e um motorista com convite individual preparado. Outros contatos ainda precisam de admissão; a autonomia administrativa do time está em preparação. |
 | API de produto | O app e o atendimento usam as credenciais próprias de cada fluxo. | Rotas `/driver-app/v1/` e `/integrations/whatsapp/v1/` exigem autenticação. Receber 401 ao abrir no navegador é esperado. |
 | Código e issues | Usar este repositório e o [guia de contribuição](../../CONTRIBUTING.md). | Desenvolvimento e testes sintéticos independem da liberação do número. Veja abaixo a diferença entre `main`, branch e versão publicada. |
 | n8n, Evolution, banco e VPS | Operação por Matheus. Alterações são preparadas no Git e revisadas antes da publicação. | Não são painéis de teste abertos para o grupo. O acesso de cada colega a esses painéis não foi provisionado. Não compartilhar senha, SSH ou token de serviço. |
@@ -107,15 +111,15 @@ Na issue da funcionalidade, anote: versão do APK, revisão da API informada pel
 
 ## Código publicado, main e contribuições
 
-A VPS **não atualiza automaticamente quando alguém muda a `main`**. Os workflows deste repositório testam e constroem artefatos locais do runner; não publicam o ambiente. Uma mudança só chega à homologação depois de preparar, revisar e autorizar a publicação da revisão exata.
+**Até a nova esteira entrar em funcionamento, a VPS ainda não atualiza com a `main`.** O modelo aprovado passa a ser automático: testes aprovados → imagem identificada → atualização dos componentes alterados → verificação. A ativação depende primeiro da integração do código já hospedado com a `main`. Não exigir confirmação manual do proprietário em cada publicação normal depois disso.
 
 | Referência | Conteúdo nesta conferência |
 | --- | --- |
 | API publicada `acc572f` / imagem `4648c6c43401` | Rotas do MVP, homologação e correções de ajuda/retomada e presença vazia. |
 | Código/documentação da homologação até `c44f916` | Branch `codex/homologacao-api-equipe`; a documentação mais recente não implica outro binário na VPS. |
-| `main` em `0393030` / PR #105 | Melhoria do colega para SIM/NÃO e respostas não compreendidas no cadastro. Ainda não faz parte da API publicada. |
-| Integração `codex/integracao-equipe-homologacao` | Reúne a homologação e a `main`, preservando ambos os históricos. Aguarda publicação/revisão pelo grupo; sem deploy implícito. |
-| PR #106 | Dias nomeados e novas opções de cadastro em revisão separada. Não incluído por antecipação nesta integração. |
+| `main` em `33e6d9f` / PRs #105 e #106 | Melhorias de cadastro, dias nomeados e confirmação simplificada. Ainda não faz parte da API publicada. |
+| Integração local `codex/equipe-ci-automatico` em `a8df3c7` | Resolve os conflitos da integração com a `main`, preservando a homologação e as melhorias do colega. Ainda sem push ou deploy; validação completa pendente. |
+| PR #107 | Continua aberto na revisão remota anterior; a integração local ainda precisa ser enviada para revisão. |
 
 Para desenvolver, siga [CONTRIBUTING.md](../../CONTRIBUTING.md) e abra uma branch a partir da `main` atualizada. Para reproduzir a integração antes de ela entrar na `main`, use a branch do PR correspondente quando estiver publicada. Combine a tarefa na issue para evitar alterações simultâneas no mesmo fluxo. Mudanças locais não aparecem no bot hospedado.
 

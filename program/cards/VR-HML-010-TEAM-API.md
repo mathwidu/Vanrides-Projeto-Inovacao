@@ -197,3 +197,24 @@ revisão independente. Tempos remotos do novo desenho ainda pendentes; não
 confundir medição local com aprovação da meta de cinco minutos da CI inteira.
 Documentação: `docs/desenvolvimento/revisao-ci-e-testes.md`. Sem publicação,
 VPS ou dispositivos. O card e o aceite do MVP mantêm seus estados anteriores.
+
+
+## Desenvolvimento compartilhado e autonomia — 09/11/2026
+
+O proprietário aprovou um único ambiente compartilhado até v1.0, publicação
+automática da `main` após testes (demais branches validam) e autonomia equivalente
+dos quatro integrantes para operações de teste do produto, sem distribuir acesso
+SSH. O CD manual recorrente foi rejeitado. A instalação inicial da esteira,
+credenciais dedicadas, atualização por componente e interface autenticada da
+equipe ainda estão por implementar; ver a [decisão da CI](../../docs/desenvolvimento/revisao-ci-e-testes.md).
+
+A operação inicial autorizada admitiu o motorista do colega, gerou convite e
+incluiu o contato no receptor, preservando o passageiro. Recibos COMMITTED e
+remoção dos jobs comprovados; receptor READY, API UP e nove serviços 1/1. Cadastro,
+aceite, rotina e jornada completa dependem do próprio participante. A primeira
+aplicação do receptor retornou à lista anterior após não confirmar a checagem;
+a repetição foi verificada, sem alteração da API ou sessão do bot.
+
+Merge local `a8df3c7` preserva homologação/V38 e integra main `33e6d9f`/PR #106.
+Testes leves passaram; a suíte completa e publicação permanecem pendentes.
+O card continua em andamento; isso não libera piloto ou produção.
