@@ -6,7 +6,7 @@
     "runId": 41918379045,
     "sourceHead": "d4716243070f55f7f44f94ee006e69476a0b202b",
     "testedMerge": "b1b8baf0253818bc424facd7da57abf01d566f53",
-    "scope": "Surefire class elapsed seconds from one successful run; not an execution deadline"
+    "scope": "Surefire class elapsed seconds from one successful run; zero marks an unmeasured class; not an execution deadline"
   },
   "classes": [
     {
@@ -316,7 +316,7 @@
     },
     {
       "className": "com.vanrides.vanrides.whatsapp.transport.WaPassengerDeliveryFencingIntegrationTest",
-      "tests": 10,
+      "tests": 11,
       "seconds": 19.76
     },
     {
@@ -331,8 +331,13 @@
     },
     {
       "className": "com.vanrides.vanrides.whatsapp.transport.WaPassengerFencingIntegrationTest",
-      "tests": 9,
+      "tests": 11,
       "seconds": 37.17
+    },
+    {
+      "className": "com.vanrides.vanrides.whatsapp.transport.WaPassengerInputIntegrationTest",
+      "tests": 6,
+      "seconds": 0
     },
     {
       "className": "com.vanrides.vanrides.whatsapp.transport.WaPassengerIsolationIntegrationTest",
@@ -346,7 +351,7 @@
     },
     {
       "className": "com.vanrides.vanrides.whatsapp.transport.WaPassengerWizardIntegrationTest",
-      "tests": 12,
+      "tests": 11,
       "seconds": 39.37
     },
     {

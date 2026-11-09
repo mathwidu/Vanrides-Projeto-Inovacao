@@ -121,8 +121,8 @@ export function passengerConversation({ input, tools, actor, address, peers, ins
   }
   const confirm = (person, offered, command, options) => {
     const marker = extractConfirmationMarker(offered.reply);
-    demand(marker !== null, 'PASSENGER_REVIEW_MARKER_MISSING');
-    return send(person, 'CONFIRMAR ' + marker, command, options);
+    demand(marker !== null || /responda CONFIRMAR\./u.test(offered.reply), 'PASSENGER_REVIEW_MARKER_MISSING');
+    return send(person, marker === null ? 'CONFIRMAR' : 'CONFIRMAR ' + marker, command, options);
   };
   return { send, confirm, bootstrap, restart, replay, deliverReminder, deliverRunNotice, driver, passenger: peers[0], otherDriver: peers[1],
     totals: () => ({ uniqueEvents: events, duplicateEvents: duplicates, commandReceipts: events,

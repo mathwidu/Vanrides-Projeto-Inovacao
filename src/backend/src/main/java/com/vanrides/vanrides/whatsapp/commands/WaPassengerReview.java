@@ -15,27 +15,9 @@ final class WaPassengerReview {
     void enrich(WaProfileState actor, WaInboxAccess.Context event, ObjectNode draft) {
         ObjectNode pin = null;
         if (draft.has("linkId")) {
-            StringBuilder summary = new StringBuilder();
-            var rows =
-                    data.array(
-                            """
-                            SELECT jsonb_build_object('name',r.name,'direction',r.direction,'time',r.local_time::text,'days',s.weekdays)::text
-                            FROM wa.passenger_link_routine s JOIN wa.routine r ON r.id=s.routine_id WHERE s.link_id=? ORDER BY r.created_at,r.id
-                            """,
-                            UUID.fromString(draft.path("linkId").asText()));
-            for (var selection : rows) {
-                summary.append(selection.path("name").asText())
-                        .append(
-                                selection.path("direction").asText().equals("OUTBOUND")
-                                        ? " (ida)"
-                                        : " (volta)")
-                        .append(" às ")
-                        .append(selection.path("time").asText())
-                        .append(", dias ")
-                        .append(selection.path("days"))
-                        .append(". ");
-            }
-            draft.put("selectionSummary", summary.toString().strip());
+            draft.put(
+                    "selectionSummary",
+                    data.selectionSummary(UUID.fromString(draft.path("linkId").asText())));
         }
         if (draft.has("sourceEvent")) {
             pin = data.pin(actor.identityId(), draft.path("sourceEvent").asText(), event.eventId());

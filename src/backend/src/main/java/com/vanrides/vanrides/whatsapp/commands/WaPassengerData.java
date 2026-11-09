@@ -1,5 +1,6 @@
 package com.vanrides.vanrides.whatsapp.commands;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.vanrides.vanrides.whatsapp.api.WaJson;
@@ -11,6 +12,8 @@ import com.vanrides.vanrides.whatsapp.config.WaSettings;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 /** Reads bounded by owners; never use personal pickup points as a public catalogue. */
@@ -257,6 +260,25 @@ final class WaPassengerData {
         // Count is deliberately excluded: only the durable request consumes the invite under its
         // row lock.
         return WaCrypto.digest(WaJson.canonical(result));
+    }
+
+    String selectionSummary(UUID link) {
+        List<String> lines = new ArrayList<>();
+        for (JsonNode selection :
+                array(
+                        """
+                        SELECT jsonb_build_object('name',r.name,'direction',r.direction,'time',r.local_time::text,'days',s.weekdays)::text
+                        FROM wa.passenger_link_routine s JOIN wa.routine r ON r.id=s.routine_id WHERE s.link_id=? ORDER BY r.created_at,r.id
+                        """,
+                        link)) {
+            lines.add(
+                    WaPassengerTexts.routineLine(
+                            selection.path("name").asText(),
+                            selection.path("direction").asText(),
+                            selection.path("time").asText(),
+                            selection.path("days")));
+        }
+        return String.join("\n", lines);
     }
 
     ArrayNode array(String sql, Object... args) {

@@ -12,6 +12,7 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import java.time.Instant;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
@@ -42,7 +43,7 @@ class WaPassengerFencingIntegrationTest {
     void stolenLinkAndPickupReferencesCannotApproveAnotherDriversPassenger() {
         UUID link = fixture.request(passenger, code);
         var review = fixture.driverReview(driver, "APROVAR");
-        var confirmation = fixture.conversation.text(driver, "CONFIRMAR " + fixture.marker(review));
+        var confirmation = fixture.conversation.text(driver, fixture.confirmation(driver, review));
         var context = fixture.context(confirmation);
         UUID intruder = fixture.driver();
         var attack = fixture.conversation.text(intruder, "APROVAR 1");
@@ -60,7 +61,7 @@ class WaPassengerFencingIntegrationTest {
     void payloadMustExactlyMatchTheOfferedReferences() {
         UUID link = fixture.request(passenger, code);
         var review = fixture.driverReview(driver, "APROVAR");
-        var lease = fixture.conversation.text(driver, "CONFIRMAR " + fixture.marker(review));
+        var lease = fixture.conversation.text(driver, fixture.confirmation(driver, review));
         var payload = fixture.payload(fixture.context(lease));
         payload.put("pickupRef", "pickup_" + UUID.randomUUID().toString().replace("-", ""));
         assertEquals(
@@ -79,14 +80,46 @@ class WaPassengerFencingIntegrationTest {
     }
 
     @Test
-    void expiredAndSupersededHumanMarkersCannotCreateARequest() {
-        var original = fixture.review(passenger, code);
-        var current = fixture.send(passenger, "SIM");
-        assertNotEquals(fixture.marker(original), fixture.marker(current));
-        fixture.send(passenger, "CONFIRMAR " + fixture.marker(original));
+    void driverApprovalStillNeedsTheCodeFromTheSummary() {
+        UUID link = fixture.request(passenger, code);
+        var review = fixture.driverReview(driver, "APROVAR");
+        assertNotEquals("CONFIRMAR", fixture.confirmationText(review), review.text());
+        var bare = fixture.send(driver, "CONFIRMAR");
+        assertNotEquals("CONFIRMAR", fixture.confirmationText(bare), bare.text());
+        assertEquals(
+                "REQUESTED",
+                fixture.conversation.string(
+                        "SELECT state FROM wa.driver_passenger_link WHERE id=?", link));
+    }
+
+    @Test
+    void passengerConfirmationNeedsTheSummarySubmittedAndNotTypedBeforeItsIssueSecond() {
+        fixture.review(passenger, code);
+        fixture.send(passenger, "CONFIRMAR");
         assertEquals(0, fixture.count("driver_passenger_link"));
+
+        fixture.markSummarySubmitted(passenger);
+        var before = fixture.conversation.textAt(passenger, "CONFIRMAR", issuedAt().minusMillis(1));
+        fixture.execute(before, true);
+        assertEquals(0, fixture.count("driver_passenger_link"));
+
+        fixture.markSummarySubmitted(passenger);
+        var sameSecond = fixture.conversation.textAt(passenger, "CONFIRMAR", issuedAt());
+        fixture.execute(sameSecond, true);
+        assertEquals(1, fixture.count("driver_passenger_link"));
+    }
+
+    private Instant issuedAt() {
+        return Instant.parse(
+                fixture.draft(passenger).path("confirmation").path("issuedAt").asText());
+    }
+
+    @Test
+    void expiredPassengerConfirmationCannotCreateARequest() {
+        var review = fixture.review(passenger, code);
+        assertEquals("CONFIRMAR", fixture.confirmationText(review));
         fixture.transport.time.advance(301);
-        var stale = fixture.conversation.text(passenger, "CONFIRMAR " + fixture.marker(current));
+        var stale = fixture.conversation.text(passenger, fixture.confirmation(passenger, review));
         assertEquals("ADVANCE_PASSENGER_SETUP", fixture.command(fixture.context(stale)));
         fixture.execute(stale, true);
         assertEquals(0, fixture.count("driver_passenger_link"));
@@ -100,7 +133,7 @@ class WaPassengerFencingIntegrationTest {
                 "UPDATE wa.pickup_point SET reference_text='Nova referência',version=version+1"
                         + " WHERE link_id=?",
                 link);
-        var lease = fixture.conversation.text(driver, "CONFIRMAR " + fixture.marker(review));
+        var lease = fixture.conversation.text(driver, fixture.confirmation(driver, review));
         assertEquals(
                 WaProblem.Code.VERSION_CONFLICT,
                 fixture.decide(lease, "APPROVE_LINK", fixture.payload(fixture.context(lease)))
@@ -130,7 +163,7 @@ class WaPassengerFencingIntegrationTest {
     @Test
     void replayAfterServiceRestartKeepsOneUseOneRequestAndExactlyTheSameResponseIds() {
         var review = fixture.review(passenger, code);
-        var lease = fixture.conversation.text(passenger, "CONFIRMAR " + fixture.marker(review));
+        var lease = fixture.conversation.text(passenger, fixture.confirmation(passenger, review));
         var result = fixture.execute(lease, false);
         var replay =
                 fixture.driverFixture
@@ -163,8 +196,8 @@ class WaPassengerFencingIntegrationTest {
         var firstReview = fixture.review(passenger, code);
         var secondReview = fixture.review(other, code);
         var first =
-                fixture.conversation.text(passenger, "CONFIRMAR " + fixture.marker(firstReview));
-        var second = fixture.conversation.text(other, "CONFIRMAR " + fixture.marker(secondReview));
+                fixture.conversation.text(passenger, fixture.confirmation(passenger, firstReview));
+        var second = fixture.conversation.text(other, fixture.confirmation(other, secondReview));
         var firstBody =
                 fixture.conversation.body(
                         first, "REQUEST_LINK", fixture.payload(fixture.context(first)));
@@ -264,7 +297,7 @@ class WaPassengerFencingIntegrationTest {
                 "CREATE TRIGGER reject_synthetic_passenger_peer BEFORE INSERT ON"
                         + " wa.passenger_response_route FOR EACH ROW EXECUTE FUNCTION"
                         + " wa.reject_synthetic_passenger_peer()");
-            var lease = fixture.conversation.text(passenger, "CONFIRMAR " + fixture.marker(review));
+            var lease = fixture.conversation.text(passenger, fixture.confirmation(passenger, review));
             var context = fixture.context(lease);
             assertThrows(
                     RuntimeException.class,

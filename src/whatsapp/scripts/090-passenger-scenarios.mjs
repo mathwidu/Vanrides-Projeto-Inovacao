@@ -46,7 +46,7 @@ export async function runPassengerScenarios(runtime) {
     demand(opened.reply.includes('Alex Exemplo') && uses() === 0 && links('REQUESTED') === 0, 'PASSENGER_DRIVER_PREVIEW_REQUIRED');
     passed('invitation_from_driver_conversation_opens_draft_without_reserving_a_use');
 
-    for (const msg of ['CONTINUAR', 'Lia Exemplo', 'ACEITO', 'SIM', 'NÃO', '1', '1,3,5']) await p(msg);
+    for (const msg of ['SIM', 'Lia Exemplo', 'ACEITO', 'SIM', 'NÃO', '1', '1,3,5']) await p(msg);
     const live = await send(passenger, { liveLocationMessage: { degreesLatitude: 0, degreesLongitude: 0 } }, 'RESPOND_TO_MESSAGE');
     demand(live.reply?.includes('estático'), 'PASSENGER_FIXED_PIN_GUIDANCE_MISSING');
     await p('Não sei o endereço exato');
@@ -123,7 +123,7 @@ export async function runPassengerScenarios(runtime) {
     demand(secondCode, 'PASSENGER_SECOND_INVITE_MISSING');
     await p('PASSAGEIRO ' + secondCode);
     // Existing name and notice are retained. The passenger can choose a different direction and notifications.
-    for (const msg of ['CONTINUAR', 'NÃO', 'SIM', '2', '2,4', 'PONTO 1']) await p(msg);
+    for (const msg of ['SIM', 'NÃO', 'SIM', '2', '2,4', 'PONTO 1']) await p(msg);
     await confirm(passenger, await p('PULAR'), 'REQUEST_LINK', { notify: driver });
     await review('PASSAGEIROS');
     const rejected = await confirm(driver, await review('RECUSAR 1'), 'CLOSE_LINK', { notify: passenger });

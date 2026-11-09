@@ -65,6 +65,10 @@ final class WaPassengerDraftStore {
                 actor.identityId());
     }
 
+    private static boolean needsCode(WaProfileState actor) {
+        return actor.role().equals("DRIVER");
+    }
+
     String marker(
             WaProfileState actor,
             WaInboxAccess.Context event,
@@ -72,7 +76,8 @@ final class WaPassengerDraftStore {
             UUID outbox,
             String target) {
         draft.remove("confirmation");
-        String marker = WaCrypto.userCode();
+        boolean coded = needsCode(actor);
+        String marker = coded ? WaCrypto.userCode() : "";
         ObjectNode confirmation =
                 json().put("ref", ref("confirmation", UUID.randomUUID()))
                         .put("profileVersion", actor.version() + 1)
@@ -81,12 +86,13 @@ final class WaPassengerDraftStore {
                         .put("sourceInbox", event.eventId().toString())
                         .put("outboxId", outbox.toString())
                         .put("issuedAt", clock.now().toString())
-                        .put("expiresAt", clock.now().plusSeconds(300).toString())
-                        .put(
-                                "markerHash",
-                                crypto.secretHash(
-                                        "passenger-confirmation",
-                                        actor.identityId() + ":" + marker));
+                        .put("expiresAt", clock.now().plusSeconds(300).toString());
+        if (coded) {
+            confirmation.put(
+                    "markerHash",
+                    crypto.secretHash(
+                            "passenger-confirmation", actor.identityId() + ":" + marker));
+        }
         draft.set("confirmation", confirmation);
         return marker;
     }
@@ -95,9 +101,12 @@ final class WaPassengerDraftStore {
         if (!draft.path("stage").asText().equals("REVIEW") || !draft.has("confirmation")) {
             return false;
         }
-        String text = WaDriverWizard.text(event);
         var confirmation = draft.path("confirmation");
-        if (!text.matches("confirmar [bcdfghjkmnpqrstvwxyz]{8}")) {
+        boolean coded = needsCode(actor) || confirmation.has("markerHash");
+        String text = WaDriverWizard.text(event);
+        if (coded
+                ? !text.matches("confirmar [bcdfghjkmnpqrstvwxyz]{8}")
+                : !WaPassengerAnswers.loose(text).equals("confirmar")) {
             return false;
         }
         try {
@@ -108,20 +117,25 @@ final class WaPassengerDraftStore {
                     && !received.isBefore(issued.truncatedTo(ChronoUnit.SECONDS))
                     && !event.eventId().toString().equals(confirmation.path("sourceInbox").asText())
                     && digest(draft).equals(confirmation.path("draftDigest").asText())
-                    && WaCrypto.same(
-                            confirmation.path("markerHash").asText(),
-                            crypto.secretHash(
-                                    "passenger-confirmation",
-                                    actor.identityId()
-                                            + ":"
-                                            + text.substring(10).toUpperCase(Locale.ROOT)))
+                    && (!coded
+                            || WaCrypto.same(
+                                    confirmation.path("markerHash").asText(),
+                                    crypto.secretHash(
+                                            "passenger-confirmation",
+                                            actor.identityId()
+                                                    + ":"
+                                                    + text.substring(10).toUpperCase(Locale.ROOT))))
                     && Boolean.TRUE.equals(
                             jdbc.queryForObject(
                                     """
                                     SELECT EXISTS(SELECT 1 FROM wa.message_outbox o JOIN wa.command_receipt r ON r.command_id=o.command_id
                                     WHERE o.id=? AND o.recipient_identity_id=? AND r.inbox_event_id=?
-                                    AND o.policy_version='passenger-setup-v1' AND o.state NOT IN ('CANCELED','EXPIRED'))
-                                    """,
+                                    AND o.policy_version='passenger-setup-v1' AND o.state %s)
+                                    """
+                                            .formatted(
+                                                    coded
+                                                            ? "NOT IN ('CANCELED','EXPIRED')"
+                                                            : "IN ('SUBMITTED','DELIVERED','READ')"),
                                     Boolean.class,
                                     UUID.fromString(confirmation.path("outboxId").asText()),
                                     actor.identityId(),

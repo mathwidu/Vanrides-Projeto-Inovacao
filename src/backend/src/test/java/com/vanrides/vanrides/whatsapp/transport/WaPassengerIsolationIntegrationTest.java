@@ -95,7 +95,7 @@ class WaPassengerIsolationIntegrationTest {
                 cohort);
         fixture.transport.jdbc.update(
                 "UPDATE wa.identity SET test_cohort_id=? WHERE id=?", cohort, passenger);
-        var lease = fixture.conversation.text(passenger, "CONFIRMAR " + fixture.marker(review));
+        var lease = fixture.conversation.text(passenger, fixture.confirmation(passenger, review));
         assertEquals(
                 WaProblem.Code.ACTION_NOT_ALLOWED,
                 fixture.decide(lease, "REQUEST_LINK", fixture.payload(fixture.context(lease)))
@@ -120,7 +120,7 @@ class WaPassengerIsolationIntegrationTest {
         fixture.transport.jdbc.update(
                 "UPDATE wa.identity_alias SET instance_id='another-instance' WHERE identity_id=?",
                 driver);
-        var lease = fixture.conversation.text(passenger, "CONFIRMAR " + fixture.marker(review));
+        var lease = fixture.conversation.text(passenger, fixture.confirmation(passenger, review));
         assertEquals(
                 WaProblem.Code.ACTION_NOT_ALLOWED,
                 fixture.decide(lease, "REQUEST_LINK", fixture.payload(fixture.context(lease)))
