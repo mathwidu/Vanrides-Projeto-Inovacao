@@ -132,6 +132,8 @@ class WaAttendanceOwnershipIntegrationTest {
         assertEquals(1, f.conversation.number(
             "SELECT count(*) FROM wa.driver_passenger_link WHERE passenger_id=? AND state='APPROVED'", passenger));
 
+        // The next minute window includes the link and pickup created after the previous window began.
+        f.transport.time.advance(60);
         var jobs = f.transport.proxy(new WaAttendanceJobs(f.transport.jdbc, f.transport.access,
             f.transport.settings, f.transport.clock));
         var job = f.transport.principal(WaPrincipal.Kind.SYSTEM_JOB);

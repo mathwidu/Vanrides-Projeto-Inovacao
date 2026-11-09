@@ -49,8 +49,32 @@ consulta com servidor local e dados sintéticos; isso não comprova OAuth real.
 A revisão independente encontrou e corrigiu o limite de requisições da área,
 a rejeição do PN legado órfão, a primeira associação LID e a rota de versão mista.
 
-A suíte completa, o GitHub App real e a publicação ainda estão pendentes nesta
-revisão do registro. Não houve mudança na VPS nesta implementação local.
+A rodada integral do commit `f355c0f` executou **1.814 testes** em 656,2 s:
+1.811 passaram e três falharam em `WaAttendanceOwnershipIntegrationTest`.
+A entrega do resumo adicionada pelo PR #106 avançava o relógio um segundo;
+a fixture materializava a presença antes da validade do vínculo/ponto. Apenas
+o relógio simulado passou para a próxima janela. Os sete testes dessa classe
+passaram na reexecução em 27,4 s. O runtime e as asserções foram preservados.
+Não foi repetida a suíte inteira por esse ajuste de fixture; a CI integral
+remota da revisão final continua pendente. Não agregar os dois ensaios como
+um único gate canônico aprovado.
+
+Também passaram o gate leve (49 verificações de wiring e demais auxiliares),
+os 35 testes do atualizador, a suíte WhatsApp offline, actionlint, consistência
+documental e controle do programa. O Graphify estrutural foi atualizado;
+a cobertura semântica continua parcial.
+
+O JAR candidato `ead942a539bdaf2e629b0fa14596a8b40a4c516e15173e574485ba2df3e7fb56`
+passou em cinco verificações locais sequenciais: API anterior com V38,
+migração pelo candidato para V39, backup/restauração do banco sintético,
+API anterior iniciando com V39 restaurada e fronteira HTTP da área habilitada.
+O JAR anterior foi comparado ao checksum do serviço hospedado. A nova área
+respondeu 200 para a tela, 303 para iniciar login, 401 sem sessão e rejeitou
+POST sem origem válida. Isso não usa nem comprova login real no GitHub.
+Os contêineres e arquivos temporários próprios do ensaio foram removidos.
+
+O GitHub App real e a publicação continuam pendentes. Não houve mudança na
+VPS nesta implementação local. A API hospedada respondeu UP novamente.
 
 ## Ativação inicial
 

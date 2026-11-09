@@ -228,3 +228,12 @@ A implementação local e as decisões estão no
 [registro desta etapa](../../docs/runbooks/whatsapp-mvp/equipe-ci-automatico.md).
 A primeira rodada focada passou 43 testes Java; o login GitHub real e a ativação
 na VPS continuam pendentes. O estado permanece in_progress, sem aceite do MVP.
+
+
+Validação integrada local: 1.814 testes executados, com três falhas de relógio
+na fixture de presença após PR #106; ajuste apenas de fixture e sete cenários
+da classe reaprovados. A rodada canônica integral inicial permanece reprovada;
+a CI final precisa ser executada, sem misturar recibos de revisões diferentes.
+Compatibilidade V38→V39→restauração→API anterior passou em banco sintético.
+A interface habilitada passou no HTTP real local, com provedores sintéticos.
+Issues #89/#90/#91 atualizadas; GitHub App/login e ativação continuam pendentes.
