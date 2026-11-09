@@ -6,7 +6,12 @@
 
 Usamos um único ambiente de desenvolvimento compartilhado. Os nomes técnicos ainda dizem “hml”; não existe produção real liberada para usuários. Stage e produção separados ficam para a versão 1.0.
 
-**Mudança aprovada, ainda em preparação:** push/merge na `main` deverá construir e publicar automaticamente neste endereço. As outras branches apenas validarão as alterações. Uma área autenticada da equipe deverá permitir aos quatro integrantes liberar participantes e gerar convites sem acesso à VPS. Essas duas automações ainda não estão disponíveis. O [guia da área da equipe](area-da-equipe.md) descreve o novo fluxo, e o [runbook de deploy](../../deploy/homologacao/AUTOMATICO.md) registra a configuração inicial.
+**Ativo:** push/merge na `main` constrói a API/imagem e publica automaticamente
+neste endereço, sem suítes de testes na esteira. PRs e pushes em `dev` apenas
+constroem. A [área da equipe](https://vanrides-inovacao-api.matheusduarte.dev.br/equipe)
+permite aos integrantes com escrita no GitHub liberar participantes e preparar
+convites sem acesso à VPS. Veja o [passo a passo](area-da-equipe.md) e o
+[funcionamento do deploy](../../deploy/homologacao/AUTOMATICO.md).
 
 ## O que cada integrante pode acessar
 
@@ -14,7 +19,8 @@ Usamos um único ambiente de desenvolvimento compartilhado. Os nomes técnicos a
 | --- | --- | --- |
 | [Saúde da API](https://vanrides-inovacao-api.matheusduarte.dev.br/actuator/health) | Abrir no navegador; esperado HTTP 200 e `{"status":"UP"}`. | Público, disponível para os quatro integrantes. Não testa uma jornada de negócio. |
 | [APK do motorista](https://vanrides-inovacao-api.matheusduarte.dev.br/motorista/VanRides.apk) | Baixar no Android e instalar o VanRides Motorista **0.3.0-hml+13**. | Download público; já aponta para a API online. Instalar não habilita automaticamente um motorista. |
-| Bot pelo WhatsApp | Pedir a Matheus o contato do bot e a liberação do seu próprio número por canal privado. Depois enviar `AJUDA`. | Bot conectado. Um passageiro admitido e um motorista com convite individual preparado. Outros contatos ainda precisam de admissão; a autonomia administrativa do time está em preparação. |
+| [Área da equipe](https://vanrides-inovacao-api.matheusduarte.dev.br/equipe) | Entrar com GitHub, informar o contato autorizado e escolher passageiro ou motorista. | Login do mantenedor e operações reais validados; confirmar primeiro acesso individual dos colegas. |
+| Bot pelo WhatsApp | Obter o contato do bot por canal privado, liberar seu número pela área da equipe e enviar `AJUDA`. | Bot conectado. Passageiro ativo e convite individual do motorista preservados. O cadastro continua no WhatsApp. |
 | API de produto | O app e o atendimento usam as credenciais próprias de cada fluxo. | Rotas `/driver-app/v1/` e `/integrations/whatsapp/v1/` exigem autenticação. Receber 401 ao abrir no navegador é esperado. |
 | Código e issues | Usar este repositório e o [guia de contribuição](../../CONTRIBUTING.md). | Desenvolvimento e testes sintéticos independem da liberação do número. Veja abaixo a diferença entre `main`, branch e versão publicada. |
 | n8n, Evolution, banco e VPS | Operação por Matheus. Alterações são preparadas no Git e revisadas antes da publicação. | Não são painéis de teste abertos para o grupo. O acesso de cada colega a esses painéis não foi provisionado. Não compartilhar senha, SSH ou token de serviço. |
@@ -111,15 +117,19 @@ Na issue da funcionalidade, anote: versão do APK, revisão da API informada pel
 
 ## Código publicado, main e contribuições
 
-**Até a nova esteira entrar em funcionamento, a VPS ainda não atualiza com a `main`.** O modelo aprovado passa a ser automático: construção da API → imagem identificada → atualização da API/interface → verificação de saúde. A ativação depende primeiro da integração do código já hospedado com a `main`. Não exigir confirmação manual do proprietário em cada publicação normal depois disso.
+A `main` atualiza automaticamente **a API e sua interface**. O workflow tem
+construção/publicação da imagem e deploy por digest com verificação de saúde.
+Ele não executa suítes de testes e não publica n8n, Evolution, receptor, worker
+ou APK. O primeiro ciclo completo levou **2 min 22 s**; o build do PR levou
+33 s no total. [Execução da ativação](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/actions/runs/42643485312).
 
 | Referência | Conteúdo nesta conferência |
 | --- | --- |
-| API publicada `acc572f` / imagem `4648c6c43401` | Rotas do MVP, homologação e correções de ajuda/retomada e presença vazia. |
-| Código/documentação da homologação até `c44f916` | Branch `codex/homologacao-api-equipe`; a documentação mais recente não implica outro binário na VPS. |
-| `main` em `33e6d9f` / PRs #105 e #106 | Melhorias de cadastro, dias nomeados e confirmação simplificada. Ainda não faz parte da API publicada. |
-| Integração local `codex/equipe-ci-automatico` em `a8df3c7` | Resolve os conflitos da integração com a `main`, preservando a homologação e as melhorias do colega. Ainda sem push ou deploy; validação completa pendente. |
-| PR #107 | Continua aberto na revisão remota anterior; a integração local ainda precisa ser enviada para revisão. |
+| Primeira ativação `f433dbf` / PR #108 | Integração preservando PRs #105/#106 e a API anterior, área da equipe e CI/CD simples. |
+| API/interface | Publicadas pelo Actions; a imagem efetiva e a revisão ficam no resumo de cada execução. |
+| Receptor de mensagens | Admissão pela API habilitada; permite contatos liberados pela equipe e ignora desconhecidos. |
+| Migração V39 | Aplicada. Backup anterior restaurado e conteúdo de 74 tabelas conferido em instância isolada. |
+| PR #107 | Trabalho incorporado à integração do #108; não usar sua revisão antiga como API hospedada. |
 
 Para desenvolver, siga [CONTRIBUTING.md](../../CONTRIBUTING.md) e abra uma branch a partir da `main` atualizada. Para reproduzir a integração antes de ela entrar na `main`, use a branch do PR correspondente quando estiver publicada. Combine a tarefa na issue para evitar alterações simultâneas no mesmo fluxo. Mudanças locais não aparecem no bot hospedado.
 

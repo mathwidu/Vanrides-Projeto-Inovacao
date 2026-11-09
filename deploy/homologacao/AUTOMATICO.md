@@ -16,7 +16,9 @@ A imagem usa o JAR construído nessa mesma execução, com revisão e checksum.
 O deploy recebe o digest imutável, atualiza imagem/checksum juntos e verifica
 saúde HTTPS. Falha na construção impede a publicação; falha de saúde tenta
 retornar à imagem anterior. Isso não equivale à validação funcional do MVP.
-O tempo total ainda precisa ser medido no GitHub; não há promessa de cinco minutos.
+Primeira execução da main: **2 min 22 s**, incluindo build (57 s) e deploy
+(75 s). O PR levou 33 s. São medições dessa execução, não um limite garantido
+para toda execução futura.
 
 O único serviço atualizado automaticamente é **`vanrides-hml-api_api`**, que
 contém API e interface da equipe. Banco/volumes, worker, receptor, Evolution,
@@ -106,3 +108,28 @@ separadas. O lock coordena quem o adota.
 O job continua vermelho mesmo após o retorno saudável. Em caso de falha na
 recuperação, o operador confere o estado antes de nova tentativa. Saúde da API
 e a jornada real da equipe são evidências separadas.
+
+## Estado da ativação inicial — 09/11/2026
+
+PR #108 integrado por merge normal em `f433dbf`, preservando a ancestralidade.
+[Build/deploy aprovado](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/actions/runs/42643485312).
+O Environment homologacao está restrito à main, a chave de deploy recusa
+comandos de terminal arbitrários, e a V39 foi aplicada. API e receptor foram
+conferidos online; o login individual e as operações estão no
+[guia da equipe](../../docs/desenvolvimento/area-da-equipe.md).
+
+A configuração de runtime da área adiciona a rede privada do canal e três
+secrets somente de leitura: cliente GitHub, chave da instância Evolution e CA.
+As variáveis e os endpoints estão no
+[contrato da área](../../src/backend/contracts/whatsapp-team-web.md).
+A atualização automática preserva essa configuração. As receitas antigas de
+criação em `online.py`/`canal/stack.yml` não devem ser reaplicadas sobre o ambiente
+ativo sem incorporar essa configuração: elas descrevem a instalação anterior.
+Snapshots privados atualizados ficam no diretório de ativação da VPS; os
+valores de credenciais, contatos e coorte não pertencem ao Git.
+
+A troca do bind do receptor usa `--mount-add` com o mesmo destino `/opt/src`,
+que atualiza a origem. Não combinar com `--mount-rm /opt/src` na mesma chamada:
+a remoção prevalece e deixa o serviço sem os fontes. A primeira tentativa
+falhou por isso, foi revertida e a segunda foi validada. Banco e sessão do bot
+foram preservados.

@@ -237,3 +237,15 @@ a CI final precisa ser executada, sem misturar recibos de revisões diferentes.
 Compatibilidade V38→V39→restauração→API anterior passou em banco sintético.
 A interface habilitada passou no HTTP real local, com provedores sintéticos.
 Issues #89/#90/#91 atualizadas; GitHub App/login e ativação continuam pendentes.
+
+
+### Ativação e correção de escopo concluídas — 09/11/2026
+
+A suite automática inicial foi cancelada por não corresponder ao pedido. O
+PR #108 agora usa dois jobs, construção/publicação e deploy da API. Nenhuma
+suite de testes é acionada por push/PR. Main integrada `f433dbf`; execução
+42643485312 verde em 2 min 22 s. API, V39 e receptor dinâmico ativados; login,
+liberação de passageiro e convite de motorista verificados com o mantenedor.
+Guia `docs/desenvolvimento/area-da-equipe.md` publicado para os colegas.
+O aceite individual de um colega e a jornada completa do MVP continuam
+pendentes; o card permanece em andamento. Recibos de CI só provam build/deploy.

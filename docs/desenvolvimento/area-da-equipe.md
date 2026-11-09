@@ -5,10 +5,10 @@ Cada integrante usa sua própria conta do GitHub; não recebe acesso ao banco,
 SSH ou credenciais do bot. A pessoa liberada continua responsável por concluir
 seu cadastro e aceitar o aviso de dados no WhatsApp.
 
-**Estado em 09/11/2026:** implementação em validação local. O login GitHub,
-a configuração do servidor e a publicação ainda não foram concluídos.
-O endereço previsto é `/equipe` na mesma API do ambiente compartilhado.
-Este documento descreve o fluxo a ser disponibilizado, não um serviço já ativo.
+**Disponível em 09/11/2026:** [abrir área da equipe](https://vanrides-inovacao-api.matheusduarte.dev.br/equipe).
+Login real do mantenedor, consulta/liberação do passageiro e recuperação do
+convite de motorista foram verificados no ambiente online. O primeiro login
+com a conta de outro integrante ainda precisa ser confirmado por ele.
 
 ## Preparar um teste
 
@@ -38,8 +38,8 @@ a origem e a proteção contra requisições de outro site. A auditoria registra
 a conta que executou cada operação, sem guardar telefone ou código no registro
 da operação. As identidades do produto continuam no banco próprio do VanRides.
 
-Um GitHub App dedicado precisa ser instalado somente neste repositório, com
-leitura de metadados. O cadastro do app deve permitir autorização por usuários
+O GitHub App **VanRides Equipe** está instalado somente neste repositório, com
+leitura de metadados. O cadastro permite autorização por usuários
 externos à conta proprietária; o backend restringe o acesso à instalação e ao
 repositório configurados. O token pessoal do mantenedor não é usado pelo site.
 
@@ -67,3 +67,18 @@ sem permitir que elas criem cadastros por engano.
 Não coloque telefone, convite, sessão, token ou conversa em issues. Registre
 apenas cenário, horário, versão e resultado. Se o acesso for removido do GitHub,
 a próxima verificação da sessão deve recusar a operação.
+
+## Se não conseguir entrar
+
+Use a conta GitHub que aceitou o convite de colaboração no repositório. No
+primeiro acesso, o GitHub pede autorização ao **VanRides Equipe**. O aplicativo
+confere o acesso de escrita; não pede senha da VPS ou token de administrador.
+Uma conta diferente, convite de colaboração não aceito ou permissão apenas de
+leitura impedem as operações. Não instale o aplicativo em outros repositórios.
+
+Após 30 minutos ou uma atualização da API, pode ser necessário entrar novamente.
+Na issue, informe apenas o horário e a mensagem apresentada; nunca copie cookies,
+convites ou o telefone do participante. Cada integrante opera com sua identidade.
+
+A área libera testes e convites. Ela não permite alterar um participante ativo
+para outro papel nem substitui o aceite de dados feito pelo participante no bot.
