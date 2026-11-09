@@ -135,8 +135,8 @@ Deploy e testes com usuários são etapas separadas. O bot está conectado à
 Evolution e o perfil básico foi validado no WhatsApp real. O uso pelo colega
 requer admissão do contato; credenciais e convites são individuais. Testes
 físicos do aplicativo iPhone continuam pausados. O novo fluxo publica a API
-automaticamente após a construção da aplicação e da imagem em um push na `main`, assim que o provisionamento
-inicial for concluído. PRs não publicam. Consulte o
+automaticamente após a construção da aplicação e da imagem em um push na `main`.
+O provisionamento está ativo. PRs e pushes em `dev` constroem sem publicar. Consulte o
 [estado de ativação](docs/desenvolvimento/area-da-equipe.md) e o
 [procedimento de deploy](deploy/homologacao/AUTOMATICO.md).
 

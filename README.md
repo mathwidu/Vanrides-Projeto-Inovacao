@@ -44,10 +44,10 @@ CI aprovada confirma a construção da API/imagem; não comprova testes de negó
 
 As novas contribuições ficam concentradas neste repositório. As origens
 anteriores permanecem como histórico. O corte e os testes da nova estrutura ficam no [registro da migração](docs/desenvolvimento/migracao.md).
-O deploy automático da API pela `main` e a área da equipe estão em implantação.
+O deploy automático da API pela `main` e a [área da equipe](https://vanrides-inovacao-api.matheusduarte.dev.br/equipe) estão ativos.
 Veja o [fluxo de publicação](deploy/homologacao/AUTOMATICO.md) e o
 [estado da área da equipe](docs/desenvolvimento/area-da-equipe.md). PRs executam
-os testes; o job de publicação é exclusivo de push na `main`.
+a construção, sem testes automáticos; a publicação é exclusiva de push na `main`.
 
 ## Equipe e histórico
 

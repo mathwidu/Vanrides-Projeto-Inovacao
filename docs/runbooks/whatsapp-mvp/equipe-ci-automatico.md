@@ -1,5 +1,10 @@
 # Área da equipe e deploy automático — 09/11/2026
 
+**Estado atual:** deploy automático e área da equipe ativos. O CI/CD simples
+substitui os gates automáticos descritos no histórico abaixo. O login e as
+operações reais foram validados com o mantenedor; acesso individual de outro
+colega e jornada completa do MVP ainda dependem dessa participação.
+
 ## Escopo aprovado
 
 Um ambiente compartilhado, sem produção real, com publicação da API após a
@@ -129,3 +134,26 @@ Até esse ponto foram preparados o GitHub App (metadados, um repositório), o
 Environment restrito à main, a chave SSH de comando forçado e o secret do login.
 O comando arbitrário de terminal foi recusado pela chave dedicada. A API, o
 receptor e o banco publicados não foram atualizados nesta etapa.
+
+## Ativação comprovada
+
+- PR #108 integrado em `f433dbf`; CI do PR em 33 s, só construção. Main em
+  2 min 22 s, com publicação e deploy: run `42643485312`.
+- Imagem inicial por digest `sha256:6a0004f3b1ee0d35018acff7d7b2a9c545a37e5f2939f86a3675fa55fe5ad180`;
+  JAR `a09060897730ec5b4e35dc422cc1a19efaa3b5c4c650e8d2e38bf9ded4a234d2`.
+- Backup privado anterior à V39 restaurado em PostgreSQL isolado, com conteúdo
+  e histórico conferidos em 74 tabelas. Instância temporária removida.
+- GitHub App instalado somente no repositório, leitura de metadados; login
+  real do mantenedor, consulta/liberação do passageiro ativo e recuperação do
+  convite existente do motorista, sem estender sua validade. Saída da sessão
+  confirmada. Auditoria registrou os dois tipos de operação pela conta GitHub.
+- API e receptor saudáveis; mensagem sintética de desconhecido recebeu
+  `202 IGNORED`. Conflito de papel foi recusado. A primeira tentativa de
+  montagem do receptor falhou; API/receptor retornaram, a chamada foi corrigida
+  e a segunda ativação foi confirmada.
+- Nenhum teste físico iPhone, percurso, jornada WhatsApp completa ou login de
+  outro integrante foi declarado aprovado por essa ativação.
+
+O dump e os snapshots privados estão em
+`~/.local/share/vanrides/homologacao/team-activation-20261109` na VPS. O diretório
+não deve ser publicado. A interface não expõe esses arquivos nem credenciais.

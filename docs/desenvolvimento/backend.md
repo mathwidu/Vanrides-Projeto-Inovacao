@@ -14,81 +14,46 @@ WSL2 com Git, Python, Node e Java dentro do Linux e integração Docker Desktop
 habilitada para a distribuição. O gate usa Bash e locks POSIX; PowerShell
 nativo e Git Bash não foram validados como substitutos.
 
-Execute da raiz Git:
+Para conferir a construção usada pelo CI/CD, execute:
+
+```bash
+cd src/backend
+./mvnw -B -ntp -Dmaven.test.skip=true package
+```
+
+Esse comando compila e empacota a aplicação, sem compilar ou executar testes.
+Um build aprovado não comprova o funcionamento das regras de negócio.
+
+O [workflow automático](../../.github/workflows/backend.yml) tem dois jobs:
+**Construir API** e **Atualizar API da homologação da equipe**. PRs e pushes em
+`dev` constroem a aplicação/imagem; somente push na `main` publica a imagem no
+GHCR e atualiza `vanrides-hml-api_api`. A referência usa digest e o checksum do
+JAR dessa execução. O deploy confere saúde HTTPS e tenta retorno à imagem
+anterior se falhar. Veja o [procedimento](../../deploy/homologacao/AUTOMATICO.md).
+
+Não há matriz PostgreSQL, jornadas HTTP, testes dos auxiliares, ratchet ou
+homologação encadeada no CI/CD automático. Os workflows de verificação ficam
+separados, sem gatilhos de push/PR. O cache Maven armazena dependências;
+nenhum relatório de teste é necessário para construir/publicar.
+
+Durante o desenvolvimento, escolha os testes relacionados à mudança. Para uma
+validação completa deliberada, continuam disponíveis na raiz Git:
 
 ```bash
 bash scripts/check_backend.sh --light
 bash scripts/check_backend.sh
 ```
 
-`--light` executa primeiro o ratchet e depois os testes dos gates,
-isolamento/proveniência/locks, sem Maven, containers ou rede. Usa a mesma
-definição de checks de `src/backend/scripts/ci_quality_gate.sh --quick`.
-É uma validação parcial, não aprovação do backend. O comando completo exige Docker local: roda
-uma vez o gate canônico com toda a matriz PostgreSQL, empacota o mesmo código
-e executa a jornada HTTP sintética com Spring/PostgreSQL/worker Node reais e
-um provedor Evolution simulado em loopback. Não requer número, WhatsApp, IA
-paga nem credencial externa. Os recursos temporários pertencem à execução.
+`--light` executa ratchet e testes dos auxiliares sem Maven/containers. O comando
+completo exige Docker, executa a suíte canônica e as jornadas sintéticas com
+Spring/PostgreSQL/worker. Não precisa de WhatsApp real nem credencial externa.
+Não é um requisito automático de todo commit ou deploy. Mantenha essas execuções
+sequenciais no computador; não abra oito processos Maven simultâneos.
 
-CI: [backend.yml](../../.github/workflows/backend.yml), Ubuntu padrão e
-permissão `contents: read`:
-
-- **Verificações rápidas**: ratchet e testes dos auxiliares, antes dos jobs pesados.
-- **PostgreSQL em oito grupos**: a mesma matriz obrigatória, distribuída por
-  duração histórica entre runners isolados. Cada grupo executa sequencialmente,
-  com banco próprio; nenhum caso ou skip é dispensado.
-- **Demais testes Java**: descoberta padrão do Surefire, excluindo apenas as
-  classes da matriz PostgreSQL. Novos testes continuam sendo descobertos;
-  não há uma segunda lista manual de testes unitários.
-- **Suíte canônica PostgreSQL**: agrega os oito grupos e os demais testes Java,
-  confere cobertura, revisão e origem dos resultados e reprova ausências,
-  duplicações ou falhas. Roda em paralelo ao empacotamento do candidato.
-- **Empacotar candidato uma vez**: gera um JAR e seu checksum, guarda somente
-  esse arquivo como artefato imutável por um dia. Ainda não é aprovação do produto.
-- **Integração HTTP e imagem**: recebe o candidato por ID, verifica revisão e
-  checksum, executa cinco jornadas com os seis conjuntos de validação, e monta
-  a imagem com o mesmo JAR. O target `tested-jar` confere o checksum novamente.
-- **Homologação do candidato compartilhado**: chama
-  [homologacao-api.yml](../../.github/workflows/homologacao-api.yml), que testa
-  o auxiliar em Windows/Linux e exercita a API com duas credenciais sintéticas.
-  Usa o mesmo JAR, sem empacotar outro.
-- **Resultado do backend**: exige sucesso de rápida, PostgreSQL, candidato,
-  integração e homologação. Etapas puladas ou canceladas não viram aprovação.
-
-Todos os checkouts usam `github.sha` (merge de teste no PR). A ação local
-`receive-backend` exige ID único desta execução, SHA compatível com o checkout,
-checksum calculado pelo produtor e somente `backend.jar` no artefato. Não há
-busca pela última compilação de outra branch. O cache Maven guarda dependências,
-não resultados de testes ou aprovação. O `user.home` isolado e os locks da
-matriz PostgreSQL continuam preservados.
-
-A homologação deixou de disparar outro workflow independente para cada mudança.
-Seu disparo manual agora é pelo workflow **Backend e integração sintética**,
-que produz o candidato e executa todos os consumidores. Os paths anteriores
-foram incorporados ao caller. Antes da integração no GitHub, conferir os checks
-exigidos pela proteção da branch, pois os nomes da homologação passam a ser aninhados.
-
-Cada grupo compila os testes no próprio runner; o candidato continua sendo o
-único JAR empacotado. Essa escolha reduz o tempo de espera, mas pode aumentar o
-trabalho somado dos runners. PostgreSQL e as integrações permanecem obrigatórios.
-Em PRs, o fluxo termina na validação. Em push na `main`, os gates liberam a
-imagem do mesmo JAR e o deploy da API pelo digest. O provisionamento inicial
-ainda está pendente; consulte o [guia](../../deploy/homologacao/AUTOMATICO.md).
-Os testes continuam sem WhatsApp real ou upload de logs brutos.
-Maven usa `-ntp` sem ocultar saída de falhas. O build Docker padrão por fontes
-continua disponível para os consumidores existentes.
-
-O comando local completo mantém `qa_integration_profile.sh --all-tests` e
-continua sequencial. A divisão em oito grupos é da CI; não iniciar oito Maven
-simultâneos em um computador de desenvolvimento. Medições locais e remotas,
-incluindo o estado de publicação desta mudança, ficam na
-[revisão da CI](revisao-ci-e-testes.md).
-
-Nesta primeira versão, os recibos precisam pertencer à mesma tentativa da
-execução. No GitHub, uma retentativa deve usar **Re-run all jobs**: reexecutar
-somente um grupo ou o agregador não encontrará os nove recibos dessa tentativa
-e será rejeitado. Reaproveitar grupos de tentativas anteriores fica para uma
-melhoria separada; nenhum resultado incompleto é aprovado por essa restrição.
+O histórico da divisão em oito grupos e dos experimentos de compartilhamento do
+JAR está na [revisão da CI](revisao-ci-e-testes.md). Esses mecanismos não fazem
+parte da esteira automática atual. Para testes de produto, registre cenário,
+versão, resultado e limitações na issue; para um build, registre apenas o build.
 
 A jornada 130 já executa integralmente a 110. O smoke agora a executa uma vez,
 com cinco execuções e seis conjuntos de verificações. O recibo V2 identifica
