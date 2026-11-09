@@ -133,8 +133,11 @@ sistema operacional de cada pessoa.
 Deploy e testes com usuários são etapas separadas. O bot está conectado à
 Evolution e o perfil básico foi validado no WhatsApp real. O uso pelo colega
 requer admissão do contato; credenciais e convites são individuais. Testes
-físicos do aplicativo iPhone continuam pausados. Alterar a `main` não atualiza
-a VPS automaticamente.
+físicos do aplicativo iPhone continuam pausados. O novo fluxo publica a API
+automaticamente após os testes de um push na `main`, assim que o provisionamento
+inicial for concluído. PRs não publicam. Consulte o
+[estado de ativação](docs/desenvolvimento/area-da-equipe.md) e o
+[procedimento de deploy](deploy/homologacao/AUTOMATICO.md).
 
 O [guia de homologação da equipe](docs/desenvolvimento/homologacao-da-equipe.md)
 reúne URLs, versões, fluxos, roteiro de teste e limites do que está publicado.

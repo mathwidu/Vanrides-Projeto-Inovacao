@@ -6,7 +6,7 @@
 
 Usamos um único ambiente de desenvolvimento compartilhado. Os nomes técnicos ainda dizem “hml”; não existe produção real liberada para usuários. Stage e produção separados ficam para a versão 1.0.
 
-**Mudança aprovada, ainda em preparação:** push/merge na `main` deverá testar e publicar automaticamente neste endereço. As outras branches apenas validarão as alterações. Uma área autenticada da equipe deverá permitir aos quatro integrantes liberar participantes e gerar convites sem acesso à VPS. Essas duas automações ainda não estão disponíveis.
+**Mudança aprovada, ainda em preparação:** push/merge na `main` deverá testar e publicar automaticamente neste endereço. As outras branches apenas validarão as alterações. Uma área autenticada da equipe deverá permitir aos quatro integrantes liberar participantes e gerar convites sem acesso à VPS. Essas duas automações ainda não estão disponíveis. O [guia da área da equipe](area-da-equipe.md) descreve o novo fluxo, e o [runbook de deploy](../../deploy/homologacao/AUTOMATICO.md) registra a configuração inicial.
 
 ## O que cada integrante pode acessar
 

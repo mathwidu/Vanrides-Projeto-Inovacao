@@ -9,8 +9,8 @@ name: Backend e integração sintética
 permissions:
   contents: read
 concurrency:
-  group: backend-${{ github.ref }}
-  cancel-in-progress: true
+  group: backend-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
   quick:
     name: Verificações rápidas do backend
@@ -243,6 +243,87 @@ jobs:
             printf '| Candidato | %s |\n' "$CANDIDATE"
             printf '| Homologação | %s |\n' "$HOMOLOGATION"
             printf '| Jornadas HTTP e imagem | %s |\n' "$INTEGRATION"
-            printf '\nDetalhes no job que falhou. Sem serviços reais ou implantação.\n'
+            printf '\nValidações isoladas. A publicação da main, quando aplicável, usa jobs separados.\n'
           } >> "$GITHUB_STEP_SUMMARY"
           [[ "$QUICK" == success && "$TESTS" == success && "$INTEGRATION" == success && "$CANDIDATE" == success && "$HOMOLOGATION" == success ]]
+  publish_image:
+    name: Publicar imagem aprovada da API
+    needs: [result, candidate]
+    if: github.repository == 'mathwidu/Vanrides-Projeto-Inovacao' && github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      digest: ${{ steps.image.outputs.digest }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+          fetch-depth: 1
+      - uses: ./.github/actions/receive-backend
+        with:
+          artifact-id: ${{ needs.candidate.outputs.artifact-id }}
+          jar-sha256: ${{ needs.candidate.outputs.jar-sha256 }}
+          source-sha: ${{ github.sha }}
+      - name: Montar e publicar o runtime de homologação com o JAR aprovado
+        id: image
+        env:
+          JAVA_IMAGE: ${{ vars.VANRIDES_HML_JAVA_IMAGE }}
+          GHCR_TOKEN: ${{ github.token }}
+          JAR_SHA256: ${{ needs.candidate.outputs.jar-sha256 }}
+        run: |
+          set -euo pipefail
+          [[ "$JAVA_IMAGE" =~ ^eclipse-temurin@sha256:[a-f0-9]{64}$ ]]
+          context=$(mktemp -d "$RUNNER_TEMP/vanrides-image.XXXXXX")
+          export DOCKER_CONFIG="$context/docker-config"
+          mkdir -m 700 "$DOCKER_CONFIG" "$context/build"
+          cp deploy/homologacao/{Dockerfile,entrypoint.sh} "$context/build/"
+          cp src/backend/target/backend.jar "$context/build/"
+          printf '%s' "$GHCR_TOKEN" | docker login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
+          unset GHCR_TOKEN
+          trap 'docker logout ghcr.io >/dev/null 2>&1 || true' EXIT
+          docker buildx build --platform linux/amd64 --push --metadata-file "$context/metadata.json" \
+            --tag "ghcr.io/mathwidu/vanrides-projeto-inovacao-team-api:sha-$GITHUB_SHA-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" \
+            --build-arg "JAVA_IMAGE=$JAVA_IMAGE" --build-arg "SOURCE_SHA=$GITHUB_SHA" \
+            --build-arg "SOURCE_TREE=$(git rev-parse 'HEAD^{tree}')" --build-arg "JAR_SHA256=$JAR_SHA256" \
+            "$context/build"
+          digest=$(jq -er '."containerimage.digest"' "$context/metadata.json")
+          [[ "$digest" =~ ^sha256:[a-f0-9]{64}$ ]]
+          printf 'digest=%s\n' "$digest" >> "$GITHUB_OUTPUT"
+          printf 'Imagem GHCR: %s\n\nRevisão: %s\n\nChecksum do JAR: %s\n' \
+            "$digest" "$GITHUB_SHA" "$JAR_SHA256" >> "$GITHUB_STEP_SUMMARY"
+  deploy_homologacao:
+    name: Atualizar API da homologação da equipe
+    needs: [publish_image, candidate]
+    if: github.repository == 'mathwidu/Vanrides-Projeto-Inovacao' && github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions: {}
+    environment: homologacao
+    steps:
+      - name: Solicitar rollout ao comando SSH dedicado
+        env:
+          SSH_TARGET: ${{ vars.VANRIDES_HML_SSH_TARGET }}
+          SSH_KEY: ${{ secrets.VANRIDES_HML_SSH_KEY }}
+          SSH_KNOWN_HOSTS: ${{ vars.VANRIDES_HML_SSH_KNOWN_HOSTS }}
+          IMAGE_DIGEST: ${{ needs.publish_image.outputs.digest }}
+          JAR_SHA256: ${{ needs.candidate.outputs.jar-sha256 }}
+        run: |
+          set -euo pipefail
+          [[ "$SSH_TARGET" =~ ^mathwidu@[A-Za-z0-9][A-Za-z0-9.-]*$ ]]
+          [[ -n "$SSH_KEY" && -n "$SSH_KNOWN_HOSTS" ]]
+          [[ "$GITHUB_SHA" =~ ^[a-f0-9]{40}$ && "$IMAGE_DIGEST" =~ ^sha256:[a-f0-9]{64}$ && "$JAR_SHA256" =~ ^[a-f0-9]{64}$ ]]
+          ssh_dir=$(mktemp -d "$RUNNER_TEMP/vanrides-ssh.XXXXXX")
+          umask 077
+          printf '%s\n' "$SSH_KEY" > "$ssh_dir/key"
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > "$ssh_dir/known_hosts"
+          unset SSH_KEY
+          trap 'unlink "$ssh_dir/key"; unlink "$ssh_dir/known_hosts"; rmdir "$ssh_dir"' EXIT
+          ssh -nT -F /dev/null -i "$ssh_dir/key" \
+            -o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes \
+            -o "UserKnownHostsFile=$ssh_dir/known_hosts" -o GlobalKnownHostsFile=/dev/null \
+            -o ConnectTimeout=10 -o ServerAliveInterval=10 -o ServerAliveCountMax=3 \
+            "$SSH_TARGET" "deploy $GITHUB_SHA $IMAGE_DIGEST $JAR_SHA256"

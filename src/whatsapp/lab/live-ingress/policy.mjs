@@ -1,14 +1,17 @@
+import { createHmac, randomBytes } from 'node:crypto';
 import { pn, lid } from './config.mjs';
 import { object, timestamp } from './strict-json.mjs';
 import { isHml } from './hml-config.mjs';
 
+// Only an in-memory quota key; never log a contact or a stable phone hash.
+const quotaKey = randomBytes(32);
 const STATUSES = new Set(['SERVER_ACK', 'DELIVERY_ACK', 'READ', 'PLAYED', 'ERROR']);
 const STATES = new Set(['open', 'connecting', 'close', 'refused']);
 const id = value => typeof value === 'string' && /^[\x21-\x7e]{1,160}$/.test(value);
 const text = value => typeof value === 'string' && value.trim().length > 0 && [...value].length <= 2000
   && ![...value].some(point => point === '\0' || point.codePointAt(0) >= 0xd800 && point.codePointAt(0) <= 0xdfff);
 
-/** All policy drops are decided before API ingress can resolve or create an identity. */
+/** Filters payloads locally; API mode delegates participant admission to the strict backend boundary. */
 function evaluateEvent(envelope, config, now, onDrop) {
   const drop = code => { onDrop?.(code); return null; };
   if (!Number.isSafeInteger(now) || now < config.start || now >= config.end) return drop('HML_DROP_WINDOW');
@@ -38,7 +41,12 @@ function evaluateEvent(envelope, config, now, onDrop) {
   const aliases = [key.remoteJid];
   if (Object.hasOwn(key, 'remoteJidAlt')) aliases.push(key.remoteJidAlt);
   if (aliases.some(alias => !pn(alias) && !lid(alias))) return drop('HML_DROP_ALIAS_FORMAT');
-  const contact = config.contacts.find(candidate => aliases.every(alias => alias === candidate.pn || alias === candidate.lid));
+  const dynamic = isHml(config) && config.admissionMode === 'API';
+  // The API must enforce strict pre-admission before persisting or binding aliases.
+  // This explicit rollout mode preserves payload/auth/window checks in this receiver.
+  const contact = dynamic ? { label: 'P:' + createHmac('sha256', quotaKey)
+    .update(aliases.find(pn) ?? aliases[0]).digest('hex') }
+    : config.contacts.find(candidate => aliases.every(alias => alias === candidate.pn || alias === candidate.lid));
   if (!contact) {
     if (aliases.some(alias => lid(alias) && !config.contacts.some(candidate => candidate.lid === alias)))
       return drop('HML_DROP_LID_UNCONFIRMED');

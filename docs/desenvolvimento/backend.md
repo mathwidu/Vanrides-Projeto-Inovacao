@@ -70,8 +70,11 @@ exigidos pela proteção da branch, pois os nomes da homologação passam a ser 
 
 Cada grupo compila os testes no próprio runner; o candidato continua sendo o
 único JAR empacotado. Essa escolha reduz o tempo de espera, mas pode aumentar o
-trabalho somado dos runners. PostgreSQL e as integrações permanecem obrigatórios. Não há publicação
-de imagem, implantação, uso de WhatsApp real ou upload de logs brutos.
+trabalho somado dos runners. PostgreSQL e as integrações permanecem obrigatórios.
+Em PRs, o fluxo termina na validação. Em push na `main`, os gates liberam a
+imagem do mesmo JAR e o deploy da API pelo digest. O provisionamento inicial
+ainda está pendente; consulte o [guia](../../deploy/homologacao/AUTOMATICO.md).
+Os testes continuam sem WhatsApp real ou upload de logs brutos.
 Maven usa `-ntp` sem ocultar saída de falhas. O build Docker padrão por fontes
 continua disponível para os consumidores existentes.
 

@@ -1,12 +1,14 @@
 package com.vanrides.vanrides.whatsapp.transport;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.vanrides.vanrides.whatsapp.admission.WaAdmissionStore;
 import com.vanrides.vanrides.whatsapp.api.WaJson;
 import com.vanrides.vanrides.whatsapp.api.WaProblem;
 import com.vanrides.vanrides.whatsapp.auth.WaCrypto;
 import com.vanrides.vanrides.whatsapp.auth.WaPrincipal;
 import com.vanrides.vanrides.whatsapp.config.WaClock;
 import com.vanrides.vanrides.whatsapp.config.WaSettings;
+import com.vanrides.vanrides.whatsapp.team.WaTeamSettings;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
@@ -14,6 +16,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,16 +25,26 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class WaEventService {
     private record Identity(UUID id, UUID senderAliasId, String ignoredReason) { }
+    private record Admitted(UUID identity, WaEvolutionNormalizer.Alias lidToBind) { }
     private final JdbcTemplate jdbc;
     private final WaTransportAccess access;
     private final WaEvolutionNormalizer normalizer;
     private final WaSettings settings;
     private final WaClock clock;
+    private final WaTeamSettings team;
+    private final WaAdmissionStore admission;
     private final WaDeliveryConnection connection;
 
     public WaEventService(JdbcTemplate jdbc, WaTransportAccess access, WaEvolutionNormalizer normalizer,
                           WaSettings settings, WaClock clock) {
+        this(jdbc, access, normalizer, settings, clock, null, null);
+    }
+
+    @Autowired
+    public WaEventService(JdbcTemplate jdbc, WaTransportAccess access, WaEvolutionNormalizer normalizer,
+                          WaSettings settings, WaClock clock, WaTeamSettings team, WaAdmissionStore admission) {
         this.jdbc = jdbc; this.access = access; this.normalizer = normalizer; this.settings = settings; this.clock = clock;
+        this.team = team; this.admission = admission;
         this.connection = new WaDeliveryConnection(jdbc, settings, clock);
     }
 
@@ -42,9 +55,21 @@ public class WaEventService {
         String instance = WaJson.text(envelope, "instance", 1, 80);
         if (!instance.equals(grant.instance())) throw WaProblem.denied();
         WaEvolutionNormalizer.Event event = normalizer.normalize(envelope);
-        // Message and callback namespaces are deliberately distinct. Do not resolve aliases on a retry.
+        boolean strict = team != null && team.strictIngress(instance);
+        if (strict && !Set.of("messages.upsert", "messages.update", "connection.update").contains(envelope.path("event").asText()))
+            return ignored(grant);
+        if (strict && envelope.path("event").asText().equals("messages.upsert")
+                && (!event.humanMessage() || envelope.path("data").path("key").has("remoteJidAlt") != (event.aliases().size() == 2)))
+            return ignored(grant);
+        // Message and callback namespaces are deliberately distinct.
         String dedup = event.category().equals("MESSAGE") ? event.messageId() : event.category() + "\0" + event.eventKey();
         lock("EVENT", instance, dedup, grant);
+        Admitted admitted = null;
+        if (strict && event.humanMessage()) {
+            if (!settings.enabled()) return ignored(grant);
+            admitted = resolveAdmitted(instance, event.aliases(), grant);
+            if (admitted == null) return ignored(grant);
+        }
         List<UUID> duplicate = event.category().equals("MESSAGE")
             ? jdbc.query("SELECT id FROM wa.integration_inbox WHERE instance_id=? AND message_id=? AND category='MESSAGE'",
                 (rs, i) -> rs.getObject(1, UUID.class), instance, event.messageId())
@@ -58,7 +83,8 @@ public class WaEventService {
         String state = event.state();
         ObjectNode payload = event.payload();
         if (event.humanMessage()) {
-            Identity actor = settings.enabled() ? resolve(instance, event.aliases(), grant) : new Identity(null, null, "DISABLED");
+            Identity actor = admitted != null ? bindVerifiedLid(instance, event.aliases().get(0), admitted)
+                : settings.enabled() ? resolve(instance, event.aliases(), grant) : new Identity(null, null, "DISABLED");
             identity = actor.id();
             if (actor.ignoredReason() != null) { state = "SKIPPED"; payload = WaEvolutionNormalizer.reason(actor.ignoredReason()); }
             else payload = payload.deepCopy().put("senderAliasId", actor.senderAliasId().toString());
@@ -75,6 +101,44 @@ public class WaEventService {
             connection.record(grant, id, payload);
         access.revalidate(grant);
         return receipt(id, state.equals("SKIPPED") ? "IGNORED" : "PERSISTED");
+    }
+
+    private Admitted resolveAdmitted(String instance, List<WaEvolutionNormalizer.Alias> aliases, WaTransportAccess.Grant grant) {
+        admission.lockAliases(instance, aliases);
+        access.revalidate(grant);
+        UUID identity = null;
+        WaEvolutionNormalizer.Alias lidToBind = null;
+        for (var alias : aliases) {
+            UUID owner = admission.owner(instance, alias);
+            if (owner == null) {
+                if (!alias.type().equals("LID") || aliases.size() != 2) return null;
+                lidToBind = alias;
+            } else {
+                if (identity != null && !identity.equals(owner)) return null;
+                identity = owner;
+            }
+        }
+        if (identity == null) return null;
+        try {
+            admission.requireCohort(settings.environment(), team.cohort(), false);
+            admission.requireIdentity(identity, team.cohort(), true);
+            for (var alias : aliases) admission.requireCompatible(instance, identity, alias);
+        } catch (WaProblem denied) { return null; }
+        if (!access.allowedIdentity(identity) || !admission.hasPhone(instance, identity) || !admission.teamAdmitted(identity))
+            return null;
+        return new Admitted(identity, lidToBind);
+    }
+
+    private Identity bindVerifiedLid(String instance, WaEvolutionNormalizer.Alias sender, Admitted admitted) {
+        // The CHANNEL is bound to this Evolution instance, and the alias and identity locks are still held.
+        // Only a paired, previously admitted PN can attach an unbound LID. Duplicate events never attach aliases.
+        if (admitted.lidToBind() != null) admission.bind(instance, admitted.identity(), admitted.lidToBind(), clock.now());
+        return new Identity(admitted.identity(), senderAlias(admitted.identity(), instance, sender), null);
+    }
+
+    private ObjectNode ignored(WaTransportAccess.Grant grant) {
+        access.revalidate(grant);
+        return receipt(UUID.randomUUID(), "IGNORED");
     }
 
     private Identity resolve(String instance, List<WaEvolutionNormalizer.Alias> aliases, WaTransportAccess.Grant grant) {

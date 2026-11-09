@@ -21,7 +21,7 @@ public class WaTransportController {
     public WaTransportController(WaEventService events, WaInboxService inbox, WaOutboxService outbox) {
         this.events = events; this.inbox = inbox; this.outbox = outbox;
     }
-    @PostMapping("/integrations/whatsapp/v1/events")
+    @PostMapping({"/integrations/whatsapp/v1/events", "/integrations/whatsapp/v1/team-events"})
     @ResponseStatus(HttpStatus.ACCEPTED)
     public ObjectNode event(HttpServletRequest request) {
         return events.accept(actor(request, WaPrincipal.Kind.CHANNEL), body(request));

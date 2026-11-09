@@ -44,7 +44,10 @@ CI aprovada comprova os testes declarados, não WhatsApp real ou percurso.
 
 As novas contribuições ficam concentradas neste repositório. As origens
 anteriores permanecem como histórico. O corte e os testes da nova estrutura ficam no [registro da migração](docs/desenvolvimento/migracao.md).
-A implantação na VPS é independente; estes workflows não publicam imagens nem fazem deploy.
+O deploy automático da API pela `main` e a área da equipe estão em implantação.
+Veja o [fluxo de publicação](deploy/homologacao/AUTOMATICO.md) e o
+[estado da área da equipe](docs/desenvolvimento/area-da-equipe.md). PRs executam
+os testes; o job de publicação é exclusivo de push na `main`.
 
 ## Equipe e histórico
 

@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { request as httpRequest } from 'node:http';
 import { once } from 'node:events';
+import { createMinuteLimit } from './minute-limit.mjs';
 import { validateConfig } from './config.mjs';
 import { filterEvent } from './policy.mjs';
 import { createLiveIngressServer } from './server.mjs';
@@ -178,4 +179,70 @@ test('HML preserves backend IGNORED receipts and rejects a missing or foreign en
     } });
     assert.equal((await request(upstream.port, human())).status, 503); assert.equal(calls, 1);
   }
+});
+
+
+test('API admission uses authenticated backend policy, without keeping a static contact list', async t => {
+  const raw = rawConfig(); raw.admissionMode = 'API'; raw.contacts = [];
+  const config = validateConfig(raw), event = human();
+  assert.equal(config.admissionMode, 'API');
+  assert.match(filterEvent(event, config, NOW).contact, /^P:[a-f0-9]{64}$/);
+  const swapped = clone(event);
+  [swapped.data.key.remoteJid, swapped.data.key.remoteJidAlt] = [swapped.data.key.remoteJidAlt, swapped.data.key.remoteJid];
+  assert.equal(filterEvent(event, config, NOW).contact, filterEvent(swapped, config, NOW).contact);
+  event.data.pushName = PRIVATE; event.apikey = PRIVATE;
+  let sent;
+  const accepted = await server(t, { raw, fetchImpl: async (url, input) => {
+    sent = input;
+    assert.equal(url, raw.apiOrigin + '/integrations/whatsapp/v1/team-events');
+    const response = receipt('IGNORED'); response.headers.set('X-Vanrides-Admission-Policy', 'TEAM_V1'); return response;
+  } });
+  const response = await request(accepted.port, event);
+  assert.equal(response.status, 202); assert.equal(JSON.parse(response.body).status, 'IGNORED');
+  assert.equal(sent.headers['X-Vanrides-Admission-Policy'], 'TEAM_V1');
+  assert.equal(sent.body.includes(PRIVATE), false);
+  assert.equal((await request(accepted.port, swapped)).status, 429);
+  assert.equal(accepted.ingress.snapshot().ignored, 1);
+  assert.equal(accepted.ingress.snapshot().contactA, 0);
+  for (const value of [PRIVATE, '10000000001', '20000000001', filterEvent(event, config, NOW).contact])
+    assert.equal(JSON.stringify(accepted.logs).includes(value), false);
+  for (const policy of [null, 'TEAM_V0']) {
+    const missing = await server(t, { raw, fetchImpl: async () => {
+      const response = receipt(); if (policy) response.headers.set('x-vanrides-admission-policy', policy); return response;
+    } });
+    assert.equal((await request(missing.port, human())).status, 503);
+    assert.equal(missing.ingress.snapshot().forwarded, 0);
+  }
+  for (const value of ['LEGACY', false, null]) {
+    const invalid = { ...raw, admissionMode: value }; assert.throws(() => validateConfig(invalid), /CONFIG_INVALID/);
+  }
+  const group = human(); group.data.key.remoteJid = '10000000001@g.us';
+  assert.equal(filterEvent(group, config, NOW), null);
+  const outbound = human(); outbound.data.key.fromMe = true;
+  assert.equal(filterEvent(outbound, config, NOW), null);
+});
+
+
+test('unknown participants retain transport and sender quotas without consuming the admitted budget', () => {
+  const limits = { human: 48, perContact: 16, status: 1, connection: 1 };
+  const limiter = createMinuteLimit(limits, true);
+  const event = index => ({ kind: 'human', contact: 'P:' + index.toString(16).padStart(64, '0') });
+  for (let index = 1; index <= 3; index++) {
+    for (let count = 0; count < 16; count++) {
+      const reservation = limiter.take(event(index), NOW); assert.equal(reservation.allowed, true);
+      reservation.refundIgnored(); reservation.refundIgnored();
+    }
+    assert.equal(limiter.take(event(index), NOW).allowed, false);
+  }
+  assert.equal(limiter.take(event(4), NOW).allowed, true);
+  let accepted = 49;
+  for (let index = 5; index < 30; index++) {
+    for (let count = 0; count < 16; count++) {
+      const reservation = limiter.take(event(index), NOW);
+      if (reservation.allowed) { accepted++; reservation.refundIgnored(); }
+    }
+  }
+  assert.equal(accepted, 240);
+  assert.equal(limiter.take(event(31), NOW).allowed, false);
+  assert.equal(limiter.take(event(31), NOW + 60_000).allowed, true);
 });

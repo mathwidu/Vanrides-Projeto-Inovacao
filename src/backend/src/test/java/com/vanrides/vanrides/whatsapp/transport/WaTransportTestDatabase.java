@@ -9,7 +9,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 import org.testcontainers.containers.PostgreSQLContainer;
 
 /** Explicit per-class opt-in; callers must finish each scenario before requesting its next fixture. */
-final class WaTransportTestDatabase {
+public final class WaTransportTestDatabase {
     // The sole seed on an empty database, copied from V2__company_base.sql.
     private static final String COMPANY_SEED = """
             INSERT INTO public.company (nome, slug, created_at, updated_at)
@@ -25,8 +25,12 @@ final class WaTransportTestDatabase {
     private List<Map<String, Object>> triggerInventory;
     private String containerId;
 
-    WaTransportTestDatabase(PostgreSQLContainer<?> postgres) {
+    public WaTransportTestDatabase(PostgreSQLContainer<?> postgres) {
         this.postgres = postgres;
+    }
+
+    public DataSource nextDataSource() {
+        return fixture().jdbc.getDataSource();
     }
 
     synchronized WaTransportTestSupport fixture() {

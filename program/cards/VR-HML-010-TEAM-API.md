@@ -218,3 +218,13 @@ a repetição foi verificada, sem alteração da API ou sessão do bot.
 Merge local `a8df3c7` preserva homologação/V38 e integra main `33e6d9f`/PR #106.
 Testes leves passaram; a suíte completa e publicação permanecem pendentes.
 O card continua em andamento; isso não libera piloto ou produção.
+
+### Implementação da autonomia e do CD — 09/11/2026
+
+O novo pedido autoriza implementar a publicação automática da API pela main e
+a área da equipe. Escopo: workflow/CD, interface estática, autenticação GitHub,
+admissão e convites, V39, integração do receptor, testes e documentação.
+A implementação local e as decisões estão no
+[registro desta etapa](../../docs/runbooks/whatsapp-mvp/equipe-ci-automatico.md).
+A primeira rodada focada passou 43 testes Java; o login GitHub real e a ativação
+na VPS continuam pendentes. O estado permanece in_progress, sem aceite do MVP.

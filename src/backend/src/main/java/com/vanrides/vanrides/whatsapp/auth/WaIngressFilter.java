@@ -3,6 +3,7 @@ package com.vanrides.vanrides.whatsapp.auth;
 import com.vanrides.vanrides.whatsapp.api.WaHttp;
 import com.vanrides.vanrides.whatsapp.api.WaProblem;
 import com.vanrides.vanrides.whatsapp.config.WaSettings;
+import com.vanrides.vanrides.whatsapp.team.WaTeamSettings;
 import com.vanrides.vanrides.filtros.TrustedProxyClientAddressResolver;
 import jakarta.servlet.DispatcherType;
 import jakarta.servlet.FilterChain;
@@ -14,13 +15,21 @@ import org.springframework.web.filter.GenericFilterBean;
 
 /** Runs before global CORS; does not read a body ahead of the existing admission guard. */
 public final class WaIngressFilter extends GenericFilterBean {
+    private static final String ADMISSION_POLICY_HEADER = "X-Vanrides-Admission-Policy";
+    private static final String ADMISSION_POLICY_TEAM = "TEAM_V1";
     private final WaSettings settings;
+    private final WaTeamSettings team;
     private final WaCredentials credentials;
     private final WaRateLimiter limiter;
     private final TrustedProxyClientAddressResolver addresses;
     public WaIngressFilter(WaSettings settings, WaCredentials credentials, WaRateLimiter limiter,
                            TrustedProxyClientAddressResolver addresses) {
+        this(settings, credentials, limiter, addresses, null);
+    }
+    public WaIngressFilter(WaSettings settings, WaCredentials credentials, WaRateLimiter limiter,
+                           TrustedProxyClientAddressResolver addresses, WaTeamSettings team) {
         this.settings = settings; this.credentials = credentials; this.limiter = limiter; this.addresses = addresses;
+        this.team = team;
     }
     static String path(HttpServletRequest request) {
         var mapping = request.getHttpServletMapping();
@@ -46,6 +55,18 @@ public final class WaIngressFilter extends GenericFilterBean {
         if (!(incoming instanceof HttpServletRequest request) || !(outgoing instanceof HttpServletResponse response)) {
             chain.doFilter(incoming, outgoing); return;
         }
+        String resolved = path(request);
+        if (WaTeamWebBoundary.scoped(resolved)) {
+            try {
+                if (WaTeamWebBoundary.admit(team, resolved, request, response))
+                    limiter.acquireTeam(addresses.resolve(request).digest());
+                chain.doFilter(request, response);
+            } catch (WaProblem e) { WaHttp.writeError(request, response, e); }
+            catch (TrustedProxyClientAddressResolver.ResolutionException e) {
+                WaHttp.writeError(request, response, WaProblem.invalid());
+            }
+            return;
+        }
         if (settings.publishedMvp() && !WaTeamApiBoundary.admit(request,response,settings.mvpOnline())) return;
         if (!WaRoutes.scoped(path(request))) { chain.doFilter(request, response); return; }
         try {
@@ -70,6 +91,9 @@ public final class WaIngressFilter extends GenericFilterBean {
                     : credentials.device(token, path.equals("/driver-app/v1/session/revoke")
                         || path.equals("/driver-app/v1/tracking-status") || path.matches("/driver-app/v1/tracking-sessions/[^/]+/state"));
                 if (principal.kind() != route.kind()) throw WaProblem.denied();
+                boolean teamEvents = path.equals("/integrations/whatsapp/v1/team-events");
+                if (teamEvents || path.equals("/integrations/whatsapp/v1/events"))
+                    admissionPolicy(request, response, principal, teamEvents);
                 request.setAttribute(WaHttp.PRINCIPAL, principal);
             } else if (request.getHeader("Authorization") != null) throw WaProblem.unauthorized();
             if (!route.available()) throw new WaProblem(WaProblem.Code.DEPENDENCY_UNAVAILABLE);
@@ -88,4 +112,14 @@ public final class WaIngressFilter extends GenericFilterBean {
         catch (TrustedProxyClientAddressResolver.ResolutionException e) { WaHttp.writeError(request, response, WaProblem.invalid()); }
         catch (org.springframework.dao.DataAccessException e) { WaHttp.writeError(request, response, new WaProblem(WaProblem.Code.DEPENDENCY_UNAVAILABLE)); }
     }
+
+    private void admissionPolicy(HttpServletRequest request, HttpServletResponse response, WaPrincipal principal,
+                                 boolean teamEvents) {
+        String requested = WaHttp.header(request, ADMISSION_POLICY_HEADER, teamEvents);
+        if (requested != null && !ADMISSION_POLICY_TEAM.equals(requested)) throw WaProblem.invalid();
+        boolean strict = team != null && team.strictIngress(principal.instanceId());
+        if (!strict && requested != null) throw new WaProblem(WaProblem.Code.DEPENDENCY_UNAVAILABLE);
+        if (strict) response.setHeader(ADMISSION_POLICY_HEADER, ADMISSION_POLICY_TEAM);
+    }
+
 }

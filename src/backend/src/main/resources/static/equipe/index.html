@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>Equipe · VanRides</title>
+  <link rel="stylesheet" href="/equipe/style.css">
+  <script src="/equipe/app.js" defer></script>
+</head>
+<body>
+<header><a class="brand" href="/equipe/">VanRides<span>Equipe</span></a><span class="environment">Desenvolvimento compartilhado</span></header>
+<main>
+  <section class="intro"><p class="eyebrow">Preparar um teste</p><h1>Todo mundo a bordo.</h1><p>Libere um participante e deixe que ele conclua o cadastro pelo WhatsApp.</p></section>
+  <p id="message" role="status" aria-live="polite">Conferindo seu acesso…</p>
+  <section id="login" class="panel" hidden><h2>Entre com sua conta do GitHub</h2><p>Os integrantes com permissão de escrita no repositório podem preparar os testes. Cada ação fica associada à pessoa que a realizou.</p><a class="button" href="/equipe/login">Entrar com GitHub</a></section>
+  <section id="workspace" hidden>
+    <div class="session"><span>Conectado como <strong id="username"></strong></span><button type="button" id="logout" class="quiet">Sair</button></div>
+    <div class="columns">
+      <section class="panel"><h2>Liberar participante</h2><form id="participant-form">
+        <label for="phone">WhatsApp do participante</label><input id="phone" name="phone" type="tel" inputmode="tel" autocomplete="off" placeholder="+55 (51) 90000-0000" maxlength="24" required aria-describedby="phone-help"><p id="phone-help" class="hint">Informe país e DDD. Use o número pessoal da pessoa, diferente do número do bot.</p>
+        <label for="role">Papel neste teste</label><select id="role" name="role"><option value="passenger">Passageiro</option><option value="driver">Motorista</option></select>
+        <label class="check"><input id="consent" type="checkbox" required><span>Esta pessoa concordou em participar do teste com este número.</span></label>
+        <div class="actions"><button type="submit" id="submit">Liberar passageiro</button><button type="button" id="status" class="secondary">Consultar cadastro</button></div>
+      </form></section>
+      <aside class="panel guide"><h2>Como o teste continua</h2><ol><li>Libere o número do participante.</li><li>Se for motorista, entregue o convite individual por um canal privado.</li><li>A pessoa conversa com o bot, informa seu nome e lê o aviso de dados.</li><li>O motorista cria a rotina e convida o passageiro para o vínculo.</li></ol><p class="hint">A liberação não preenche o cadastro nem aceita o aviso em nome da pessoa.</p><a href="https://github.com/mathwidu/Vanrides-Projeto-Inovacao/blob/main/docs/desenvolvimento/homologacao-da-equipe.md" target="_blank" rel="noopener noreferrer">Abrir guia de testes ↗</a></aside>
+    </div>
+    <section id="result" class="panel result" hidden aria-labelledby="result-title"><h2 id="result-title">Resultado</h2><p id="result-description"></p><dl><div><dt>Liberação</dt><dd id="admission"></dd></div><div><dt>Cadastro</dt><dd id="profile"></dd></div><div><dt>Convite de motorista</dt><dd id="invite-status"></dd></div></dl><div id="invitation" hidden><label for="invite-code">Convite individual</label><input id="invite-code" readonly autocomplete="off" spellcheck="false"><p id="expiry" class="hint"></p><div class="actions"><button id="copy" type="button">Copiar instruções e convite</button></div><p class="hint">Envie somente ao participante. Não coloque o convite em issues, commits ou canais públicos.</p></div><button id="renew" type="button" class="secondary" hidden>Gerar novo convite de motorista</button></section>
+  </section>
+  <footer>VanRides · Área de testes da equipe. <a href="/motorista/VanRides.apk">Baixar APK do motorista</a></footer>
+</main>
+</body>
+</html>

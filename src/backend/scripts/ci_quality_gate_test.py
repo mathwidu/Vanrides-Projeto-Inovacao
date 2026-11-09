@@ -46,6 +46,26 @@ DOCKER_OPTIONAL_TESTCONTAINERS = re.compile(
 )
 
 
+def _workflow_sections(workflow: str) -> tuple[str, dict[str, str]]:
+    """Split the workflow at job IDs, independent of the order of jobs."""
+    header, body = workflow.split("\njobs:\n", 1)
+    body = re.split(r"(?m)^(?=[^ \t\n#])", body, maxsplit=1)[0]
+    parts = re.split(r"(?m)^  ([\w-]+):[ \t]*(?:#[^\n]*)?\n", body)
+    return header, dict(zip(parts[1::2], parts[2::2]))
+
+
+def _run_block(job: str) -> str:
+    start = re.search(r"(?m)^( +)run: \|[+-]?[ \t]*\n", job)
+    if start is None:
+        raise ValueError("Job has no literal run block")
+    lines = []
+    for line in job[start.end():].splitlines(keepends=True):
+        if line.strip() and len(line) - len(line.lstrip(" ")) <= len(start[1]):
+            break
+        lines.append(line)
+    return textwrap.dedent("".join(lines))
+
+
 def _strip_java_comments(source: str) -> str:
     """Remove Java comments without turning comment markers in literals into syntax."""
     output: list[str] = []
@@ -623,10 +643,8 @@ class BackendCiQualityGateWiringTest(unittest.TestCase):
 
     def test_workflow_requires_quick_checks_before_the_full_postgres_matrix(self) -> None:
         workflow = WORKFLOW.read_text(encoding="utf-8")
-        quick = workflow.split("\n  quick:\n", 1)[1].split("\n  postgres:\n", 1)[0]
-        postgres = workflow.split("\n  postgres:\n", 1)[1].split("\n  java:\n", 1)[0]
-        java = workflow.split("\n  java:\n", 1)[1].split("\n  test:\n", 1)[0]
-        canonical = workflow.split("\n  test:\n", 1)[1].split("\n  candidate:\n", 1)[0]
+        _, jobs = _workflow_sections(workflow)
+        quick, postgres, java, canonical = (jobs[name] for name in ("quick", "postgres", "java", "test"))
         self.assertIn("run: bash scripts/check_backend.sh --light", quick)
         self.assertNotIn("setup-java", quick)
         self.assertIn("group: [pg-1, pg-2, pg-3, pg-4, pg-5, pg-6, pg-7, pg-8]", postgres)
@@ -644,26 +662,61 @@ class BackendCiQualityGateWiringTest(unittest.TestCase):
         self.assertIn("qa_test_groups.py aggregate", canonical)
         self.assertIn("--require-clean", canonical)
         for forbidden in ("continue-on-error", "target/surefire-reports", "*.txt", "*.dump",
-                          "run: ./mvnw -B test", "pull_request_target", "secrets.", "self-hosted"):
+                          "run: ./mvnw -B test", "pull_request_target", "self-hosted"):
             self.assertNotIn(forbidden, workflow)
 
-    def test_workflow_has_read_only_permissions_and_no_external_publication(self) -> None:
+    def test_workflow_limits_publication_to_main_after_the_full_gate(self) -> None:
         workflow = WORKFLOW.read_text(encoding="utf-8")
-        self.assertIn("permissions:\n  contents: read", workflow)
-        for forbidden in ("packages: write", "contents: write", "build_and_push:", "deploy_swarm:",
-                          "docker push", "docker/login-action", "ssh "):
-            self.assertNotIn(forbidden, workflow)
-        self.assertEqual(6, workflow.count("persist-credentials: false"))
-        self.assertEqual(6, workflow.count("ref: ${{ github.sha }}"))
-        self.assertIn("  push:\n    branches: [main]", workflow)
-        self.assertEqual(3, workflow.count("cache: maven"))
-        self.assertEqual(3, workflow.count("cache-dependency-path: src/backend/pom.xml"))
+        header, jobs = _workflow_sections(workflow)
+        self.assertRegex(header, r"(?m)^permissions:\n  contents: read\n(?=\S)")
+        self.assertIn("  push:\n    branches: [main]", header)
+        self.assertIn("cancel-in-progress: ${{ github.event_name == 'pull_request' }}", header)
+        for name, job in jobs.items():
+            if name not in ("publish_image", "deploy_homologacao"):
+                self.assertNotRegex(job, r"(?m)^    (?:permissions|environment):")
+                for forbidden in ("secrets.", "docker push", "docker login", "docker/login-action", "--push", "ssh "):
+                    self.assertNotIn(forbidden, job, name)
+
+        publish, deploy = jobs["publish_image"], jobs["deploy_homologacao"]
+        guard = {
+            "github.repository == 'mathwidu/Vanrides-Projeto-Inovacao'",
+            "github.event_name == 'push'",
+            "github.ref == 'refs/heads/main'",
+        }
+        for job in (publish, deploy):
+            condition = re.search(r"(?m)^    if: (.+)$", job)
+            self.assertIsNotNone(condition)
+            self.assertEqual(guard, {part.strip() for part in condition[1].split("&&")})
+        self.assertIn("needs: [result, candidate]", publish)
+        self.assertIn("needs: [publish_image, candidate]", deploy)
+        self.assertRegex(publish, r"(?m)^    permissions:\n      contents: read\n      packages: write\n(?=    \S)")
+        self.assertNotIn("secrets.", publish)
+        self.assertNotIn("contents: write", workflow)
+        self.assertIn("permissions: {}", deploy)
+        self.assertIn("environment: homologacao", deploy)
+        self.assertIn("uses: ./.github/actions/receive-backend", publish)
+        self.assertIn("artifact-id: ${{ needs.candidate.outputs.artifact-id }}", publish)
+        self.assertIn("jar-sha256: ${{ needs.candidate.outputs.jar-sha256 }}", publish)
+        self.assertIn("docker buildx build --platform linux/amd64 --push", publish)
+        tag = "ghcr.io/mathwidu/vanrides-projeto-inovacao-team-api:sha-$GITHUB_SHA-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+        self.assertIn(f'--tag "{tag}"', publish)
+        self.assertIn("IMAGE_DIGEST: ${{ needs.publish_image.outputs.digest }}", deploy)
+        self.assertIn("JAR_SHA256: ${{ needs.candidate.outputs.jar-sha256 }}", deploy)
+        self.assertIn("\"deploy $GITHUB_SHA $IMAGE_DIGEST $JAR_SHA256\"", deploy)
+
+        for name in ("quick", "postgres", "java", "test", "candidate", "integration", "publish_image"):
+            job = jobs[name]
+            self.assertIn("actions/checkout@", job)
+            self.assertIn("persist-credentials: false", job)
+            self.assertIn("ref: ${{ github.sha }}", job)
+        for name in ("postgres", "java", "candidate"):
+            self.assertIn("cache: maven", jobs[name])
+            self.assertIn("cache-dependency-path: src/backend/pom.xml", jobs[name])
 
     def test_parallel_consumers_require_one_candidate_and_no_second_package(self) -> None:
         workflow = WORKFLOW.read_text(encoding="utf-8")
-        candidate = workflow.split("\n  candidate:\n", 1)[1].split("\n  integration:\n", 1)[0]
-        integration = workflow.split("\n  integration:\n", 1)[1].split("\n  homologation:\n", 1)[0]
-        homologation = workflow.split("\n  homologation:\n", 1)[1].split("\n  result:\n", 1)[0]
+        _, jobs = _workflow_sections(workflow)
+        candidate, integration, homologation = (jobs[name] for name in ("candidate", "integration", "homologation"))
         called = (ROOT.parents[1] / ".github/workflows/homologacao-api.yml").read_text()
         self.assertIn("needs: quick", candidate)
         for job in (integration, homologation):
@@ -796,15 +849,33 @@ class BackendCiQualityGateWiringTest(unittest.TestCase):
             (module / "scripts").mkdir(parents=True)
             fake_bin.mkdir()
             shutil.copy2(wrapper, scripts / wrapper.name)
-            for target, event in ((module / "scripts/ci_quality_gate.sh", "canonical"),
-                                  (module / "mvnw", "package"), (fake_bin / "node", "smoke")):
-                target.write_text('#!/usr/bin/env bash\nprintf "%s\\n" "' + event + '" >> "$VANRIDES_TEST_TRACE"\n')
+            fakes = {
+                module / "scripts/ci_quality_gate.sh": '''
+                    case "$*" in
+                      '') event=canonical ;;
+                      --quick) event=quick ;;
+                      *) exit 90 ;;
+                    esac
+                ''',
+                module / "mvnw": '[[ "$*" == "-B -ntp -DskipTests package" ]] || exit 90\nevent=package',
+                fake_bin / "node": '''
+                    case "$*" in
+                      "--test --test-reporter=dot "*/team_ui_test.mjs) event=team-ui ;;
+                      */academic-integration-smoke.mjs) [[ "$#" == 1 ]] || exit 90; event=smoke ;;
+                      *) exit 90 ;;
+                    esac
+                ''',
+            }
+            for target, script in fakes.items():
+                target.write_text('#!/usr/bin/env bash\n' + textwrap.dedent(script).strip()
+                                  + '\nprintf "%s\\n" "$event" >> "$VANRIDES_TEST_TRACE"\n')
                 target.chmod(0o755)
             trace = root / "events"
             environment = {**os.environ, "PATH": str(fake_bin) + os.pathsep + os.environ["PATH"],
                            "VANRIDES_TEST_TRACE": str(trace)}
-            for arguments, expected in (([], ["canonical", "package", "smoke"]),
-                                        (["--integration-only"], ["package", "smoke"])):
+            for arguments, expected in (([], ["team-ui", "canonical", "package", "smoke"]),
+                                        (["--integration-only"], ["team-ui", "package", "smoke"]),
+                                        (["--light"], ["team-ui", "quick"])):
                 trace.unlink(missing_ok=True)
                 result = subprocess.run([str(scripts / wrapper.name), *arguments], env=environment,
                                         capture_output=True, text=True, check=False)
@@ -891,11 +962,11 @@ class BackendCiQualityGateWiringTest(unittest.TestCase):
                         self.assertIn("Gate backend CI finalizado com sucesso", result.stdout)
 
     def test_ci_summary_does_not_turn_failed_or_skipped_dependencies_green(self) -> None:
-        workflow = WORKFLOW.read_text(encoding="utf-8")
-        result_job = workflow.split("\n  result:\n", 1)[1]
+        _, jobs = _workflow_sections(WORKFLOW.read_text(encoding="utf-8"))
+        result_job = jobs["result"]
         self.assertIn("needs: [quick, test, candidate, integration, homologation]", result_job)
         self.assertIn("if: ${{ always() }}", result_job)
-        command = textwrap.dedent(result_job.split("run: |\n", 1)[1])
+        command = _run_block(result_job)
         with tempfile.TemporaryDirectory() as temporary:
             summary = Path(temporary) / "summary.md"
             names = ("QUICK", "TESTS", "CANDIDATE", "INTEGRATION", "HOMOLOGATION")
@@ -1055,7 +1126,7 @@ class BackendCiQualityGateWiringTest(unittest.TestCase):
         discovered = _discover_docker_optional_test_classes(ROOT / "src/test/java")
 
         self.assertEqual(discovered, set(expected))
-        self.assertEqual(600, sum(expected.values()))
+        self.assertEqual(606, sum(expected.values()))
 
     def test_docker_optional_annotation_scanner_accepts_equivalent_formatting(self) -> None:
         variants = (

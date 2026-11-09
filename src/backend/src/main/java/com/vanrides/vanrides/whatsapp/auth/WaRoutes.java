@@ -15,6 +15,7 @@ public final class WaRoutes {
         service("GET", "/context", WaPrincipal.Kind.CONVERSATION_WORKER, true, true),
         service("POST", "/commands", WaPrincipal.Kind.CONVERSATION_WORKER, true, true),
         service("POST", "/events", WaPrincipal.Kind.CHANNEL, true, true),
+        service("POST", "/team-events", WaPrincipal.Kind.CHANNEL, true, false),
         service("POST", "/inbox/claim", WaPrincipal.Kind.CONVERSATION_WORKER, true, false),
         service("POST", "/inbox/" + UUID + "/result", WaPrincipal.Kind.CONVERSATION_WORKER, true, true),
         service("POST", "/jobs/tick", WaPrincipal.Kind.SYSTEM_JOB, true, true),

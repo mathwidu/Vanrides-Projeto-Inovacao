@@ -4,6 +4,7 @@ export PYTHONDONTWRITEBYTECODE=1
 REPOSITORY_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BACKEND_DIR="$REPOSITORY_DIR/src/backend"
 cd "$BACKEND_DIR"
+node --test --test-reporter=dot "$REPOSITORY_DIR/scripts/homologacao/team_ui_test.mjs"
 run_integration() {
   ./mvnw -B -ntp -DskipTests package
   node "$REPOSITORY_DIR/src/whatsapp/scripts/academic-integration-smoke.mjs"

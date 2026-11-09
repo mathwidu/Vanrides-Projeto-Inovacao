@@ -53,8 +53,8 @@ class TestGroupsTest(unittest.TestCase):
         return path
 
     def test_plan_has_exact_postgres_union_and_deterministic_balanced_groups(self):
-        self.assertEqual(78, len(self.postgres))
-        self.assertEqual(600, sum(self.postgres.values()))
+        self.assertEqual(79, len(self.postgres))
+        self.assertEqual(606, sum(self.postgres.values()))
         self.assertEqual(groups.plan()[1], self.plan)
         union = {}
         for cases in self.plan.values():
@@ -82,7 +82,7 @@ class TestGroupsTest(unittest.TestCase):
     def test_java_exclusions_are_only_postgres_and_default_inner_class_rule(self):
         result = subprocess.run([sys.executable, str(Path(groups.__file__)), "excludes"], capture_output=True, text=True, check=True)
         patterns = result.stdout.splitlines()
-        self.assertEqual(79, len(patterns))
+        self.assertEqual(80, len(patterns))
         self.assertEqual("**/*$*", patterns[0])
         for name in self.postgres:
             self.assertIn(name.replace(".", "/") + ".java", patterns)
@@ -119,7 +119,7 @@ class TestGroupsTest(unittest.TestCase):
 
     def test_finalized_receipts_and_exact_nine_group_union(self):
         result = self.aggregate(self.receipts())
-        self.assertEqual((9, 79, 603, 600, 3), (result["groups"], result["classes"], result["tests"], result["postgresTests"], result["javaOnlyTests"]))
+        self.assertEqual((9, 80, 609, 606, 3), (result["groups"], result["classes"], result["tests"], result["postgresTests"], result["javaOnlyTests"]))
         self.assertNotIn("properties", json.dumps(self.receipts()))
 
     def test_compact_receipt_refuses_prepared_or_duplicate_canonical_reports(self):

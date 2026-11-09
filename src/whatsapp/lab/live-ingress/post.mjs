@@ -10,6 +10,9 @@ async function receipt(response, signal, config) {
   if (isHml(config) && response.headers?.get('x-vanrides-environment') !== config.environment) {
     cancel(response.body); return unavailable();
   }
+  if (config.admissionMode === 'API' && response.headers?.get('x-vanrides-admission-policy') !== 'TEAM_V1') {
+    cancel(response.body); return unavailable();
+  }
   if (response.status !== 202 || !/^application\/json(?:;\s*charset=utf-8)?$/i.test(response.headers?.get('content-type') ?? '')
       || response.headers?.get('content-encoding') !== null
       || Number(response.headers?.get('content-length') ?? 0) > 4096) {
@@ -60,9 +63,10 @@ export function startPost({ config, envelope, signal, fetchImpl = fetch, now = D
       // Serialize before the last fence; nothing asynchronous precedes the single HTTP invocation.
       const body = JSON.stringify(envelope);
       if (expired()) return unavailable();
-      const response = await fetchImpl(config.apiOrigin + '/integrations/whatsapp/v1/events', {
+      const response = await fetchImpl(config.apiOrigin + '/integrations/whatsapp/v1/' + (config.admissionMode === 'API' ? 'team-events' : 'events'), {
         method: 'POST', redirect: 'manual', signal: controller.signal,
-        headers: { Authorization: `Bearer ${config.channelToken}`, 'content-type': 'application/json' }, body,
+        headers: { Authorization: `Bearer ${config.channelToken}`, 'content-type': 'application/json',
+          ...(config.admissionMode === 'API' ? { 'X-Vanrides-Admission-Policy': 'TEAM_V1' } : {}) }, body,
       });
       if (expired()) { cancel(response.body); return unavailable(); }
       const result = await receipt(response, controller.signal, config);

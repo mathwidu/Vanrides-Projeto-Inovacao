@@ -9,8 +9,11 @@ const token = value => typeof value === 'string' && /^[A-Za-z0-9_-]{43}$/.test(v
 /** A private operator document, never an HTTP enrollment/renewal endpoint. */
 export function validateHmlConfig(raw) {
   try {
+    const dynamic = raw?.admissionMode === 'API';
     if (!exact(raw, ['mode', 'environment', 'instance', 'webhookToken', 'channelToken', 'apiOrigin',
-      'startsAt', 'endsAt', 'contacts', 'limitsPerMinute', 'listenHost', 'listenPort'])
+      'startsAt', 'endsAt', 'contacts', 'limitsPerMinute', 'listenHost', 'listenPort',
+      ...(Object.hasOwn(raw ?? {}, 'admissionMode') ? ['admissionMode'] : [])])
+      || Object.hasOwn(raw ?? {}, 'admissionMode') && !dynamic
       || raw.mode !== HML_MODE || raw.environment !== 'vanrides-mvp-hml'
       || typeof raw.instance !== 'string' || !/^[A-Za-z0-9_-]{1,80}$/.test(raw.instance)
       || !token(raw.webhookToken) || !token(raw.channelToken) || raw.webhookToken === raw.channelToken) invalid();
@@ -23,7 +26,7 @@ export function validateHmlConfig(raw) {
     if (start === null || end === null || end <= start || end - start > 30 * 24 * 60 * 60_000) invalid();
     if (!['127.0.0.1', '::1', '0.0.0.0'].includes(raw.listenHost)
       || !Number.isInteger(raw.listenPort) || raw.listenPort < 1 || raw.listenPort > 65535
-      || !Array.isArray(raw.contacts) || raw.contacts.length < 1 || raw.contacts.length > 4) invalid();
+      || !Array.isArray(raw.contacts) || raw.contacts.length < (dynamic ? 0 : 1) || raw.contacts.length > 4) invalid();
     const labels = new Set(), aliases = new Set();
     const contacts = raw.contacts.map(contact => {
       const keys = Object.hasOwn(contact ?? {}, 'lid') ? ['label', 'approved', 'pn', 'lid'] : ['label', 'approved', 'pn'];
@@ -45,7 +48,7 @@ export function validateHmlConfig(raw) {
     if (!exact(limits, Object.keys(caps)) || Object.entries(caps).some(([key, cap]) =>
       !Number.isSafeInteger(limits[key]) || limits[key] < 1 || limits[key] > cap)
       || limits.perContact > limits.human) invalid();
-    const config = { mode: HML_MODE, environment: raw.environment, instance: raw.instance,
+    const config = { ...(dynamic ? { admissionMode: 'API' } : {}), mode: HML_MODE, environment: raw.environment, instance: raw.instance,
       apiOrigin: raw.apiOrigin, startsAt: raw.startsAt, endsAt: raw.endsAt, start, end,
       listenHost: raw.listenHost, listenPort: raw.listenPort,
       limitsPerMinute: Object.freeze({ ...limits }) };

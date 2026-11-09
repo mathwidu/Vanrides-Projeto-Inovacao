@@ -24,7 +24,7 @@ class WaTransportTestDatabaseIntegrationTest {
         var sequences = sequences(first.jdbc);
         Long identityTable = first.jdbc.queryForObject("SELECT 'wa.identity'::regclass::oid::bigint", Long.class);
         assertThat(first.jdbc.queryForObject("SELECT max(version::integer) FROM public.flyway_schema_history", Integer.class))
-                .isEqualTo(38);
+                .isEqualTo(39);
         Long company = first.jdbc.queryForObject("""
                 INSERT INTO public.company (nome,slug,created_at,updated_at)
                 VALUES ('Synthetic reset company','synthetic-reset',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP) RETURNING id

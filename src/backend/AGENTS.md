@@ -11,7 +11,9 @@ repositório acadêmico; não é outro repositório Git nem submódulo.
 - Gate da equipe, na raiz: `bash scripts/check_backend.sh`; `--light` não compila.
 - Proveniência usa SHA/tree/dirt do repositório inteiro; relatórios e Maven pertencem
   ao módulo. Preserve isolamento do Maven, locks, sanitização e release antes de PASS.
-- O workflow é `../../.github/workflows/backend.yml`, somente testes/build local.
+- O workflow é `../../.github/workflows/backend.yml`: PR valida; push na main
+  publica a API após os gates, quando o provisionamento estiver ativo. Consulte
+  `../../deploy/homologacao/AUTOMATICO.md` antes de alterar publicação.
 - Mudança de contrato exige gates dos consumidores e smoke da mesma versão.
 - `deploy/ops` é fonte de guardrails testados; não executar operação externa sem autorização.
 - Nunca versionar `.env`, tokens, dados pessoais, GPS real ou relatórios brutos.

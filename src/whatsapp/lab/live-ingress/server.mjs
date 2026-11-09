@@ -60,7 +60,7 @@ export function createLiveIngressServer({ config, fetchImpl = fetch, now = Date.
     forwarded: 0, dropped: 0, unauthorized: 0, invalid: 0, oversized: 0, busy: 0, unavailable: 0 };
   const hml = isHml(config);
   if (hml) Object.assign(counters, { contactC: 0, contactD: 0, rateLimited: 0, ignored: 0 });
-  const minuteLimit = hml ? createMinuteLimit(config.limitsPerMinute) : null;
+  const minuteLimit = hml ? createMinuteLimit(config.limitsPerMinute, config.admissionMode === 'API') : null;
   const active = { human: 0, callback: 0 };
   const controllers = new Set();
   let reading = 0, stopped = false;
@@ -98,14 +98,15 @@ export function createLiveIngressServer({ config, fetchImpl = fetch, now = Date.
         || event.kind === 'human' && counters['contact' + event.contact] >= 8))
       return reply(response, 204, null, hml ? classifyPolicyDrop(envelope, config, eventNow) ?? 'POLICY_DROP' : 'POLICY_DROP', 'dropped');
     if (stopped || active[event.lane]) return busy(response);
+    let capacity;
     if (hml) {
-      const capacity = minuteLimit.take(event, now());
+      capacity = minuteLimit.take(event, now());
       if (!capacity.allowed)
         return reply(response, 429, { code: 'RATE_LIMITED' }, 'RATE_LIMITED', 'rateLimited', true,
           { 'retry-after': String(capacity.retryAfter) });
     }
     counters[event.kind]++;
-    if (event.kind === 'human') counters[`contact${event.contact}`]++;
+    if (event.kind === 'human' && ['A', 'B', 'C', 'D'].includes(event.contact)) counters[`contact${event.contact}`]++;
     active[event.lane]++;
     const controller = new AbortController();
     controllers.add(controller);
@@ -116,8 +117,10 @@ export function createLiveIngressServer({ config, fetchImpl = fetch, now = Date.
     const result = await operation.result;
     response.off('close', disconnect);
     if (result.ok) {
-      if (hml && result.receipt.status === 'IGNORED')
+      if (hml && result.receipt.status === 'IGNORED') {
+        capacity?.refundIgnored();
         return reply(response, 202, result.receipt, 'BACKEND_IGNORED', 'ignored');
+      }
       return reply(response, 202, result.receipt, 'FORWARDED', 'forwarded');
     }
     return reply(response, 503, { code: 'UPSTREAM_UNAVAILABLE' }, 'UPSTREAM_UNAVAILABLE', 'unavailable', true);
