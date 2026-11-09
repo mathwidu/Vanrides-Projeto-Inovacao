@@ -31,7 +31,7 @@ O bot exige admissão individual: na conferência de 04/11 há um passageiro lib
 e ainda falta motorista participante. O APK e a saúde da API são acessíveis ao
 time inteiro pelo [guia de testes](docs/desenvolvimento/homologacao-da-equipe.md).
 Os testes físicos do iPhone estão pausados. **O piloto ainda não está liberado.**
-CI aprovada comprova os testes declarados, não WhatsApp real ou percurso.
+CI aprovada confirma a construção da API/imagem; não comprova testes de negócio, WhatsApp real ou percurso.
 
 ## Código e desenvolvimento
 

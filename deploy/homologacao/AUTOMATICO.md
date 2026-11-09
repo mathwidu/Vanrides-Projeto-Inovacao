@@ -1,16 +1,27 @@
-# Publicação automática da API de homologação
+# Publicação automática da API do VanRides
 
-Um push em `main`, incluindo o push de merge do GitHub, publica a API de
-homologação quando o [workflow do backend](../../.github/workflows/backend.yml)
-é acionado e todos os seus gates passam. PR e `workflow_dispatch` executam a CI.
-A publicação monta o runtime Linux amd64 do Dockerfile de homologação com o
-mesmo JAR aprovado. O Swarm recebe a referência por digest e o SHA-256 do JAR
-na mesma atualização. A tag associa SHA, execução e tentativa para rastreio.
+O fluxo segue a estrutura simples da API Ponto da Testing Company:
+**construir → publicar imagem → atualizar o Swarm → conferir saúde**.
+O único workflow automático é [backend.yml](../../.github/workflows/backend.yml).
 
-O destino é `vanrides-hml-api_api` no ambiente compartilhado atual. O processo
-mantém a configuração online, o comando de entrada, o `/tmp` gravável e as
-ligações existentes do serviço. Worker, receptor, Evolution, n8n, links e APK
-têm seus próprios artefatos e procedimentos de publicação.
+- **Pull request ou push em `dev`:** compila e empacota a API e constrói a imagem.
+  Não publica no GHCR nem altera a VPS.
+- **Push em `main`:** constrói a aplicação/imagem, publica no GHCR e atualiza
+  automaticamente o ambiente compartilhado. Não depende de um disparo manual.
+- **Testes:** PostgreSQL, jornadas HTTP, auxiliares, WhatsApp e mobile ficam
+  fora desse fluxo. Os comandos permanecem no repositório e os workflows de
+  verificação só podem ser executados separadamente, quando necessários.
+
+A imagem usa o JAR construído nessa mesma execução, com revisão e checksum.
+O deploy recebe o digest imutável, atualiza imagem/checksum juntos e verifica
+saúde HTTPS. Falha na construção impede a publicação; falha de saúde tenta
+retornar à imagem anterior. Isso não equivale à validação funcional do MVP.
+O tempo total ainda precisa ser medido no GitHub; não há promessa de cinco minutos.
+
+O único serviço atualizado automaticamente é **`vanrides-hml-api_api`**, que
+contém API e interface da equipe. Banco/volumes, worker, receptor, Evolution,
+n8n e APK não são recriados por esse workflow. Mudanças de schema exigem a
+preparação de migração descrita abaixo, não são liberadas por um build verde.
 
 ## Configuração inicial
 

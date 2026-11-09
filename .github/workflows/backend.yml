@@ -1,303 +1,82 @@
-name: Backend e integração sintética
+name: Backend
 'on':
   pull_request:
-    paths: ['src/backend/**', 'src/whatsapp/**', 'scripts/check_backend.sh', 'scripts/check_backend_image.py', 'scripts/verify_backend_candidate.py', 'scripts/homologacao/**', 'deploy/homologacao/**', '.github/actions/receive-backend/**', '.github/workflows/backend.yml', '.github/workflows/homologacao-api.yml']
+    branches: [main, dev]
   push:
-    branches: [main]
-    paths: ['src/backend/**', 'src/whatsapp/**', 'scripts/check_backend.sh', 'scripts/check_backend_image.py', 'scripts/verify_backend_candidate.py', 'scripts/homologacao/**', 'deploy/homologacao/**', '.github/actions/receive-backend/**', '.github/workflows/backend.yml', '.github/workflows/homologacao-api.yml']
-  workflow_dispatch:
+    branches: [main, dev]
 permissions:
   contents: read
 concurrency:
   group: backend-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
-  quick:
-    name: Verificações rápidas do backend
+  build:
+    name: Construir API
     runs-on: ubuntu-latest
-    timeout-minutes: 6
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          ref: ${{ github.sha }}
-          persist-credentials: false
-          fetch-depth: 1
-      - name: Regras estáticas e testes dos auxiliares, sem Maven ou Docker
-        run: bash scripts/check_backend.sh --light
-  postgres:
-    name: PostgreSQL (${{ matrix.group }})
-    needs: quick
-    strategy:
-      fail-fast: false
-      matrix:
-        group: [pg-1, pg-2, pg-3, pg-4, pg-5, pg-6, pg-7, pg-8]
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    env:
-      VANRIDES_QA_REQUIRE_CLEAN: "1"
-      VANRIDES_QA_RETENTION_CLASS: ci
-      PYTHONDONTWRITEBYTECODE: "1"
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          ref: ${{ github.sha }}
-          persist-credentials: false
-          fetch-depth: 1
-      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
-        with:
-          distribution: temurin
-          java-version: '17'
-          cache: maven
-          cache-dependency-path: src/backend/pom.xml
-      - name: Executar grupo PostgreSQL com locks e evidência canônica
-        env:
-          VANRIDES_QA_GROUP_RECEIPT: ${{ runner.temp }}/backend-test-${{ matrix.group }}.json
-        working-directory: src/backend
-        run: ./scripts/qa_integration_profile.sh --group "${{ matrix.group }}"
-      - name: Compartilhar somente o recibo compacto do grupo
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: backend-tests-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.group }}
-          path: ${{ runner.temp }}/backend-test-${{ matrix.group }}.json
-          if-no-files-found: error
-          retention-days: 1
-          compression-level: 0
-  java:
-    name: Java sem PostgreSQL
-    needs: quick
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    env:
-      VANRIDES_QA_REQUIRE_CLEAN: "1"
-      VANRIDES_QA_RETENTION_CLASS: ci
-      PYTHONDONTWRITEBYTECODE: "1"
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          ref: ${{ github.sha }}
-          persist-credentials: false
-          fetch-depth: 1
-      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
-        with:
-          distribution: temurin
-          java-version: '17'
-          cache: maven
-          cache-dependency-path: src/backend/pom.xml
-      - name: Descoberta padrão Surefire excluindo somente o manifest PostgreSQL
-        env:
-          VANRIDES_QA_GROUP_RECEIPT: ${{ runner.temp }}/backend-test-unit.json
-        working-directory: src/backend
-        run: ./scripts/qa_integration_profile.sh --group unit
-      - name: Compartilhar somente o recibo compacto Java
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: backend-tests-${{ github.run_id }}-${{ github.run_attempt }}-unit
-          path: ${{ runner.temp }}/backend-test-unit.json
-          if-no-files-found: error
-          retention-days: 1
-          compression-level: 0
-  test:
-    # Preserve the existing required check name; success now requires every group.
-    name: Suíte canônica PostgreSQL
-    needs: [postgres, java]
-    if: ${{ always() }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 2
-    steps:
-      - name: Exigir sucesso de todos os grupos, inclusive Java
-        env:
-          POSTGRES: ${{ needs.postgres.result }}
-          JAVA: ${{ needs.java.result }}
-        run: '[[ "$POSTGRES" == success && "$JAVA" == success ]]'
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          ref: ${{ github.sha }}
-          persist-credentials: false
-          fetch-depth: 1
-      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
-        with:
-          pattern: backend-tests-${{ github.run_id }}-${{ github.run_attempt }}-*
-          path: ${{ runner.temp }}/backend-test-receipts
-          digest-mismatch: error
-      - name: Conferir união exata, origem e ausência de skips
-        env:
-          RECEIPT_DIRECTORY: ${{ runner.temp }}/backend-test-receipts
-        run: |
-          [[ "$(git rev-parse HEAD)" == "$GITHUB_SHA" ]]
-          python3 -B src/backend/scripts/qa_test_groups.py aggregate --directory "$RECEIPT_DIRECTORY" --expected-sha "$GITHUB_SHA" --expected-tree "$(git rev-parse 'HEAD^{tree}')" --ci-run-id "$GITHUB_RUN_ID" --ci-attempt "$GITHUB_RUN_ATTEMPT" --require-clean
-  candidate:
-    name: Empacotar candidato uma vez
-    needs: quick
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    outputs:
-      artifact-id: ${{ steps.upload.outputs.artifact-id }}
-      jar-sha256: ${{ steps.jar.outputs.sha256 }}
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          ref: ${{ github.sha }}
-          persist-credentials: false
-          fetch-depth: 1
-      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
-        with:
-          distribution: temurin
-          java-version: '17'
-          cache: maven
-          cache-dependency-path: src/backend/pom.xml
-      - name: Empacotar sem repetir a suíte obrigatória do job test
-        working-directory: src/backend
-        run: ./mvnw -B -ntp -DskipTests package
-      - name: Separar somente o JAR e calcular seu checksum
-        id: jar
-        run: |
-          shopt -s nullglob
-          jars=(src/backend/target/*.jar)
-          [[ "${#jars[@]}" -eq 1 && -f "${jars[0]}" && ! -L "${jars[0]}" ]] || exit 1
-          mkdir "$RUNNER_TEMP/backend-candidate"
-          cp "${jars[0]}" "$RUNNER_TEMP/backend-candidate/backend.jar"
-          read -r digest _ < <(sha256sum "$RUNNER_TEMP/backend-candidate/backend.jar")
-          printf 'sha256=%s\n' "$digest" >> "$GITHUB_OUTPUT"
-      - name: Compartilhar candidato por um dia, sem logs ou credenciais
-        id: upload
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: backend-candidate-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
-          path: ${{ runner.temp }}/backend-candidate/backend.jar
-          if-no-files-found: error
-          retention-days: 1
-          compression-level: 0
-          include-hidden-files: false
-  integration:
-    name: Integração HTTP e imagem
-    needs: candidate
-    runs-on: ubuntu-latest
-    # Mantido até medir as cinco execuções com seis conjuntos de validação.
-    timeout-minutes: 35
-    env:
-      VANRIDES_EXPECTED_SOURCE_SHA: ${{ github.sha }}
-      PYTHONDONTWRITEBYTECODE: "1"
-    steps:
-      - name: Checkout da mesma revisão avaliada pela suíte
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          ref: ${{ github.sha }}
-          persist-credentials: false
-          fetch-depth: 1
-      - name: Java 17
-        uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
-        with:
-          distribution: temurin
-          java-version: '17'
-      - name: Node 22 do worker
-        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
-        with:
-          node-version: '22.23.2'
-      - uses: ./.github/actions/receive-backend
-        with:
-          artifact-id: ${{ needs.candidate.outputs.artifact-id }}
-          jar-sha256: ${{ needs.candidate.outputs.jar-sha256 }}
-          source-sha: ${{ github.sha }}
-      - name: Exercitar o JAR compartilhado nas jornadas HTTP
-        env:
-          VANRIDES_ACADEMIC_RECEIPT_PATH: ${{ runner.temp }}/vanrides-integration.json
-        run: node src/whatsapp/scripts/academic-integration-smoke.mjs
-      - name: Construir imagem local com o JAR aprovado pelas jornadas
-        env:
-          VANRIDES_ACADEMIC_RECEIPT_PATH: ${{ runner.temp }}/vanrides-integration.json
-        run: python3 scripts/check_backend_image.py --receipt "$VANRIDES_ACADEMIC_RECEIPT_PATH"
-      - name: Identificar a fonte e os limites
-        env:
-          SOURCE_SHA: ${{ github.sha }}
-        run: |
-          printf 'Integração HTTP e imagem avaliadas em %s. PostgreSQL isolado e provedor sintético em loopback; sem WhatsApp, IA ao vivo ou dispositivos. Suíte canônica em job independente igualmente obrigatório. Nenhuma implantação.\n' "$SOURCE_SHA" >> "$GITHUB_STEP_SUMMARY"
-  homologation:
-    name: Homologação do candidato compartilhado
-    needs: candidate
-    uses: ./.github/workflows/homologacao-api.yml
-    with:
-      artifact-id: ${{ needs.candidate.outputs.artifact-id }}
-      jar-sha256: ${{ needs.candidate.outputs.jar-sha256 }}
-      source-sha: ${{ github.sha }}
-  result:
-    name: Resultado do backend
-    needs: [quick, test, candidate, integration, homologation]
-    if: ${{ always() }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 2
-    steps:
-      - name: Resumo das etapas e resultado conjunto
-        env:
-          SOURCE_SHA: ${{ github.sha }}
-          QUICK: ${{ needs.quick.result }}
-          TESTS: ${{ needs.test.result }}
-          CANDIDATE: ${{ needs.candidate.result }}
-          HOMOLOGATION: ${{ needs.homologation.result }}
-          INTEGRATION: ${{ needs.integration.result }}
-        run: |
-          {
-            printf '### Backend\n\nRevisão: %s\n\n' "$SOURCE_SHA"
-            printf '| Etapa | Resultado |\n|---|---|\n'
-            printf '| Verificações rápidas | %s |\n' "$QUICK"
-            printf '| PostgreSQL | %s |\n' "$TESTS"
-            printf '| Candidato | %s |\n' "$CANDIDATE"
-            printf '| Homologação | %s |\n' "$HOMOLOGATION"
-            printf '| Jornadas HTTP e imagem | %s |\n' "$INTEGRATION"
-            printf '\nValidações isoladas. A publicação da main, quando aplicável, usa jobs separados.\n'
-          } >> "$GITHUB_STEP_SUMMARY"
-          [[ "$QUICK" == success && "$TESTS" == success && "$INTEGRATION" == success && "$CANDIDATE" == success && "$HOMOLOGATION" == success ]]
-  publish_image:
-    name: Publicar imagem aprovada da API
-    needs: [result, candidate]
-    if: github.repository == 'mathwidu/Vanrides-Projeto-Inovacao' && github.event_name == 'push' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     permissions:
       contents: read
       packages: write
     outputs:
       digest: ${{ steps.image.outputs.digest }}
+      jar-sha256: ${{ steps.image.outputs.jar-sha256 }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.sha }}
           persist-credentials: false
-          fetch-depth: 1
-      - uses: ./.github/actions/receive-backend
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3 # v4
         with:
-          artifact-id: ${{ needs.candidate.outputs.artifact-id }}
-          jar-sha256: ${{ needs.candidate.outputs.jar-sha256 }}
-          source-sha: ${{ github.sha }}
-      - name: Montar e publicar o runtime de homologação com o JAR aprovado
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+          cache-dependency-path: src/backend/pom.xml
+      - name: Empacotar sem executar ou compilar testes
+        working-directory: src/backend
+        run: ./mvnw -B -ntp -Dmaven.test.skip=true package
+      - name: Montar a imagem e publicar na main
         id: image
         env:
           JAVA_IMAGE: ${{ vars.VANRIDES_HML_JAVA_IMAGE }}
-          GHCR_TOKEN: ${{ github.token }}
-          JAR_SHA256: ${{ needs.candidate.outputs.jar-sha256 }}
+          GHCR_TOKEN: ${{ github.repository == 'mathwidu/Vanrides-Projeto-Inovacao' && github.event_name == 'push' && github.ref == 'refs/heads/main' && github.token || '' }}
         run: |
           set -euo pipefail
           [[ "$JAVA_IMAGE" =~ ^eclipse-temurin@sha256:[a-f0-9]{64}$ ]]
+          [[ "$(git rev-parse HEAD)" == "$GITHUB_SHA" ]]
+          shopt -s nullglob
+          jars=(src/backend/target/*.jar)
+          [[ "${#jars[@]}" == 1 && -f "${jars[0]}" && ! -L "${jars[0]}" ]]
+          read -r jar_sha _ < <(sha256sum "${jars[0]}")
           context=$(mktemp -d "$RUNNER_TEMP/vanrides-image.XXXXXX")
-          export DOCKER_CONFIG="$context/docker-config"
-          mkdir -m 700 "$DOCKER_CONFIG" "$context/build"
+          mkdir "$context/build"
           cp deploy/homologacao/{Dockerfile,entrypoint.sh} "$context/build/"
-          cp src/backend/target/backend.jar "$context/build/"
-          printf '%s' "$GHCR_TOKEN" | docker login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
-          unset GHCR_TOKEN
-          trap 'docker logout ghcr.io >/dev/null 2>&1 || true' EXIT
-          docker buildx build --platform linux/amd64 --push --metadata-file "$context/metadata.json" \
+          cp "${jars[0]}" "$context/build/backend.jar"
+
+          output=(--load)
+          if [[ "$GITHUB_REPOSITORY" == mathwidu/Vanrides-Projeto-Inovacao && "$GITHUB_EVENT_NAME" == push && "$GITHUB_REF" == refs/heads/main ]]; then
+            [[ -n "$GHCR_TOKEN" ]]
+            export DOCKER_CONFIG="$context/docker-config"
+            mkdir -m 700 "$DOCKER_CONFIG"
+            printf '%s' "$GHCR_TOKEN" | docker login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
+            unset GHCR_TOKEN
+            trap 'docker logout ghcr.io >/dev/null 2>&1 || true' EXIT
+            output=(--push --metadata-file "$context/metadata.json")
+          fi
+          docker buildx build --platform linux/amd64 "${output[@]}" \
             --tag "ghcr.io/mathwidu/vanrides-projeto-inovacao-team-api:sha-$GITHUB_SHA-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" \
             --build-arg "JAVA_IMAGE=$JAVA_IMAGE" --build-arg "SOURCE_SHA=$GITHUB_SHA" \
-            --build-arg "SOURCE_TREE=$(git rev-parse 'HEAD^{tree}')" --build-arg "JAR_SHA256=$JAR_SHA256" \
+            --build-arg "SOURCE_TREE=$(git rev-parse 'HEAD^{tree}')" --build-arg "JAR_SHA256=$jar_sha" \
             "$context/build"
-          digest=$(jq -er '."containerimage.digest"' "$context/metadata.json")
-          [[ "$digest" =~ ^sha256:[a-f0-9]{64}$ ]]
-          printf 'digest=%s\n' "$digest" >> "$GITHUB_OUTPUT"
-          printf 'Imagem GHCR: %s\n\nRevisão: %s\n\nChecksum do JAR: %s\n' \
-            "$digest" "$GITHUB_SHA" "$JAR_SHA256" >> "$GITHUB_STEP_SUMMARY"
+          if [[ "${output[0]}" == --push ]]; then
+            digest=$(jq -er '."containerimage.digest"' "$context/metadata.json")
+            [[ "$digest" =~ ^sha256:[a-f0-9]{64}$ ]]
+            printf 'digest=%s\njar-sha256=%s\n' "$digest" "$jar_sha" >> "$GITHUB_OUTPUT"
+            printf 'Imagem GHCR: %s\n\nRevisão: %s\n\nChecksum do JAR: %s\n' \
+              "$digest" "$GITHUB_SHA" "$jar_sha" >> "$GITHUB_STEP_SUMMARY"
+          fi
   deploy_homologacao:
     name: Atualizar API da homologação da equipe
-    needs: [publish_image, candidate]
+    needs: build
     if: github.repository == 'mathwidu/Vanrides-Projeto-Inovacao' && github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -309,8 +88,8 @@ jobs:
           SSH_TARGET: ${{ vars.VANRIDES_HML_SSH_TARGET }}
           SSH_KEY: ${{ secrets.VANRIDES_HML_SSH_KEY }}
           SSH_KNOWN_HOSTS: ${{ vars.VANRIDES_HML_SSH_KNOWN_HOSTS }}
-          IMAGE_DIGEST: ${{ needs.publish_image.outputs.digest }}
-          JAR_SHA256: ${{ needs.candidate.outputs.jar-sha256 }}
+          IMAGE_DIGEST: ${{ needs.build.outputs.digest }}
+          JAR_SHA256: ${{ needs.build.outputs.jar-sha256 }}
         run: |
           set -euo pipefail
           [[ "$SSH_TARGET" =~ ^mathwidu@[A-Za-z0-9][A-Za-z0-9.-]*$ ]]

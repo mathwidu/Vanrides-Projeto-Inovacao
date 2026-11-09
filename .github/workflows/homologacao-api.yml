@@ -1,5 +1,5 @@
 name: Homologação técnica da API
-# Chamado pelo backend.yml na mesma execução, com o mesmo JAR. Disparo manual pelo caller.
+# Ensaio reutilizável preservado. Não participa do CI/CD automático.
 'on':
   workflow_call:
     inputs:

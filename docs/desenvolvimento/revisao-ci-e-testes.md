@@ -1,5 +1,12 @@
 # Revisão da CI e dos testes
 
+**Decisão vigente em 09/11/2026:** as tentativas de otimizar a suíte automática
+foram substituídas por um CI/CD simples, seguindo o Ponto API. O workflow
+automático constrói a API/imagem e publica somente a `main`. As suítes abaixo
+permanecem disponíveis fora da publicação. O restante desta página registra
+o histórico das medições, não a esteira atual. Veja o
+[fluxo vigente](../../deploy/homologacao/AUTOMATICO.md).
+
 **04/11/2026 — candidato compartilhado aprovado no GitHub; pilotos de preparação do PostgreSQL e do operador implementados e validados localmente.**
 
 O objetivo é reduzir o tempo de retorno e o trabalho de manutenção sem perder

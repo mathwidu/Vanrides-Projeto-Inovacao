@@ -6,7 +6,7 @@
 
 Usamos um único ambiente de desenvolvimento compartilhado. Os nomes técnicos ainda dizem “hml”; não existe produção real liberada para usuários. Stage e produção separados ficam para a versão 1.0.
 
-**Mudança aprovada, ainda em preparação:** push/merge na `main` deverá testar e publicar automaticamente neste endereço. As outras branches apenas validarão as alterações. Uma área autenticada da equipe deverá permitir aos quatro integrantes liberar participantes e gerar convites sem acesso à VPS. Essas duas automações ainda não estão disponíveis. O [guia da área da equipe](area-da-equipe.md) descreve o novo fluxo, e o [runbook de deploy](../../deploy/homologacao/AUTOMATICO.md) registra a configuração inicial.
+**Mudança aprovada, ainda em preparação:** push/merge na `main` deverá construir e publicar automaticamente neste endereço. As outras branches apenas validarão as alterações. Uma área autenticada da equipe deverá permitir aos quatro integrantes liberar participantes e gerar convites sem acesso à VPS. Essas duas automações ainda não estão disponíveis. O [guia da área da equipe](area-da-equipe.md) descreve o novo fluxo, e o [runbook de deploy](../../deploy/homologacao/AUTOMATICO.md) registra a configuração inicial.
 
 ## O que cada integrante pode acessar
 
@@ -111,7 +111,7 @@ Na issue da funcionalidade, anote: versão do APK, revisão da API informada pel
 
 ## Código publicado, main e contribuições
 
-**Até a nova esteira entrar em funcionamento, a VPS ainda não atualiza com a `main`.** O modelo aprovado passa a ser automático: testes aprovados → imagem identificada → atualização dos componentes alterados → verificação. A ativação depende primeiro da integração do código já hospedado com a `main`. Não exigir confirmação manual do proprietário em cada publicação normal depois disso.
+**Até a nova esteira entrar em funcionamento, a VPS ainda não atualiza com a `main`.** O modelo aprovado passa a ser automático: construção da API → imagem identificada → atualização da API/interface → verificação de saúde. A ativação depende primeiro da integração do código já hospedado com a `main`. Não exigir confirmação manual do proprietário em cada publicação normal depois disso.
 
 | Referência | Conteúdo nesta conferência |
 | --- | --- |

@@ -1,11 +1,8 @@
-name: WhatsApp, workflows e receptor sintético
+name: Verificacao opcional do WhatsApp
+# Fora do CI/CD automatico; executar apenas em validacao direcionada.
 'on':
-  pull_request:
-    paths: ['src/whatsapp/**', 'src/backend/contracts/**', 'scripts/check_whatsapp.py', '.github/workflows/whatsapp.yml']
-  push:
-    branches: [main]
-    paths: ['src/whatsapp/**', 'src/backend/contracts/**', 'scripts/check_whatsapp.py', '.github/workflows/whatsapp.yml']
   workflow_dispatch:
+
 permissions:
   contents: read
 concurrency:

@@ -1,9 +1,7 @@
-name: Programa
+name: Verificacao opcional do programa
 
-on:
-  pull_request:
-  push:
-    branches: [main]
+# Fora do CI/CD automatico; executar apenas em validacao direcionada.
+'on':
   workflow_dispatch:
 
 permissions:

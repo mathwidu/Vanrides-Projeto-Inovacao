@@ -54,18 +54,6 @@ def _workflow_sections(workflow: str) -> tuple[str, dict[str, str]]:
     return header, dict(zip(parts[1::2], parts[2::2]))
 
 
-def _run_block(job: str) -> str:
-    start = re.search(r"(?m)^( +)run: \|[+-]?[ \t]*\n", job)
-    if start is None:
-        raise ValueError("Job has no literal run block")
-    lines = []
-    for line in job[start.end():].splitlines(keepends=True):
-        if line.strip() and len(line) - len(line.lstrip(" ")) <= len(start[1]):
-            break
-        lines.append(line)
-    return textwrap.dedent("".join(lines))
-
-
 def _strip_java_comments(source: str) -> str:
     """Remove Java comments without turning comment markers in literals into syntax."""
     output: list[str] = []
@@ -641,103 +629,38 @@ class BackendCiQualityGateWiringTest(unittest.TestCase):
             lock_is_reacquirable,
         )
 
-    def test_workflow_requires_quick_checks_before_the_full_postgres_matrix(self) -> None:
-        workflow = WORKFLOW.read_text(encoding="utf-8")
-        _, jobs = _workflow_sections(workflow)
-        quick, postgres, java, canonical = (jobs[name] for name in ("quick", "postgres", "java", "test"))
-        self.assertIn("run: bash scripts/check_backend.sh --light", quick)
-        self.assertNotIn("setup-java", quick)
-        self.assertIn("group: [pg-1, pg-2, pg-3, pg-4, pg-5, pg-6, pg-7, pg-8]", postgres)
-        self.assertIn("fail-fast: false", postgres)
-        for group in (postgres, java):
-            self.assertIn("needs: quick", group)
-            self.assertIn('VANRIDES_QA_REQUIRE_CLEAN: "1"', group)
-            self.assertIn('VANRIDES_QA_RETENTION_CLASS: ci', group)
-            self.assertIn("working-directory: src/backend", group)
-            self.assertIn("if-no-files-found: error", group)
-            self.assertNotIn("skipTests", group)
-        self.assertIn("--group unit", java)
-        self.assertIn("needs: [postgres, java]", canonical)
-        self.assertIn("if: ${{ always() }}", canonical)
-        self.assertIn("qa_test_groups.py aggregate", canonical)
-        self.assertIn("--require-clean", canonical)
-        for forbidden in ("continue-on-error", "target/surefire-reports", "*.txt", "*.dump",
-                          "run: ./mvnw -B test", "pull_request_target", "self-hosted"):
-            self.assertNotIn(forbidden, workflow)
-
-    def test_workflow_limits_publication_to_main_after_the_full_gate(self) -> None:
+    def test_workflow_builds_without_tests_and_deploys_only_canonical_main(self) -> None:
         workflow = WORKFLOW.read_text(encoding="utf-8")
         header, jobs = _workflow_sections(workflow)
-        self.assertRegex(header, r"(?m)^permissions:\n  contents: read\n(?=\S)")
-        self.assertIn("  push:\n    branches: [main]", header)
+        self.assertEqual({"build", "deploy_homologacao"}, set(jobs))
+        self.assertIn("  pull_request:\n    branches: [main, dev]", header)
+        self.assertIn("  push:\n    branches: [main, dev]", header)
         self.assertIn("cancel-in-progress: ${{ github.event_name == 'pull_request' }}", header)
-        for name, job in jobs.items():
-            if name not in ("publish_image", "deploy_homologacao"):
-                self.assertNotRegex(job, r"(?m)^    (?:permissions|environment):")
-                for forbidden in ("secrets.", "docker push", "docker login", "docker/login-action", "--push", "ssh "):
-                    self.assertNotIn(forbidden, job, name)
+        for forbidden in ("pull_request_target", "continue-on-error", "upload-artifact",
+                          "download-artifact", "check_backend.sh", "qa_integration_profile.sh"):
+            self.assertNotIn(forbidden, workflow)
 
-        publish, deploy = jobs["publish_image"], jobs["deploy_homologacao"]
-        guard = {
-            "github.repository == 'mathwidu/Vanrides-Projeto-Inovacao'",
-            "github.event_name == 'push'",
-            "github.ref == 'refs/heads/main'",
-        }
-        for job in (publish, deploy):
-            condition = re.search(r"(?m)^    if: (.+)$", job)
-            self.assertIsNotNone(condition)
-            self.assertEqual(guard, {part.strip() for part in condition[1].split("&&")})
-        self.assertIn("needs: [result, candidate]", publish)
-        self.assertIn("needs: [publish_image, candidate]", deploy)
-        self.assertRegex(publish, r"(?m)^    permissions:\n      contents: read\n      packages: write\n(?=    \S)")
-        self.assertNotIn("secrets.", publish)
-        self.assertNotIn("contents: write", workflow)
+        build, deploy = jobs["build"], jobs["deploy_homologacao"]
+        guard = ("github.repository == 'mathwidu/Vanrides-Projeto-Inovacao' && "
+                 "github.event_name == 'push' && github.ref == 'refs/heads/main'")
+        self.assertIn("run: ./mvnw -B -ntp -Dmaven.test.skip=true package", build)
+        self.assertIn("persist-credentials: false", build)
+        self.assertIn("ref: ${{ github.sha }}", build)
+        self.assertIn("vars.VANRIDES_HML_JAVA_IMAGE", build)
+        self.assertIn("GHCR_TOKEN: ${{ " + guard + " && github.token || '' }}", build)
+        self.assertNotIn("secrets.", build)
+        self.assertIn("docker buildx build --platform linux/amd64", build)
+        self.assertIn(":sha-$GITHUB_SHA-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT", build)
+        self.assertIn('output=(--load)', build)
+        self.assertIn('output=(--push --metadata-file', build)
+
+        self.assertIn(f"if: {guard}", deploy)
+        self.assertIn("needs: build", deploy)
         self.assertIn("permissions: {}", deploy)
         self.assertIn("environment: homologacao", deploy)
-        self.assertIn("uses: ./.github/actions/receive-backend", publish)
-        self.assertIn("artifact-id: ${{ needs.candidate.outputs.artifact-id }}", publish)
-        self.assertIn("jar-sha256: ${{ needs.candidate.outputs.jar-sha256 }}", publish)
-        self.assertIn("docker buildx build --platform linux/amd64 --push", publish)
-        tag = "ghcr.io/mathwidu/vanrides-projeto-inovacao-team-api:sha-$GITHUB_SHA-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
-        self.assertIn(f'--tag "{tag}"', publish)
-        self.assertIn("IMAGE_DIGEST: ${{ needs.publish_image.outputs.digest }}", deploy)
-        self.assertIn("JAR_SHA256: ${{ needs.candidate.outputs.jar-sha256 }}", deploy)
-        self.assertIn("\"deploy $GITHUB_SHA $IMAGE_DIGEST $JAR_SHA256\"", deploy)
-
-        for name in ("quick", "postgres", "java", "test", "candidate", "integration", "publish_image"):
-            job = jobs[name]
-            self.assertIn("actions/checkout@", job)
-            self.assertIn("persist-credentials: false", job)
-            self.assertIn("ref: ${{ github.sha }}", job)
-        for name in ("postgres", "java", "candidate"):
-            self.assertIn("cache: maven", jobs[name])
-            self.assertIn("cache-dependency-path: src/backend/pom.xml", jobs[name])
-
-    def test_parallel_consumers_require_one_candidate_and_no_second_package(self) -> None:
-        workflow = WORKFLOW.read_text(encoding="utf-8")
-        _, jobs = _workflow_sections(workflow)
-        candidate, integration, homologation = (jobs[name] for name in ("candidate", "integration", "homologation"))
-        called = (ROOT.parents[1] / ".github/workflows/homologacao-api.yml").read_text()
-        self.assertIn("needs: quick", candidate)
-        for job in (integration, homologation):
-            self.assertNotRegex(job, r"(?m)^    (?:if|continue-on-error):")
-            self.assertIn("needs: candidate", job)
-            self.assertIn("artifact-id: ${{ needs.candidate.outputs.artifact-id }}", job)
-            self.assertIn("jar-sha256: ${{ needs.candidate.outputs.jar-sha256 }}", job)
-        self.assertEqual(1, workflow.count("run: ./mvnw -B -ntp -DskipTests package"))
-        self.assertNotIn("mvnw", called)
-        self.assertIn("workflow_call:", called)
-        for event in ("pull_request:", "push:", "workflow_dispatch:"):
-            self.assertNotIn(event, called)
-        self.assertIn("uses: ./.github/workflows/homologacao-api.yml", homologation)
-        self.assertIn("uses: ./.github/actions/receive-backend", called)
-        self.assertIn("uses: ./.github/actions/receive-backend", integration)
-        self.assertIn("VANRIDES_EXPECTED_SOURCE_SHA: ${{ github.sha }}", integration)
-        self.assertLess(integration.index("run: node src/whatsapp/scripts/academic-integration-smoke.mjs"),
-                        integration.index('python3 scripts/check_backend_image.py --receipt'))
-        self.assertIn("path: ${{ runner.temp }}/backend-candidate/backend.jar", candidate)
-        self.assertIn("retention-days: 1", candidate)
-        self.assertNotIn("overwrite:", candidate)
+        self.assertIn("IMAGE_DIGEST: ${{ needs.build.outputs.digest }}", deploy)
+        self.assertIn("JAR_SHA256: ${{ needs.build.outputs.jar-sha256 }}", deploy)
+        self.assertIn('"deploy $GITHUB_SHA $IMAGE_DIGEST $JAR_SHA256"', deploy)
 
     def test_artifact_identity_is_checked_before_download(self) -> None:
         action = (ROOT.parents[1] / ".github/actions/receive-backend/action.yml").read_text()
@@ -960,30 +883,6 @@ class BackendCiQualityGateWiringTest(unittest.TestCase):
                         self.assertNotIn("Gate backend CI finalizado com sucesso", result.stdout)
                     else:
                         self.assertIn("Gate backend CI finalizado com sucesso", result.stdout)
-
-    def test_ci_summary_does_not_turn_failed_or_skipped_dependencies_green(self) -> None:
-        _, jobs = _workflow_sections(WORKFLOW.read_text(encoding="utf-8"))
-        result_job = jobs["result"]
-        self.assertIn("needs: [quick, test, candidate, integration, homologation]", result_job)
-        self.assertIn("if: ${{ always() }}", result_job)
-        command = _run_block(result_job)
-        with tempfile.TemporaryDirectory() as temporary:
-            summary = Path(temporary) / "summary.md"
-            names = ("QUICK", "TESTS", "CANDIDATE", "INTEGRATION", "HOMOLOGATION")
-            cases = [dict.fromkeys(names, "success")]
-            cases += [{**cases[0], name: state} for name in names
-                      for state in ("failure", "skipped", "cancelled")]
-            for states in cases:
-                with self.subTest(states=states):
-                    summary.unlink(missing_ok=True)
-                    env = {**os.environ, "GITHUB_STEP_SUMMARY": str(summary),
-                           "SOURCE_SHA": "a" * 40, **states}
-                    result = subprocess.run(["bash", "-e", "-c", command], env=env,
-                                            capture_output=True, text=True)
-                    self.assertEqual(0 if set(states.values()) == {"success"} else 1,
-                                     result.returncode, result.stderr)
-                    self.assertIn("a" * 40, summary.read_text())
-                    self.assertIn(f"| PostgreSQL | {states['TESTS']} |", summary.read_text())
 
     def test_card_gate_composes_canonical_gate_before_http_smoke(self) -> None:
         script = CARD_GATE_SCRIPT.read_text(encoding="utf-8")

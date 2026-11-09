@@ -2,8 +2,8 @@
 
 ## Escopo aprovado
 
-Um ambiente compartilhado, sem produção real, com publicação da API após os
-testes de um push na `main`. PRs validam. A primeira integração preserva o
+Um ambiente compartilhado, sem produção real, com publicação da API após a
+construção em um push na `main`. PRs verificam a construção. A primeira integração preserva o
 histórico da API já instalada e das melhorias dos colegas; não usar squash
 nem rebase para esse merge inicial. Separação de stage/produção fica para v1.0.
 
@@ -31,7 +31,7 @@ painéis de infraestrutura. O cadastro e o aceite permanecem com o participante.
   (240 tentativas/minuto) e limites por remetente continuam consumidos.
 - V39 adiciona auditoria GitHub e permite convite emitido por esse ator.
   Operações usam UUID estável para reconsulta após perda de resposta.
-- Actions publica o mesmo JAR aprovado, com imagem por digest, e usa uma chave
+- Actions publica o mesmo JAR construído, com imagem por digest, e usa uma chave
   SSH exclusiva limitada ao atualizador deste serviço. Não copia a chave do Mac.
 - O CD desta etapa atualiza **API e interface da equipe**. Worker/receptor,
   fluxos n8n e APK conservam os procedimentos próprios; alterações neles não
@@ -111,3 +111,21 @@ imagem não remove a V39. Nenhum volume, conta do bot ou fluxo de outro projeto
 - [Contrato HTTP da área](../../../src/backend/contracts/whatsapp-team-web.md).
 - [Instalação do CD](../../../deploy/homologacao/AUTOMATICO.md).
 - Issues existentes: #89, #90, #91; o card VR-HML-010 continua em andamento.
+
+## Correção do escopo da CI em 09/11/2026
+
+O primeiro push do PR #108 ainda acionou a suíte completa. Isso não correspondia
+à simplificação solicitada pelo mantenedor. A execução backend 42641554947 foi
+cancelada antes de qualquer merge ou deploy. A orientação explícita passou a ser
+seguir o Ponto API: construção da aplicação/imagem e publicação/deploy automático
+somente da main, sem testes de produto ou auxiliares nesse caminho.
+
+Os testes e a otimização dos grupos PostgreSQL não são apagados. São recursos
+para validação direcionada do desenvolvimento. Os demais workflows deixam os
+gatilhos push/pull_request. As verificações de imagem, revisão, destino e saúde
+do atualizador permanecem, pois fazem parte da própria publicação.
+
+Até esse ponto foram preparados o GitHub App (metadados, um repositório), o
+Environment restrito à main, a chave SSH de comando forçado e o secret do login.
+O comando arbitrário de terminal foi recusado pela chave dedicada. A API, o
+receptor e o banco publicados não foram atualizados nesta etapa.
