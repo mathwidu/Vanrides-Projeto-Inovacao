@@ -1,0 +1,141 @@
+version: '3.8'
+x-service: &isolado
+  networks: [canal]
+  deploy:
+    placement:
+      constraints: ["node.hostname == srv1397065"]
+    labels: { traefik.enable: 'false' }
+    resources:
+      limits: { memory: 768M, cpus: '1.0' }
+  logging: { driver: json-file, options: { max-size: 1m, max-file: '2' } }
+services:
+  db:
+    <<: *isolado
+    image: postgres@sha256:cbf42f0edc946c0bc1b8eeed62403734e1f25dc67a3491455d07a92fdb558b28
+    environment:
+      POSTGRES_DB: evolution
+      POSTGRES_USER: vanrides
+      POSTGRES_PASSWORD_FILE: /run/secrets/pg_pass
+      POSTGRES_INITDB_ARGS: --auth-host=scram-sha-256
+    secrets: [pg_pass]
+    volumes: [evo_db:/var/lib/postgresql/data]
+  cache:
+    <<: *isolado
+    image: redis@sha256:976ab0f0939b78c06d802bcd3bea44c5142ea9a756a57b861e08819817f768c8
+    command: ["redis-server", "/run/secrets/redis_conf"]
+    secrets: [redis_conf]
+  evolution:
+    <<: *isolado
+    image: evoapicloud/evolution-api:v2.3.7@sha256:1bd8afc4a6cf48822e6cf02469aeae7bd35a12a6b616eacd1291926307f4d339
+    entrypoint: ["/bin/sh", "/run/evolution-start.sh"]
+    configs: [{source: evo_start, target: /run/evolution-start.sh}]
+    secrets: [evo_key, pg_pass, redis_pass]
+    volumes: [instances:/evolution/instances]
+    logging: {driver: none}
+    environment:
+      # Evolution 2.3.7 emits local wall time with a Z suffix; UTC keeps callbacks correct.
+      TZ: UTC
+      SERVER_TYPE: http
+      SERVER_PORT: '8080'
+      SERVER_URL: https://evolution-hml:8443
+      DATABASE_PROVIDER: postgresql
+      DATABASE_CONNECTION_CLIENT_NAME: vanrides_hml
+      AUTHENTICATION_EXPOSE_IN_FETCH_INSTANCES: 'false'
+      CACHE_REDIS_ENABLED: 'true'
+      CACHE_REDIS_PREFIX_KEY: vanrides_hml
+      CACHE_REDIS_TTL: '1800'
+      CACHE_REDIS_SAVE_INSTANCES: 'false'
+      CACHE_LOCAL_ENABLED: 'false'
+      DATABASE_SAVE_DATA_INSTANCE: 'true'
+      DATABASE_SAVE_DATA_NEW_MESSAGE: 'false'
+      DATABASE_SAVE_MESSAGE_UPDATE: 'false'
+      DATABASE_SAVE_DATA_CONTACTS: 'false'
+      DATABASE_SAVE_DATA_CHATS: 'false'
+      DATABASE_SAVE_DATA_HISTORIC: 'false'
+      DATABASE_SAVE_DATA_LABELS: 'false'
+      DATABASE_SAVE_IS_ON_WHATSAPP: 'false'
+      DATABASE_DELETE_MESSAGE: 'false'
+      WEBSOCKET_ENABLED: 'false'
+      TELEMETRY_ENABLED: 'false'
+      WEBHOOK_GLOBAL_ENABLED: 'false'
+      LOG_LEVEL: ERROR,WARN
+      LOG_BAILEYS: error
+  tls:
+    <<: *isolado
+    image: nginx:1.27-alpine@sha256:65645c7bb6a0661892a8b03b89d0743208a18dd2f3f17a54ef4b76fb8e2f2a10
+    entrypoint: ["/usr/sbin/nginx"]
+    command: ["-c", "/run/evolution.conf", "-g", "daemon off;"]
+    user: "101:101"
+    read_only: true
+    configs: [{source: tls_conf,target: /run/evolution.conf}]
+    secrets:
+      - {source: tls_crt, uid: '101', mode: 0400}
+      - {source: tls_key, uid: '101', mode: 0400}
+    volumes:
+      - {type: tmpfs, target: /tmp, tmpfs: {size: 8388608}}
+    networks:
+      canal: {aliases: [evolution-hml]}
+  ingress:
+    <<: *isolado
+    image: node@sha256:48e4b67d85f87bd551df43704e24d252f56cc5f8e9718841aace50f19948f0f9
+    user: "1000:1000"
+    read_only: true
+    entrypoint: ["node", "/opt/src/lab/live-ingress/main.mjs"]
+    environment: {WA120_INGRESS_CONFIG_FILE: /run/secrets/ingress}
+    secrets: [{source: ingress, uid: '1000', gid: '1000', mode: 0600}]
+    volumes:
+      - {type: bind, source: "${VANRIDES_WHATSAPP_SOURCE:?Origem do código}", target: /opt/src, read_only: true}
+  worker:
+    <<: *isolado
+    image: node@sha256:48e4b67d85f87bd551df43704e24d252f56cc5f8e9718841aace50f19948f0f9
+    user: "1000:1000"
+    read_only: true
+    entrypoint: ["node", "/opt/src/worker/main.mjs"]
+    volumes:
+      - {type: bind, source: "${VANRIDES_WHATSAPP_SOURCE:?Origem do código}", target: /opt/src, read_only: true}
+    networks:
+      canal: {}
+      executor: {aliases: [vanrides-hml-worker]}
+    environment:
+      NODE_EXTRA_CA_CERTS: /run/secrets/tls_ca
+      WA070_ENVIRONMENT: vanrides-mvp-hml
+      WA070_LOCAL_MODE: 'false'
+      WA070_BACKEND_BASE_URL: https://vanrides-inovacao-api.matheusduarte.dev.br
+      WA070_EVOLUTION_BASE_URL: https://evolution-hml:8443
+      WA070_HOST: 0.0.0.0
+      WA070_PORT: '7080'
+      WA070_INSTANCE: vanrides-hml
+      WA070_MODEL_MODE: disabled
+      WA070_CONVERSATION_TOKEN_FILE: /run/secrets/conversation
+      WA070_DELIVERY_TOKEN_FILE: /run/secrets/delivery
+      WA070_CONTROL_TOKEN_FILE: /run/secrets/control
+      WA070_EVOLUTION_API_KEY_FILE: /run/secrets/evo_key
+      WA100_JOB_TOKEN_FILE: /run/secrets/job
+    secrets:
+      - {source: tls_ca, uid: '1000', mode: 0444}
+      - {source: conversation, uid: '1000', gid: '1000', mode: 0600}
+      - {source: delivery, uid: '1000', gid: '1000', mode: 0600}
+      - {source: control, uid: '1000', gid: '1000', mode: 0600}
+      - {source: evo_instance, target: evo_key, uid: '1000', gid: '1000', mode: 0600}
+      - {source: job, uid: '1000', gid: '1000', mode: 0600}
+networks:
+  canal: {driver: overlay, driver_opts: {encrypted: ''}}
+  executor: {external: true, name: n8n_internal}
+volumes: {evo_db: {}, instances: {}}
+configs:
+  evo_start: {file: ./evolution-start.sh}
+  tls_conf: {file: ./tls.conf}
+secrets:
+  pg_pass: {external: true, name: vanrides-hml-canal-pg_pass-v1}
+  redis_pass: {external: true, name: vanrides-hml-canal-redis_pass-v1}
+  redis_conf: {external: true, name: vanrides-hml-canal-redis_conf-v1}
+  evo_key: {external: true, name: vanrides-hml-canal-evo_key-v1}
+  tls_crt: {external: true, name: vanrides-hml-canal-tls_crt-v1}
+  tls_key: {external: true, name: vanrides-hml-canal-tls_key-v1}
+  tls_ca: {external: true, name: vanrides-hml-canal-tls_ca-v1}
+  ingress: {external: true, name: vanrides-hml-canal-ingress-v2}
+  conversation: {external: true, name: vanrides-hml-canal-conversation-v1}
+  delivery: {external: true, name: vanrides-hml-canal-delivery-v1}
+  control: {external: true, name: vanrides-hml-canal-control-v1}
+  job: {external: true, name: vanrides-hml-canal-job-v1}
+  evo_instance: {external: true, name: vanrides-hml-canal-evo_instance-v1}

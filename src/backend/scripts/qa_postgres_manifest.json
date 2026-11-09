@@ -1,0 +1,408 @@
+{
+  "schemaVersion": 1,
+  "groups": 8,
+  "balance": "longest-first-then-class-name; lowest-total-then-group-number",
+  "measurement": {
+    "runId": 41918379045,
+    "sourceHead": "d4716243070f55f7f44f94ee006e69476a0b202b",
+    "testedMerge": "b1b8baf0253818bc424facd7da57abf01d566f53",
+    "scope": "Surefire class elapsed seconds from one successful run; zero marks an unmeasured class; not an execution deadline"
+  },
+  "classes": [
+    {
+      "className": "com.vanrides.vanrides.VanridesApplicationContextIntegrationTest",
+      "tests": 3,
+      "seconds": 13.97
+    },
+    {
+      "className": "com.vanrides.vanrides.repository.CompanyAdminBootstrapConcurrencyIntegrationTest",
+      "tests": 1,
+      "seconds": 3.094
+    },
+    {
+      "className": "com.vanrides.vanrides.repository.DeviceTokenRegistrationConcurrencyIntegrationTest",
+      "tests": 2,
+      "seconds": 5.0
+    },
+    {
+      "className": "com.vanrides.vanrides.repository.DeviceTokenRepositoryIntegrationTest",
+      "tests": 1,
+      "seconds": 3.387
+    },
+    {
+      "className": "com.vanrides.vanrides.repository.EmailVerificationConcurrencyIntegrationTest",
+      "tests": 5,
+      "seconds": 12.53
+    },
+    {
+      "className": "com.vanrides.vanrides.repository.EmailVerificationConfirmationConcurrencyIntegrationTest",
+      "tests": 3,
+      "seconds": 8.61
+    },
+    {
+      "className": "com.vanrides.vanrides.repository.LegacyCompanyMigrationIntegrationTest",
+      "tests": 2,
+      "seconds": 4.182
+    },
+    {
+      "className": "com.vanrides.vanrides.repository.LoginIdentityConcurrencyIntegrationTest",
+      "tests": 4,
+      "seconds": 8.797
+    },
+    {
+      "className": "com.vanrides.vanrides.repository.LoginIdentityDeviceTokenConcurrencyIntegrationTest",
+      "tests": 4,
+      "seconds": 8.457
+    },
+    {
+      "className": "com.vanrides.vanrides.repository.LoginIdentityMigrationIntegrationTest",
+      "tests": 3,
+      "seconds": 6.124
+    },
+    {
+      "className": "com.vanrides.vanrides.repository.LoginIdentityMigrationPreflightIntegrationTest",
+      "tests": 4,
+      "seconds": 6.026
+    },
+    {
+      "className": "com.vanrides.vanrides.repository.LoginIdentityTriggerIntegrationTest",
+      "tests": 4,
+      "seconds": 7.588
+    },
+    {
+      "className": "com.vanrides.vanrides.repository.RefreshTokenRepositoryIntegrationTest",
+      "tests": 1,
+      "seconds": 8.543
+    },
+    {
+      "className": "com.vanrides.vanrides.repository.RepositoryIntegrationTest",
+      "tests": 9,
+      "seconds": 3.336
+    },
+    {
+      "className": "com.vanrides.vanrides.service.PassengerTenantDeleteConcurrencyIntegrationTest",
+      "tests": 3,
+      "seconds": 9.935
+    },
+    {
+      "className": "com.vanrides.vanrides.whatsapp.auth.WaFoundationIntegrationTest",
+      "tests": 14,
+      "seconds": 24.54
+    },
+    {
+      "className": "com.vanrides.vanrides.whatsapp.auth.WaHttpIntegrationTest",
+      "tests": 9,
+      "seconds": 4.064
+    },
+    {
+      "className": "com.vanrides.vanrides.whatsapp.auth.WaTeamApiHttpIntegrationTest",
+      "tests": 7,
+      "seconds": 4.213
+    },
+    {
+      "className": "com.vanrides.vanrides.whatsapp.operator.WaAttendanceDeliveryResetIntegrationTest",
+      "tests": 1,
+      "seconds": 3.683
+    },
+    {
+      "className": "com.vanrides.vanrides.whatsapp.operator.WaConversationResetIntegrationTest",
+      "tests": 1,
+      "seconds": 2.747
+    },
+    {
+      "className": "com.vanrides.vanrides.whatsapp.operator.WaOperatorAdmissionPostgresIntegrationTest",
+      "tests": 8,
+      "seconds": 3.812
+    },
+    {
+      "className": "com.vanrides.vanrides.whatsapp.operator.WaOperatorBatchPostgresIntegrationTest",
+      "tests": 6,
+      "seconds": 2.997
+    },
+    {
+      "className": "com.vanrides.vanrides.whatsapp.operator.WaOperatorEmptyCohortPostgresIntegrationTest",
+      "tests": 1,
+      "seconds": 2.819
+    },
+    {
+      "className": "com.vanrides.vanrides.whatsapp.operator.WaOperatorPostgresIntegrationTest",
+      "tests": 15,
+      "seconds": 3.991
+    },
+    {
+      "className": "com.vanrides.vanrides.whatsapp.pairing.WaPairingConcurrencyIntegrationTest",
+      "tests": 7,
+      "seconds": 12.35
+    },
+    {
+      "className": "com.vanrides.vanrides.whatsapp.pairing.WaPairingServiceIntegrationTest",
+      "tests": 15,
+      "seconds": 25.95
+    },
+    {
+      "className": "com.vanrides.vanrides.whatsapp.persistence.WhatsappMigrationIntegrationTest",
+      "tests": 4,
+      "seconds": 7.732
+    },
+    {
+      "className": "com.vanrides.vanrides.whatsapp.persistence.WhatsappSchemaConcurrencyIntegrationTest",
+      "tests": 5,
+      "seconds": 7.153
+    },
+    {
+      "className": "com.vanrides.vanrides.whatsapp.persistence.WhatsappSchemaInvariantIntegrationTest",
+      "tests": 10,
+      "seconds": 12.92
+    },
+    {
+      "className": "com.vanrides.vanrides.whatsapp.team.TeamAdmissionIntegrationTest",
+      "tests": 6,
+      "seconds": 0
+    },
+    {
+      "className": "com.vanrides.vanrides.whatsapp.transport.WaApproachIntegrationTest",
+      "tests": 18,
+      "seconds": 42.04
+    },
+    {
+      "className": "com.vanrides.vanrides.whatsapp.transport.WaAttendanceCalendarIntegrationTest",
+      "tests": 10,
+      "seconds": 18.93
+    },
+    {
+      "className": "com.vanrides.vanrides.whatsapp.transport.WaAttendanceCalendarStateIntegrationTest",
+      "tests": 10,
+      "seconds": 20.26
+    },
+    {
+      "className": "com.vanrides.vanrides.whatsapp.transport.WaAttendanceConversationIntegrationTest",
+      "tests": 16,
+      "seconds": 49.61
+    },
+    {
+      "className": "com.vanrides.vanrides.whatsapp.transport.WaAttendanceCutoffIntegrationTest",
+      "tests": 8,
+      "seconds": 25.39
+    },
+    {
+      "className": "com.vanrides.vanrides.whatsapp.transport.WaAttendanceDeliveryFencingIntegrationTest",
+      "tests": 7,
+      "seconds": 22.79
+    },
+    {
+      "className": "com.vanrides.vanrides.whatsapp.transport.WaAttendanceDeliveryHistoryIntegrationTest",
+      "tests": 8,
+      "seconds": 30.19
+    },
+    {
+      "className": "com.vanrides.vanrides.whatsapp.transport.WaAttendanceDeliveryIntegrationTest",
+      "tests": 10,
+      "seconds": 33.56
+    },
+    {
+      "className": "com.vanrides.vanrides.whatsapp.transport.WaAttendanceJobsIntegrationTest",
+      "tests": 10,
+      "seconds": 19.08
+    },
+    {
+      "className": "com.vanrides.vanrides.whatsapp.transport.WaAttendanceJobsPagingIntegrationTest",
+      "tests": 7,
+      "seconds": 33.2
+    },
+    {
+      "className": "com.vanrides.vanrides.whatsapp.transport.WaAttendanceOwnershipIntegrationTest",
+      "tests": 7,
+      "seconds": 39.04
+    },
+    {
+      "className": "com.vanrides.vanrides.whatsapp.transport.WaConversationCommandsIntegrationTest",
+      "tests": 14,
+      "seconds": 26.38
+    },
+    {
+      "className": "com.vanrides.vanrides.whatsapp.transport.WaConversationFencingIntegrationTest",
+      "tests": 7,
+      "seconds": 14.08
+    },
+    {
+      "className": "com.vanrides.vanrides.whatsapp.transport.WaDeliveryCaseOperatorIntegrationTest",
+      "tests": 7,
+      "seconds": 14.15
+    },
+    {
+      "className": "com.vanrides.vanrides.whatsapp.transport.WaDeliveryConnectionFencingIntegrationTest",
+      "tests": 4,
+      "seconds": 7.692
+    },
+    {
+      "className": "com.vanrides.vanrides.whatsapp.transport.WaDeliveryConnectionIntegrationTest",
+      "tests": 11,
+      "seconds": 19.18
+    },
+    {
+      "className": "com.vanrides.vanrides.whatsapp.transport.WaDeliveryQuotaFencingIntegrationTest",
+      "tests": 3,
+      "seconds": 10.07
+    },
+    {
+      "className": "com.vanrides.vanrides.whatsapp.transport.WaDeliveryQuotaIntegrationTest",
+      "tests": 10,
+      "seconds": 39.92
+    },
+    {
+      "className": "com.vanrides.vanrides.whatsapp.transport.WaDeliveryRecoveryFencingIntegrationTest",
+      "tests": 4,
+      "seconds": 8.647
+    },
+    {
+      "className": "com.vanrides.vanrides.whatsapp.transport.WaDeliveryRecoveryIntegrationTest",
+      "tests": 11,
+      "seconds": 24.53
+    },
+    {
+      "className": "com.vanrides.vanrides.whatsapp.transport.WaDeliveryRetryFencingIntegrationTest",
+      "tests": 6,
+      "seconds": 11.77
+    },
+    {
+      "className": "com.vanrides.vanrides.whatsapp.transport.WaDeliveryRetryIntegrationTest",
+      "tests": 12,
+      "seconds": 24.35
+    },
+    {
+      "className": "com.vanrides.vanrides.whatsapp.transport.WaDeliveryRetryPrivateIntegrationTest",
+      "tests": 5,
+      "seconds": 12.25
+    },
+    {
+      "className": "com.vanrides.vanrides.whatsapp.transport.WaDriverFencingIntegrationTest",
+      "tests": 9,
+      "seconds": 30.2
+    },
+    {
+      "className": "com.vanrides.vanrides.whatsapp.transport.WaDriverInvitesIntegrationTest",
+      "tests": 11,
+      "seconds": 25.42
+    },
+    {
+      "className": "com.vanrides.vanrides.whatsapp.transport.WaDriverLocationIntegrationTest",
+      "tests": 17,
+      "seconds": 41.04
+    },
+    {
+      "className": "com.vanrides.vanrides.whatsapp.transport.WaDriverRoutinesIntegrationTest",
+      "tests": 16,
+      "seconds": 44.48
+    },
+    {
+      "className": "com.vanrides.vanrides.whatsapp.transport.WaDriverWizardIntegrationTest",
+      "tests": 16,
+      "seconds": 39.98
+    },
+    {
+      "className": "com.vanrides.vanrides.whatsapp.transport.WaEvolutionIngressIntegrationTest",
+      "tests": 16,
+      "seconds": 30.02
+    },
+    {
+      "className": "com.vanrides.vanrides.whatsapp.transport.WaInboxTransportIntegrationTest",
+      "tests": 19,
+      "seconds": 10.03
+    },
+    {
+      "className": "com.vanrides.vanrides.whatsapp.transport.WaOutboxTransportIntegrationTest",
+      "tests": 19,
+      "seconds": 34.6
+    },
+    {
+      "className": "com.vanrides.vanrides.whatsapp.transport.WaPassengerBusinessIntegrationTest",
+      "tests": 8,
+      "seconds": 45.76
+    },
+    {
+      "className": "com.vanrides.vanrides.whatsapp.transport.WaPassengerDeliveryFencingIntegrationTest",
+      "tests": 11,
+      "seconds": 19.76
+    },
+    {
+      "className": "com.vanrides.vanrides.whatsapp.transport.WaPassengerDeliveryHistoryIntegrationTest",
+      "tests": 5,
+      "seconds": 12.45
+    },
+    {
+      "className": "com.vanrides.vanrides.whatsapp.transport.WaPassengerDeliveryIntegrationTest",
+      "tests": 13,
+      "seconds": 27.23
+    },
+    {
+      "className": "com.vanrides.vanrides.whatsapp.transport.WaPassengerFencingIntegrationTest",
+      "tests": 11,
+      "seconds": 37.17
+    },
+    {
+      "className": "com.vanrides.vanrides.whatsapp.transport.WaPassengerInputIntegrationTest",
+      "tests": 6,
+      "seconds": 0
+    },
+    {
+      "className": "com.vanrides.vanrides.whatsapp.transport.WaPassengerIsolationIntegrationTest",
+      "tests": 4,
+      "seconds": 15.92
+    },
+    {
+      "className": "com.vanrides.vanrides.whatsapp.transport.WaPassengerSnapshotsIntegrationTest",
+      "tests": 2,
+      "seconds": 13.95
+    },
+    {
+      "className": "com.vanrides.vanrides.whatsapp.transport.WaPassengerWizardIntegrationTest",
+      "tests": 11,
+      "seconds": 39.37
+    },
+    {
+      "className": "com.vanrides.vanrides.whatsapp.transport.WaRunConversationIntegrationTest",
+      "tests": 8,
+      "seconds": 22.5
+    },
+    {
+      "className": "com.vanrides.vanrides.whatsapp.transport.WaRunGpsDeliveryFencingIntegrationTest",
+      "tests": 6,
+      "seconds": 14.04
+    },
+    {
+      "className": "com.vanrides.vanrides.whatsapp.transport.WaRunGpsDeliveryIntegrationTest",
+      "tests": 5,
+      "seconds": 11.92
+    },
+    {
+      "className": "com.vanrides.vanrides.whatsapp.transport.WaRunPreparationIntegrationTest",
+      "tests": 8,
+      "seconds": 22.17
+    },
+    {
+      "className": "com.vanrides.vanrides.whatsapp.transport.WaTrackingActivationIntegrationTest",
+      "tests": 6,
+      "seconds": 13.35
+    },
+    {
+      "className": "com.vanrides.vanrides.whatsapp.transport.WaTrackingEnvironmentIntegrationTest",
+      "tests": 1,
+      "seconds": 3.356
+    },
+    {
+      "className": "com.vanrides.vanrides.whatsapp.transport.WaTrackingLifecycleIntegrationTest",
+      "tests": 6,
+      "seconds": 13.68
+    },
+    {
+      "className": "com.vanrides.vanrides.whatsapp.transport.WaTrackingSamplesIntegrationTest",
+      "tests": 7,
+      "seconds": 15.78
+    },
+    {
+      "className": "com.vanrides.vanrides.whatsapp.transport.WaTransportTestDatabaseIntegrationTest",
+      "tests": 2,
+      "seconds": 6.276
+    }
+  ]
+}

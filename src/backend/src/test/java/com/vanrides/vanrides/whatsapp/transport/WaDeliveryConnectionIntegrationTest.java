@@ -110,7 +110,7 @@ class WaDeliveryConnectionIntegrationTest {
         assertThat(f.count("delivery_connection")).isZero();
     }
     @Test void migrationAddsNoImplicitOpenAndDatabasePinsTheSourceCredentialScope() {
-        assertThat(f.h.jdbc.queryForObject("SELECT version FROM public.flyway_schema_history WHERE success ORDER BY installed_rank DESC LIMIT 1", String.class)).isEqualTo("37");
+        assertThat(f.h.jdbc.queryForObject("SELECT version FROM public.flyway_schema_history WHERE success ORDER BY installed_rank DESC LIMIT 1", String.class)).isEqualTo("39");
         assertThat(f.count("delivery_connection")).isZero(); f.connection("open");
         assertThatThrownBy(() -> f.h.jdbc.update("UPDATE wa.delivery_connection SET environment='other-test'"))
             .isInstanceOf(DataIntegrityViolationException.class);

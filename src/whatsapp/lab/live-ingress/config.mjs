@@ -1,6 +1,7 @@
 import { constants, openSync, fstatSync, readSync, closeSync } from 'node:fs';
 import { isAbsolute } from 'node:path';
 import { strictJson, exact, timestamp } from './strict-json.mjs';
+import { validateHmlConfig } from './hml-config.mjs';
 
 export const pn = value => typeof value === 'string' && /^[0-9]{1,32}@s\.whatsapp\.net$/.test(value);
 export const lid = value => typeof value === 'string' && /^[0-9]{1,32}@lid$/.test(value);
@@ -19,6 +20,7 @@ function privateHost(value) {
 
 export function validateConfig(raw) {
   try {
+    if (Object.hasOwn(raw ?? {}, 'mode')) return validateHmlConfig(raw);
     if (!exact(raw, ['instance', 'webhookToken', 'channelToken', 'apiOrigin', 'startsAt', 'endsAt', 'contacts', 'listenHost', 'listenPort'])
         || typeof raw.instance !== 'string' || !/^[A-Za-z0-9_-]{1,80}$/.test(raw.instance)
         || !token(raw.webhookToken) || !token(raw.channelToken) || raw.webhookToken === raw.channelToken) invalid();

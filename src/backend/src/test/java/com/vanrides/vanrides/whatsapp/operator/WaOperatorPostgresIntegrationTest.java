@@ -8,32 +8,16 @@ import com.vanrides.vanrides.whatsapp.auth.WaPrincipal;
 import com.vanrides.vanrides.whatsapp.commands.WaInboxAccess;
 import com.vanrides.vanrides.whatsapp.config.WaClock;
 import com.vanrides.vanrides.whatsapp.config.WaSettings;
-import java.nio.charset.StandardCharsets;
-import java.nio.ByteBuffer;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Timestamp;
-import java.time.Instant;
-import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicReference;
-import javax.sql.DataSource;
-import org.flywaydb.core.Flyway;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 import org.springframework.aop.support.AopUtils;
-import org.springframework.context.annotation.AnnotationConfigApplicationContext;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.core.env.MapPropertySource;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.datasource.DataSourceTransactionManager;
-import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
@@ -41,67 +25,12 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import static org.assertj.core.api.Assertions.*;
 
 @Testcontainers(disabledWithoutDocker = true)
-class WaOperatorPostgresIntegrationTest {
-    @Container static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:16-alpine")
-            .withDatabaseName("wa_operator_test").withUsername("wa_operator_test").withPassword("synthetic-container-password");
-    private AnnotationConfigApplicationContext context;
-    private JdbcTemplate jdbc;
-    private WaOperatorService service;
-    private WaCrypto crypto;
-    private String operator;
-    private Instant now;
-    private UUID batch;
-    private WaOperatorMutableClock mutableClock;
-    @TempDir Path directory;
-    private static final String INSTANCE = "synthetic_operator_instance";
+class WaOperatorPostgresIntegrationTest extends WaOperatorPostgresTestSupport {
+    @Container static final PostgreSQLContainer<?> POSTGRES = postgres("wa_operator_test");
 
-    @Configuration(proxyBeanMethods = false) @EnableTransactionManagement
-    static class Transactions { }
+    @BeforeAll static void migrate() { migrate(POSTGRES); }
+    @Override protected PostgreSQLContainer<?> database() { return POSTGRES; }
 
-    @BeforeAll static void migrate() {
-        Flyway.configure().dataSource(POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword())
-                .locations("classpath:db/migration").load().migrate();
-    }
-
-    @BeforeEach void prepare() {
-        operator = WaCrypto.randomToken(); now = Instant.now(); batch = UUID.randomUUID();
-        mutableClock = new WaOperatorMutableClock(now);
-        context = application("test", now.plusSeconds(3600));
-        jdbc = context.getBean(JdbcTemplate.class); service = context.getBean(WaOperatorService.class);
-        crypto = context.getBean(WaCrypto.class);
-    }
-    @AfterEach void close() { if (context != null) context.close(); }
-
-    private AnnotationConfigApplicationContext application(String environment, Instant expiry) {
-        var app = new AnnotationConfigApplicationContext();
-        app.getEnvironment().getPropertySources().addFirst(new MapPropertySource("private-test-values", Map.of(
-                "spring.main.web-application-type", "none", "vanrides.wa.enabled", "true",
-                "vanrides.wa.environment", environment, "vanrides.wa.public-base-url", "http://127.0.0.1:18080",
-                "vanrides.wa.hash-key", WaCrypto.randomToken(), "vanrides.wa.response-key", WaCrypto.randomToken(),
-                "vanrides.wa.operator-credential", operator, "vanrides.wa.operator-expires-at", expiry.toString())));
-        app.register(Transactions.class);
-        app.registerBean(DataSource.class, () -> new DriverManagerDataSource(
-                POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword()));
-        app.registerBean(JdbcTemplate.class, () -> new JdbcTemplate(app.getBean(DataSource.class)));
-        app.registerBean(PlatformTransactionManager.class, () -> new DataSourceTransactionManager(app.getBean(DataSource.class)));
-        app.registerBean(WaClock.class, () -> new WaClock(mutableClock.source()));
-        app.register(WaSettings.class, WaCrypto.class, WaOperatorMode.class, WaOperatorFixtures.class,
-                WaOperatorReset.class, WaOperatorRevocation.class, WaOperatorService.class);
-        app.refresh(); return app;
-    }
-
-    private ObjectNode request(String operation) {
-        return WaJson.MAPPER.createObjectNode().put("environment", context.getBean(WaSettings.class).environment())
-                .put("operation", operation).put("batchId", batch.toString()).put("operatorCredential", operator);
-    }
-    private static WaOperatorRequest parse(ObjectNode input) {
-        return WaOperatorRequest.parse(WaJson.write(input).getBytes(StandardCharsets.UTF_8));
-    }
-    private ObjectNode execute(ObjectNode input) {
-        AtomicReference<ObjectNode> output = new AtomicReference<>();
-        service.execute(parse(input), value -> output.set(value.deepCopy()));
-        return output.get();
-    }
     private void cohort() { execute(request("create-test-cohort").put("synthetic", true)); }
     private ObjectNode provision(String principal) {
         return execute(request("provision-service-credential").put("principal", principal)
@@ -111,7 +40,6 @@ class WaOperatorPostgresIntegrationTest {
         return request("seed-test-data").put("identityId", identity.toString()).put("inboxEventId", UUID.randomUUID().toString())
                 .put("workerCredentialId", worker.toString()).put("leaseExpiresAt", now.plusSeconds(60).toString());
     }
-    private long count(String sql, Object... args) { return jdbc.queryForObject(sql, Long.class, args); }
 
     @Test void transactionProxyAuthenticatesOperatorAndProvisionsSeparateScopedExpiringCredential() {
         assertThat(AopUtils.isAopProxy(service)).isTrue();
@@ -344,6 +272,4 @@ class WaOperatorPostgresIntegrationTest {
             """, UUID.randomUUID(), identity, event, UUID.randomUUID().toString(), WaCrypto.digest("synthetic-command"),
                 Timestamp.from(now), Timestamp.from(now.plusSeconds(86400)));
     }
-
-
 }

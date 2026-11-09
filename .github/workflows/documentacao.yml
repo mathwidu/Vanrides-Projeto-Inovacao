@@ -1,11 +1,8 @@
-name: Documentação e backlog
-on:
-  push:
-    branches: [main]
-    paths: ['docs/**', '*.md', '*.docx', '*.xlsx', 'scripts/backlog*.py', 'scripts/check_repository.py', '.github/workflows/documentacao.yml']
-  pull_request:
-    paths: ['docs/**', '*.md', '*.docx', '*.xlsx', 'scripts/backlog*.py', 'scripts/check_repository.py', '.github/workflows/documentacao.yml']
+name: Verificacao opcional da documentacao
+# Fora do CI/CD automatico; executar apenas em validacao direcionada.
+'on':
   workflow_dispatch:
+
 permissions:
   contents: read
 concurrency:

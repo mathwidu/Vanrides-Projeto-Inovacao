@@ -14,8 +14,9 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @Testcontainers(disabledWithoutDocker = true)
 class WaDriverRoutinesIntegrationTest {
     @Container static final PostgreSQLContainer<?> POSTGRES = WaTransportTestSupport.postgres("wa_driver_routines");
+    private static final WaTransportTestDatabase DATABASE = new WaTransportTestDatabase(POSTGRES);
     WaDriverTestSupport f;
-    @BeforeEach void setup() { f = new WaDriverTestSupport(POSTGRES); }
+    @BeforeEach void setup() { f = new WaDriverTestSupport(DATABASE.fixture()); }
     @Test void editsRoutineWithoutMutatingExistingRunSnapshot() {
         UUID actor = f.driver(), routine = f.routine(actor), run = run(actor, routine, "TRACKING");
         String before = f.s.string("SELECT snapshot_json::text FROM wa.operation_run WHERE id=?", run);

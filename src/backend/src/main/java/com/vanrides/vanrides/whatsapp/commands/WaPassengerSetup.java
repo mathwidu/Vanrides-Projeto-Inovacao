@@ -18,6 +18,13 @@ import java.util.UUID;
 
 /** Passenger conversation seam. Offer is computed again under the same transactional authority. */
 final class WaPassengerSetup {
+    private static final String INVITATION_HELP =
+            "Seu perfil de passageiro está pronto, mas você ainda não tem vínculo com um motorista."
+                    + " Peça ao seu motorista um convite de passageiro do VanRides e envie esse"
+                    + " convite aqui. Você vai revisar o motorista, as rotinas e o ponto de embarque;"
+                    + " o vínculo depende da aprovação do motorista. Para atendimento, escreva"
+                    + " FALAR COM SUPORTE.";
+
     static final Set<String> COMMANDS =
             Set.of(
                     "ADVANCE_PASSENGER_SETUP",
@@ -36,6 +43,7 @@ final class WaPassengerSetup {
     private final WaPassengerDraftStore store;
     private final WaPassengerData data;
     private final WaPassengerWizard wizard;
+    private final WaPassengerReview review;
     private final WaPassengerMutations mutations;
 
     WaPassengerSetup(JdbcTemplate jdbc, WaClock clock, WaCrypto crypto, WaSettings settings) {
@@ -44,6 +52,7 @@ final class WaPassengerSetup {
         store = new WaPassengerDraftStore(jdbc, clock, crypto);
         data = new WaPassengerData(jdbc, clock, settings);
         wizard = new WaPassengerWizard(data);
+        review = new WaPassengerReview(data);
         mutations = new WaPassengerMutations(data);
     }
 
@@ -174,7 +183,7 @@ final class WaPassengerSetup {
             String response = WaPassengerTexts.prompt(draft);
             if (draft.path("stage").asText().equals("REVIEW")) {
                 String target = data.snapshot(actor.identityId(), draft, event);
-                reviewPoint(actor, event, draft);
+                review.enrich(actor, event, draft);
                 String marker = store.marker(actor, event, draft, outbox, target);
                 response = WaPassengerTexts.review(draft, marker);
                 if (response.codePointCount(0, response.length()) > 1900) {
@@ -189,49 +198,6 @@ final class WaPassengerSetup {
             return new Result(WaDecision.ok(Map.of("changed", true)), lead + response, null);
         } catch (WaProblem failure) {
             return recover(actor, event, draft, failure);
-        }
-    }
-
-    private void reviewPoint(WaProfileState actor, WaInboxAccess.Context event, ObjectNode draft) {
-        ObjectNode pin = null;
-        if (draft.has("linkId")) {
-            draft.put(
-                    "selectionSummary",
-                    data.selectionSummary(UUID.fromString(draft.path("linkId").asText())));
-        }
-        if (draft.has("sourceEvent")) {
-            pin = data.pin(actor.identityId(), draft.path("sourceEvent").asText(), event.eventId());
-        } else {
-            if (draft.has("pickupId")) {
-                pin =
-                        data.point(
-                                UUID.fromString(draft.path("linkId").asText()),
-                                UUID.fromString(draft.path("pickupId").asText()),
-                                false);
-                if (pin.hasNonNull("reference_text")) {
-                    draft.put("reference", pin.path("reference_text").asText());
-                }
-                if (pin.hasNonNull("label")) {
-                    draft.put("pointLabel", pin.path("label").asText());
-                }
-            } else {
-                if (draft.has("commonId")) {
-                    var values = data.commons(UUID.fromString(draft.path("driverId").asText()));
-                    for (var value : values) {
-                        if (value.path("id").asText().equals(draft.path("commonId").asText())) {
-                            pin = (ObjectNode) value;
-                        }
-                    }
-                }
-            }
-        }
-        if (pin != null) {
-            draft.put(
-                    "mapUrl",
-                    "https://www.google.com/maps?q="
-                            + pin.path("latitude").asDouble()
-                            + ","
-                            + pin.path("longitude").asDouble());
         }
     }
 
@@ -270,17 +236,29 @@ final class WaPassengerSetup {
             }
         }
         store.save(actor, event, draft);
+        String invitation = draft.isEmpty() ? invitationHelp(actor) : null;
         return new Result(
                 WaDecision.error(failure.code()),
-                "Essa proposta não pode mais ser aplicada. Nenhum vínculo ou ponto foi aprovado."
-                        + "\n\nEnvie PASSAGEIROS para revisar como motorista, CORRIGIR PONTO como"
-                        + " passageiro vinculado, ou um novo convite para retomar seu cadastro.",
+                invitation != null
+                        ? invitation
+                        : "Essa proposta não pode mais ser aplicada. Nenhum vínculo ou ponto foi aprovado."
+                                + "\n\nEnvie PASSAGEIROS para revisar como motorista, CORRIGIR PONTO como"
+                                + " passageiro vinculado, ou um novo convite para retomar seu cadastro.",
                 null);
     }
 
     String help(WaProfileState actor) {
         ObjectNode draft = store.load(actor.identityId());
-        return draft.isEmpty() ? null : WaPassengerTexts.prompt(draft);
+        return draft.isEmpty() ? invitationHelp(actor) : WaPassengerTexts.prompt(draft);
+    }
+
+    private String invitationHelp(WaProfileState actor) {
+        return actor.role().equals("PASSENGER")
+                        && actor.status().equals("ACTIVE")
+                        && actor.name() != null
+                        && WaOnboardingCommands.NOTICE_VERSION.equals(actor.noticeVersion())
+                        && data.links(actor.identityId(), false).isEmpty()
+                ? INVITATION_HELP : null;
     }
 
     static Result unavailable() {

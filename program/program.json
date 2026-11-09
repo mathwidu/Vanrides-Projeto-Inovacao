@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-11-02",
+  "updatedAt": "2026-11-03",
   "productDecision": {
     "pilot": "HOLD",
     "production": "HOLD",
@@ -1361,7 +1361,7 @@
         ]
       },
       "blockers": [
-        "Disponibilizar uma linha sob controle do proprietario, registrar/parear a conta dedicada e comprovar envio autorizado e callback real; proprietario informou que precisara de outro numero, ainda indisponivel."
+        "Numero dedicado ativo no WhatsApp Business, confirmado pelo proprietario. Pendente preparar ambiente do monorepo, parear a conta e comprovar envio autorizado e callback real."
       ],
       "commits": [],
       "evidence": []
@@ -1370,7 +1370,7 @@
       "id": "VR-WA-130-APPROACH",
       "epic": "VR-WA-MVP",
       "title": "Entregar aproximação útil por passageiro",
-      "status": "analyzed",
+      "status": "waiting_human",
       "priority": 14,
       "repositories": [
         "coordination",
@@ -1391,7 +1391,22 @@
           ".dev-harness/status.json",
           "docs/plans/2026-10-28-whatsapp-mvp/",
           "src/whatsapp/",
-          "docs/runbooks/whatsapp-mvp/"
+          "docs/runbooks/whatsapp-mvp/",
+          "docs/backlog/acompanhamento.json",
+          "docs/backlog/criterios.json",
+          "docs/07-como-ler-o-backlog.md",
+          "docs/08-especificacoes-mvp.md",
+          "docs/desenvolvimento/",
+          "docs/04-plano-de-entrega.md",
+          "README.md",
+          "CONTRIBUTING.md",
+          "scripts/check_backend.sh",
+          ".github/workflows/backend.yml",
+          ".github/workflows/laboratorio-whatsapp.yml",
+          "docs/03-testes-e-resultados.md",
+          "docs/01-produto-e-experiencia.md",
+          "docs/02-arquitetura-e-decisoes.md",
+          "docs/06-canvas-mvp.md"
         ],
         "backend": [
           "src/main/",
@@ -1399,12 +1414,20 @@
           "contracts/whatsapp-mvp/",
           "backlog/",
           "docs/",
-          "pom.xml"
+          "pom.xml",
+          "scripts/"
         ]
       },
-      "blockers": [],
-      "commits": [],
-      "evidence": []
+      "blockers": [
+        "Validar antecedência, cobertura e destinatário em percurso com rotina revisada e participantes consentidos. A prova física do iPhone está pausada."
+      ],
+      "commits": [
+        "backend:dd12cf0b233e2c16fba334d84fc2ec50f1e7458d",
+        "coordination:cd45d7404d22c426b202584b20e5e80d1e8f2f93"
+      ],
+      "evidence": [
+        "program/evidence/VR-WA-130-APPROACH.md"
+      ]
     },
     {
       "id": "VR-WA-140-FINISH-SUPPORT",
@@ -5864,10 +5887,75 @@
       "evidence": [
         "program/evidence/VR-PGM-002-ACADEMIC-MIGRATION-001.md"
       ]
+    },
+    {
+      "id": "VR-HML-010-TEAM-API",
+      "epic": "VR-WA-MVP",
+      "title": "Publicar a API do MVP para todo o grupo",
+      "status": "in_progress",
+      "priority": 15,
+      "repositories": [
+        "coordination",
+        "backend"
+      ],
+      "dependsOn": [
+        "VR-WA-040-DOMAIN-AUTH",
+        "VR-WA-070-AGENT-WORKFLOWS"
+      ],
+      "cardFile": "program/cards/VR-HML-010-TEAM-API.md",
+      "allowedDirtyPaths": {
+        "coordination": [
+          "program/program.json",
+          "program/cards/",
+          "program/evidence/",
+          "docs/desenvolvimento/",
+          "docs/runbooks/whatsapp-mvp/",
+          "docs/backlog/",
+          "docs/07-como-ler-o-backlog.md",
+          "docs/08-especificacoes-mvp.md",
+          "deploy/homologacao/",
+          "scripts/homologacao/",
+          ".github/workflows/homologacao-api.yml",
+          "docs/plans/2026-10-28-whatsapp-mvp/10-registro-de-decisoes.md",
+          "README.md",
+          "CONTRIBUTING.md",
+          "docs/02-arquitetura-e-decisoes.md",
+          "docs/03-testes-e-resultados.md",
+          "docs/04-plano-de-entrega.md",
+          "src/whatsapp/scripts/070-worker-scenarios.mjs",
+          ".github/workflows/backend.yml",
+          "scripts/check_backend.sh",
+          "scripts/check_whatsapp.py",
+          "scripts/check_backend_image.py",
+          "scripts/verify_backend_candidate.py",
+          ".github/actions/receive-backend/",
+          ".github/workflows/laboratorio-whatsapp.yml",
+          "src/whatsapp/scripts/academic-integration-smoke.mjs",
+          "src/whatsapp/scripts/academic-integration-smoke.test.mjs",
+          "src/whatsapp/scripts/academic-scenario-plan.mjs",
+          "src/whatsapp/lab/live-runtime/monorepo_receipt.py",
+          "src/whatsapp/lab/live-runtime/monorepo_test.py",
+          "src/whatsapp/scripts/070-operator-batch.mjs",
+          "src/whatsapp/scripts/070-operator-batch.test.mjs",
+          "src/whatsapp/scripts/070-worker-lifecycle.mjs",
+          "src/whatsapp/scripts/070-worker-smoke.test.mjs"
+        ],
+        "backend": [
+          "src/main/",
+          "src/test/",
+          "scripts/",
+          "contracts/whatsapp-mvp/",
+          "docs/",
+          "Dockerfile"
+        ]
+      },
+      "blockers": [],
+      "commits": [],
+      "evidence": []
     }
   ],
-  "activeCardId": null,
-  "nextCardId": null,
+  "activeCardId": "VR-HML-010-TEAM-API",
+  "nextCardId": "VR-HML-010-TEAM-API",
   "migration": {
     "card": "VR-PGM-002-ACADEMIC-MIGRATION-001",
     "status": "done",

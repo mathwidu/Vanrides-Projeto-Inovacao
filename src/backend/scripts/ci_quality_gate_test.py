@@ -3,12 +3,16 @@ from __future__ import annotations
 
 import errno
 import fcntl
+import hashlib
+import importlib.util
+import json
 import os
 import re
 import shutil
 import stat
 import subprocess
 import tempfile
+import textwrap
 import unittest
 from pathlib import Path
 
@@ -40,6 +44,14 @@ CODEX_CLOUD_SETUP = ROOT / "scripts/codex_cloud_setup.sh"
 DOCKER_OPTIONAL_TESTCONTAINERS = re.compile(
     r"@\s*(?:[A-Za-z_$][A-Za-z0-9_$]*\s*\.\s*)*Testcontainers\b"
 )
+
+
+def _workflow_sections(workflow: str) -> tuple[str, dict[str, str]]:
+    """Split the workflow at job IDs, independent of the order of jobs."""
+    header, body = workflow.split("\njobs:\n", 1)
+    body = re.split(r"(?m)^(?=[^ \t\n#])", body, maxsplit=1)[0]
+    parts = re.split(r"(?m)^  ([\w-]+):[ \t]*(?:#[^\n]*)?\n", body)
+    return header, dict(zip(parts[1::2], parts[2::2]))
 
 
 def _strip_java_comments(source: str) -> str:
@@ -271,6 +283,7 @@ class BackendCiQualityGateWiringTest(unittest.TestCase):
         shadow_compgen: bool = False,
         module_relative: str | None = None,
         fake_dirty: bool = False,
+        group_reports: dict[str, int] | None = None,
         lock_observations: list[
             tuple[tuple[str, ...], tuple[str, ...], bool]
         ]
@@ -290,6 +303,8 @@ class BackendCiQualityGateWiringTest(unittest.TestCase):
 
             profile = scripts / "qa_integration_profile.sh"
             shutil.copy2(INTEGRATION_PROFILE_SCRIPT, profile)
+            for helper in ("qa_test_groups.py", "qa_postgres_manifest.json"):
+                shutil.copy2(ROOT / "scripts" / helper, scripts / helper)
             shutil.copy2(
                 MAVEN_EVIDENCE_LOCK_SCRIPT,
                 scripts / "qa_maven_evidence_lock.sh",
@@ -333,6 +348,16 @@ class BackendCiQualityGateWiringTest(unittest.TestCase):
                 "\"$profile_pid\") &\n"
                 "  wait \"$sleeper_pid\"\n"
                 "  exit 91\n"
+                "fi\n"
+                "if [[ -n \"${FAKE_GROUP_REPORTS:-}\" ]]; then\n"
+                "  python3 - <<'PYREPORT'\n"
+                "import json,os,pathlib,xml.etree.ElementTree as E\n"
+                "d=pathlib.Path('target/surefire-reports'); d.mkdir(parents=True,exist_ok=True)\n"
+                "for name,count in json.loads(os.environ['FAKE_GROUP_REPORTS']).items():\n"
+                " r=E.Element('testsuite',name=name,tests=str(count),skipped='0',failures='0',errors='0')\n"
+                " for n in range(count): E.SubElement(r,'testcase',name='template['+str(n)+']',classname=name)\n"
+                " (d/('TEST-'+name+'.xml')).write_bytes(E.tostring(r))\n"
+                "PYREPORT\n"
                 "fi\n"
                 "exit \"${FAKE_MAVEN_EXIT:-0}\"\n",
                 encoding="utf-8",
@@ -451,6 +476,8 @@ class BackendCiQualityGateWiringTest(unittest.TestCase):
                 }
             )
             (temp / "locks").mkdir()
+            if group_reports is not None:
+                environment["FAKE_GROUP_REPORTS"] = json.dumps(group_reports)
             if environment_overrides:
                 environment.update(environment_overrides)
             if lock_release_exit is not None:
@@ -602,42 +629,137 @@ class BackendCiQualityGateWiringTest(unittest.TestCase):
             lock_is_reacquirable,
         )
 
-    def test_workflow_runs_only_canonical_gate_in_test_job(self) -> None:
+    def test_workflow_builds_without_tests_and_deploys_only_canonical_main(self) -> None:
         workflow = WORKFLOW.read_text(encoding="utf-8")
-        canonical = workflow.split("\n  test:\n", 1)[1].split("\n  integration:\n", 1)[0]
-        self.assertIn("runs-on: ubuntu-latest", canonical)
-        self.assertEqual(1, workflow.count("run: ./scripts/ci_quality_gate.sh"))
-        self.assertIn("working-directory: src/backend", canonical)
-        self.assertIn('VANRIDES_QA_REQUIRE_CLEAN: "1"', canonical)
-        self.assertIn('VANRIDES_QA_RETENTION_CLASS: ci', canonical)
-        self.assertNotIn("skipTests", canonical)
-        for forbidden in ("continue-on-error", "target/surefire-reports", "*.txt", "*.dump",
-                          "run: ./mvnw -B test", "pull_request_target", "secrets.", "self-hosted"):
+        header, jobs = _workflow_sections(workflow)
+        self.assertEqual({"build", "deploy_homologacao"}, set(jobs))
+        self.assertIn("  pull_request:\n    branches: [main, dev]", header)
+        self.assertIn("  push:\n    branches: [main, dev]", header)
+        self.assertIn("cancel-in-progress: ${{ github.event_name == 'pull_request' }}", header)
+        for forbidden in ("pull_request_target", "continue-on-error", "upload-artifact",
+                          "download-artifact", "check_backend.sh", "qa_integration_profile.sh"):
             self.assertNotIn(forbidden, workflow)
 
-    def test_workflow_has_read_only_permissions_and_no_external_publication(self) -> None:
-        workflow = WORKFLOW.read_text(encoding="utf-8")
-        self.assertIn("permissions:\n  contents: read", workflow)
-        for forbidden in ("packages: write", "contents: write", "build_and_push:", "deploy_swarm:",
-                          "docker push", "docker/login-action", "upload-artifact", "ssh "):
-            self.assertNotIn(forbidden, workflow)
-        self.assertEqual(2, workflow.count("persist-credentials: false"))
-        self.assertEqual(2, workflow.count("ref: ${{ github.sha }}"))
-        self.assertIn("  push:\n    branches: [main]", workflow)
-        self.assertNotIn("cache: maven", workflow)
-        self.assertNotIn("cache-dependency-path:", workflow)
+        build, deploy = jobs["build"], jobs["deploy_homologacao"]
+        guard = ("github.repository == 'mathwidu/Vanrides-Projeto-Inovacao' && "
+                 "github.event_name == 'push' && github.ref == 'refs/heads/main'")
+        self.assertIn("run: ./mvnw -B -ntp -Dmaven.test.skip=true package", build)
+        self.assertIn("persist-credentials: false", build)
+        self.assertIn("ref: ${{ github.sha }}", build)
+        self.assertIn("vars.VANRIDES_HML_JAVA_IMAGE", build)
+        self.assertIn("GHCR_TOKEN: ${{ " + guard + " && github.token || '' }}", build)
+        self.assertNotIn("secrets.", build)
+        self.assertIn("docker buildx build --platform linux/amd64", build)
+        self.assertIn(":sha-$GITHUB_SHA-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT", build)
+        self.assertIn('output=(--load)', build)
+        self.assertIn('output=(--push --metadata-file', build)
 
-    def test_parallel_integration_is_required_and_builds_the_same_clean_revision(self) -> None:
-        workflow = WORKFLOW.read_text(encoding="utf-8")
-        canonical, integration = workflow.split("\n  test:\n", 1)[1].split("\n  integration:\n", 1)
-        for job in (canonical, integration):
-            self.assertNotRegex(job, r"(?m)^    (?:if|continue-on-error|needs):")
-            self.assertIn("runs-on: ubuntu-latest", job)
-        self.assertIn("VANRIDES_EXPECTED_SOURCE_SHA: ${{ github.sha }}", integration)
-        self.assertEqual(1, integration.count("run: bash scripts/check_backend.sh --integration-only"))
-        self.assertNotIn("ci_quality_gate.sh", integration)
-        self.assertLess(integration.index("run: bash scripts/check_backend.sh --integration-only"),
-                        integration.index("docker build -t vanrides-backend:ci src/backend"))
+        self.assertIn(f"if: {guard}", deploy)
+        self.assertIn("needs: build", deploy)
+        self.assertIn("permissions: {}", deploy)
+        self.assertIn("environment: homologacao", deploy)
+        self.assertIn("IMAGE_DIGEST: ${{ needs.build.outputs.digest }}", deploy)
+        self.assertIn("JAR_SHA256: ${{ needs.build.outputs.jar-sha256 }}", deploy)
+        self.assertIn('"deploy $GITHUB_SHA $IMAGE_DIGEST $JAR_SHA256"', deploy)
+
+    def test_artifact_identity_is_checked_before_download(self) -> None:
+        action = (ROOT.parents[1] / ".github/actions/receive-backend/action.yml").read_text()
+        before_download = action.split("    - name: Baixar somente", 1)[0]
+        command = textwrap.dedent(before_download.split("      run: |\n", 1)[1])
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            git = root / "git"
+            git.write_text('#!/bin/sh\ncase "$*" in "rev-parse HEAD") printf "%s" "$OBSERVED_SHA";; "status --porcelain --untracked-files=all") printf "%s" "$DIRTY";; *) exit 90;; esac\n')
+            git.chmod(0o755)
+            base = {"ARTIFACT_ID": "123", "EXPECTED_SHA": "a" * 40,
+                    "GITHUB_SHA": "a" * 40, "OBSERVED_SHA": "a" * 40,
+                    "EXPECTED_DIGEST": "b" * 64, "DIRTY": ""}
+            cases = [(None, None)] + [(name, value) for name, value in (
+                ("ARTIFACT_ID", ""), ("ARTIFACT_ID", "123,456"),
+                ("EXPECTED_DIGEST", ""), ("GITHUB_SHA", "c" * 40),
+                ("OBSERVED_SHA", "c" * 40), ("DIRTY", " M source.java"))]
+            for name, value in cases:
+                with self.subTest(name=name):
+                    env = {**os.environ, **base, "PATH": str(root) + os.pathsep + os.environ["PATH"]}
+                    if name: env[name] = value
+                    result = subprocess.run(["bash", "-e", "-c", command], env=env, capture_output=True)
+                    self.assertEqual(0 if name is None else 1, result.returncode, result.stderr)
+
+    def test_downloaded_candidate_rejects_corruption_extra_files_and_symlinks(self) -> None:
+        spec = importlib.util.spec_from_file_location(
+            "candidate", ROOT.parents[1] / "scripts/verify_backend_candidate.py")
+        candidate = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(candidate)
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            jar = directory / "backend.jar"
+            payload = b"synthetic artifact transport"
+            jar.write_bytes(payload)
+            digest = hashlib.sha256(payload).hexdigest()
+            self.assertEqual(jar, candidate.verify(directory, digest))
+            for expected in ("", "a" * 63, "0" * 64):
+                with self.assertRaises(ValueError):
+                    candidate.verify(directory, expected)
+            jar.write_bytes(b"x" * len(payload))
+            with self.assertRaises(ValueError):
+                candidate.verify(directory, digest)
+            jar.write_bytes(payload)
+            extra = directory / ".unexpected"
+            extra.write_text("fixture")
+            with self.assertRaises(ValueError):
+                candidate.verify(directory, digest)
+            extra.unlink()
+            jar.unlink()
+            with self.assertRaises(ValueError):
+                candidate.verify(directory, digest)
+            jar.symlink_to(directory / "missing")
+            with self.assertRaises(ValueError):
+                candidate.verify(directory, digest)
+
+    def test_image_requires_the_unchanged_jar_and_receipt_of_this_revision(self) -> None:
+        spec = importlib.util.spec_from_file_location(
+            "backend_image", ROOT.parents[1] / "scripts/check_backend_image.py")
+        image = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(image)
+        with tempfile.TemporaryDirectory() as temporary:
+            backend = Path(temporary)
+            (backend / "target").mkdir()
+            jar = backend / "target/backend.jar"
+            original = b"synthetic packaging fixture"
+            jar.write_bytes(original)
+            digest = hashlib.sha256(original).hexdigest()
+            receipt = backend / "smoke.json"
+            valid = {"schemaVersion": 1, "profile": "VANRIDES_ACADEMIC_INTEGRATION_V1",
+                     "status": "PASS", "sourceSha": "a" * 40, "sourceTree": "b" * 40,
+                     "cleanup": {"status": "OWNED_RESOURCES_REMOVED", "errors": []},
+                     "jar": {"sha256": digest, "bytes": len(original)}}
+            def verify(value):
+                receipt.write_text(json.dumps(value))
+                return image.tested_jar(backend, receipt, "a" * 40, "b" * 40)
+            self.assertEqual(digest, verify(valid))
+            self.assertEqual(digest, verify({**valid, "schemaVersion": 2,
+                                           "profile": "VANRIDES_ACADEMIC_INTEGRATION_V2"}))
+            for field, value in (("status", "FAIL"), ("sourceSha", "c" * 40),
+                                 ("sourceTree", "c" * 40), ("schemaVersion", 2),
+                                 ("cleanup", {"status": "OWNED_RESOURCES_REMOVED", "errors": ["failure"]}),
+                                 ("jar", {"sha256": digest, "bytes": len(original) + 1})):
+                with self.subTest(field=field):
+                    with self.assertRaises(ValueError):
+                        verify({**valid, field: value})
+            receipt.write_text(json.dumps(valid))
+            jar.write_bytes(b"x" * len(original))
+            with self.assertRaisesRegex(ValueError, "JAR mudou"):
+                image.tested_jar(backend, receipt, "a" * 40, "b" * 40)
+            jar.write_bytes(original)
+            extra = jar.with_name("other.jar")
+            extra.write_bytes(original)
+            with self.assertRaisesRegex(ValueError, "exatamente um JAR"):
+                image.tested_jar(backend, receipt, "a" * 40, "b" * 40)
+            extra.unlink()
+            jar.unlink()
+            jar.symlink_to(receipt)
+            with self.assertRaisesRegex(ValueError, "JAR regular"):
+                image.tested_jar(backend, receipt, "a" * 40, "b" * 40)
 
     def test_local_team_gate_preserves_full_sequence_and_explicit_partial_mode(self) -> None:
         wrapper = ROOT.parents[1] / "scripts/check_backend.sh"
@@ -650,15 +772,33 @@ class BackendCiQualityGateWiringTest(unittest.TestCase):
             (module / "scripts").mkdir(parents=True)
             fake_bin.mkdir()
             shutil.copy2(wrapper, scripts / wrapper.name)
-            for target, event in ((module / "scripts/ci_quality_gate.sh", "canonical"),
-                                  (module / "mvnw", "package"), (fake_bin / "node", "smoke")):
-                target.write_text('#!/usr/bin/env bash\nprintf "%s\\n" "' + event + '" >> "$VANRIDES_TEST_TRACE"\n')
+            fakes = {
+                module / "scripts/ci_quality_gate.sh": '''
+                    case "$*" in
+                      '') event=canonical ;;
+                      --quick) event=quick ;;
+                      *) exit 90 ;;
+                    esac
+                ''',
+                module / "mvnw": '[[ "$*" == "-B -ntp -DskipTests package" ]] || exit 90\nevent=package',
+                fake_bin / "node": '''
+                    case "$*" in
+                      "--test --test-reporter=dot "*/team_ui_test.mjs) event=team-ui ;;
+                      */academic-integration-smoke.mjs) [[ "$#" == 1 ]] || exit 90; event=smoke ;;
+                      *) exit 90 ;;
+                    esac
+                ''',
+            }
+            for target, script in fakes.items():
+                target.write_text('#!/usr/bin/env bash\n' + textwrap.dedent(script).strip()
+                                  + '\nprintf "%s\\n" "$event" >> "$VANRIDES_TEST_TRACE"\n')
                 target.chmod(0o755)
             trace = root / "events"
             environment = {**os.environ, "PATH": str(fake_bin) + os.pathsep + os.environ["PATH"],
                            "VANRIDES_TEST_TRACE": str(trace)}
-            for arguments, expected in (([], ["canonical", "package", "smoke"]),
-                                        (["--integration-only"], ["package", "smoke"])):
+            for arguments, expected in (([], ["team-ui", "canonical", "package", "smoke"]),
+                                        (["--integration-only"], ["team-ui", "package", "smoke"]),
+                                        (["--light"], ["team-ui", "quick"])):
                 trace.unlink(missing_ok=True)
                 result = subprocess.run([str(scripts / wrapper.name), *arguments], env=environment,
                                         capture_output=True, text=True, check=False)
@@ -692,64 +832,57 @@ class BackendCiQualityGateWiringTest(unittest.TestCase):
         self.assertIn("Clean source required", result.stderr)
         self.assertEqual([], maven_args)
 
-    def test_ci_gate_runs_all_required_quality_steps(self) -> None:
-        script = CI_SCRIPT.read_text(encoding="utf-8")
-
-        self.assertIn("ci_quality_gate_test.py", script)
-        self.assertIn("qa_report_evidence_test.py", script)
-        self.assertEqual(
-            1,
-            script.splitlines().count(
-                'python3 "$ROOT_DIR/scripts/qa_evidence_retention_test.py"'
-            ),
-        )
-        self.assertEqual(
-            1,
-            script.splitlines().count(
-                'python3 "$ROOT_DIR/scripts/qa_maven_evidence_lock_test.py"'
-            ),
-        )
-        self.assertEqual(
-            1,
-            script.splitlines().count(
-                'python3 "$ROOT_DIR/scripts/qa_location_read_smoke_test.py"'
-            ),
-        )
-        self.assertEqual(
-            1,
-            script.splitlines().count(
-                'python3 "$ROOT_DIR/scripts/qa_rate_limit_trust_load_test.py"'
-            ),
-        )
-        self.assertEqual(
-            1,
-            script.splitlines().count(
-                'python3 "$ROOT_DIR/scripts/qa_rate_limit_trust_smoke_test.py"'
-            ),
-        )
-        self.assertEqual(
-            1,
-            script.splitlines().count(
-                'python3 "$ROOT_DIR/scripts/qa_email_confirmation_intent_smoke_test.py"'
-            ),
-        )
-        self.assertNotIn(
-            '"$ROOT_DIR/scripts/qa_email_confirmation_intent_smoke.sh"',
-            script,
-        )
-        strict_call = '"$ROOT_DIR/scripts/qa_integration_profile.sh" --all-tests'
-        self.assertEqual(1, script.splitlines().count(strict_call))
-        self.assertNotIn("./mvnw -B test", script)
-        self.assertIn("quality_metrics_test.py", script)
-        self.assertIn("dev_fixture_preflight_test.py", script)
-        self.assertEqual(
-            1,
-            script.splitlines().count(
-                'python3 "$ROOT_DIR/scripts/bootstrap_fixture_contract_test.py"'
-            ),
-        )
-        self.assertIn("quality_gate.sh", script)
-        self.assertNotIn("qa_gate_card.sh", script)
+    def test_ci_gate_stops_early_and_preserves_all_checks(self) -> None:
+        # Execute the real orchestration with process doubles, without Java/Docker.
+        quick_checks = [
+            "quality_gate.sh", "ci_quality_gate_test.py", "qa_report_evidence_test.py",
+            "qa_evidence_retention_test.py", "qa_maven_evidence_lock_test.py",
+            "qa_location_read_smoke_test.py", "qa_rate_limit_trust_load_test.py",
+            "qa_rate_limit_trust_smoke_test.py", "qa_email_confirmation_intent_smoke_test.py",
+            "quality_metrics_test.py", "dev_fixture_preflight_test.py",
+            "seed_operational_service_day_fixture_test.py", "bootstrap_fixture_contract_test.py",
+            "vanrides_dev_ops_test.py", "qa_test_groups_test.py",
+        ]
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            scripts = root / "scripts"
+            scripts.mkdir()
+            fake_bin = root / "bin"
+            fake_bin.mkdir()
+            gate = scripts / CI_SCRIPT.name
+            shutil.copy2(CI_SCRIPT, gate)
+            stub = ('#!/usr/bin/env bash\n'
+                    'event="$(basename "$0")"\n'
+                    '[[ "$event" != python3 ]] || event="$(basename "$1")"\n'
+                    'printf "%s\n" "$event" >> "$TRACE"\n'
+                    '[[ "$event" != "$FAIL_AT" ]] || exit 7\n')
+            for target in (fake_bin / "python3", scripts / "quality_gate.sh",
+                           scripts / "qa_integration_profile.sh"):
+                target.write_text(stub)
+                target.chmod(0o755)
+            trace = root / "trace"
+            cases = [
+                (["--quick"], "", 0, quick_checks),
+                ([], "", 0, quick_checks + ["qa_integration_profile.sh"]),
+                ([], "quality_gate.sh", 7, quick_checks[:1]),
+                ([], "qa_report_evidence_test.py", 7, quick_checks[:3]),
+                ([], "qa_integration_profile.sh", 7, quick_checks + ["qa_integration_profile.sh"]),
+                (["--unknown"], "", 2, []),
+                (["--quick", "extra"], "", 2, []),
+            ]
+            for args, fail_at, expected_exit, events in cases:
+                with self.subTest(args=args, fail_at=fail_at):
+                    trace.unlink(missing_ok=True)
+                    env = {**os.environ, "PATH": str(fake_bin) + os.pathsep + os.environ["PATH"],
+                           "TRACE": str(trace), "FAIL_AT": fail_at}
+                    result = subprocess.run([str(gate), *args], env=env,
+                                            capture_output=True, text=True)
+                    self.assertEqual(expected_exit, result.returncode, result.stderr)
+                    self.assertEqual(events, trace.read_text().splitlines() if trace.exists() else [])
+                    if args or expected_exit:
+                        self.assertNotIn("Gate backend CI finalizado com sucesso", result.stdout)
+                    else:
+                        self.assertIn("Gate backend CI finalizado com sucesso", result.stdout)
 
     def test_card_gate_composes_canonical_gate_before_http_smoke(self) -> None:
         script = CARD_GATE_SCRIPT.read_text(encoding="utf-8")
@@ -829,77 +962,10 @@ class BackendCiQualityGateWiringTest(unittest.TestCase):
         self.assertIn('mavenRcSkipped=true', script)
         self.assertIn('--expected-user-home "$MAVEN_ISOLATED_HOME"', script)
         self.assertIn("--all-tests", script)
-        self.assertIn("VanridesApplicationContextIntegrationTest", script)
-        self.assertIn("RepositoryIntegrationTest", script)
-        self.assertIn("CompanyAdminBootstrapConcurrencyIntegrationTest", script)
-        self.assertIn("RefreshTokenRepositoryIntegrationTest", script)
-        self.assertIn("LegacyCompanyMigrationIntegrationTest", script)
-        self.assertIn("LoginIdentityMigrationIntegrationTest", script)
-        self.assertIn("LoginIdentityTriggerIntegrationTest", script)
-        self.assertIn("LoginIdentityConcurrencyIntegrationTest", script)
-        self.assertIn("LoginIdentityDeviceTokenConcurrencyIntegrationTest", script)
-        self.assertIn("EmailVerificationConcurrencyIntegrationTest", script)
-        self.assertIn("EmailVerificationConfirmationConcurrencyIntegrationTest", script)
-        self.assertIn("PassengerTenantDeleteConcurrencyIntegrationTest", script)
+        self.assertIn("qa_test_groups.py", script)
         self.assertIn('for expectation in "${EXPECTED_TEST_CLASSES[@]}"', script)
         self.assertIn('./mvnw -B "${maven_args[@]}"', script)
-        self.assertIn(
-            '"com.vanrides.vanrides.VanridesApplicationContextIntegrationTest=3"',
-            script,
-        )
-        self.assertIn('"com.vanrides.vanrides.repository.RepositoryIntegrationTest=9"', script)
-        self.assertIn(
-            '"com.vanrides.vanrides.repository.DeviceTokenRepositoryIntegrationTest=1"',
-            script,
-        )
-        self.assertIn(
-            '"com.vanrides.vanrides.repository.CompanyAdminBootstrapConcurrencyIntegrationTest=1"',
-            script,
-        )
-        self.assertIn(
-            '"com.vanrides.vanrides.repository.RefreshTokenRepositoryIntegrationTest=1"',
-            script,
-        )
-        self.assertIn(
-            '"com.vanrides.vanrides.repository.LegacyCompanyMigrationIntegrationTest=2"',
-            script,
-        )
-        self.assertIn(
-            '"com.vanrides.vanrides.repository.LoginIdentityMigrationIntegrationTest=3"',
-            script,
-        )
-        self.assertIn(
-            '"com.vanrides.vanrides.repository.LoginIdentityMigrationPreflightIntegrationTest=4"',
-            script,
-        )
-        self.assertIn(
-            '"com.vanrides.vanrides.repository.LoginIdentityTriggerIntegrationTest=4"',
-            script,
-        )
-        self.assertIn(
-            '"com.vanrides.vanrides.repository.LoginIdentityConcurrencyIntegrationTest=4"',
-            script,
-        )
-        self.assertIn(
-            '"com.vanrides.vanrides.repository.LoginIdentityDeviceTokenConcurrencyIntegrationTest=4"',
-            script,
-        )
-        self.assertIn(
-            '"com.vanrides.vanrides.repository.DeviceTokenRegistrationConcurrencyIntegrationTest=2"',
-            script,
-        )
-        self.assertIn(
-            '"com.vanrides.vanrides.repository.EmailVerificationConcurrencyIntegrationTest=5"',
-            script,
-        )
-        self.assertIn(
-            '"com.vanrides.vanrides.repository.EmailVerificationConfirmationConcurrencyIntegrationTest=3"',
-            script,
-        )
-        self.assertIn(
-            '"com.vanrides.vanrides.service.PassengerTenantDeleteConcurrencyIntegrationTest=3"',
-            script,
-        )
+        self.assertIn("surefire.excludesFile", script)
         self.assertIn('-Dvanrides.qa.run-id="$RUN_ID"', script)
         self.assertIn("qa_report_evidence.py", script)
         self.assertIn('output/qa-evidence', script)
@@ -954,18 +1020,12 @@ class BackendCiQualityGateWiringTest(unittest.TestCase):
         self.assertIn("if (( LOCK_ACQUIRED == 0 )); then", cleanup_body)
 
     def test_integration_matrix_matches_every_docker_optional_test_class(self) -> None:
-        profile = INTEGRATION_PROFILE_SCRIPT.read_text(encoding="utf-8")
-        expected = {
-            class_name: int(count)
-            for class_name, count in re.findall(
-                r'"(com\.vanrides\.vanrides\.[A-Za-z0-9_.]+)=(\d+)"',
-                profile,
-            )
-        }
+        manifest = json.loads((ROOT / "scripts/qa_postgres_manifest.json").read_text())
+        expected = {entry["className"]: entry["tests"] for entry in manifest["classes"]}
         discovered = _discover_docker_optional_test_classes(ROOT / "src/test/java")
 
         self.assertEqual(discovered, set(expected))
-        self.assertEqual(542, sum(expected.values()))
+        self.assertEqual(606, sum(expected.values()))
 
     def test_docker_optional_annotation_scanner_accepts_equivalent_formatting(self) -> None:
         variants = (
@@ -1055,6 +1115,7 @@ class BackendCiQualityGateWiringTest(unittest.TestCase):
 
         self.assertEqual(0, result.returncode, result.stderr)
         self.assertFalse(any(argument.startswith("-Dtest=") for argument in maven_args))
+        self.assertIn("-ntp", maven_args)
         self.assertIn("clean", maven_args)
         self.assertIn("test", maven_args)
         isolated_home_args = [
@@ -1103,6 +1164,25 @@ class BackendCiQualityGateWiringTest(unittest.TestCase):
         self.assertEqual(2, len(invocations))
         self.assertEqual("prepare", invocations[0][invocations[0].index("--phase") + 1])
         self.assertEqual("finalize", invocations[1][invocations[1].index("--phase") + 1])
+
+    def test_postgres_group_selector_and_expected_reports_use_one_manifest(self) -> None:
+        spec = importlib.util.spec_from_file_location("qa_test_groups", ROOT / "scripts/qa_test_groups.py")
+        helper = importlib.util.module_from_spec(spec); spec.loader.exec_module(helper)
+        expected = helper.plan()[1]["pg-1"]
+        result, maven_args, validator_args, _ = self._run_profile_with_fake_runtime("--group", "pg-1", group_reports=expected)
+        self.assertEqual(0, result.returncode, result.stderr)
+        selector = next(argument for argument in maven_args if argument.startswith("-Dtest="))
+        self.assertEqual(set(expected), set(selector.partition("=")[2].split(",")))
+        self.assertIn("scope=focused", validator_args)
+        for name, count in expected.items(): self.assertIn(f"{name}={count}", validator_args)
+
+    def test_java_group_keeps_default_discovery_and_validates_actual_new_template_cases(self) -> None:
+        result, maven_args, validator_args, _ = self._run_profile_with_fake_runtime(
+            "--group", "unit", group_reports={"example.NewIntegrationTest": 3})
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertFalse(any(argument.startswith("-Dtest=") for argument in maven_args))
+        self.assertTrue(any(argument.startswith("-Dsurefire.excludesFile=") for argument in maven_args))
+        self.assertIn("example.NewIntegrationTest=3", validator_args)
 
     def test_integration_profile_rejects_unknown_argument_before_maven(self) -> None:
         result, maven_args, _, _ = self._run_profile_with_fake_runtime("--unknown")

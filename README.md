@@ -17,6 +17,7 @@ Universidade Feevale, 2026/2.
 | Conferir o que foi testado | [Testes e resultados](docs/03-testes-e-resultados.md) |
 | Entender uma tarefa e o que falta | [Backlog](docs/07-como-ler-o-backlog.md) e [issues do MVP](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues?q=is%3Aissue+is%3Aopen+label%3Amvp) |
 | Preparar o computador e contribuir | [Guia de contribuição](CONTRIBUTING.md) |
+| Testar uma versão com o grupo | [Homologação da equipe](docs/desenvolvimento/homologacao-da-equipe.md) |
 | Consultar a entrega da disciplina | [STACK](STACK.docx), [BACKLOG](BACKLOG.xlsx) e [Canvas](docs/06-canvas-mvp.md) |
 
 ## Situação do MVP
@@ -25,10 +26,12 @@ Cadastros, vínculos, rotinas e presença possuem implementação e ensaios de
 laboratório. O aplicativo de localização está implementado para Android/iPhone;
 a integração recente foi ensaiada no Android, com o aparelho parado.
 
-Faltam confirmação do canal real com a linha dedicada do bot, conclusão dos
-avisos e do encerramento automático, percurso completo e aceite de uso.
+A consulta da van passou no ensaio integrado com canal simulado. A regra de aproximação passou nos testes de banco e aguarda avaliação em percurso. A API, o APK e o canal estão publicados em homologação; perfil básico de passageiro, ajuda e retomada já foram validados no WhatsApp real. Faltam validar as jornadas completas nesse canal e concluir o encerramento automático.
+O bot exige admissão individual: na conferência de 04/11 há um passageiro liberado,
+e ainda falta motorista participante. O APK e a saúde da API são acessíveis ao
+time inteiro pelo [guia de testes](docs/desenvolvimento/homologacao-da-equipe.md).
 Os testes físicos do iPhone estão pausados. **O piloto ainda não está liberado.**
-CI aprovada comprova os testes declarados, não WhatsApp real ou percurso.
+CI aprovada confirma a construção da API/imagem; não comprova testes de negócio, WhatsApp real ou percurso.
 
 ## Código e desenvolvimento
 
@@ -41,7 +44,10 @@ CI aprovada comprova os testes declarados, não WhatsApp real ou percurso.
 
 As novas contribuições ficam concentradas neste repositório. As origens
 anteriores permanecem como histórico. O corte e os testes da nova estrutura ficam no [registro da migração](docs/desenvolvimento/migracao.md).
-A implantação na VPS é independente; estes workflows não publicam imagens nem fazem deploy.
+O deploy automático da API pela `main` e a área da equipe estão em implantação.
+Veja o [fluxo de publicação](deploy/homologacao/AUTOMATICO.md) e o
+[estado da área da equipe](docs/desenvolvimento/area-da-equipe.md). PRs executam
+os testes; o job de publicação é exclusivo de push na `main`.
 
 ## Equipe e histórico
 

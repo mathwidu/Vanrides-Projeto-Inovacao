@@ -34,7 +34,8 @@ export async function startProvider(instance, address, apiKey, peerAddresses = [
     }
     requests++;
     try {
-      demand(request.method === 'POST' && request.url === '/message/sendText/' + encodeURIComponent(instance)
+      demand(request.method === 'POST' && ['/message/sendText/', '/message/sendLocation/']
+        .some(route => request.url === route + encodeURIComponent(instance))
         && request.headers.apikey === apiKey && request.headers['content-type'] === 'application/json', 'PROVIDER_REQUEST_INVALID');
       let size = 0; const chunks = [];
       for await (const chunk of request) {
@@ -42,10 +43,20 @@ export async function startProvider(instance, address, apiKey, peerAddresses = [
       }
       const body = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(Buffer.concat(chunks, size)));
       const next = expected.shift();
-      demand(next && exact(body, ['number', 'text', 'linkPreview']) && body.number === next.address
-        && body.linkPreview === false && !seen.has(next.outboxId), 'PROVIDER_CONTENT_INVALID');
-      demand(typeof body.text === 'string' && body.text.length > 0 && body.text.length <= 2000
-        && (typeof next.text === 'string' ? body.text === next.text : next.matches?.(body.text) === true), 'PROVIDER_CONTENT_INVALID');
+      demand(next && body.number === next.address && !seen.has(next.outboxId), 'PROVIDER_CONTENT_INVALID');
+      if (typeof next.pinMatches === 'function') {
+        demand(request.url === '/message/sendLocation/' + encodeURIComponent(instance)
+          && exact(body, ['number', 'latitude', 'longitude', 'name', 'address'])
+          && Number.isFinite(body.latitude) && Math.abs(body.latitude) <= 90
+          && Number.isFinite(body.longitude) && Math.abs(body.longitude) <= 180
+          && body.name === 'Localização atual do veículo' && typeof body.address === 'string'
+          && next.pinMatches(body) === true, 'PROVIDER_PIN_INVALID');
+      } else {
+        demand(request.url === '/message/sendText/' + encodeURIComponent(instance)
+          && exact(body, ['number', 'text', 'linkPreview']) && body.linkPreview === false
+          && typeof body.text === 'string' && body.text.length > 0 && body.text.length <= 2000
+          && (typeof next.text === 'string' ? body.text === next.text : next.matches?.(body.text) === true), 'PROVIDER_CONTENT_INVALID');
+      }
       seen.add(next.outboxId); accepted++;
       const effect = nextEffect; nextEffect = 'ACCEPTED';
       response.writeHead(effect === 'AMBIGUOUS_AFTER_EFFECT' ? 400 : 201, { 'Content-Type': 'application/json' });

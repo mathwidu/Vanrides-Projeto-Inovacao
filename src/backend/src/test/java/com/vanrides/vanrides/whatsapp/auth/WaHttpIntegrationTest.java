@@ -84,7 +84,9 @@ class WaHttpIntegrationTest {
     }
 
     @Test void preservesLegacyPublicCorsAndProtectedAccountBehavior() throws Exception {
-        assertThat(send("GET", "/motoristas", null, Map.of()).statusCode()).isEqualTo(200);
+        var legacy=send("GET", "/motoristas", null, Map.of());
+        assertThat(legacy.statusCode()).isEqualTo(200);
+        assertThat(legacy.headers().firstValue("X-VanRides-Environment")).isEmpty();
         var preflight = send("OPTIONS", "/motoristas", null, Map.of("Origin", "https://app.exemplo", "Access-Control-Request-Method", "GET"));
         assertThat(preflight.statusCode()).isEqualTo(200);
         assertThat(preflight.headers().firstValue("Access-Control-Allow-Origin")).isPresent();

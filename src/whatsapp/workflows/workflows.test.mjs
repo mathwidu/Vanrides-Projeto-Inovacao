@@ -73,7 +73,7 @@ test('W04 wakes the private attendance controller once a minute without business
   const { row, data } = workflows.find(w => w.row.logicalId === 'W04');
   assert.equal(row.mode, 'IMPLEMENTED_CONTROL');
   assert.equal(row.prerequisite, null);
-  assert.deepEqual(data.nodes[0].parameters.rule.interval, [{ field: 'seconds', secondsInterval: 60 }]);
+  assert.deepEqual(data.nodes[0].parameters.rule.interval, [{ field: 'minutes', minutesInterval: 1 }]);
   assert.equal(data.nodes[1].parameters.url, 'http://vanrides-wa070-worker:7080/v1/tick-attendance');
   assert.equal(data.nodes[1].parameters.jsonBody, '{}');
 });
@@ -83,9 +83,19 @@ test('W08 reconciles delivery once a minute through the private worker with no b
   assert.equal(manifest.card, 'VR-WA-120-DELIVERY-RECOVERY');
   assert.equal(row.mode, 'IMPLEMENTED_CONTROL');
   assert.equal(row.prerequisite, null);
-  assert.deepEqual(data.nodes[0].parameters.rule.interval, [{ field: 'seconds', secondsInterval: 60 }]);
+  assert.deepEqual(data.nodes[0].parameters.rule.interval, [{ field: 'minutes', minutesInterval: 1 }]);
   assert.equal(data.nodes[1].parameters.url, 'http://vanrides-wa070-worker:7080/v1/reconcile-delivery');
   assert.equal(data.nodes[1].parameters.method, 'POST');
   assert.equal(data.nodes[1].parameters.jsonBody, '{}');
   assert.equal(data.nodes[1].retryOnFail, false);
+});
+
+test('Schedule Trigger 1.4 exports use supported interval ranges', () => {
+  for (const { data } of workflows) for (const node of data.nodes.filter(n => n.type === 'n8n-nodes-base.scheduleTrigger')) {
+    for (const interval of node.parameters.rule.interval) {
+      assert.ok(['seconds', 'minutes'].includes(interval.field));
+      const value = interval.field === 'seconds' ? interval.secondsInterval : interval.minutesInterval;
+      assert.ok(Number.isInteger(value) && value >= 1 && value <= 59, `${data.id}: interval outside Schedule Trigger range`);
+    }
+  }
 });

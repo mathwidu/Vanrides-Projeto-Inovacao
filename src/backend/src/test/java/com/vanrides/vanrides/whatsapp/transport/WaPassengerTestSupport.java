@@ -42,7 +42,11 @@ final class WaPassengerTestSupport {
     UUID cohort;
 
     WaPassengerTestSupport(PostgreSQLContainer<?> postgres) {
-        driverFixture = new WaDriverTestSupport(postgres);
+        this(new WaTransportTestSupport(postgres));
+    }
+
+    WaPassengerTestSupport(WaTransportTestSupport transportFixture) {
+        driverFixture = new WaDriverTestSupport(transportFixture);
         conversation = driverFixture.s;
         transport = driverFixture.h;
     }

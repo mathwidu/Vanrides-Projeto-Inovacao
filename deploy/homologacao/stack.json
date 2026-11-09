@@ -1,0 +1,291 @@
+{
+  "version": "3.8",
+  "services": {
+    "api": {
+      "image": "${HML_API_IMAGE:?digest required}",
+      "user": "10001:10001",
+      "read_only": true,
+      "environment": {
+        "SPRING_PROFILES_ACTIVE": "homolog",
+        "WA_TEAM_API_ONLY": "true",
+        "VANRIDES_EMAIL_PROVIDER": "disabled",
+        "VANRIDES_EMAIL_VERIFICATION_PUBLIC_BASE_URL": "",
+        "VANRIDES_EMAIL_RESEND_API_KEY": "",
+        "VANRIDES_AUTH_BASIC_ENABLED": "false",
+        "VANRIDES_QA_AUTO_VERIFY_EMAIL_DOMAINS": "",
+        "VANRIDES_QA_AUTO_VERIFY_BOOTSTRAP_DOMAINS": "",
+        "VANRIDES_RATE_LIMIT_ENABLED": "true",
+        "SERVER_HTTP2_ENABLED": "false",
+        "SPRING_DATASOURCE_URL": "jdbc:postgresql://db:5432/vanrides_hml_api",
+        "SPRING_DATASOURCE_USERNAME": "vanrides_hml_api",
+        "SPRING_DATASOURCE_PASSWORD_FILE": "/run/secrets/db_password",
+        "SPRING_JPA_HIBERNATE_DDL_AUTO": "validate",
+        "SPRING_JPA_SHOW_SQL": "false",
+        "SPRING_JPA_FORMAT_SQL": "false",
+        "SPRING_FLYWAY_BASELINE_ON_MIGRATE": "false",
+        "MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE": "health",
+        "MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS": "never",
+        "VANRIDES_ROUTING_PROVIDER": "static",
+        "VANRIDES_MAPS_PLATFORM_ENABLED": "false",
+        "VANRIDES_PUSH_PROVIDER": "none",
+        "VANRIDES_CORS_ALLOWED_ORIGIN_PATTERNS": "https://vanrides-inovacao-api.matheusduarte.dev.br",
+        "VANRIDES_CORS_ALLOWED_METHODS": "GET,POST",
+        "VANRIDES_CORS_ALLOWED_HEADERS": "Content-Type,Authorization,X-Inbox-Lease,Idempotency-Key,X-Correlation-Id",
+        "WA_MVP_ENABLED": "true",
+        "WA_NEW_STARTS_ENABLED": "false",
+        "WA_APPROACH_ENABLED": "false",
+        "WA_APPROACH_REVIEWED_ROUTINE_IDS": "",
+        "WA_TEST_COHORT_ONLY": "true",
+        "WA_ENVIRONMENT": "vanrides-team-hml",
+        "WA_PUBLIC_BASE_URL": "https://vanrides-inovacao-api.matheusduarte.dev.br",
+        "VANRIDES_JWT_SECRET_FILE": "/run/secrets/jwt_secret",
+        "WA_SECRET_HASH_KEY_FILE": "/run/secrets/wa_hash_key",
+        "WA_RESPONSE_ENCRYPTION_KEY_FILE": "/run/secrets/wa_response_key",
+        "WA_OPERATOR_CREDENTIAL_FILE": "/run/secrets/wa_operator",
+        "WA_OPERATOR_EXPIRES_AT": "${HML_OPERATOR_EXPIRES_AT:?explicit UTC expiry required}",
+        "JAVA_OPTS": "-Xmx768m -XX:MaxMetaspaceSize=256m -Djava.io.tmpdir=/tmp"
+      },
+      "networks": [
+        "private"
+      ],
+      "secrets": [
+        {
+          "source": "db_password",
+          "target": "db_password",
+          "uid": "10001",
+          "gid": "10001",
+          "mode": 256
+        },
+        {
+          "source": "jwt_secret",
+          "target": "jwt_secret",
+          "uid": "10001",
+          "gid": "10001",
+          "mode": 256
+        },
+        {
+          "source": "wa_hash_key",
+          "target": "wa_hash_key",
+          "uid": "10001",
+          "gid": "10001",
+          "mode": 256
+        },
+        {
+          "source": "wa_response_key",
+          "target": "wa_response_key",
+          "uid": "10001",
+          "gid": "10001",
+          "mode": 256
+        },
+        {
+          "source": "wa_operator",
+          "target": "wa_operator",
+          "uid": "10001",
+          "gid": "10001",
+          "mode": 256
+        }
+      ],
+      "tmpfs": [
+        "/tmp:rw,noexec,nosuid,size=64m,uid=10001,gid=10001,mode=0700"
+      ],
+      "cap_drop": [
+        "ALL"
+      ],
+      "security_opt": [
+        "no-new-privileges:true"
+      ],
+      "labels": {
+        "dev.vanrides.environment": "vanrides-team-hml",
+        "dev.vanrides.stack": "vanrides-hml-api"
+      },
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-size": "5m",
+          "max-file": "2"
+        }
+      },
+      "deploy": {
+        "replicas": 1,
+        "labels": {
+          "dev.vanrides.environment": "vanrides-team-hml",
+          "dev.vanrides.stack": "vanrides-hml-api",
+          "traefik.enable": "false"
+        },
+        "placement": {
+          "constraints": [
+            "node.hostname == srv1397065"
+          ]
+        },
+        "resources": {
+          "limits": {
+            "cpus": "1.0",
+            "memory": "1280M"
+          }
+        },
+        "restart_policy": {
+          "condition": "on-failure",
+          "delay": "10s",
+          "max_attempts": 3
+        },
+        "update_config": {
+          "parallelism": 1,
+          "order": "stop-first",
+          "failure_action": "pause"
+        },
+        "rollback_config": {
+          "parallelism": 1,
+          "order": "stop-first"
+        }
+      }
+    },
+    "db": {
+      "image": "${HML_POSTGRES_IMAGE:?digest required}",
+      "environment": {
+        "POSTGRES_DB": "vanrides_hml_api",
+        "POSTGRES_USER": "postgres",
+        "POSTGRES_PASSWORD_FILE": "/run/secrets/db_admin_password",
+        "POSTGRES_INITDB_ARGS": "--auth-host=scram-sha-256"
+      },
+      "command": [
+        "postgres",
+        "-c",
+        "log_statement=none",
+        "-c",
+        "log_min_error_statement=panic",
+        "-c",
+        "log_connections=off",
+        "-c",
+        "log_disconnections=off",
+        "-c",
+        "password_encryption=scram-sha-256"
+      ],
+      "networks": [
+        "private"
+      ],
+      "volumes": [
+        "pgdata:/var/lib/postgresql/data"
+      ],
+      "secrets": [
+        {
+          "source": "db_admin_password",
+          "target": "db_admin_password",
+          "uid": "0",
+          "gid": "0",
+          "mode": 292
+        },
+        {
+          "source": "db_password",
+          "target": "db_password",
+          "uid": "0",
+          "gid": "0",
+          "mode": 292
+        }
+      ],
+      "configs": [
+        {
+          "source": "db_init",
+          "target": "/docker-entrypoint-initdb.d/010-team-api.sh",
+          "mode": 365
+        }
+      ],
+      "healthcheck": {
+        "test": [
+          "CMD-SHELL",
+          "pg_isready -U postgres -d vanrides_hml_api"
+        ],
+        "interval": "5s",
+        "timeout": "3s",
+        "retries": 20
+      },
+      "labels": {
+        "dev.vanrides.environment": "vanrides-team-hml",
+        "dev.vanrides.stack": "vanrides-hml-api"
+      },
+      "logging": {
+        "driver": "json-file",
+        "options": {
+          "max-size": "5m",
+          "max-file": "2"
+        }
+      },
+      "deploy": {
+        "replicas": 1,
+        "labels": {
+          "dev.vanrides.environment": "vanrides-team-hml",
+          "dev.vanrides.stack": "vanrides-hml-api",
+          "traefik.enable": "false"
+        },
+        "placement": {
+          "constraints": [
+            "node.hostname == srv1397065"
+          ]
+        },
+        "resources": {
+          "limits": {
+            "cpus": "1.0",
+            "memory": "512M"
+          }
+        },
+        "restart_policy": {
+          "condition": "on-failure",
+          "delay": "10s",
+          "max_attempts": 3
+        },
+        "update_config": {
+          "parallelism": 1,
+          "order": "stop-first",
+          "failure_action": "pause"
+        }
+      }
+    }
+  },
+  "networks": {
+    "private": {
+      "name": "vanrides-hml-api_private",
+      "driver": "overlay",
+      "attachable": false,
+      "driver_opts": {
+        "encrypted": ""
+      }
+    }
+  },
+  "volumes": {
+    "pgdata": {
+      "name": "vanrides-hml-api_pgdata",
+      "driver": "local"
+    }
+  },
+  "configs": {
+    "db_init": {
+      "name": "${HML_DB_INIT_NAME:?release config name required}",
+      "file": "./db-init.sh"
+    }
+  },
+  "secrets": {
+    "db_password": {
+      "external": true,
+      "name": "vanrides-hml-api-db-password-v1"
+    },
+    "db_admin_password": {
+      "external": true,
+      "name": "vanrides-hml-api-db-admin-password-v1"
+    },
+    "jwt_secret": {
+      "external": true,
+      "name": "vanrides-hml-api-jwt-secret-v1"
+    },
+    "wa_hash_key": {
+      "external": true,
+      "name": "vanrides-hml-api-wa-hash-key-v1"
+    },
+    "wa_response_key": {
+      "external": true,
+      "name": "vanrides-hml-api-wa-response-key-v1"
+    },
+    "wa_operator": {
+      "external": true,
+      "name": "vanrides-hml-api-wa-operator-v1"
+    }
+  }
+}

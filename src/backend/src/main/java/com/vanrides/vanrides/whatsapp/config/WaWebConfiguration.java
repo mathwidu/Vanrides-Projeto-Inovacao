@@ -1,6 +1,7 @@
 package com.vanrides.vanrides.whatsapp.config;
 
 import com.vanrides.vanrides.whatsapp.auth.*;
+import com.vanrides.vanrides.whatsapp.team.WaTeamSettings;
 import jakarta.servlet.DispatcherType;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
@@ -13,10 +14,11 @@ import org.springframework.core.Ordered;
 public class WaWebConfiguration {
     @Bean
     FilterRegistrationBean<WaIngressFilter> waIngress(WaSettings settings, WaCredentials credentials, WaRateLimiter limiter,
-            com.vanrides.vanrides.filtros.TrustedProxyClientAddressResolver addresses) {
-        var bean = new FilterRegistrationBean<>(new WaIngressFilter(settings, credentials, limiter, addresses));
+            com.vanrides.vanrides.filtros.TrustedProxyClientAddressResolver addresses, WaTeamSettings team) {
+        var bean = new FilterRegistrationBean<>(new WaIngressFilter(settings, credentials, limiter, addresses, team));
         bean.setName("waIngress"); bean.setOrder(Ordered.HIGHEST_PRECEDENCE);
         bean.setDispatcherTypes(DispatcherType.REQUEST, DispatcherType.FORWARD);
+        if(settings.publishedMvp()) bean.setDispatcherTypes(DispatcherType.REQUEST,DispatcherType.FORWARD,DispatcherType.ERROR,DispatcherType.ASYNC);
         return bean;
     }
     @Bean

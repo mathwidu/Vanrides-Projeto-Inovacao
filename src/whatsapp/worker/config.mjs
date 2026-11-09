@@ -48,15 +48,20 @@ export function privateSecret(file) {
   finally { if (fd !== undefined) { try { closeSync(fd); } catch { throw new WorkerError('CONFIG_INVALID'); } } }
 }
 
-/** Only explicit dedicated local070 files are read; no secret discovery or plaintext env fallback. */
+/** Explicit lab/MVP files only; no secret discovery or plaintext env fallback. */
 export function loadConfig(env = process.env) {
   try {
-    if (env.WA070_ENVIRONMENT !== 'wa070-local') invalidConfig();
+    const environment = env.WA070_ENVIRONMENT;
+    if (!['wa070-local', 'vanrides-mvp-hml'].includes(environment)) invalidConfig();
     if (env.WA070_LOCAL_MODE !== undefined && !['true', 'false'].includes(env.WA070_LOCAL_MODE)) invalidConfig();
     const localMode = env.WA070_LOCAL_MODE === 'true';
     const allowedHttpHosts = env.WA070_HTTP_HOSTS ? env.WA070_HTTP_HOSTS.split(',') : [];
+    // The published MVP never inherits the lab's cleartext exception.
+    if (environment === 'vanrides-mvp-hml' && (localMode || allowedHttpHosts.length !== 0)) invalidConfig();
     const backendBaseUrl = trustedOrigin(env.WA070_BACKEND_BASE_URL, { localMode, allowedHttpHosts });
     const evolutionBaseUrl = trustedOrigin(env.WA070_EVOLUTION_BASE_URL, { localMode, allowedHttpHosts });
+    if (environment === 'vanrides-mvp-hml'
+        && (!backendBaseUrl.startsWith('https:') || !evolutionBaseUrl.startsWith('https:'))) invalidConfig();
     if (evolutionBaseUrl.startsWith('http:') && !['127.0.0.1', 'localhost', '[::1]'].includes(new URL(evolutionBaseUrl).hostname)) invalidConfig();
     if (!/^[A-Za-z0-9_-]{1,128}$/.test(env.WA070_INSTANCE ?? '')) invalidConfig();
     const host = env.WA070_HOST ?? '127.0.0.1';
@@ -77,7 +82,7 @@ export function loadConfig(env = process.env) {
     if (![secrets.conversationToken, secrets.deliveryToken, secrets.controlToken].every(isToken)
         || !/^[\x21-\x7e]{1,4096}$/.test(secrets.evolutionApiKey)
         || new Set(Object.values(secrets)).size !== Object.keys(secrets).length) invalidConfig();
-    const config = { environment: 'wa070-local', backendBaseUrl, evolutionBaseUrl, instance: env.WA070_INSTANCE,
+    const config = { environment, backendBaseUrl, evolutionBaseUrl, instance: env.WA070_INSTANCE,
       host, port: Number(portValue), localMode, allowedHttpHosts: Object.freeze([...allowedHttpHosts]) };
     for (const [name, value] of Object.entries(secrets)) Object.defineProperty(config, name, { value, enumerable: false });
     return Object.freeze(config);

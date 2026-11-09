@@ -1,11 +1,7 @@
-name: Aplicativo motorista
+name: Verificacao opcional do aplicativo
 
-on:
-  push:
-    branches: [main]
-    paths: ['src/aplicativo-motorista/**', 'scripts/check_app.sh', '.github/workflows/aplicativo.yml']
-  pull_request:
-    paths: ['src/aplicativo-motorista/**', 'scripts/check_app.sh', '.github/workflows/aplicativo.yml']
+# Fora do CI/CD automatico; executar apenas em validacao direcionada.
+'on':
   workflow_dispatch:
 
 permissions:

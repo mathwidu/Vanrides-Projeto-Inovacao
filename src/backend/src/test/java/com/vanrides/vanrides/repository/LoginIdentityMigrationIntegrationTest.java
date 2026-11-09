@@ -25,7 +25,7 @@ import static org.assertj.core.api.Assertions.catchThrowable;
 @Testcontainers(disabledWithoutDocker = true)
 class LoginIdentityMigrationIntegrationTest {
 
-    private static final String LATEST_SCHEMA_VERSION = "37";
+    private static final String LATEST_SCHEMA_VERSION = "39";
 
     @Container
     static PostgreSQLContainer<?> postgres = LoginIdentityPostgresTestSupport.postgres(

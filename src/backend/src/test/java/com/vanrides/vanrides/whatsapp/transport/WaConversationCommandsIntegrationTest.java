@@ -19,8 +19,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @Testcontainers(disabledWithoutDocker = true)
 class WaConversationCommandsIntegrationTest {
     @Container static final PostgreSQLContainer<?> POSTGRES = WaTransportTestSupport.postgres("wa_conversation_commands");
+    private static final WaTransportTestDatabase DATABASE = new WaTransportTestDatabase(POSTGRES);
     private WaConversationTestSupport c;
-    @BeforeEach void reset() { c = new WaConversationTestSupport(POSTGRES); }
+    @BeforeEach void reset() { c = new WaConversationTestSupport(DATABASE.fixture()); }
 
     @Test void helpIsAtomicAndReplayableWithoutCreatingAProfileOrLeakingInternalFields() {
         UUID actor = c.actor(); Lease event = c.text(actor, "AJUDA");

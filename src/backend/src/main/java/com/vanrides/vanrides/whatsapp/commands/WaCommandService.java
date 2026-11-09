@@ -25,8 +25,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class WaCommandService {
     private static final Set<String> IMPLEMENTED = Set.of("START_ONBOARDING", "SET_PROFILE_NAME", "ACCEPT_NOTICE",
-        "CLAIM_DRIVER_INVITE", "CONFIRM_PAIRING", "RESPOND_TO_MESSAGE", "REQUEST_SUPPORT");
-    private static final Set<String> FUTURE = Set.of("FINISH_RUN", "GET_DRIVER_LOCATION",
+        "CLAIM_DRIVER_INVITE", "CONFIRM_PAIRING", "RESPOND_TO_MESSAGE", "REQUEST_SUPPORT", "GET_DRIVER_LOCATION");
+    private static final Set<String> FUTURE = Set.of("FINISH_RUN",
         "SET_PREFERENCE", "REQUEST_DATA_DELETION");
     private final JdbcTemplate jdbc;
     private final WaInboxAccess inbox;
@@ -41,6 +41,7 @@ public class WaCommandService {
     private final WaPassengerSetup passenger;
     private final WaAttendanceConversation attendance;
     private final WaRunConversation runs;
+    private final WaLocationConversation locations;
 
     public WaCommandService(JdbcTemplate jdbc, WaInboxAccess inbox, WaCommandStore store, WaOnboardingCommands onboarding,
                             WaPairingService pairing, WaSettings settings, WaClock clock, WaCrypto crypto) {
@@ -51,6 +52,7 @@ public class WaCommandService {
         this.passenger = new WaPassengerSetup(jdbc, clock, crypto, settings);
         this.attendance = new WaAttendanceConversation(jdbc, clock, settings, crypto);
         this.runs = new WaRunConversation(jdbc, clock, settings, crypto);
+        this.locations = new WaLocationConversation(jdbc, clock, settings);
     }
 
     @Transactional
@@ -61,6 +63,10 @@ public class WaCommandService {
         ObjectNode result = WaJson.object(WaJson.write(Map.of("inboxEventId", eventId.toString(), "entityVersion", actor.version(),
             "actorState", actor.role(), "step", step(actor), "allowedCommands", allowed(actor, event),
             "options", List.of(), "serverTime", clock.now().toString())));
+        if(settings.teamApiOnly()) {
+            result.put("registrationStep",conversation.registration(actor,settings.enabled())).put("eventFreshness",conversation.freshness(event));
+            inbox.revalidate(event);return result;
+        }
         var offer = driverOffer(actor, event);
         if (offer != null) result.set("options", offer.options());
         var passengerOffer = passengerOffer(actor, event);
@@ -84,6 +90,8 @@ public class WaCommandService {
         UUID eventId = WaJson.uuid(envelope, "inboxEventId");
         long version = WaJson.version(envelope);
         if (!(envelope.get("payload") instanceof ObjectNode payload)) throw WaProblem.invalid();
+        if(settings.teamApiOnly() && !(type.equals("START_ONBOARDING") || type.equals("RESPOND_TO_MESSAGE")
+            && payload.path("responseCode").asText().equals("HELP"))) throw WaProblem.denied();
         if (!IMPLEMENTED.contains(type) && !FUTURE.contains(type) && !WaDriverSetup.COMMANDS.contains(type)
                 && !WaPassengerSetup.COMMANDS.contains(type) && !WaAttendanceConversation.COMMANDS.contains(type)
                 && !WaRunConversation.COMMANDS.contains(type)) throw WaProblem.invalid();
@@ -103,6 +111,9 @@ public class WaCommandService {
         boolean initiallyCurrent = conversation.freshness(event).equals("CURRENT");
         UUID commandId = UUID.randomUUID();
         UUID responseId = UUID.randomUUID();
+        boolean locationCommand = type.equals("GET_DRIVER_LOCATION");
+        WaLocationConversation.Result locationResult = locationCommand && allowed(actor,event).contains(type)
+            ? locations.execute(actor,event) : null;
         boolean runCommand = WaRunConversation.COMMANDS.contains(type);
         WaRunConversation.Result runResult = runCommand
             ? allowed(actor, event).contains(type) ? runs.execute(actor, event, type, payload, responseId) : WaRunConversation.unavailable()
@@ -123,11 +134,13 @@ public class WaCommandService {
         WaDriverSetup.Result driverResult = driverCommand
             ? allowed(actor, event).contains(type) ? driver.execute(actor, event, type, payload, responseId) : WaDriverSetup.unavailable()
             : null;
-        WaDecision decision = runCommand ? runResult.decision() : attendanceCommand ? attendanceResult.decision() : passengerCommand ? passengerResult.decision()
+        WaDecision decision = locationCommand ? locationResult == null ? WaDecision.error(WaProblem.Code.ACTION_NOT_ALLOWED) : locationResult.decision()
+            : runCommand ? runResult.decision() : attendanceCommand ? attendanceResult.decision() : passengerCommand ? passengerResult.decision()
             : driverCommand ? driverResult.decision() : apply(type, payload, actor, event, correlation);
         WaProfileState current = store.profile(actor.identityId());
         String registration = conversation.registration(current, settings.enabled());
-        String response = runCommand ? runResult.text() : attendanceCommand ? attendanceResult.text() : passengerCommand ? passengerResult.text()
+        String response = locationCommand ? locationResult == null ? com.vanrides.vanrides.whatsapp.tracking.WaVehicleLocation.UNAVAILABLE : locationResult.text()
+            : runCommand ? runResult.text() : attendanceCommand ? attendanceResult.text() : passengerCommand ? passengerResult.text()
             : driverCommand ? driverResult.text() : response(type, payload, decision, registration, current, event);
         if (decision.error() == null) {
             ObjectNode result = WaJson.object("{}");
@@ -141,10 +154,13 @@ public class WaCommandService {
             decision = WaDecision.ok(result);
         }
         store.save(commandId, event, key, type, hash, decision);
-        if (!runCommand && !attendanceCommand && !driverCommand && !passengerCommand && decision.error() == null && !type.equals("REQUEST_SUPPORT")
+        if (!locationCommand && !runCommand && !attendanceCommand && !driverCommand && !passengerCommand && decision.error() == null && !type.equals("REQUEST_SUPPORT")
                 && (!type.equals("RESPOND_TO_MESSAGE") || Set.of("HELP", "CONTINUE").contains(payload.path("responseCode").asText())))
             conversation.emitted(current, event, registration);
-        if (runCommand) {
+        if (locationCommand) {
+            WaFoundationResponses.saveConversation(jdbc,responseId,commandId,actor.identityId(),response,clock.now());
+            if(locationResult!=null) locations.attach(responseId,locationResult);
+        } else if (runCommand) {
             WaFoundationResponses.saveRun(jdbc, responseId, commandId, actor.identityId(), response, clock.now());
             runs.attach(responseId, commandId, actor.identityId(), runResult);
         } else if (attendanceCommand) {
@@ -192,6 +208,8 @@ public class WaCommandService {
 
     private String response(String type, ObjectNode payload, WaDecision decision, String registration, WaProfileState actor, WaInboxAccess.Context event) {
         if (decision.error() != null) return WaConversationResponses.rejected(decision.error());
+        if(settings.teamApiOnly() && type.equals("RESPOND_TO_MESSAGE"))
+            return "Este ambiente permite somente o cadastro sintético de teste. Use o roteiro recebido para iniciar e conferir o resultado.";
         if (type.equals("RESPOND_TO_MESSAGE")) {
             String help = null;
             if (Set.of("HELP", "CONTINUE").contains(payload.path("responseCode").asText())) {
@@ -209,10 +227,16 @@ public class WaCommandService {
 
     private List<String> allowed(WaProfileState actor, WaInboxAccess.Context event) {
         if (actor.blocked() || !settings.enabled() || conversation.paused(actor.identityId())) return List.of();
+        if(settings.teamApiOnly()) {
+            if(!conversation.freshness(event).equals("CURRENT")) return List.of();
+            if(conversation.isHelp(event)) return List.of("RESPOND_TO_MESSAGE");
+            return actor.role().equals("UNREGISTERED") && conversation.hasText(event) ? List.of("START_ONBOARDING") : List.of();
+        }
         List<String> commands = new ArrayList<>();
         commands.add("RESPOND_TO_MESSAGE");
         if (!conversation.freshness(event).equals("CURRENT")) return List.copyOf(commands);
         if (conversation.explicitSupport(event)) commands.add("REQUEST_SUPPORT");
+        if (locations.offer(actor,event)) { commands.add("GET_DRIVER_LOCATION"); return List.copyOf(commands); }
         var runOffer = runOffer(actor, event);
         var attendanceOffer = runOffer == null ? attendanceOffer(actor, event) : null;
         var passengerOffer = runOffer == null && attendanceOffer == null ? passengerOffer(actor, event) : null;

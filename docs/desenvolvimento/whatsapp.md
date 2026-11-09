@@ -77,5 +77,19 @@ bancos ou capturas de aparelhos no Git ou nos artefatos públicos.
 Hosts do receptor GPS, bundle IDs e pins dos laboratórios foram conservados
 porque fazem parte dos contratos e de verificações de origem. Eles não são
 chaves nem acionam tráfego nos testes offline. Os manifests de `vps110` incluem
-identificadores públicos do ambiente histórico; a entrada atual da equipe
+identificadores públicos do ambiente histórico; a entrada dos testes sintéticos
 continua sendo loopback e não usa esses destinos automaticamente.
+
+
+## Testar o canal hospedado
+
+O [guia da homologação](homologacao-da-equipe.md) descreve o ambiente real:
+Evolution dedicada → receptor → API; n8n aciona o worker para conversa e envio.
+A OpenAI está desabilitada e um contato de passageiro foi admitido. Novos
+participantes dependem de admissão pelo operador. Não importar os exports nem
+ativar agendas novamente para testar uma alteração de código.
+
+O código no Git não altera automaticamente o bot hospedado. Desenvolva e teste
+localmente; a publicação de uma revisão e o teste de contato real são passos
+separados. Os exports inativos citados acima pertencem à receita/teste sintético;
+na VPS, quatro agendas e o tratamento de erros do VanRides estão publicados.

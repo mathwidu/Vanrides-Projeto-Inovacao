@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.vanrides.vanrides.whatsapp.api.WaJson;
 import com.vanrides.vanrides.whatsapp.api.WaProblem;
 import com.vanrides.vanrides.whatsapp.auth.WaCrypto;
+import com.vanrides.vanrides.whatsapp.config.WaSettings;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -14,8 +15,8 @@ import static com.vanrides.vanrides.whatsapp.tracking.WaTrackingStore.*;
 
 /** Individual durable receipts do not infer a contiguous ACK from the highest sequence. */
 final class WaTrackingSamples {
-    private final WaTrackingStore store; private final WaTrackingNotices notices;
-    WaTrackingSamples(WaTrackingStore store) { this.store=store; notices=new WaTrackingNotices(store.jdbc); }
+    private final WaTrackingStore store; private final WaTrackingNotices notices; private final WaApproachDecisions approach;
+    WaTrackingSamples(WaTrackingStore store,WaSettings settings) { this.store=store; notices=new WaTrackingNotices(store.jdbc); approach=new WaApproachDecisions(store.jdbc,settings); }
     ObjectNode ingest(Session session,Run run,ObjectNode request,Instant now,boolean enabled) {
         WaJson.fields(request,"sessionId","generation","batchId","deviceTime","samples");
         if(!WaJson.uuid(request,"sessionId").equals(session.id()) || WaTrackingPolicy.positive(request,"generation")!=session.generation()) throw WaProblem.missing();
@@ -39,6 +40,7 @@ final class WaTrackingSamples {
         store.jdbc.update("INSERT INTO wa.tracking_batch_receipt(session_id,generation,batch_id,request_hash,result_json,received_at) VALUES (?,?,?,?,'{}'::jsonb,?)",
             session.id(),session.generation(),batch,hash,ts(now));
         long lastSequence=session.sequence(); Instant lastCaptured=session.captured(); JsonNode newest=null;
+        var newFixes=new ArrayList<JsonNode>();
         boolean continuing="CONTINUE".equals(WaTrackingResponses.action(session,run,now,enabled));
         boolean clockSkew=WaTrackingPolicy.instant(request,"deviceTime").isAfter(now.plusSeconds(10));
         for(var sample:ordered) {
@@ -59,7 +61,7 @@ final class WaTrackingSamples {
                 INSERT INTO wa.tracking_sample_receipt(id,session_id,generation,batch_id,sequence,captured_at,received_at,outcome,rejection_code,sample_hash)
                 VALUES (?,?,?,?,?,?,?,?,?,?)
                 """,UUID.randomUUID(),session.id(),session.generation(),batch,seq,ts(captured),ts(now),code==null?"ACCEPTED":"REJECTED",code,sampleHash);
-            if(code==null) { accepted.add(seq); lastSequence=seq; lastCaptured=captured; newest=sample; }
+            if(code==null) { accepted.add(seq); lastSequence=seq; lastCaptured=captured; newest=sample; newFixes.add(sample); }
             else { rejected.addObject().put("sequence",seq).put("code",code); if("FUTURE".equals(code)) clockSkew=true; }
         }
         if(newest!=null) {
@@ -69,6 +71,7 @@ final class WaTrackingSamples {
                 """,lastSequence,ts(lastCaptured),ts(now),newest.path("latitude").doubleValue(),newest.path("longitude").doubleValue(),newest.path("accuracyM").doubleValue(),session.id());
             store.jdbc.update("UPDATE wa.operation_run SET state='TRACKING',started_at=COALESCE(started_at,?),start_failure_expires_at=NULL,version=version+1 WHERE id=? AND state IN ('STARTING','DEGRADED')",ts(now),run.id());
             notices.confirmed(session,now);
+            for(var fix:newFixes) approach.accept(session.id(),run.id(),fix,now);
         } else if(clockSkew && continuing) store.jdbc.update("UPDATE wa.tracking_session SET gps_state='CLOCK_SKEW',version=version+1 WHERE id=?",session.id());
         Session updated=store.session(session.id(),session.driver()); Run updatedRun=store.run(run.id(),run.driver());
         // Only sequence outcomes are immutable. Authorization and GPS are projected live,

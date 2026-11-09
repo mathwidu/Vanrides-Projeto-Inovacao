@@ -68,8 +68,14 @@ git switch -c feat/tarefa-descricao-curta
 ## 4. Implementar e testar
 
 Use os comandos da sua frente. Preserve contratos ou ajuste produtores e
-consumidores juntos. Não reduza testes para obter CI verde. Registre comando,
+consumidores juntos. Execute os testes relacionados ao comportamento alterado;
+a CI automática confirma a construção, não executa a suíte de testes. Registre comando,
 revisão, ambiente, resultado e testes que não conseguiu executar.
+
+A [revisão da CI e dos testes](docs/desenvolvimento/revisao-ci-e-testes.md)
+registra os gargalos, mudanças implementadas, medições e etapas ainda pendentes.
+Use os comandos atuais do guia da sua frente; o gate local completo permanece
+disponível para validações direcionadas, fora do caminho de publicação.
 
 Não comite `.env`, chaves, assinatura Apple/Android, conversas, telefones reais
 ou coordenadas pessoais. Use dados sintéticos. Revise os logs antes de anexá-los.
@@ -125,5 +131,16 @@ Envie uma correção pequena de instrução ou um teste de cenário compreendido
 Isso confirma acesso e revisão. A escolha da área depende do grupo, não do
 sistema operacional de cada pessoa.
 
-Deploy e testes com usuários são etapas separadas. Testes físicos do iPhone
-continuam pausados e a linha dedicada do bot ainda depende de ativação.
+Deploy e testes com usuários são etapas separadas. O bot está conectado à
+Evolution e o perfil básico foi validado no WhatsApp real. O uso pelo colega
+requer admissão do contato; credenciais e convites são individuais. Testes
+físicos do aplicativo iPhone continuam pausados. O novo fluxo publica a API
+automaticamente após a construção da aplicação e da imagem em um push na `main`, assim que o provisionamento
+inicial for concluído. PRs não publicam. Consulte o
+[estado de ativação](docs/desenvolvimento/area-da-equipe.md) e o
+[procedimento de deploy](deploy/homologacao/AUTOMATICO.md).
+
+O [guia de homologação da equipe](docs/desenvolvimento/homologacao-da-equipe.md)
+reúne URLs, versões, fluxos, roteiro de teste e limites do que está publicado.
+Antes de diagnosticar uma diferença de resposta, confira se a mudança está
+somente na sua branch, na `main` ou também na versão instalada na VPS.

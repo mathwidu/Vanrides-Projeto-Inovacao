@@ -45,7 +45,8 @@ public final class WaTransportAccess {
               LEFT JOIN wa.test_cohort c ON c.id=i.test_cohort_id
               LEFT JOIN wa.profile p ON p.identity_id=i.id
               WHERE i.id=? AND (?=false OR c.environment=?)
+                AND (?=false OR c.synthetic)
                 AND (p.status IS NULL OR p.status NOT IN ('SUSPENDED','CLOSED')))
-            """, Boolean.class, identity, settings.cohortOnly(), settings.environment()));
+            """, Boolean.class, identity, settings.cohortOnly(), settings.environment(),settings.teamApiOnly()));
     }
 }

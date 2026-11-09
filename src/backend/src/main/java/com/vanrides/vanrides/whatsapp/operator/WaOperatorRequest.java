@@ -12,9 +12,11 @@ import java.util.UUID;
 public final class WaOperatorRequest {
     enum Operation {
         CREATE_COHORT("create-test-cohort", Set.of("synthetic"), Set.of()),
+        CREATE_AUTHORIZED_COHORT("create-authorized-cohort", Set.of("reasonCode"), Set.of()),
+        ADMIT_PARTICIPANT("admit-participant", Set.of("identityId", "allowedInstanceId", "phoneNumber", "phoneVerification"), Set.of()),
         PROVISION_CREDENTIAL("provision-service-credential", Set.of("principal", "allowedInstanceId", "expiresAt"), Set.of()),
         REVOKE_CREDENTIAL("revoke-service-credential", Set.of("credentialId", "reasonCode"), Set.of()),
-        DRIVER_BOOTSTRAP("driver-bootstrap", Set.of("identityId", "expiresAt"), Set.of()),
+        DRIVER_BOOTSTRAP("driver-bootstrap", Set.of("identityId", "expiresAt"), Set.of("inviteId")),
         SEED("seed-test-data", Set.of("identityId", "inboxEventId", "workerCredentialId", "leaseExpiresAt"),
                 Set.of("pairingCode", "driverInviteCode", "messageText")),
         COMPLETE_INBOX("complete-test-inbox", Set.of("inboxEventId"), Set.of()),
@@ -59,7 +61,7 @@ public final class WaOperatorRequest {
         if (!text("environment", 1, 32).matches("[a-z][a-z0-9_-]{0,31}")) throw new WaOperatorFailure();
         uuid("batchId");
         WaDpopVerifier.canonical32(text("operatorCredential", 43, 43));
-        for (String field : new String[] {"identityId", "inboxEventId", "workerCredentialId", "credentialId", "deviceId", "afterCaseId"})
+        for (String field : new String[] {"identityId", "inboxEventId", "workerCredentialId", "credentialId", "deviceId", "afterCaseId", "inviteId"})
             if (data.has(field)) uuid(field);
         for (String field : new String[] {"expiresAt", "leaseExpiresAt"}) if (data.has(field)) instant(field);
         if (data.has("reasonCode") && !text("reasonCode", 1, 64).matches("[A-Z][A-Z0-9_]{0,63}")) throw new WaOperatorFailure();
@@ -69,6 +71,10 @@ public final class WaOperatorRequest {
         if (data.has("limit")) limit();
         if (operation == Operation.CREATE_COHORT && (!data.get("synthetic").isBoolean() || !data.get("synthetic").booleanValue()))
             throw new WaOperatorFailure();
+        if (operation == Operation.CREATE_AUTHORIZED_COHORT && !text("reasonCode",1,64).equals("AUTHORIZED_HOMOLOGATION_GROUP"))
+            throw new WaOperatorFailure();
+        if (operation == Operation.ADMIT_PARTICIPANT && (!text("phoneNumber",9,16).matches("\\+[1-9][0-9]{7,14}")
+                || !text("phoneVerification",1,64).equals("PARTICIPANT_CONFIRMED"))) throw new WaOperatorFailure();
         if (data.has("pairingCode") && !text("pairingCode", 8, 8).matches("[BCDFGHJKMNPQRSTVWXYZ]{8}"))
             throw new WaOperatorFailure();
         if (data.has("driverInviteCode")) WaDpopVerifier.canonical32(text("driverInviteCode", 43, 43));

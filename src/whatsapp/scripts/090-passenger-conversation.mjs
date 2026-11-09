@@ -26,7 +26,7 @@ export function passengerConversation({ input, tools, actor, address, peers, ins
     summary(response.data, kind, status, response.status);
   }
 
-  async function send(person, message, command, { notify, expectedError, verifyRunLink } = {}) {
+  async function send(person, message, command, { notify, expectedError, verifyRunLink, verifyStaticPin, beforeDispatch } = {}) {
     const id = 'wa090_' + crypto.randomUUID().replaceAll('-', '');
     lastEvent = { event: 'messages.upsert', instance, date_time: new Date().toISOString(), data: {
       key: { id, fromMe: false, remoteJid: person.address }, messageTimestamp: Math.floor(Date.now() / 1000),
@@ -52,9 +52,14 @@ export function passengerConversation({ input, tools, actor, address, peers, ins
       && boxes.map(box => box.actor).sort().every((id, i) => id === recipients[i]), 'PASSENGER_WRONG_RECIPIENTS');
     if (!expectedError) demand(Array.isArray(result.result.responseIds) && result.result.responseIds.length === boxes.length
       && boxes.every(box => uuid(box.id) && result.result.responseIds.includes(box.id)), 'PASSENGER_RECEIPT_MISSING_RESPONSE');
-    const delivered = new Map();
+    const delivered = new Map(), pins = new Map();
     for (const box of boxes) {
-      provider.enqueue({ outboxId: box.id, address: byActor.get(box.actor).address, matches: text => {
+      provider.enqueue({ outboxId: box.id, address: byActor.get(box.actor).address, beforeDispatch,
+        ...(verifyStaticPin ? { pinMatches: body => {
+          if (result.command !== 'GET_DRIVER_LOCATION' || box.actor !== person.actor
+              || !verifyStaticPin(body)) return false;
+          pins.set(box.actor, body); return true;
+        } } : {}), matches: text => {
         if (verifyRunLink) {
           if (!['REQUEST_START','REQUEST_RESUME'].includes(result.command) || box.actor !== driver.actor
               || !verifyRunLink(text, box.text)) return false;
@@ -77,7 +82,8 @@ export function passengerConversation({ input, tools, actor, address, peers, ins
         'PASSENGER_DISPATCH_NOT_VERIFIED');
       if (box.actor !== person.actor) peerDeliveries++;
     }
-    return { reply: delivered.get(person.actor), peer: notify ? delivered.get(notify.actor) : null };
+    return { reply: delivered.get(person.actor), peer: notify ? delivered.get(notify.actor) : null,
+      ...(verifyStaticPin ? { pin: pins.get(person.actor) } : {}) };
   }
 
   async function replay() {

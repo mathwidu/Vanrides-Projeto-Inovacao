@@ -326,17 +326,19 @@
         "Operação de consulta prevista e regra de elegibilidade da viagem disponíveis."
       ],
       "decisionPending": null,
-      "nextRequiredOutcome": "Implementar a consulta com escopo dos participantes e seus testes.",
+      "nextRequiredOutcome": "Validar consulta e recebimento do pin no WhatsApp de teste, após publicar a homologação.",
       "sourcePaths": [
         "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/auth/WaIngressFilter.java",
         "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/auth/WaProofFilter.java",
-        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaCommandService.java"
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaCommandService.java",
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaLocationConversation.java"
       ],
       "evidencePaths": [
         "program/evidence/VR-WA-040-DOMAIN-AUTH.md",
         "program/evidence/VR-WA-110-RUN-TRACKING.md",
         "program/cards/VR-WA-040-DOMAIN-AUTH.md",
-        "program/cards/VR-WA-110-RUN-TRACKING.md"
+        "program/cards/VR-WA-110-RUN-TRACKING.md",
+        "program/evidence/VR-WA-130-APPROACH.md"
       ],
       "planningPaths": [
         "program/cards/VR-WA-040-DOMAIN-AUTH.md",
@@ -370,13 +372,15 @@
         "Consulta autorizada e acesso à última posição com seu horário."
       ],
       "decisionPending": null,
-      "nextRequiredOutcome": "Implementar a resposta com horário e indicação de posição antiga.",
+      "nextRequiredOutcome": "Validar consulta e recebimento do pin no WhatsApp de teste, após publicar a homologação.",
       "sourcePaths": [
-        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaCommandService.java"
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaCommandService.java",
+        "src/whatsapp/transport/evolution-location.mjs"
       ],
       "evidencePaths": [
         "program/cards/VR-WA-110-RUN-TRACKING.md",
-        "program/cards/VR-WA-130-APPROACH.md"
+        "program/cards/VR-WA-130-APPROACH.md",
+        "program/evidence/VR-WA-130-APPROACH.md"
       ],
       "planningPaths": [
         "program/cards/VR-WA-110-RUN-TRACKING.md",
@@ -410,15 +414,17 @@
         "Recepção de GPS validada e operação de consulta autorizada."
       ],
       "decisionPending": null,
-      "nextRequiredOutcome": "Concluir a consulta autorizada e testar posição desatualizada.",
+      "nextRequiredOutcome": "Validar consulta e recebimento do pin no WhatsApp de teste, após publicar a homologação.",
       "sourcePaths": [
         "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/tracking/WaTrackingSamples.java",
         "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/tracking/WaTrackingService.java",
-        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaCommandService.java"
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaCommandService.java",
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/tracking/WaVehicleLocation.java"
       ],
       "evidencePaths": [
         "program/evidence/VR-WA-110-RUN-TRACKING.md",
-        "program/cards/VR-WA-110-RUN-TRACKING.md"
+        "program/cards/VR-WA-110-RUN-TRACKING.md",
+        "program/evidence/VR-WA-130-APPROACH.md"
       ],
       "planningPaths": [
         "program/cards/VR-WA-110-RUN-TRACKING.md"
@@ -451,12 +457,14 @@
         "Regra de aproximação configurada e base de envio e recuperação disponíveis."
       ],
       "decisionPending": null,
-      "nextRequiredOutcome": "Implementar a regra e o aviso por passageiro antes do teste de utilidade.",
+      "nextRequiredOutcome": "Validar o aviso com passageiros consentidos e rotina revisada em percurso.",
       "sourcePaths": [
-        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaCommandService.java"
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaCommandService.java",
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/transport/WaApproachDelivery.java"
       ],
       "evidencePaths": [
-        "program/cards/VR-WA-130-APPROACH.md"
+        "program/cards/VR-WA-130-APPROACH.md",
+        "program/evidence/VR-WA-130-APPROACH.md"
       ],
       "planningPaths": [
         "program/cards/VR-WA-130-APPROACH.md"
@@ -1548,10 +1556,13 @@
         "Antes de iniciar, documentar a versão da regra, os parâmetros de ensaio e os resultados esperados para aproximação, sentido incorreto e ambiguidade. Dispor de posições válidas e pontos aprovados."
       ],
       "decisionPending": "Confirmar o conjunto versionado de parâmetros e casos usado no ensaio. Os valores iniciais existentes são hipóteses; a calibração e a utilidade em percurso continuam pendentes.",
-      "nextRequiredOutcome": "Implementar a regra com posição atual, sentido e ponto corretos.",
-      "sourcePaths": [],
+      "nextRequiredOutcome": "Validar o aviso com passageiros consentidos e rotina revisada em percurso.",
+      "sourcePaths": [
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/tracking/WaApproachPolicy.java"
+      ],
       "evidencePaths": [
-        "program/cards/VR-WA-130-APPROACH.md"
+        "program/cards/VR-WA-130-APPROACH.md",
+        "program/evidence/VR-WA-130-APPROACH.md"
       ],
       "planningPaths": [
         "program/cards/VR-WA-130-APPROACH.md"
@@ -1594,17 +1605,19 @@
         "Lista da partida e regra de aproximação integradas."
       ],
       "decisionPending": null,
-      "nextRequiredOutcome": "Integrar a progressão dos pontos ao aviso de aproximação.",
+      "nextRequiredOutcome": "Validar o aviso com passageiros consentidos e rotina revisada em percurso.",
       "sourcePaths": [
         "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaDriverMutations.java",
         "src/backend/src/test/java/com/vanrides/vanrides/whatsapp/transport/WaDriverRoutinesIntegrationTest.java",
         "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaAttendanceMutation.java",
-        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaAttendanceConversation.java"
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaAttendanceConversation.java",
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/tracking/WaApproachDecisions.java"
       ],
       "evidencePaths": [
         "program/evidence/VR-WA-100-ATTENDANCE.md",
         "program/evidence/VR-WA-110-RUN-TRACKING.md",
-        "program/cards/VR-WA-130-APPROACH.md"
+        "program/cards/VR-WA-130-APPROACH.md",
+        "program/evidence/VR-WA-130-APPROACH.md"
       ],
       "planningPaths": [
         "program/cards/VR-WA-130-APPROACH.md"
@@ -1637,10 +1650,13 @@
         "Produtor de aproximação disponível e cenários esperados congelados antes da execução."
       ],
       "decisionPending": null,
-      "nextRequiredOutcome": "Criar e executar os cenários de destinatário, ponto comum e duplicação.",
-      "sourcePaths": [],
+      "nextRequiredOutcome": "Validar o aviso com passageiros consentidos e rotina revisada em percurso.",
+      "sourcePaths": [
+        "src/backend/src/test/java/com/vanrides/vanrides/whatsapp/transport/WaApproachIntegrationTest.java"
+      ],
       "evidencePaths": [
-        "program/cards/VR-WA-130-APPROACH.md"
+        "program/cards/VR-WA-130-APPROACH.md",
+        "program/evidence/VR-WA-130-APPROACH.md"
       ],
       "planningPaths": [
         "program/cards/VR-WA-130-APPROACH.md"

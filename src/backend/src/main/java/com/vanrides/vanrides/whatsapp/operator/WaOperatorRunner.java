@@ -1,5 +1,6 @@
 package com.vanrides.vanrides.whatsapp.operator;
 
+import com.vanrides.vanrides.whatsapp.api.WaJson;
 import java.nio.file.Path;
 import java.util.function.Function;
 import org.slf4j.Logger;
@@ -32,11 +33,18 @@ public final class WaOperatorRunner implements ApplicationRunner {
         try {
             mode.requireLocal();
             String destination = environment.getProperty("vanrides.wa.operator.output-file");
-            if (destination == null || input.isBlank() || destination.isBlank()) throw new WaOperatorFailure();
-            WaOperatorRequest request = WaOperatorRequest.parse(WaOperatorFiles.read(Path.of(input)));
-            try (WaOperatorFiles files = filesFactory.apply(Path.of(destination))) {
-                service.execute(request, files::prepare);
-                files.committed();
+            if (input.isBlank()) throw new WaOperatorFailure();
+            byte[] bytes = WaOperatorFiles.read(Path.of(input));
+            if (WaOperatorBatch.selected(WaJson.object(bytes))) {
+                if (destination != null) throw new WaOperatorFailure();
+                WaOperatorBatch.parse(bytes, Path.of(input)).execute(service, filesFactory);
+            } else {
+                if (destination == null || destination.isBlank()) throw new WaOperatorFailure();
+                WaOperatorRequest request = WaOperatorRequest.parse(bytes);
+                try (WaOperatorFiles files = filesFactory.apply(Path.of(destination))) {
+                    service.execute(request, files::prepare);
+                    files.committed();
+                }
             }
             LOGGER.info("WA_OPERATOR_OK");
         } catch (Exception failure) {

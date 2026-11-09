@@ -318,7 +318,7 @@ F05 · Onda 2 · [Issue #33](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Resultado esperado:** Somente o motorista e os passageiros autorizados consultam a posição daquela viagem.
 
-**Situação:** Parcial · Teste automatizado. GET_DRIVER_LOCATION ainda é recusado como dependência indisponível no código.
+**Situação:** Implementado · Laboratório. Jornada 130 com API e worker reais, aquisições e receptor sintéticos. Consulta autorizada, fila atrasada e replay verificados.
 
 **Inclui:**
 
@@ -345,13 +345,14 @@ F05 · Onda 2 · [Issue #33](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Decisão pendente:** Nenhuma adicional identificada.
 
-**Próxima ação:** Implementar a consulta com escopo dos participantes e seus testes.
+**Próxima ação:** Validar consulta e recebimento do pin no WhatsApp de teste, após publicar a homologação.
 
 **Onde conferir:**
 
 - `src/backend/src/main/java/com/vanrides/vanrides/whatsapp/auth/WaIngressFilter.java`
 - `src/backend/src/main/java/com/vanrides/vanrides/whatsapp/auth/WaProofFilter.java`
 - `src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaCommandService.java`
+- `src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaLocationConversation.java`
 
 <a id="t9b"></a>
 ## T9b — Responder consulta de localização
@@ -362,7 +363,7 @@ F05 · Onda 2 · [Issue #34](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Resultado esperado:** A resposta informa a última posição válida e quando ela foi obtida.
 
-**Situação:** Planejado · Pendente. O comando GET_DRIVER_LOCATION está explicitamente na lista de ações futuras.
+**Situação:** Implementado · Laboratório. Jornada 130 com API e worker reais, aquisições e receptor sintéticos. Consulta autorizada, fila atrasada e replay verificados.
 
 **Inclui:**
 
@@ -389,11 +390,12 @@ F05 · Onda 2 · [Issue #34](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Decisão pendente:** Nenhuma adicional identificada.
 
-**Próxima ação:** Implementar a resposta com horário e indicação de posição antiga.
+**Próxima ação:** Validar consulta e recebimento do pin no WhatsApp de teste, após publicar a homologação.
 
 **Onde conferir:**
 
 - `src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaCommandService.java`
+- `src/whatsapp/transport/evolution-location.mjs`
 
 <a id="t10"></a>
 ## T10 — Guardar a última posição válida
@@ -404,7 +406,7 @@ F05 · Onda 2 · [Issue #35](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Resultado esperado:** O armazenamento fornece a última posição válida e o horário para a consulta autorizada.
 
-**Situação:** Parcial · Teste automatizado. WaTrackingSamples atualiza a última posição; GET_DRIVER_LOCATION continua futuro.
+**Situação:** Implementado · Laboratório. Jornada 130 com API e worker reais, aquisições e receptor sintéticos. Consulta autorizada, fila atrasada e replay verificados.
 
 **Inclui:**
 
@@ -431,13 +433,14 @@ F05 · Onda 2 · [Issue #35](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Decisão pendente:** Nenhuma adicional identificada.
 
-**Próxima ação:** Concluir a consulta autorizada e testar posição desatualizada.
+**Próxima ação:** Validar consulta e recebimento do pin no WhatsApp de teste, após publicar a homologação.
 
 **Onde conferir:**
 
 - `src/backend/src/main/java/com/vanrides/vanrides/whatsapp/tracking/WaTrackingSamples.java`
 - `src/backend/src/main/java/com/vanrides/vanrides/whatsapp/tracking/WaTrackingService.java`
 - `src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaCommandService.java`
+- `src/backend/src/main/java/com/vanrides/vanrides/whatsapp/tracking/WaVehicleLocation.java`
 
 <a id="t11"></a>
 ## T11 — Preparar aviso de aproximação
@@ -448,7 +451,7 @@ F11 · Onda 2 · [Issue #36](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Resultado esperado:** Uma aproximação válida gera um aviso para o passageiro correto.
 
-**Situação:** Planejado · Pendente. A prova isolada do receptor não comprova este aviso no produto.
+**Situação:** Implementado · Teste automatizado. Casos de política e integração PostgreSQL passaram na suíte completa. Utilidade em percurso e canal real aguardam ensaio.
 
 **Inclui:**
 
@@ -475,11 +478,12 @@ F11 · Onda 2 · [Issue #36](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Decisão pendente:** Nenhuma adicional identificada.
 
-**Próxima ação:** Implementar a regra e o aviso por passageiro antes do teste de utilidade.
+**Próxima ação:** Validar o aviso com passageiros consentidos e rotina revisada em percurso.
 
 **Onde conferir:**
 
 - `src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaCommandService.java`
+- `src/backend/src/main/java/com/vanrides/vanrides/whatsapp/transport/WaApproachDelivery.java`
 
 <a id="t23"></a>
 ## T23 — Explicar cadastro e correção do ponto
@@ -1616,7 +1620,7 @@ F11 · Onda 2 · [Issue #75](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Resultado esperado:** A regra usa posição atual, ponto e sentido e recusa situações ambíguas.
 
-**Situação:** Planejado · Pendente. A regra do receptor isolado não é a entrega do aviso por pessoa.
+**Situação:** Implementado · Teste automatizado. Casos de política e integração PostgreSQL passaram na suíte completa. Utilidade em percurso e canal real aguardam ensaio.
 
 **Inclui:**
 
@@ -1643,7 +1647,11 @@ F11 · Onda 2 · [Issue #75](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Decisão pendente:** Confirmar o conjunto versionado de parâmetros e casos usado no ensaio. Os valores iniciais existentes são hipóteses; a calibração e a utilidade em percurso continuam pendentes.
 
-**Próxima ação:** Implementar a regra com posição atual, sentido e ponto corretos.
+**Próxima ação:** Validar o aviso com passageiros consentidos e rotina revisada em percurso.
+
+**Onde conferir:**
+
+- `src/backend/src/main/java/com/vanrides/vanrides/whatsapp/tracking/WaApproachPolicy.java`
 
 <a id="t50"></a>
 ## T50 — Respeitar progressão e cancelamento
@@ -1654,7 +1662,7 @@ F11 · Onda 2 · [Issue #76](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Resultado esperado:** Somente os próximos pontos e passageiros elegíveis podem gerar aviso.
 
-**Situação:** Parcial · Teste automatizado. Lista congelada e ausência tardia testadas; regra de passagem e aproximação ainda pendente.
+**Situação:** Implementado · Teste automatizado. Casos de política e integração PostgreSQL passaram na suíte completa. Utilidade em percurso e canal real aguardam ensaio.
 
 **Inclui:**
 
@@ -1681,7 +1689,7 @@ F11 · Onda 2 · [Issue #76](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Decisão pendente:** Nenhuma adicional identificada.
 
-**Próxima ação:** Integrar a progressão dos pontos ao aviso de aproximação.
+**Próxima ação:** Validar o aviso com passageiros consentidos e rotina revisada em percurso.
 
 **Onde conferir:**
 
@@ -1699,7 +1707,7 @@ F11 · Onda 2 · [Issue #77](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Resultado esperado:** Os testes demonstram os limites do produtor de aproximação.
 
-**Situação:** Planejado · Pendente. Testes do GPS isolado não fecham os cenários do produtor futuro.
+**Situação:** Implementado · Teste automatizado. Casos de política e integração PostgreSQL passaram na suíte completa. Utilidade em percurso e canal real aguardam ensaio.
 
 **Inclui:**
 
@@ -1726,7 +1734,11 @@ F11 · Onda 2 · [Issue #77](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Decisão pendente:** Nenhuma adicional identificada.
 
-**Próxima ação:** Criar e executar os cenários de destinatário, ponto comum e duplicação.
+**Próxima ação:** Validar o aviso com passageiros consentidos e rotina revisada em percurso.
+
+**Onde conferir:**
+
+- `src/backend/src/test/java/com/vanrides/vanrides/whatsapp/transport/WaApproachIntegrationTest.java`
 
 <a id="t52"></a>
 ## T52 — Encerrar a viagem automaticamente
@@ -2246,6 +2258,7 @@ F05 · Onda 2 · [Issue #89](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 **Onde conferir:**
 
 - `docs/runbooks/whatsapp-mvp/110-laboratorio-temporario.md`
+- `docs/desenvolvimento/homologacao-da-equipe.md`
 
 <a id="t64"></a>
 ## T64 — Instalar no ambiente autorizado de teste
@@ -2283,13 +2296,14 @@ F05 · Onda 2 · [Issue #90](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Decisão pendente:** Nenhuma adicional identificada.
 
-**Próxima ação:** Preparar ambiente final quando as funções e o número dedicado estiverem disponíveis.
+**Próxima ação:** Publicar a revisão aprovada no endereço reservado, conferir certificado, versão e executar uma operação autenticada.
 
 **Onde conferir:**
 
 - `docs/runbooks/whatsapp-mvp/110-laboratorio-temporario.md`
 - `src/whatsapp/worker/README.md`
 - `docs/runbooks/whatsapp-mvp/120-entrega-e-canal-real.md`
+- `docs/desenvolvimento/homologacao-da-equipe.md`
 
 <a id="t65"></a>
 ## T65 — Conferir o número dedicado
@@ -2300,7 +2314,7 @@ F11 · Onda 2 · [Issue #91](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Resultado esperado:** A conta dedicada envia mensagem e tem o retorno de entrega conferido.
 
-**Situação:** Planejado · Pendente. Proprietário precisa de outra linha; nenhuma entrega real foi comprovada.
+**Situação:** Planejado · Pendente. Número dedicado ativo no WhatsApp Business, confirmado pelo proprietário em 03/11/2026. Pareamento Evolution e entrega/retorno reais ainda pendentes.
 
 **Inclui:**
 
@@ -2327,12 +2341,13 @@ F11 · Onda 2 · [Issue #91](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Decisão pendente:** Nenhuma adicional identificada.
 
-**Próxima ação:** Disponibilizar a linha e conferir envio e confirmação reais.
+**Próxima ação:** Executar a primeira prova delimitada com Evolution exclusiva e o WhatsApp Business do Redmi; conferir envio e callback.
 
 **Onde conferir:**
 
 - `src/whatsapp/worker/README.md`
 - `docs/runbooks/whatsapp-mvp/120-entrega-e-canal-real.md`
+- `docs/desenvolvimento/homologacao-da-equipe.md`
 
 <a id="t66"></a>
 ## T66 — Testar agendas no ambiente escolhido

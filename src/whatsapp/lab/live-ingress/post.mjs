@@ -1,11 +1,18 @@
 import { strictJson, exact, timestamp } from './strict-json.mjs';
+import { isHml } from './hml-config.mjs';
 
 const unavailable = () => ({ ok: false });
 function cancel(body) {
   try { Promise.resolve(body?.cancel()).catch(() => {}); } catch { /* Never expose upstream errors. */ }
 }
 
-async function receipt(response, signal) {
+async function receipt(response, signal, config) {
+  if (isHml(config) && response.headers?.get('x-vanrides-environment') !== config.environment) {
+    cancel(response.body); return unavailable();
+  }
+  if (config.admissionMode === 'API' && response.headers?.get('x-vanrides-admission-policy') !== 'TEAM_V1') {
+    cancel(response.body); return unavailable();
+  }
   if (response.status !== 202 || !/^application\/json(?:;\s*charset=utf-8)?$/i.test(response.headers?.get('content-type') ?? '')
       || response.headers?.get('content-encoding') !== null
       || Number(response.headers?.get('content-length') ?? 0) > 4096) {
@@ -28,7 +35,7 @@ async function receipt(response, signal) {
     const body = strictJson(Buffer.concat(chunks, size));
     if (!exact(body, ['receiptId', 'status', 'serverTime'])
         || typeof body.receiptId !== 'string' || !/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/.test(body.receiptId)
-        || !['PERSISTED', 'DUPLICATE'].includes(body.status) || timestamp(body.serverTime) === null) return unavailable();
+        || !(isHml(config) ? ['PERSISTED', 'DUPLICATE', 'IGNORED'] : ['PERSISTED', 'DUPLICATE']).includes(body.status) || timestamp(body.serverTime) === null) return unavailable();
     return { ok: true, receipt: { receiptId: body.receiptId, status: body.status, serverTime: body.serverTime } };
   } finally {
     signal.removeEventListener('abort', abort);
@@ -56,12 +63,13 @@ export function startPost({ config, envelope, signal, fetchImpl = fetch, now = D
       // Serialize before the last fence; nothing asynchronous precedes the single HTTP invocation.
       const body = JSON.stringify(envelope);
       if (expired()) return unavailable();
-      const response = await fetchImpl(config.apiOrigin + '/integrations/whatsapp/v1/events', {
+      const response = await fetchImpl(config.apiOrigin + '/integrations/whatsapp/v1/' + (config.admissionMode === 'API' ? 'team-events' : 'events'), {
         method: 'POST', redirect: 'manual', signal: controller.signal,
-        headers: { Authorization: `Bearer ${config.channelToken}`, 'content-type': 'application/json' }, body,
+        headers: { Authorization: `Bearer ${config.channelToken}`, 'content-type': 'application/json',
+          ...(config.admissionMode === 'API' ? { 'X-Vanrides-Admission-Policy': 'TEAM_V1' } : {}) }, body,
       });
       if (expired()) { cancel(response.body); return unavailable(); }
-      const result = await receipt(response, controller.signal);
+      const result = await receipt(response, controller.signal, config);
       return expired() ? unavailable() : result;
     } catch { return unavailable(); }
   })();

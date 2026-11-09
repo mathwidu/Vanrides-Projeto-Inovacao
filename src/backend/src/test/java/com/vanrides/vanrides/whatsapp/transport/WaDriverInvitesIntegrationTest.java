@@ -15,8 +15,9 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @Testcontainers(disabledWithoutDocker = true)
 class WaDriverInvitesIntegrationTest {
     @Container static final PostgreSQLContainer<?> POSTGRES = WaTransportTestSupport.postgres("wa_driver_invites");
+    private static final WaTransportTestDatabase DATABASE = new WaTransportTestDatabase(POSTGRES);
     WaDriverTestSupport f;
-    @BeforeEach void setup() { f = new WaDriverTestSupport(POSTGRES); }
+    @BeforeEach void setup() { f = new WaDriverTestSupport(DATABASE.fixture()); }
     @Test void invitationExistsOnlyAfterExplicitConfirmationWithShownDefaults() {
         UUID actor = f.driver(); f.send(actor, "CONVIDAR"); var review = f.send(actor, "PADRÃO");
         assertTrue(review.text().contains("1 uso(s); validade 1440 minutos")); assertEquals(0, f.count("driver_invite", actor));

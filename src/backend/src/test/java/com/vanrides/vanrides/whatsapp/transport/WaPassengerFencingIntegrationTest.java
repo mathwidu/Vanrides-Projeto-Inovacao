@@ -23,6 +23,7 @@ class WaPassengerFencingIntegrationTest {
     @Container
     static final PostgreSQLContainer<?> POSTGRES =
             WaTransportTestSupport.postgres("wa_passenger_fencing");
+    private static final WaTransportTestDatabase DATABASE = new WaTransportTestDatabase(POSTGRES);
 
     WaPassengerTestSupport fixture;
     UUID driver;
@@ -31,7 +32,7 @@ class WaPassengerFencingIntegrationTest {
 
     @BeforeEach
     void setup() {
-        fixture = new WaPassengerTestSupport(POSTGRES);
+        fixture = new WaPassengerTestSupport(DATABASE.fixture());
         driver = fixture.driver();
         fixture.routine(driver);
         passenger = fixture.passenger();
@@ -283,7 +284,8 @@ class WaPassengerFencingIntegrationTest {
                 fixture.conversation.number(
                         "SELECT version FROM wa.profile WHERE identity_id=?", passenger);
         long responses = fixture.count("message_outbox");
-        fixture.transport.jdbc.execute(
+        try {
+            fixture.transport.jdbc.execute(
                 """
                 CREATE FUNCTION wa.reject_synthetic_passenger_peer() RETURNS trigger LANGUAGE plpgsql AS $$
                 BEGIN
@@ -291,33 +293,38 @@ class WaPassengerFencingIntegrationTest {
                   RETURN NEW;
                 END $$
                 """);
-        fixture.transport.jdbc.execute(
+            fixture.transport.jdbc.execute(
                 "CREATE TRIGGER reject_synthetic_passenger_peer BEFORE INSERT ON"
                         + " wa.passenger_response_route FOR EACH ROW EXECUTE FUNCTION"
                         + " wa.reject_synthetic_passenger_peer()");
-        var lease = fixture.conversation.text(passenger, fixture.confirmation(passenger, review));
-        var context = fixture.context(lease);
-        assertThrows(
-                RuntimeException.class,
-                () -> fixture.decide(lease, "REQUEST_LINK", fixture.payload(context)));
-        assertEquals(0, fixture.count("driver_passenger_link"));
-        assertEquals(0, fixture.count("pickup_point"));
-        assertEquals(0, fixture.count("passenger_link_routine"));
-        assertEquals(0, fixture.count("routine_member"));
-        assertEquals(
-                0,
-                fixture.conversation.number(
-                        "SELECT use_count FROM wa.driver_invite WHERE driver_id=?", driver));
-        assertEquals(
-                0,
-                fixture.conversation.number(
-                        "SELECT count(*) FROM wa.command_receipt WHERE inbox_event_id=?",
-                        lease.id()));
-        assertEquals(
-                profileVersion,
-                fixture.conversation.number(
-                        "SELECT version FROM wa.profile WHERE identity_id=?", passenger));
-        assertEquals(responses, fixture.count("message_outbox"));
-        assertTrue(fixture.draft(passenger).has("confirmation"));
+            var lease = fixture.conversation.text(passenger, fixture.confirmation(passenger, review));
+            var context = fixture.context(lease);
+            assertThrows(
+                    RuntimeException.class,
+                    () -> fixture.decide(lease, "REQUEST_LINK", fixture.payload(context)));
+            assertEquals(0, fixture.count("driver_passenger_link"));
+            assertEquals(0, fixture.count("pickup_point"));
+            assertEquals(0, fixture.count("passenger_link_routine"));
+            assertEquals(0, fixture.count("routine_member"));
+            assertEquals(
+                    0,
+                    fixture.conversation.number(
+                            "SELECT use_count FROM wa.driver_invite WHERE driver_id=?", driver));
+            assertEquals(
+                    0,
+                    fixture.conversation.number(
+                            "SELECT count(*) FROM wa.command_receipt WHERE inbox_event_id=?",
+                            lease.id()));
+            assertEquals(
+                    profileVersion,
+                    fixture.conversation.number(
+                            "SELECT version FROM wa.profile WHERE identity_id=?", passenger));
+            assertEquals(responses, fixture.count("message_outbox"));
+            assertTrue(fixture.draft(passenger).has("confirmation"));
+        } finally {
+            fixture.transport.jdbc.execute(
+                    "DROP TRIGGER IF EXISTS reject_synthetic_passenger_peer ON wa.passenger_response_route");
+            fixture.transport.jdbc.execute("DROP FUNCTION IF EXISTS wa.reject_synthetic_passenger_peer()");
+        }
     }
 }
