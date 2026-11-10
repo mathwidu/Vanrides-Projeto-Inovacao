@@ -13,7 +13,11 @@ import java.util.UUID;
 final class WaPassengerMutations {
     record Prepared(ObjectNode link, ObjectNode point, ObjectNode invite, ObjectNode pin) {}
 
-    record Result(UUID link, UUID pickup, String kind, String text, String peerText) {}
+    record Result(UUID link, UUID pickup, String kind, String text, String peerText) {
+        Result withoutPeer() {
+            return new Result(link, pickup, null, text, null);
+        }
+    }
 
     private final WaPassengerData data;
 

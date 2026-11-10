@@ -58,6 +58,51 @@ identidade canônica existente. Uma admissão histórica com o número digitado
 pode coexistir se pertencer ao mesmo coorte, tiver apenas seu alias PN e estiver
 livre de vínculos de domínio. Um conflito com dados existentes exige revisão.
 
+## Motorista de teste da equipe
+
+Serve para testar o cadastro do passageiro sem um segundo número de motorista.
+Há no máximo um motorista de teste por coorte, criado na primeira emissão de
+convite. Ele é um perfil `DRIVER` ativo sem telefone, sem conversa e sem
+aparelho, com uma rotina de ida ativa todos os dias às 07:30 e destino
+fictício. A tabela `wa.team_test_driver` identifica esse motorista.
+
+`POST /equipe/api/test-driver/status` recebe `{}` e retorna `driverReady`,
+`driverName` e `links`. Cada item de `links` traz `linkId`, `passengerName`,
+`state` (`REQUESTED` ou `APPROVED`), `requestedAt`, `pointPending` e
+`routines`. Telefone, pin e coordenadas não são retornados.
+
+`POST /equipe/api/test-driver` recebe `{action, operationId}` e, nas decisões,
+`linkId`:
+
+- `ISSUE_TEST_PASSENGER_INVITE` emite um convite de passageiro desse motorista,
+  com um uso e validade de 24 horas. A resposta traz `passengerInviteCode`,
+  `expiresAt` e `inviteStatus`. O passageiro envia `PASSAGEIRO <código>`.
+- `APPROVE_TEST_LINK` aprova vínculo e ponto de um pedido `REQUESTED` desse
+  motorista. As mesmas validações da aprovação pelo WhatsApp se aplicam.
+- `REJECT_TEST_LINK` recusa um pedido `REQUESTED` desse motorista.
+- `RECTIFY_TEST_POINT` pede ao passageiro que corrija o ponto proposto.
+- `APPROVE_TEST_POINT` aprova o novo ponto de um vínculo `APPROVED`.
+- `CLOSE_TEST_LINK` encerra um vínculo `APPROVED`.
+
+As decisões retornam `linkId` e `linkState`. Pedido de outro motorista ou fora
+de `REQUESTED` retorna `LINK_UNAVAILABLE` sem alterar dados. Repetir o mesmo
+`operationId` segue a regra das operações de participantes; o código do
+convite é reconstruído no servidor enquanto o convite puder ser usado.
+O recibo guarda o motorista de teste em `identity_id` e o convite ou o vínculo.
+
+Diferenças em relação a um motorista real:
+
+- A conferência de mesma instância Evolution não se aplica a ele. A de coorte
+  continua valendo.
+- Mensagens do passageiro que iriam para ele (pedido, troca de ponto,
+  encerramento) não são criadas. A área mostra esses pedidos na lista.
+- Cada decisão da área envia ao passageiro o mesmo aviso que um motorista real
+  geraria. Esses avisos usam a política de entrega `team-test-driver-v1`
+  (`purpose` `OPERATIONAL`), registrada em `wa.team_passenger_notice`. A
+  entrega é cancelada se o vínculo ou o ponto mudarem antes do envio.
+- Presença, saída, GPS e avisos de aproximação não acontecem para os
+  passageiros dele, porque essas rotinas exigem a conversa do motorista.
+
 ## Ingresso Evolution
 
 O receptor em modo API envia o mesmo envelope técnico de `/events` por

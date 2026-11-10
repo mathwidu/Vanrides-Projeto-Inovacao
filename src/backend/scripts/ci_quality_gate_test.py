@@ -1025,7 +1025,7 @@ class BackendCiQualityGateWiringTest(unittest.TestCase):
         discovered = _discover_docker_optional_test_classes(ROOT / "src/test/java")
 
         self.assertEqual(discovered, set(expected))
-        self.assertEqual(606, sum(expected.values()))
+        self.assertEqual(621, sum(expected.values()))
 
     def test_docker_optional_annotation_scanner_accepts_equivalent_formatting(self) -> None:
         variants = (

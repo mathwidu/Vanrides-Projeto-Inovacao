@@ -160,6 +160,16 @@
       "seconds": 0
     },
     {
+      "className": "com.vanrides.vanrides.whatsapp.team.TeamTestDriverIntegrationTest",
+      "tests": 5,
+      "seconds": 0
+    },
+    {
+      "className": "com.vanrides.vanrides.whatsapp.team.TeamTestDriverPointIntegrationTest",
+      "tests": 4,
+      "seconds": 0
+    },
+    {
       "className": "com.vanrides.vanrides.whatsapp.transport.WaApproachIntegrationTest",
       "tests": 18,
       "seconds": 42.04
@@ -378,6 +388,16 @@
       "className": "com.vanrides.vanrides.whatsapp.transport.WaRunPreparationIntegrationTest",
       "tests": 8,
       "seconds": 22.17
+    },
+    {
+      "className": "com.vanrides.vanrides.whatsapp.transport.WaTeamPassengerNoticeDeliveryIntegrationTest",
+      "tests": 3,
+      "seconds": 0
+    },
+    {
+      "className": "com.vanrides.vanrides.whatsapp.transport.WaTeamTestDriverPassengerIntegrationTest",
+      "tests": 3,
+      "seconds": 0
     },
     {
       "className": "com.vanrides.vanrides.whatsapp.transport.WaTrackingActivationIntegrationTest",

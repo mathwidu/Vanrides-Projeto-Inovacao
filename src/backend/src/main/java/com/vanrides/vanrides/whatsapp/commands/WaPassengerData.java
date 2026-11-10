@@ -52,21 +52,35 @@ final class WaPassengerData {
                                                         settings.environment()
                                                                 .equals(row.get("environment")));
         boolean sameInstance =
-                Boolean.TRUE.equals(
-                        jdbc.queryForObject(
-                                """
-                                SELECT EXISTS(SELECT 1 FROM wa.integration_inbox own JOIN wa.integration_inbox current ON current.id=?
-                                JOIN wa.identity_alias alias ON alias.id::text=own.payload_json->>'senderAliasId'
-                                  AND alias.identity_id=own.identity_id AND alias.provider=own.provider AND alias.instance_id=own.instance_id
-                                WHERE own.identity_id=? AND own.provider=current.provider AND own.instance_id=current.instance_id
-                                  AND own.category='MESSAGE' AND own.state IN ('CLAIMED','COMPLETED') AND alias.alias_type IN ('PN','LID'))
-                                """,
-                                Boolean.class,
-                                event.eventId(),
-                                driver));
+                event == null
+                        ? teamTestDriver(driver)
+                        : Boolean.TRUE.equals(
+                                jdbc.queryForObject(
+                                        """
+                                        SELECT EXISTS(SELECT 1 FROM wa.team_test_driver t JOIN wa.integration_inbox current ON current.id=?
+                                          WHERE t.driver_id=? AND current.provider='EVOLUTION' AND current.instance_id=t.instance_id)
+                                        OR EXISTS(SELECT 1 FROM wa.integration_inbox own JOIN wa.integration_inbox current ON current.id=?
+                                        JOIN wa.identity_alias alias ON alias.id::text=own.payload_json->>'senderAliasId'
+                                          AND alias.identity_id=own.identity_id AND alias.provider=own.provider AND alias.instance_id=own.instance_id
+                                        WHERE own.identity_id=? AND own.provider=current.provider AND own.instance_id=current.instance_id
+                                          AND own.category='MESSAGE' AND own.state IN ('CLAIMED','COMPLETED') AND alias.alias_type IN ('PN','LID'))
+                                        """,
+                                        Boolean.class,
+                                        event.eventId(),
+                                        driver,
+                                        event.eventId(),
+                                        driver));
         if (!sameCohort || !sameInstance) {
             throw WaProblem.denied();
         }
+    }
+
+    boolean teamTestDriver(UUID driver) {
+        return Boolean.TRUE.equals(
+                jdbc.queryForObject(
+                        "SELECT EXISTS(SELECT 1 FROM wa.team_test_driver WHERE driver_id=?)",
+                        Boolean.class,
+                        driver));
     }
 
     ObjectNode invite(UUID actor, WaInboxAccess.Context event, String hash, boolean lock) {

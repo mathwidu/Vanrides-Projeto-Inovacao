@@ -77,13 +77,16 @@ final class WaPassengerDelivery {
         return routes.size() == 1 ? alias(routes.get(0), instance, true) : List.of();
     }
     private List<Map<String, Object>> alias(Map<String, Object> route, String instance, boolean lock) {
+        return senderAlias(jdbc, (UUID) route.get("recipient_source_event_id"), (UUID) route.get("recipient_identity_id"), instance, lock);
+    }
+    static List<Map<String, Object>> senderAlias(JdbcTemplate jdbc, UUID event, UUID identity, String instance, boolean lock) {
         return jdbc.queryForList("""
             SELECT a.alias_type,a.alias_value FROM wa.integration_inbox e JOIN wa.identity_alias a
               ON a.id::text=e.payload_json->>'senderAliasId' AND a.identity_id=e.identity_id
               AND a.provider=e.provider AND a.instance_id=e.instance_id
             WHERE e.id=? AND e.identity_id=? AND e.provider='EVOLUTION' AND e.category='MESSAGE' AND e.instance_id=?
               AND a.alias_type IN ('PN','LID')
-            """ + (lock ? " FOR SHARE OF a" : ""), route.get("recipient_source_event_id"), route.get("recipient_identity_id"), instance);
+            """ + (lock ? " FOR SHARE OF a" : ""), event, identity, instance);
     }
     private boolean sameScope(UUID driver, UUID passenger) {
         var rows = jdbc.queryForList("""
@@ -96,6 +99,9 @@ final class WaPassengerDelivery {
         return first != null && first.equals(second) && rows.stream().allMatch(row -> settings.environment().equals(row.get("environment")));
     }
     private boolean paused(UUID identity, boolean lock) {
+        return paused(jdbc, identity, lock);
+    }
+    static boolean paused(JdbcTemplate jdbc, UUID identity, boolean lock) {
         var stages = jdbc.query("SELECT stage FROM wa.conversation_state WHERE identity_id=?" + (lock ? " FOR SHARE" : ""),
             (rs, i) -> rs.getString(1), identity);
         return !stages.isEmpty() && stages.get(0).equals("PAUSED");

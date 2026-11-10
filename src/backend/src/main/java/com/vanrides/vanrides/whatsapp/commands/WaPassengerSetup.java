@@ -147,6 +147,9 @@ final class WaPassengerSetup {
             // Nothing below catches a mutation failure: transaction rollback prevents partial
             // effects.
             WaPassengerMutations.Result delivery = mutations.apply(actor, event, draft, prepared);
+            if (data.teamTestDriver(UUID.fromString(draft.path("driverId").asText()))) {
+                delivery = delivery.withoutPeer();
+            }
             store.save(actor, event, WaPassengerDraftStore.json());
             return new Result(WaDecision.ok(Map.of("changed", true)), delivery.text(), delivery);
         }

@@ -40,6 +40,7 @@ public class WaOutboxService {
     private final com.vanrides.vanrides.whatsapp.tracking.WaStartDelivery starts;
     private final com.vanrides.vanrides.whatsapp.tracking.WaVehicleLocation locations;
     private final WaApproachDelivery approaches;
+    private final WaTeamPassengerNotices teamNotices;
     public WaOutboxService(JdbcTemplate jdbc, WaTransportAccess access, WaDeliveryReconciler reconciliation,
                            WaSettings settings, WaClock clock) {
         this.jdbc = jdbc; this.access = access; this.reconciliation = reconciliation; this.settings = settings; this.clock = clock;
@@ -53,6 +54,7 @@ public class WaOutboxService {
         this.starts = new com.vanrides.vanrides.whatsapp.tracking.WaStartDelivery(jdbc, clock, settings);
         this.locations = new com.vanrides.vanrides.whatsapp.tracking.WaVehicleLocation(jdbc,clock,settings);
         this.approaches = new WaApproachDelivery(jdbc,settings,clock);
+        this.teamNotices = new WaTeamPassengerNotices(jdbc, settings);
     }
     private record Item(UUID id, UUID actor, String policy, String state, String payload, Instant expires, UUID credential,
                         String tokenHash, long generation, Instant leaseExpires, String purpose, UUID run, boolean location) {
@@ -129,7 +131,7 @@ public class WaOutboxService {
         if (!connection.open(grant.instance())) return WaDecision.error(WaProblem.Code.DEPENDENCY_UNAVAILABLE);
         // Fence changes to the recipient's eligibility through the reservation commit.
         boolean relevant = true;
-        if (passenger(item) || attendancePolicy(item) || approach(item)) relevant = relevant(item, grant.instance(), true);
+        if (routed(item)) relevant = relevant(item, grant.instance(), true);
         else jdbc.queryForList("SELECT identity_id FROM wa.profile WHERE identity_id=? FOR SHARE", item.actor());
         fence(grant, item);
         if (!access.allowedIdentity(item.actor()) || !relevant) {
@@ -137,7 +139,7 @@ public class WaOutboxService {
             return WaDecision.error(WaProblem.Code.ACTION_NOT_ALLOWED);
         }
         var aliases = approach(item) ? approaches.aliases(item.id(),grant.instance()) : reminder(item) ? attendance.aliases(item.id(), grant.instance())
-            : passenger(item) ? passengers.aliases(item.id(), grant.instance()) : jdbc.queryForList("""
+            : teamNotice(item) ? teamNotices.aliases(item.id(), grant.instance()) : passenger(item) ? passengers.aliases(item.id(), grant.instance()) : jdbc.queryForList("""
             SELECT a.alias_type,a.alias_value FROM wa.identity_alias a
             JOIN wa.integration_inbox e ON a.id::text=e.payload_json->>'senderAliasId'
             JOIN wa.command_receipt r ON r.inbox_event_id=e.id
@@ -163,7 +165,7 @@ public class WaOutboxService {
         if(item.location()) { var pin=locations.pin(item.actor(),item.run()); content=pin==null?locations.unavailable():pin; }
         fence(grant, item);
         if (content == null) return WaDecision.error(WaProblem.Code.ACTION_NOT_ALLOWED);
-        if (passenger(item) || attendancePolicy(item) || approach(item)) {
+        if (routed(item)) {
             boolean stillRelevant = relevant(item, grant.instance(), true);
             fence(grant, item);
             if (!stillRelevant) {
@@ -269,7 +271,7 @@ public class WaOutboxService {
         if (!"SUBMITTING".equals(attempt.get("state"))
                 || item.generation() != ((Number) attempt.get("lease_generation")).longValue()) return Retry.terminal("UNKNOWN");
         if (!item.expires().isAfter(clock.now())) return Retry.terminal("EXPIRED");
-        if (passenger(item) || attendancePolicy(item) || approach(item)) {
+        if (routed(item)) {
             if (!relevant(item, grant.instance(), true)) return Retry.terminal("CANCELED");
         } else jdbc.queryForList("SELECT identity_id FROM wa.profile WHERE identity_id=? FOR SHARE", item.actor());
         access.revalidate(grant);
@@ -288,10 +290,13 @@ public class WaOutboxService {
     private static boolean approach(Item item) { return item.purpose().equals("APPROACH"); }
     private static boolean reminder(Item item) { return item.policy().equals(WaAttendanceDelivery.POLICY); }
     private static boolean attendancePolicy(Item item) { return reminder(item) || item.policy().equals("attendance-v1"); }
+    private static boolean teamNotice(Item item) { return item.policy().equals(WaTeamPassengerNotices.POLICY); }
+    private static boolean routed(Item item) { return passenger(item) || attendancePolicy(item) || approach(item) || teamNotice(item); }
     private boolean relevant(Item item, String instance, boolean lock) {
         if (approach(item)) return approaches.current(item.id(),instance,lock);
         if (reminder(item)) return attendance.current(item.id(), instance, lock);
         if (attendancePolicy(item)) return attendance.actorCurrent(item.actor(), lock);
+        if (teamNotice(item)) return teamNotices.current(item.id(), instance, lock);
         return !passenger(item) || passengers.current(item.id(), instance, lock);
     }
     private ObjectNode content(String stored) {
