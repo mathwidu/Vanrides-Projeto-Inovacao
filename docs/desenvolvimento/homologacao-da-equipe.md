@@ -4,6 +4,17 @@
 
 **Conferência de 09/11/2026:** API respondendo UP e nove serviços com uma réplica em execução. Um passageiro está admitido e um novo motorista recebeu liberação técnica e convite privado; ele ainda precisa concluir o cadastro e criar a rotina. As provas anteriores de cadastro básico do passageiro permanecem registradas; a jornada completa e o percurso ainda precisam de validação.
 
+**Publicação de 11/11/2026:** o motorista de teste do PR #110 está disponível
+na área da equipe após a publicação do PR #111, revisão `4a15aea`. A API
+respondeu UP e o banco está na V40. O ciclo automático concluiu em **1min53s**.
+[Execução da publicação](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/actions/runs/43032044040).
+
+O backup real foi restaurado em instância isolada e o conteúdo das 75 tabelas
+foi comparado com a origem. A candidata aplicou a V40 e a versão anterior
+iniciou saudável sobre a cópia V40. O teste do cadastro e dos avisos no WhatsApp
+real com o motorista fictício deve ser registrado separadamente. O acesso ao
+navegador da estação estava desativado durante esta conferência.
+
 Usamos um único ambiente de desenvolvimento compartilhado. Os nomes técnicos ainda dizem “hml”; não existe produção real liberada para usuários. Stage e produção separados ficam para a versão 1.0.
 
 **Ativo:** push/merge na `main` constrói a API/imagem e publica automaticamente
@@ -19,13 +30,13 @@ convites sem acesso à VPS. Veja o [passo a passo](area-da-equipe.md) e o
 | --- | --- | --- |
 | [Saúde da API](https://vanrides-inovacao-api.matheusduarte.dev.br/actuator/health) | Abrir no navegador; esperado HTTP 200 e `{"status":"UP"}`. | Público, disponível para os quatro integrantes. Não testa uma jornada de negócio. |
 | [APK do motorista](https://vanrides-inovacao-api.matheusduarte.dev.br/motorista/VanRides.apk) | Baixar no Android e instalar o VanRides Motorista **0.3.0-hml+13**. | Download público; já aponta para a API online. Instalar não habilita automaticamente um motorista. |
-| [Área da equipe](https://vanrides-inovacao-api.matheusduarte.dev.br/equipe) | Entrar com GitHub, informar o contato autorizado e escolher passageiro ou motorista. | Login do mantenedor e operações reais validados; confirmar primeiro acesso individual dos colegas. |
+| [Área da equipe](https://vanrides-inovacao-api.matheusduarte.dev.br/equipe) | Entrar com GitHub, informar o contato autorizado e escolher passageiro ou motorista. | Login do mantenedor e operações reais validados. Rafael confirmou seu acesso por captura enviada em 10/11. |
 | Bot pelo WhatsApp | Obter o contato do bot por canal privado, liberar seu número pela área da equipe e enviar `AJUDA`. | Bot conectado. Passageiro ativo e convite individual do motorista preservados. O cadastro continua no WhatsApp. |
 | API de produto | O app e o atendimento usam as credenciais próprias de cada fluxo. | Rotas `/driver-app/v1/` e `/integrations/whatsapp/v1/` exigem autenticação. Receber 401 ao abrir no navegador é esperado. |
 | Código e issues | Usar este repositório e o [guia de contribuição](../../CONTRIBUTING.md). | Desenvolvimento e testes sintéticos independem da liberação do número. Veja abaixo a diferença entre `main`, branch e versão publicada. |
 | n8n, Evolution, banco e VPS | Operação por Matheus. Alterações são preparadas no Git e revisadas antes da publicação. | Não são painéis de teste abertos para o grupo. O acesso de cada colega a esses painéis não foi provisionado. Não compartilhar senha, SSH ou token de serviço. |
 
-Todos usam a mesma URL e podem testar com identidades distintas. A restrição atual é a admissão do contato, não uma limitação a um colega por vez. O número do bot pertence ao WhatsApp Business do Redmi: ele recebe as mensagens e não serve como identidade de passageiro ou motorista. Para a jornada completa precisamos de um contato pessoal autorizado como motorista, além do passageiro.
+Todos usam a mesma URL e podem testar com identidades distintas. A restrição atual é a admissão do contato, não uma limitação a um colega por vez. O número do bot pertence ao WhatsApp Business do Redmi: ele recebe as mensagens e não serve como identidade de passageiro ou motorista. Para cadastro, ponto e vínculo do passageiro, use o **Motorista de teste da equipe**. Presença, saída e GPS exigem um contato pessoal autorizado como motorista.
 
 A janela e as credenciais técnicas atuais vencem em **01/12/2026 às 00:00 UTC** (30/11 às 21h em Brasília). O operador deve renová-las antes de manter os testes depois desse horário. Contatos e credenciais ficam fora do Git.
 
@@ -85,7 +96,21 @@ O GPS segue outro caminho: **aplicativo do motorista → API → PostgreSQL**. O
 
 Esse roteiro cobre perfil básico e orientação. Não cobre dias, ponto ou vínculo aprovado. Um passageiro já cadastrado pode seguir a partir do convite sem apagar o perfil.
 
-## Jornada completa: motorista e passageiro
+## Testar o vínculo com o motorista de teste
+
+Com o passageiro admitido e o cadastro básico concluído, abra a área da equipe
+e use **Motorista de teste da equipe → Gerar convite de passageiro**. Envie
+somente `PASSAGEIRO <código>` ao bot pelo WhatsApp do passageiro.
+
+Siga as perguntas, envie o ponto pela localização estática do WhatsApp e
+confirme o resumo. Depois, na área, toque em **Atualizar pedidos** e
+**Aprovar vínculo e ponto**. Confira o aviso no WhatsApp do passageiro.
+
+O [roteiro da área da equipe](area-da-equipe.md#testar-o-passageiro-com-o-motorista-de-teste)
+também explica correção de ponto, recusa e encerramento. A rotina fictícia é
+uma ida diária às 07h30. Presença, saída, GPS e aproximação exigem motorista real.
+
+## Jornada completa com motorista real
 
 Esta sequência descreve a implementação a validar no ambiente compartilhado; não é uma declaração de que o percurso já passou.
 
@@ -109,8 +134,8 @@ Na issue da funcionalidade, anote: versão do APK, revisão da API informada pel
 | Sintoma | Conferência inicial |
 | --- | --- |
 | Saúde responde, mas bot fica em silêncio | Contato admitido, janela válida, conexão do bot e agendas. API saudável sozinha não prova o canal. |
-| Cadastro básico pronto, sem avançar para o ponto | Falta convite de passageiro e rotina de motorista. `CONTINUAR CADASTRO` não cria esse vínculo. |
-| Presença sem ocorrência | Verificar vínculo aprovado, rotina, dias, sentido, ponto e data. Não tratar a mensagem como confirmação de presença. |
+| Cadastro básico pronto, sem avançar para o ponto | Confira a admissão e o cadastro ativo do passageiro. Gere o convite pela área da equipe ou peça a um motorista real. `CONTINUAR CADASTRO` não cria o vínculo. |
+| Presença sem ocorrência | Verificar vínculo aprovado, rotina, dias, sentido, ponto e data. O motorista de teste cobre cadastro e vínculo. Use motorista real para conferir presença. |
 | APK instalado, mas não inicia GPS | Conferir versão online, vínculo do aparelho, papel de motorista e link de início vigente; depois rede e permissões. |
 | Nenhum aviso de aproximação | A função está desligada na homologação atual. Não há ETA prometido. |
 | Conversa parou após pedir suporte | Pedido de suporte pausa o atendimento; requer recuperação pelo operador. Evite usar esse comando como teste genérico de resposta. |
@@ -129,6 +154,7 @@ ou APK. O primeiro ciclo completo levou **2 min 22 s**; o build do PR levou
 | API/interface | Publicadas pelo Actions; a imagem efetiva e a revisão ficam no resumo de cada execução. |
 | Receptor de mensagens | Admissão pela API habilitada; permite contatos liberados pela equipe e ignora desconhecidos. |
 | Migração V39 | Aplicada. Backup anterior restaurado e conteúdo de 74 tabelas conferido em instância isolada. |
+| Motorista de teste / V40 | Publicado pelo PR #111 em `4a15aea`. Geração do convite e decisões de vínculo/ponto pela área da equipe. |
 | PR #107 | Trabalho incorporado à integração do #108; não usar sua revisão antiga como API hospedada. |
 
 Para desenvolver, siga [CONTRIBUTING.md](../../CONTRIBUTING.md) e abra uma branch a partir da `main` atualizada. Para reproduzir a integração antes de ela entrar na `main`, use a branch do PR correspondente quando estiver publicada. Combine a tarefa na issue para evitar alterações simultâneas no mesmo fluxo. Mudanças locais não aparecem no bot hospedado.

@@ -137,3 +137,36 @@ que atualiza a origem. Não combinar com `--mount-rm /opt/src` na mesma chamada:
 a remoção prevalece e deixa o serviço sem os fontes. A primeira tentativa
 falhou por isso, foi revertida e a segunda foi validada. Banco e sessão do bot
 foram preservados.
+
+## Publicação da V40 — 11/11/2026
+
+O PR #110 adicionou o motorista fictício e a migração V40. Sua execução da
+main construiu a imagem, mas o atualizador recusou a diferença de schema antes
+de alterar o serviço. O PR #111 generalizou a aprovação para uma adição de
+migração com nome e hash fixados.
+
+O atualizador do PR #111 foi instalado no host com checksum
+`e0b4cc3e1a47a427c27f48cb73ae891b7e5f1bd0c98510d26d4992534b1d8186`.
+O merge normal resultou em `4a15aea0ff5592465288d4c5bd805697f2dbe564`.
+A aprovação local desse SHA liberou somente `V40__whatsapp_team_test_driver.sql`,
+SHA-256 `70cfb56b96cdc00c890e27c17c03c5002895ea18082c4d89f2cc618f577888cd`.
+
+Antes da ativação, um backup real de 1.718.892 bytes foi restaurado em
+PostgreSQL com rede isolada. A comparação conferiu o conteúdo de 75 tabelas.
+Na cópia, a imagem anterior iniciou em V39, a candidata aplicou V40 e a imagem
+anterior voltou a iniciar com V40. As configurações eram sintéticas e o ensaio
+conferiu restauração e inicialização das APIs com o usuário postgres da cópia.
+A migração no ambiente ativo executou pela configuração normal da API.
+Cadastro e avisos reais têm sua validação própria.
+
+A [publicação automática](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/actions/runs/43032044040)
+passou em 1min53s. A imagem efetiva é
+`sha256:2e500eabd68d64430f7dbfe83330cf6f5c69a5ad858c98d97405eb621c367706`,
+com JAR `c6e1858fecd14a4177b23f889bcde2ff86c17cb0a61cae3792a393ccd07a4fed`.
+A API respondeu UP, o banco confirmou V40 e a aprovação foi consumida. Os
+contêineres temporários do ensaio foram removidos. Backup, snapshots e logs
+privados permanecem no diretório da release na VPS.
+
+A primeira tentativa do ensaio parou por faltar a variável de URL de
+verificação de e-mail na configuração isolada. A segunda tentativa definiu o
+valor vazio exigido pelo perfil e concluiu as três inicializações.
