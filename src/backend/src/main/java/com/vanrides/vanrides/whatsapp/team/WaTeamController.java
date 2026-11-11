@@ -33,11 +33,14 @@ public final class WaTeamController {
     private final WaTeamSessions sessions;
     private final WaTeamEvolution evolution;
     private final WaTeamOperations operations;
+    private final WaTeamTestDriverOperations testDriver;
 
-    WaTeamController(WaTeamSessions sessions, WaTeamEvolution evolution, WaTeamOperations operations) {
+    WaTeamController(WaTeamSessions sessions, WaTeamEvolution evolution, WaTeamOperations operations,
+                     WaTeamTestDriverOperations testDriver) {
         this.sessions = sessions;
         this.evolution = evolution;
         this.operations = operations;
+        this.testDriver = testDriver;
     }
 
     @GetMapping(value = {"/equipe", "/equipe/"}, produces = "text/html")
@@ -113,6 +116,40 @@ public final class WaTeamController {
         sessions.assertLive(cookie, current);
         return operations.execute(current.actor, operation, contact, UUID.fromString(WaHttp.correlation(request)),
             () -> sessions.assertLive(cookie, current));
+    }
+
+    @PostMapping("/equipe/api/test-driver/status")
+    public ObjectNode testDriverStatus(HttpServletRequest request) {
+        String cookie = cookie(request, SESSION_COOKIE);
+        var current = sessions.require(cookie, WaHttp.header(request, CSRF_HEADER, true), true);
+        WaJson.fields(body(request));
+        ObjectNode result = testDriver.status();
+        sessions.assertLive(cookie, current);
+        return result;
+    }
+
+    @PostMapping("/equipe/api/test-driver")
+    public ObjectNode testDriverOperation(HttpServletRequest request) {
+        String cookie = cookie(request, SESSION_COOKIE);
+        var current = sessions.require(cookie, WaHttp.header(request, CSRF_HEADER, true), true);
+        var operation = testDriverOperation(body(request));
+        ObjectNode result = testDriver.replay(current.actor, operation);
+        sessions.assertLive(cookie, current);
+        if (result != null) return result;
+        return testDriver.execute(current.actor, operation, UUID.fromString(WaHttp.correlation(request)),
+            () -> sessions.assertLive(cookie, current));
+    }
+
+    private static WaTeamTestDriverOperations.Request testDriverOperation(ObjectNode data) {
+        UUID id = WaJson.uuid(data, "operationId");
+        if (id.version() != 4 || id.variant() != 2) throw WaProblem.invalid();
+        try {
+            var action = WaTeamTestDriverOperations.Action.valueOf(WaJson.text(data, "action", 1, 32));
+            boolean invite = action.decision == null;
+            if (invite) WaJson.fields(data, "action", "operationId");
+            else WaJson.fields(data, "action", "operationId", "linkId");
+            return new WaTeamTestDriverOperations.Request(action, id, invite ? null : WaJson.uuid(data, "linkId"));
+        } catch (IllegalArgumentException invalid) { throw WaProblem.invalid(); }
     }
 
     private static WaTeamOperations.Request operation(ObjectNode data) {

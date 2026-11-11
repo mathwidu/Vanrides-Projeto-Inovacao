@@ -30,6 +30,24 @@ cria outra liberação. Uma conta já ativa em outro papel não é convertida pe
 área. A consulta não revela o código do convite; emitir novamente um convite
 ativo recupera o convite elegível sem estender sua validade.
 
+## Testar o passageiro com o motorista de teste
+
+Use quando não houver um segundo número para fazer o papel de motorista.
+
+1. Libere seu número como **Passageiro** e conclua nome e aviso no bot.
+2. Em **Motorista de teste da equipe**, toque em **Gerar convite de passageiro**.
+3. Pelo WhatsApp do passageiro, envie ao bot a mensagem `PASSAGEIRO <código>`
+   exibida. O convite tem um uso e vale 24 horas.
+4. Siga as perguntas até confirmar o resumo com `CONFIRMAR`.
+5. Toque em **Atualizar pedidos** e escolha a ação do motorista: aprovar
+   vínculo e ponto, pedir correção do ponto, recusar, aprovar novo ponto ou
+   encerrar o vínculo.
+
+O passageiro recebe no WhatsApp os mesmos avisos que receberia de um motorista
+real. O que iria para o motorista aparece só na lista da área. Presença, saída,
+GPS e avisos de aproximação não acontecem com esse motorista; para esses
+testes, use um motorista real.
+
 ## Acesso e responsabilidades
 
 A aplicação verifica o acesso de escrita ao repositório pelo GitHub. A sessão

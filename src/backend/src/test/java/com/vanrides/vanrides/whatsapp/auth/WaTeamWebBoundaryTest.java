@@ -53,6 +53,28 @@ class WaTeamWebBoundaryTest {
     }
 
     @Test
+    void testDriverRoutesAreExactPostOnlyAndRequireTheTeamOrigin() throws Exception {
+        when(team.enabled()).thenReturn(true);
+        when(team.origin()).thenReturn(ORIGIN);
+        for (String path : List.of("/equipe/api/test-driver", "/equipe/api/test-driver/status")) {
+            check(request("GET", path), 404, false);
+            check(request("PUT", path), 404, false);
+            check(request("POST", path + "/"), 404, false);
+            check(request("POST", path + "/extra"), 404, false);
+            var mutation = request("POST", path);
+            check(mutation, 400, false);
+            mutation.addHeader("Origin", "https://foreign.invalid");
+            check(mutation, 403, false);
+            mutation.removeHeader("Origin");
+            mutation.addHeader("Origin", ORIGIN);
+            check(mutation, 200, true);
+            mutation.addHeader("Authorization", "Bearer " + key(5));
+            check(mutation, 403, false);
+        }
+        verifyNoInteractions(jdbc);
+    }
+
+    @Test
     void dynamicIngressHandshakeRequiresStrictModeOnTheAuthenticatedChannelInstance() throws Exception {
         var request = request("POST", "/integrations/whatsapp/v1/team-events");
         request.addHeader("Authorization", "Bearer " + key(5));

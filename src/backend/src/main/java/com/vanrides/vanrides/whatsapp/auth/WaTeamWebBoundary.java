@@ -14,7 +14,8 @@ final class WaTeamWebBoundary {
     private static final Set<String> ASSETS = Set.of("/equipe", "/equipe/", "/equipe/index.html",
         "/equipe/app.js", "/equipe/style.css");
     private static final Set<String> GET = Set.of("/equipe/login", "/equipe/callback", "/equipe/api/session");
-    private static final Set<String> POST = Set.of("/equipe/api/logout", "/equipe/api/participants/status", "/equipe/api/participants");
+    private static final Set<String> POST = Set.of("/equipe/api/logout", "/equipe/api/participants/status", "/equipe/api/participants",
+        "/equipe/api/test-driver/status", "/equipe/api/test-driver");
     private WaTeamWebBoundary() { }
 
     static boolean scoped(String path) { return path.equals("/equipe") || path.startsWith("/equipe/"); }
