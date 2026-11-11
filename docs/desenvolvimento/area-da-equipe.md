@@ -7,8 +7,7 @@ seu cadastro e aceitar o aviso de dados no WhatsApp.
 
 **Disponível em 09/11/2026:** [abrir área da equipe](https://vanrides-inovacao-api.matheusduarte.dev.br/equipe).
 Login real do mantenedor, consulta/liberação do passageiro e recuperação do
-convite de motorista foram verificados no ambiente online. O primeiro login
-com a conta de outro integrante ainda precisa ser confirmado por ele.
+convite de motorista foram verificados no ambiente online. O acesso do Rafael também foi confirmado pela captura enviada ao mantenedor em 10/11.
 
 ## Preparar um teste
 
@@ -32,21 +31,27 @@ ativo recupera o convite elegível sem estender sua validade.
 
 ## Testar o passageiro com o motorista de teste
 
-Use quando não houver um segundo número para fazer o papel de motorista.
+Use o **Motorista de teste da equipe** para testar o cadastro e o vínculo do
+passageiro sem um segundo número de motorista. Ele tem uma rotina fictícia de
+ida, todos os dias às 07h30.
 
-1. Libere seu número como **Passageiro** e conclua nome e aviso no bot.
-2. Em **Motorista de teste da equipe**, toque em **Gerar convite de passageiro**.
-3. Pelo WhatsApp do passageiro, envie ao bot a mensagem `PASSAGEIRO <código>`
-   exibida. O convite tem um uso e vale 24 horas.
-4. Siga as perguntas até confirmar o resumo com `CONFIRMAR`.
-5. Toque em **Atualizar pedidos** e escolha a ação do motorista: aprovar
-   vínculo e ponto, pedir correção do ponto, recusar, aprovar novo ponto ou
-   encerrar o vínculo.
+1. Libere o número como **Passageiro**. No bot, conclua o nome e o aceite do aviso
+   de dados. O contato precisa estar admitido e com cadastro ativo.
+2. Na área da equipe, em **Motorista de teste da equipe**, toque em
+   **Gerar convite de passageiro**. O convite tem um uso e vale 24 horas.
+3. Pelo WhatsApp do passageiro, envie ao bot somente `PASSAGEIRO <código>`,
+   usando o código exibido.
+4. Siga as perguntas sobre rotina, dias e ponto de embarque. Envie o ponto pela
+   função de **localização estática do WhatsApp**, confira o resumo e use a
+   confirmação apresentada na conversa.
+5. Volte à área, toque em **Atualizar pedidos** e escolha **Aprovar vínculo e
+   ponto**. Confira o aviso recebido pelo passageiro no WhatsApp.
 
-O passageiro recebe no WhatsApp os mesmos avisos que receberia de um motorista
-real. O que iria para o motorista aparece só na lista da área. Presença, saída,
-GPS e avisos de aproximação não acontecem com esse motorista; para esses
-testes, use um motorista real.
+A lista também permite pedir correção do ponto, recusar o pedido, aprovar um
+novo ponto e encerrar o vínculo. As decisões geram os avisos correspondentes ao
+passageiro. Os pedidos destinados ao motorista ficam na área da equipe.
+
+Presença, saída, GPS e avisos de aproximação exigem um motorista real.
 
 ## Acesso e responsabilidades
 
@@ -74,6 +79,8 @@ não dá permissão de alterar n8n, Evolution, banco, infraestrutura ou segredos
 
 A tela faz parte do mesmo JAR da API. A configuração inicial requer o GitHub
 App, seus segredos no Swarm, acesso interno à Evolution e a migração V39.
+O motorista de teste também depende da V40. O estado da publicação fica no
+[guia de homologação](homologacao-da-equipe.md).
 O [guia do deploy automático](../../deploy/homologacao/AUTOMATICO.md) descreve
 as credenciais do Actions, o serviço atualizado e o retorno à versão anterior.
 

@@ -249,3 +249,15 @@ liberação de passageiro e convite de motorista verificados com o mantenedor.
 Guia `docs/desenvolvimento/area-da-equipe.md` publicado para os colegas.
 O aceite individual de um colega e a jornada completa do MVP continuam
 pendentes; o card permanece em andamento. Recibos de CI só provam build/deploy.
+
+
+### Atualização de publicação — 11/11/2026
+
+PRs #110/#111 integrados. O motorista fictício foi publicado em `4a15aea`, com
+V40 aplicada e API UP. Backup real restaurado e conteúdo de 75 tabelas
+comparado, com inicialização da candidata e da versão anterior sobre a cópia
+migrada. A execução automática 43032044040 passou em 1min53s.
+
+O [guia da equipe](../../docs/desenvolvimento/area-da-equipe.md) descreve o
+cadastro e a aprovação de ponto com esse motorista. O teste de WhatsApp real
+dessa jornada e os critérios restantes do card mantêm seus próprios estados.
