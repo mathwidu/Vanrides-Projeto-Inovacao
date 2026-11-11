@@ -98,76 +98,96 @@ class AtualizarTest(unittest.TestCase):
             self.assertNotEqual(original, jar('changed-sql', 'SELECT 2;'))
             self.assertNotEqual(original, jar('changed-config', 'SELECT 1;', enabled='false'))
 
-    def test_bootstrap_accepts_only_the_preapproved_new_v39(self):
-        old = {'V38': 'old', 'flyway': 'unchanged'}
+    def test_approval_accepts_only_the_approved_new_migration(self):
+        v39, v40 = cd.MIGRATIONS + 'V39__a.sql', cd.MIGRATIONS + 'V40__b.sql'
+        config = 'BOOT-INF/classes/application.properties'
+        old = {v39: 'old', 'BOOT-INF/lib/flyway-core.jar': 'unchanged', config: ('spring.flyway.enabled=true',)}
         checksum = 'a' * 64
-        candidate = {**old, cd.TEAM_MIGRATION: checksum}
-        self.assertTrue(cd.allow_migrations(old, candidate, checksum))
-        self.assertFalse(cd.allow_migrations(old, old, checksum))
+        approval = (v40, checksum)
+        candidate = {**old, v40: checksum}
+        self.assertTrue(cd.allow_migrations(old, candidate, approval))
+        self.assertFalse(cd.allow_migrations(old, old, approval))
         self.assertFalse(cd.allow_migrations(candidate, candidate, None))
-        for invalid in ({**candidate, 'V40': checksum}, {**candidate, 'V38': 'changed'},
-                        {**candidate, cd.TEAM_MIGRATION: 'b' * 64}):
+        renamed = {key: value for key, value in old.items() if key != v39}
+        for invalid in ({**candidate, cd.MIGRATIONS + 'V41__c.sql': checksum}, {**candidate, v39: 'changed'},
+                        {**old, v40: 'b' * 64}, {**old, cd.MIGRATIONS + 'V40__other.sql': checksum},
+                        {**old, 'BOOT-INF/lib/flyway-new.jar': checksum},
+                        {**candidate, config: ('spring.flyway.enabled=false',)},
+                        {**renamed, v40: checksum}):
             with self.subTest(invalid=invalid), self.assertRaisesRegex(cd.DeployError, 'somente a adição'):
-                cd.allow_migrations(old, invalid, checksum)
-        with self.assertRaises(cd.DeployError):
+                cd.allow_migrations(old, invalid, approval)
+        with self.assertRaisesRegex(cd.DeployError, 'somente a adição'):
+            cd.allow_migrations(candidate, {**candidate, v39: 'changed'}, approval)
+        with self.assertRaisesRegex(cd.DeployError, 'plano de banco'):
             cd.allow_migrations(old, candidate, None)
 
     def test_rejects_additional_command_line_arguments(self):
-        arguments = ['atualizar.py', '--bootstrap-v39', self.request.source, self.request.digest, self.request.jar]
+        arguments = ['atualizar.py', '--approve-migration', self.request.source, self.request.digest, self.request.jar]
         with patch.object(cd.sys, 'argv', arguments), patch.dict(cd.os.environ, {'SSH_ORIGINAL_COMMAND': 'deploy'}), \
              patch.object(cd, 'deploy') as deploy, patch('sys.stderr'):
             self.assertEqual(cd.main(), 1)
         deploy.assert_not_called()
 
-    def test_bootstrap_approval_must_be_private(self):
+    def test_migration_approval_must_be_private_and_name_one_versioned_migration(self):
+        valid = 'a' * 64 + '  V40__whatsapp_team_test_driver.sql\n'
         with tempfile.TemporaryDirectory() as folder:
-            file = Path(folder) / f'bootstrap-v39-{self.request.source}.sha256'
-            self.assertIsNone(cd.read_bootstrap_checksum(file))
-            file.write_text('a' * 64 + '\n')
+            file = Path(folder) / f'migration-{self.request.source}.sha256'
+            self.assertIsNone(cd.read_approval(file))
+            file.write_text(valid)
             file.chmod(0o644)
             with self.assertRaises(cd.DeployError):
-                cd.read_bootstrap_checksum(file)
+                cd.read_approval(file)
             file.chmod(0o600)
-            self.assertEqual(cd.read_bootstrap_checksum(file), 'a' * 64)
+            self.assertEqual(cd.read_approval(file),
+                             (cd.MIGRATIONS + 'V40__whatsapp_team_test_driver.sql', 'a' * 64))
+            for content in ('a' * 64 + '\n', 'a' * 64 + '  R__repeatable.sql\n', 'a' * 64 + '  ../V40__x.sql\n',
+                            'a' * 64 + ' V40__x.sql\n', 'A' * 64 + '  V40__x.sql\n'):
+                file.write_text(content)
+                with self.subTest(content=content), self.assertRaisesRegex(cd.DeployError, 'inválida'):
+                    cd.read_approval(file)
             symlink = Path(folder) / 'untrusted-link'
             symlink.symlink_to(file)
             with self.assertRaises(OSError):
-                cd.read_bootstrap_checksum(symlink)
+                cd.read_approval(symlink)
 
     def test_forced_command_consumes_only_matching_approval_used_successfully(self):
         command = f'deploy {self.request.source} {self.request.digest} {self.request.jar}'
         scenarios = (
-            (self.request.source, True, 'a' * 64, False, 0),
-            (self.request.source, False, 'a' * 64, True, 0),
-            (self.request.source, cd.DeployError('Smoke falhou.'), 'a' * 64, True, 1),
+            (self.request.source, True, True, False, 0),
+            (self.request.source, False, True, True, 0),
+            (self.request.source, cd.DeployError('Smoke falhou.'), True, True, 1),
             ('5' * 40, False, None, True, 0),
         )
+        approved = (cd.MIGRATIONS + 'V40__b.sql', 'a' * 64)
         for source, result, expected_pin, approval_remains, exit_code in scenarios:
             with self.subTest(source=source, result=result), tempfile.TemporaryDirectory() as folder, \
                  patch.object(cd, 'STATE', Path(folder)), patch.object(cd.os, 'umask'), \
                  patch.object(cd.sys, 'argv', ['atualizar.py']), \
                  patch.dict(cd.os.environ, {'SSH_ORIGINAL_COMMAND': command}), \
                  patch.object(cd, 'deploy', side_effect=[result]) as deploy, patch('sys.stderr'), patch('sys.stdout'):
-                approval = cd.STATE / f'bootstrap-v39-{source}.sha256'
-                approval.write_text('a' * 64 + '\n')
+                approval = cd.STATE / f'migration-{source}.sha256'
+                approval.write_text('a' * 64 + '  V40__b.sql\n')
                 approval.chmod(0o600)
                 self.assertEqual(cd.main(), exit_code)
-                deploy.assert_called_once_with(self.request, expected_pin)
+                deploy.assert_called_once_with(self.request, approved if expected_pin else None)
                 self.assertEqual(approval.exists(), approval_remains)
 
-    def test_retry_can_consume_approval_for_healthy_identical_image_and_v39(self):
-        checksum = 'a' * 64
+    def test_retry_consumes_approval_only_when_the_healthy_image_has_the_approved_migration(self):
+        approval = (cd.MIGRATIONS + 'V40__b.sql', 'a' * 64)
         current = ('new-id', self.request.source, '7' * 40, self.request.jar)
-        with patch.object(cd, 'docker', side_effect=['srv1397065|active|true', 'single-node']), \
-             patch.object(cd, 'service', return_value=self.new), \
-             patch.object(cd, 'image_info', return_value=current), \
-             patch.object(cd, 'running_image', return_value='new-id'), patch.object(cd, 'https_ready', return_value=True), \
-             patch.object(cd, 'verify_source', return_value=current[2]), \
-             patch.object(cd, 'inspect_jar', return_value={cd.TEAM_MIGRATION: checksum}), \
-             patch.object(cd, 'wait_ready') as ready, patch.object(cd, 'rollout') as rollout, patch('sys.stdout'):
-            self.assertTrue(cd.deploy(self.request, checksum))
-        ready.assert_called_once_with(self.request.image, self.request.jar, 'new-id')
-        rollout.assert_not_called()
+        for installed, consumed in (({approval[0]: approval[1]}, True), ({approval[0]: 'b' * 64}, False),
+                                    ({cd.MIGRATIONS + 'V40__other.sql': approval[1]}, False)):
+            with self.subTest(installed=installed), \
+                 patch.object(cd, 'docker', side_effect=['srv1397065|active|true', 'single-node']), \
+                 patch.object(cd, 'service', return_value=self.new), \
+                 patch.object(cd, 'image_info', return_value=current), \
+                 patch.object(cd, 'running_image', return_value='new-id'), patch.object(cd, 'https_ready', return_value=True), \
+                 patch.object(cd, 'verify_source', return_value=current[2]), \
+                 patch.object(cd, 'inspect_jar', return_value=installed), \
+                 patch.object(cd, 'wait_ready') as ready, patch.object(cd, 'rollout') as rollout, patch('sys.stdout'):
+                self.assertEqual(cd.deploy(self.request, approval), consumed)
+            ready.assert_called_once_with(self.request.image, self.request.jar, 'new-id')
+            rollout.assert_not_called()
 
     def test_new_digest_for_installed_source_still_runs_the_full_image_checks_and_rollout(self):
         source_tree = '7' * 40

@@ -28,7 +28,7 @@ SHA = r'[a-f0-9]{40}'
 HASH = r'[a-f0-9]{64}'
 JAR_ENV = 'VANRIDES_JAR_SHA256='
 ENTRYPOINT = ['/bin/sh', '/run/online/entrypoint.sh']
-TEAM_MIGRATION = 'BOOT-INF/classes/db/migration/V39__whatsapp_team_admission.sql'
+MIGRATIONS = 'BOOT-INF/classes/db/migration/'
 
 
 class DeployError(Exception):
@@ -158,7 +158,7 @@ def verify_source(new, installed):
 def migration_inventory(jar):
     with ZipFile(jar) as contents:
         files = [item for item in contents.namelist() if not item.endswith('/')]
-        migrations = [item for item in files if item.startswith('BOOT-INF/classes/db/migration/')]
+        migrations = [item for item in files if item.startswith(MIGRATIONS)]
         require(migrations and len(migrations) == len(set(migrations)), 'Inventário Flyway ausente ou duplicado.')
         checksums = {item: hashlib.sha256(contents.read(item)).hexdigest() for item in migrations}
         for profile in ('application.properties', 'application-homolog.properties'):
@@ -172,29 +172,30 @@ def migration_inventory(jar):
         return checksums
 
 
-def allow_migrations(previous_inventory, next_inventory, bootstrap_checksum):
+def allow_migrations(previous_inventory, next_inventory, approval):
     if next_inventory == previous_inventory:
         return False
-    require(bootstrap_checksum is not None,
+    require(approval is not None,
             'Migrações ou configuração Flyway divergentes. A alteração exige plano de banco próprio.')
-    require(TEAM_MIGRATION not in previous_inventory
-            and next_inventory == {**previous_inventory, TEAM_MIGRATION: bootstrap_checksum},
-            'O bootstrap aceita somente a adição da V39 com o checksum revisado.')
+    migration, checksum = approval
+    require(migration not in previous_inventory and next_inventory == {**previous_inventory, migration: checksum},
+            'A aprovação aceita somente a adição da migração aprovada com o checksum revisado.')
     return True
 
 
-def read_bootstrap_checksum(approval):
+def read_approval(path):
     try:
-        fd = os.open(approval, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
+        fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
     except FileNotFoundError:
         return None
     with os.fdopen(fd, 'r', encoding='ascii') as file:
         info = os.fstat(file.fileno())
         require(stat.S_ISREG(info.st_mode) and stat.S_IMODE(info.st_mode) == 0o600
-                and info.st_uid == os.getuid(), 'A aprovação local da V39 deve ser um arquivo privado 0600.')
-        checksum = file.read(66)
-    require(re.fullmatch(rf'{HASH}\n?', checksum), 'Checksum inválido na aprovação local da V39.')
-    return checksum.rstrip('\n')
+                and info.st_uid == os.getuid(), 'A aprovação local da migração deve ser um arquivo privado 0600.')
+        content = file.read(200)
+    match = re.fullmatch(rf'({HASH})  (V[0-9]+__[A-Za-z0-9_]+\.sql)\n?', content)
+    require(match, 'Aprovação local da migração inválida. Use o formato do sha256sum.')
+    return MIGRATIONS + match.group(2), match.group(1)
 
 
 def inspect_jar(image, expected, directory):
@@ -274,7 +275,7 @@ def rollout(request, old, old_id, new_id):
         raise DeployError(f'{failure} Imagem e checksum anteriores restaurados.') from None
 
 
-def deploy(request, bootstrap_checksum=None):
+def deploy(request, approval=None):
     require(
         docker('info', '--format', '{{.Name}}|{{.Swarm.LocalNodeState}}|{{.Swarm.ControlAvailable}}')
         == 'srv1397065|active|true'
@@ -288,38 +289,36 @@ def deploy(request, bootstrap_checksum=None):
     tree = verify_source(request.source, installed)
     if matches(old, request.image, request.jar):
         require(installed == request.source, 'Revisão do serviço diverge do candidato solicitado.')
-        used_bootstrap = bootstrap_checksum is not None and (
-            inspect_jar(old.image, old.jar, STATE).get(TEAM_MIGRATION) == bootstrap_checksum
-        )
+        used_approval = approval is not None and inspect_jar(old.image, old.jar, STATE).get(approval[0]) == approval[1]
         wait_ready(old.image, old.jar, old_id)
         print(f'API já saudável em {request.source} {request.digest}.')
-        return used_bootstrap
+        return used_approval
     docker('pull', '--platform', 'linux/amd64', request.image, timeout=150)
     new_id, source, image_tree, jar = image_info(request.image)
     require((source, image_tree, jar) == (request.source, tree, request.jar), 'Rótulos da imagem divergem do candidato aprovado.')
-    used_bootstrap = allow_migrations(inspect_jar(old.image, old.jar, STATE),
-                                     inspect_jar(request.image, request.jar, STATE), bootstrap_checksum)
+    used_approval = allow_migrations(inspect_jar(old.image, old.jar, STATE),
+                                    inspect_jar(request.image, request.jar, STATE), approval)
     require(service() == old, 'O serviço mudou enquanto a imagem era preparada.')
     rollout(request, old, old_id, new_id)
     print(f'API saudável em {request.source} {request.digest}.')
-    return used_bootstrap
+    return used_approval
 
 
 def main():
     try:
         require(len(sys.argv) == 1, 'A entrada deve vir do comando SSH restrito.')
         request = request_from(os.environ.get('SSH_ORIGINAL_COMMAND', ''))
-        approval = STATE / f'bootstrap-v39-{request.source}.sha256'
+        approval_path = STATE / f'migration-{request.source}.sha256'
         os.umask(0o077)
         fd = os.open(STATE / 'deploy.lock', os.O_CREAT | os.O_RDWR | os.O_NOFOLLOW, 0o600)
         with os.fdopen(fd, 'w') as lock:
             fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
-            bootstrap_checksum = read_bootstrap_checksum(approval)
-            if deploy(request, bootstrap_checksum):
-                require(read_bootstrap_checksum(approval) == bootstrap_checksum,
-                        'A aprovação da V39 mudou durante a publicação. Confira o arquivo local.')
-                approval.unlink()
-                print('Aprovação local da V39 consumida após verificação da API.')
+            approval = read_approval(approval_path)
+            if deploy(request, approval):
+                require(read_approval(approval_path) == approval,
+                        'A aprovação da migração mudou durante a publicação. Confira o arquivo local.')
+                approval_path.unlink()
+                print('Aprovação local da migração consumida após verificação da API.')
     except DeployError as error:
         print(str(error), file=sys.stderr)
         return 1
