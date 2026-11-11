@@ -60,7 +60,7 @@ Um push novo preserva o workflow em curso. Se o GitHub substituir uma execução
 pendente por outra mais recente, a nova imagem contém o checkout completo do
 novo SHA. PR e execução manual usam filas separadas.
 
-## Migrações e primeira V39
+## Migrações
 
 Na rotina, diferenças no inventário Flyway ou na configuração de migração do
 JAR interrompem a operação antes de alterar o serviço. Para uma mudança de
@@ -69,31 +69,35 @@ do banco e confirme a compatibilidade da versão anterior com o schema novo.
 O retorno automatizado restaura a especificação anterior do serviço, mantendo
 o estado do banco observado após a tentativa.
 
-O único bootstrap previsto é a adição de `V39__whatsapp_team_admission.sql`.
-Depois de comprovar backup restaurável e a versão anterior sobre o schema V39,
-fixe o SHA completo que entrará na `main` e calcule o SHA-256 do SQL revisado
-nesse commit. Se o GitHub gerar um commit de merge, use o SHA efetivo da `main`.
-Provisione a aprovação no host antes de o job de deploy iniciar. O arquivo
-regular `0600` pertence ao operador e contém apenas o SHA-256 do SQL.
+Uma publicação pode adicionar uma única migração nova, aprovada no host. Depois
+de comprovar backup restaurável e a versão anterior sobre o schema novo, fixe
+o SHA completo da `main` que contém a migração. Se o GitHub gerar um commit de
+merge, use o SHA efetivo da `main`. Provisione a aprovação no host antes de o
+job de deploy iniciar ou antes de reexecutá-lo. O arquivo regular `0600`
+pertence ao operador e contém uma linha no formato do `sha256sum`: o SHA-256 do
+SQL revisado nesse commit, dois espaços e o nome do arquivo `V<versão>__<nome>.sql`.
 
 ```sh
 (
   umask 077
   set -C
-  printf '%s\n' "$APPROVED_V39_SHA256" \
-    > "$HOME/.local/share/vanrides/cd/bootstrap-v39-$APPROVED_MAIN_SHA.sha256"
+  git show "$APPROVED_MAIN_SHA:src/backend/src/main/resources/db/migration/$MIGRATION" | sha256sum \
+    | sed "s|-\$|$MIGRATION|" > "$HOME/.local/share/vanrides/cd/migration-$APPROVED_MAIN_SHA.sha256"
 )
 ```
 
 O workflow segue pelo comando SSH normal. A aprovação só se aplica ao SHA no
-nome do arquivo e à adição da V39 com o hash aprovado. As demais migrações e
-ajustes Flyway continuam idênticos ao JAR anterior. A VPS remove a aprovação
-após confirmar a imagem e a saúde da API. Uma falha preserva a aprovação para
-reconciliação. Se o serviço já estiver saudável no mesmo digest após uma
-interrupção, reexecutar o deploy permite concluir o consumo da aprovação.
-Os próximos pushes com o mesmo inventário seguem pelo CD normal. O operador
-privado legado precisa de um manifesto correspondente ao runtime instalado
-enquanto continuar em uso. [Operador legado](canal/OPERADOR.md)
+nome do arquivo e à adição de exatamente uma migração, com o nome e o hash
+aprovados.
+As demais migrações, as bibliotecas Flyway e a configuração de migração
+continuam idênticas ao JAR anterior. A VPS remove a aprovação após confirmar
+a imagem e a saúde da API. Uma falha preserva a aprovação para reconciliação.
+Se o serviço já estiver saudável no mesmo digest após uma interrupção,
+reexecutar o deploy permite concluir o consumo da aprovação. Os próximos
+pushes com o mesmo inventário seguem pelo CD normal. A V39 entrou por este
+mesmo caminho, com o nome de arquivo anterior `bootstrap-v39-<SHA>.sha256`.
+O operador privado legado precisa de um manifesto correspondente ao runtime
+instalado enquanto continuar em uso. [Operador legado](canal/OPERADOR.md)
 
 ## Confirmação e retorno
 
