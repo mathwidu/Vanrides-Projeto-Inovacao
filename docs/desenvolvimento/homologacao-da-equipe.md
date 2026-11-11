@@ -36,7 +36,7 @@ convites sem acesso à VPS. Veja o [passo a passo](area-da-equipe.md) e o
 | Código e issues | Usar este repositório e o [guia de contribuição](../../CONTRIBUTING.md). | Desenvolvimento e testes sintéticos independem da liberação do número. Veja abaixo a diferença entre `main`, branch e versão publicada. |
 | n8n, Evolution, banco e VPS | Operação por Matheus. Alterações são preparadas no Git e revisadas antes da publicação. | Não são painéis de teste abertos para o grupo. O acesso de cada colega a esses painéis não foi provisionado. Não compartilhar senha, SSH ou token de serviço. |
 
-Todos usam a mesma URL e podem testar com identidades distintas. A restrição atual é a admissão do contato, não uma limitação a um colega por vez. O número do bot pertence ao WhatsApp Business do Redmi: ele recebe as mensagens e não serve como identidade de passageiro ou motorista. Para a jornada completa precisamos de um contato pessoal autorizado como motorista, além do passageiro.
+Todos usam a mesma URL e podem testar com identidades distintas. A restrição atual é a admissão do contato, não uma limitação a um colega por vez. O número do bot pertence ao WhatsApp Business do Redmi: ele recebe as mensagens e não serve como identidade de passageiro ou motorista. Para cadastro, ponto e vínculo do passageiro, use o **Motorista de teste da equipe**. Presença, saída e GPS exigem um contato pessoal autorizado como motorista.
 
 A janela e as credenciais técnicas atuais vencem em **01/12/2026 às 00:00 UTC** (30/11 às 21h em Brasília). O operador deve renová-las antes de manter os testes depois desse horário. Contatos e credenciais ficam fora do Git.
 
