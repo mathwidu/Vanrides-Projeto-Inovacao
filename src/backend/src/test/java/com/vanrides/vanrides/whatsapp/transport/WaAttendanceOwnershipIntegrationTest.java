@@ -4,7 +4,6 @@ import static com.vanrides.vanrides.whatsapp.transport.WaConversationTestSupport
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.vanrides.vanrides.whatsapp.api.WaJson;
 import com.vanrides.vanrides.whatsapp.attendance.WaAttendanceJobs;
 import com.vanrides.vanrides.whatsapp.auth.WaCrypto;
 import com.vanrides.vanrides.whatsapp.auth.WaPrincipal;
@@ -63,18 +62,12 @@ class WaAttendanceOwnershipIntegrationTest {
         assertEquals("PREF_REMINDER", f.draft(passenger).path("stage").asText());
     }
 
-    @Test void anExplicitPresenceInterruptionCanBeAbandonedWithoutLosingPickupCorrection() {
+    @Test void aBareAnswerDuringAPickupCorrectionStaysWithTheWizard() {
         eligiblePickupCorrection();
-        ObjectNode before = f.draft(passenger).deepCopy();
-        attendance("PRESENÇA");
-        assertEquals(before, f.draft(passenger));
-        assertActiveAttendanceSelection();
-        attendance("ABANDONAR");
+        var reply = f.send(passenger, "NÃO VOU");
+        assertEquals("ADVANCE_PASSENGER_SETUP", f.command(reply.context()));
         assertEquals("PASSENGER_SETUP", owner(passenger));
-        assertEquals(before, f.draft(passenger));
-        f.send(passenger, "Portão lateral");
-        assertEquals("REVIEW", f.draft(passenger).path("stage").asText());
-        assertEquals("Portão lateral", f.draft(passenger).path("reference").asText());
+        assertEquals(0, f.conversation.number("SELECT count(*) FROM wa.attendance WHERE passenger_id=? AND state<>'PENDING'", passenger));
     }
 
     @Test void numericDaysAndDriverReviewRemainInTheRoutineWizard() {
@@ -99,24 +92,8 @@ class WaAttendanceOwnershipIntegrationTest {
         assertEquals(before, f.conversation.number("SELECT count(*) FROM wa.routine WHERE driver_id=?", driver));
     }
 
-    @Test void quotingTheAbandonAcknowledgementCannotAnswerTheSuspendedPickupCorrection() {
+    @Test void anOriginalPickupQuoteDrivesThePickupCorrection() {
         String correctionQuote = submitted(eligiblePickupCorrection());
-        ObjectNode before = f.draft(passenger).deepCopy();
-        attendance("PRESENÇA");
-        assertActiveAttendanceSelection();
-        String acknowledgement = submitted(attendance("ABANDONAR"));
-        var rejected = quoted("Portão lateral", acknowledgement);
-        assertTrue(rejected.text().contains("não corresponde à etapa atual"));
-        assertEquals(before, f.draft(passenger));
-        var accepted = quoted("Portão lateral", correctionQuote);
-        assertFalse(accepted.text().contains("não corresponde"));
-        assertEquals("REVIEW", f.draft(passenger).path("stage").asText());
-        assertEquals("Portão lateral", f.draft(passenger).path("reference").asText());
-    }
-
-    @Test void anOriginalPickupQuoteRemainsUsableAfterPresenceIsAbandoned() {
-        String correctionQuote = submitted(eligiblePickupCorrection());
-        attendance("PRESENÇA"); attendance("ABANDONAR");
         quoted("Entrada principal", correctionQuote);
         assertEquals("REVIEW", f.draft(passenger).path("stage").asText());
         assertEquals("Entrada principal", f.draft(passenger).path("reference").asText());
@@ -147,23 +124,6 @@ class WaAttendanceOwnershipIntegrationTest {
         var referenceQuestion = f.pin(passenger);
         assertEquals("REFERENCE", f.draft(passenger).path("stage").asText());
         return UUID.fromString(referenceQuestion.response().path("responseIds").get(0).asText());
-    }
-
-    private void assertActiveAttendanceSelection() {
-        ObjectNode context = WaJson.object(f.conversation.string(
-            "SELECT context_json::text FROM wa.conversation_state WHERE identity_id=?", passenger));
-        assertEquals("ATTENDANCE", owner(passenger));
-        assertTrue(context.path("attendanceDraft").path("choices").size() > 0,
-            "The catalogue must actually offer eligible occurrences, not an empty owner placeholder");
-    }
-
-    private UUID attendance(String text) {
-        var lease = f.conversation.text(passenger, text);
-        var context = f.conversation.commands.context(f.conversation.worker, lease.id(), lease.token());
-        assertTrue(context.path("allowedCommands").toString().contains("ADVANCE_ATTENDANCE"));
-        var result = f.conversation.execute(lease, "ADVANCE_ATTENDANCE", json()).requireSuccess();
-        f.conversation.finish(lease);
-        return UUID.fromString(result.path("responseIds").get(0).asText());
     }
 
     private WaPassengerTestSupport.Step quoted(String text, String external) {

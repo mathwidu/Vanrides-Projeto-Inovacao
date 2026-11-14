@@ -103,12 +103,15 @@ export async function runAttendanceScenarios(runtime) {
     demand(/^wa070_provider_[0-9]+$/u.test(external), 'ATTENDANCE_QUOTE_RECEIPT_MISSING');
     await chat.send(passenger, cited('SIM', external), answer); await chat.replay();
     demand(states(passenger,'GOING','OUTBOUND') === 1 && states(passenger,'PENDING','RETURN') === 1, 'ATTENDANCE_CITATION_CHANGED_WRONG_DATE');
-    const refused = await chat.send(second, cited('SIM', external), advance);
-    demand(refused.reply.includes('mensagem citada') && states(second,'PENDING','OUTBOUND') === 1, 'ATTENDANCE_FOREIGN_QUOTE_ALLOWED');
+    await chat.send(second, cited('SIM', external), answer);
+    demand(states(second,'GOING','OUTBOUND') === 1 && states(passenger,'GOING','OUTBOUND') === 1, 'ATTENDANCE_FOREIGN_QUOTE_NOT_IGNORED');
     passed('submitted_message_citation_confirms_only_its_original_passenger_date_and_direction');
-    const date = tools.sql(`SELECT to_char(local_date,'DD/MM/YYYY') FROM wa.attendance_question WHERE id=${quote(destination.id)};`, { recordOutput: false });
-    const label = `${date}, ida às 06:00 (Ida escolar)`;
-    await checkDriverSummary(chat, label, 'Confirmados 1. Não vão 0. Pendentes 1', ['Lia Exemplo — confirmado', 'Cris Exemplo — pendente']);
+    const [days, dayAndMonth, weekday] = tools.sql(`SELECT q.local_date-(CURRENT_TIMESTAMP AT TIME ZONE q.timezone)::date,
+      to_char(q.local_date,'DD/MM'),extract(isodow FROM q.local_date)::int FROM wa.attendance_question q WHERE q.id=${quote(destination.id)};`,
+      { recordOutput: false }).split('|');
+    const named = `${['segunda','terça','quarta','quinta','sexta','sábado','domingo'][weekday - 1]} (${dayAndMonth})`;
+    const label = `${days === '0' ? 'hoje, ' : days === '1' ? 'amanhã, ' : ''}${named}, ida às 06:00 (Ida escolar)`;
+    await checkDriverSummary(chat, label, 'Confirmados 2. Não vão 0. Pendentes 0', ['Lia Exemplo — confirmado', 'Cris Exemplo — confirmado']);
     await chat.send(second, 'NÃO VOU amanhã na ida', answer);
     demand(states(second,'NOT_GOING','OUTBOUND') === 1 && states(second,'PENDING','RETURN') === 1,
       'ATTENDANCE_MANUAL_ABSENCE_INVALID');

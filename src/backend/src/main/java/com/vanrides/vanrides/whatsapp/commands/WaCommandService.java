@@ -120,7 +120,7 @@ public class WaCommandService {
             : null;
         boolean attendanceCommand = !runCommand && attendance.command(type, payload);
         WaAttendanceConversation.Result attendanceResult = attendanceCommand
-            ? allowed(actor, event).contains(type) ? attendance.execute(actor, event, type, payload) : WaAttendanceConversation.unavailable()
+            ? allowed(actor, event).contains(type) ? attendance.execute(actor, event, type, payload) : attendance.unavailable(actor)
             : null;
         boolean driverCommand = !runCommand && !attendanceCommand && WaDriverSetup.COMMANDS.contains(type);
         boolean passengerCommand = WaPassengerSetup.COMMANDS.contains(type);

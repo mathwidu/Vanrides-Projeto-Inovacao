@@ -337,11 +337,15 @@ evolução não altera os recibos históricos070/080 nem comprova ensaio físico
 
 ## Presença no card 100
 
-O passageiro pode declarar presença por ocorrência. A API identifica a pergunta
-pela citação entregue ou pela seleção explícita de data e sentido. Se houver
-ambiguidade, o agente encaminha `ADVANCE_ATTENDANCE`. A escolha autorizada em
-`attendanceChoice` e a única referência `QUESTION` compõem `SET_ATTENDANCE`.
-O motorista consulta o seu resumo por `GET_SUMMARY`.
+O passageiro pode declarar presença por ocorrência, sem menu. A API escolhe a
+viagem pela citação do lembrete entregue; sem citação, pelos filtros de dia e
+sentido ou, numa resposta isolada, pela primeira viagem cuja parada ainda não foi
+passada. Quando não há viagem, a citação é de uma viagem encerrada ou a mensagem
+traz mais de uma escolha, o agente encaminha `ADVANCE_ATTENDANCE` e a API responde
+só com texto. A escolha autorizada em `attendanceChoice` e a única referência
+`QUESTION` compõem `SET_ATTENDANCE`. Depois da saída, parada passada ou
+ausente da lista não muda a presença. O motorista consulta o seu resumo por
+`GET_SUMMARY` e abre a lista com `ADVANCE_ATTENDANCE`.
 
 O W04 aciona somente `MATERIALIZE_OCCURRENCES` e `DUE_REMINDERS` com a
 credencial SYSTEM_JOB da instância. Cada página aceita até 100 unidades.

@@ -3,6 +3,7 @@ package com.vanrides.vanrides.whatsapp.commands;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.vanrides.vanrides.whatsapp.attendance.WaAttendanceLabels;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,8 +32,6 @@ final class WaPassengerAnswers {
                 : value;
     }
 
-    private static final List<String> DAY_NAMES =
-            List.of("segunda", "terça", "quarta", "quinta", "sexta", "sábado", "domingo");
     private static final Map<String, Integer> DAY_NUMBERS =
             Map.ofEntries(
                     Map.entry("segunda", 1),
@@ -110,7 +109,7 @@ final class WaPassengerAnswers {
         if (numbers.equals(List.of(1, 2, 3, 4, 5))) {
             return "segunda a sexta";
         }
-        List<String> names = numbers.stream().map(day -> DAY_NAMES.get(day - 1)).toList();
+        List<String> names = numbers.stream().map(day -> WaAttendanceLabels.DAY_NAMES.get(day - 1)).toList();
         if (names.size() == 1) {
             return names.get(0);
         }
@@ -124,10 +123,10 @@ final class WaPassengerAnswers {
         available.forEach(day -> numbers.add(day.asInt()));
         List<WaPrompt.Option> options = new ArrayList<>();
         for (int day : numbers) {
-            String label = DAY_NAMES.get(day - 1);
+            String label = WaAttendanceLabels.DAY_NAMES.get(day - 1);
             options.add(
                     new WaPrompt.Option(
-                            String.valueOf(day), capitalize(label), List.of()));
+                            String.valueOf(day), WaAttendanceLabels.capitalize(label), List.of()));
         }
         if (numbers.containsAll(List.of(1, 2, 3, 4, 5))) {
             options.add(new WaPrompt.Option("1,2,3,4,5", "Segunda a sexta", List.of()));
@@ -136,10 +135,6 @@ final class WaPassengerAnswers {
             options.add(new WaPrompt.Option("1,2,3,4,5,6,7", "Todos os dias", List.of()));
         }
         return WaPrompt.list(question, options);
-    }
-
-    private static String capitalize(String value) {
-        return Character.toUpperCase(value.charAt(0)) + value.substring(1);
     }
 
     static boolean subset(JsonNode days, JsonNode available) {
