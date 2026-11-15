@@ -2,14 +2,12 @@
 
 **Endereço:** <https://vanrides-inovacao-api.matheusduarte.dev.br>
 
-**Conferência de 09/11/2026:** API respondendo UP e nove serviços com uma réplica em execução. Um passageiro está admitido e um novo motorista recebeu liberação técnica e convite privado; ele ainda precisa concluir o cadastro e criar a rotina. As provas anteriores de cadastro básico do passageiro permanecem registradas; a jornada completa e o percurso ainda precisam de validação.
-
-Em 15/11, o receptor passou a remover a repetição exata do identificador que
-a Evolution enviava em dois campos. Antes disso, a API ignorava a mensagem
-de teste mesmo com o contato liberado. Após publicar o receptor `47aba5b`,
-um `AJUDA` real foi processado e a resposta chegou ao WhatsApp às 13h36
-de Brasília. A rodada do motorista e dois passageiros continua pendente.
-[Registro do canal #91](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/91)
+Em 15/11/2026, a equipe verificou no WhatsApp real o convite por link,
+o cadastro até o pedido de vínculo, a aprovação e o reenvio de um ponto
+corrigido. A API publicada na revisão `d389c31` respondeu com status UP.
+O [guia de cadastro](cadastro-guiado-whatsapp.md) tem o passo a passo e as
+evidências. A validação de presença e rastreamento na mesma saída ainda está
+pendente. [Publicação da API](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/actions/runs/43775243359)
 
 Usamos um único ambiente de desenvolvimento compartilhado. Os nomes técnicos ainda dizem “hml”; não existe produção real liberada para usuários. Stage e produção separados ficam para a versão 1.0.
 
@@ -20,19 +18,31 @@ permite aos integrantes com escrita no GitHub liberar participantes e preparar
 convites sem acesso à VPS. Veja o [passo a passo](area-da-equipe.md) e o
 [funcionamento do deploy](../../deploy/homologacao/AUTOMATICO.md).
 
+## Escolher como testar
+
+| Quero verificar | Como começar | O que consigo testar |
+| --- | --- | --- |
+| Entender o fluxo sozinho | Abra **Simular conversas** na [área da equipe](https://vanrides-inovacao-api.matheusduarte.dev.br/equipe). | Os dois papéis com dados fictícios no navegador. |
+| Testar o cadastro com meu WhatsApp | Entre no painel com GitHub, libere seu número como passageiro e escolha [Testar com o WhatsApp](area-da-equipe.md#testar-o-passageiro-com-o-motorista-de-teste). | Convite, ponto, correção e aprovação com um motorista de teste no painel. |
+| Testar presença e GPS no ambiente publicado | Combine um número de motorista e outro de passageiro e siga a [jornada com dois papéis](#jornada-completa-motorista-e-passageiro). Para GPS, instale o APK no Android do motorista. | Preparação da rotina, presença na ocorrência certa e início e parada do compartilhamento. |
+| Validar uma mudança da minha branch | Use o [guia de contribuição](../../CONTRIBUTING.md) para rodar o componente localmente e abrir o PR. | A alteração do PR, com dados de teste e canal simulado quando necessário. |
+
 ## O que cada integrante pode acessar
 
 | Acesso | Como usar | Condição atual |
 | --- | --- | --- |
 | [Saúde da API](https://vanrides-inovacao-api.matheusduarte.dev.br/actuator/health) | Abrir no navegador; esperado HTTP 200 e `{"status":"UP"}`. | Público, disponível para os quatro integrantes. Não testa uma jornada de negócio. |
 | [APK do motorista](https://vanrides-inovacao-api.matheusduarte.dev.br/motorista/VanRides.apk) | Baixar no Android e instalar o VanRides Motorista **0.3.0-hml+13**. | Download público; já aponta para a API online. Instalar não habilita automaticamente um motorista. |
-| [Área da equipe](https://vanrides-inovacao-api.matheusduarte.dev.br/equipe) | Entrar com GitHub, informar o contato autorizado e escolher passageiro ou motorista. | Login do mantenedor e operações reais validados; confirmar primeiro acesso individual dos colegas. |
-| Bot pelo WhatsApp | Obter o contato do bot por canal privado, liberar seu número pela área da equipe e enviar `AJUDA`. | Bot conectado. Passageiro ativo e convite individual do motorista preservados. O cadastro continua no WhatsApp. |
+| [Área da equipe](https://vanrides-inovacao-api.matheusduarte.dev.br/equipe) | Entrar com GitHub, informar o contato que aceitou participar e escolher passageiro ou motorista. | Disponível para contas com escrita no repositório. |
+| Bot pelo WhatsApp | Abra o convite individual ou use **Abrir conversa com o bot** no painel e envie `AJUDA`. | O cadastro é feito na conversa. O convite por link é o caminho padrão do passageiro. |
 | API de produto | O app e o atendimento usam as credenciais próprias de cada fluxo. | Rotas `/driver-app/v1/` e `/integrations/whatsapp/v1/` exigem autenticação. Receber 401 ao abrir no navegador é esperado. |
 | Código e issues | Usar este repositório e o [guia de contribuição](../../CONTRIBUTING.md). | Desenvolvimento e testes sintéticos independem da liberação do número. Veja abaixo a diferença entre `main`, branch e versão publicada. |
 | n8n, Evolution, banco e VPS | Operação por Matheus. Alterações são preparadas no Git e revisadas antes da publicação. | Não são painéis de teste abertos para o grupo. O acesso de cada colega a esses painéis não foi provisionado. Não compartilhar senha, SSH ou token de serviço. |
 
-Todos usam a mesma URL e podem testar com identidades distintas. A restrição atual é a admissão do contato, não uma limitação a um colega por vez. O número do bot pertence ao WhatsApp Business do Redmi: ele recebe as mensagens e não serve como identidade de passageiro ou motorista. Para a jornada completa precisamos de um contato pessoal autorizado como motorista, além do passageiro.
+Todos usam a mesma URL e podem testar com identidades distintas. O número do
+bot recebe as mensagens do WhatsApp. Para a jornada completa, use números
+diferentes para motorista e passageiro. O motorista é liberado no painel
+antes de enviar seu código. O passageiro pode iniciar pelo link individual.
 
 A janela e as credenciais técnicas atuais vencem em **01/12/2026 às 00:00 UTC** (30/11 às 21h em Brasília). O operador deve renová-las antes de manter os testes depois desse horário. Contatos e credenciais ficam fora do Git.
 
@@ -41,8 +51,8 @@ A janela e as credenciais técnicas atuais vencem em **01/12/2026 às 00:00 UTC*
 | Parte | Hospedagem e função | Prova e limite |
 | --- | --- | --- |
 | API Spring Boot e PostgreSQL | Regras, cadastros, vínculo, rotinas, presença, aparelho, viagens, GPS e filas de mensagens. Banco próprio da homologação. | API 200/UP e autenticação 401 sem credencial. Perfil do passageiro preservado depois da atualização. |
-| Receptor de eventos | Recebe o webhook da Evolution, confere instância/contato/tipo de mensagem e encaminha o evento à API. | Texto e callbacks reais já atravessaram o receptor. Contato não admitido não entra no atendimento. |
-| Bot VanRides / worker Node.js | Busca mensagens pendentes, propõe comandos à API e envia as respostas autorizadas pela Evolution. | Cadastro básico e quatro interações de retomada comprovados; 15 respostas entregues acumuladas na rodada documentada. **OpenAI está desabilitada** nessa homologação; os comandos são determinísticos. |
+| Receptor de eventos | Recebe o webhook da Evolution, confere instância/contato/tipo de mensagem e encaminha o evento à API. | Texto e confirmações de entrega reais foram verificados. Quem chega pelo link individual passa pela validação do convite. |
+| Bot VanRides / worker Node.js | Busca mensagens pendentes, propõe comandos à API e envia as respostas autorizadas pela Evolution. | Convite, vínculo, aprovação e correção de embarque exercitados no WhatsApp. O fluxo usa regras determinísticas. |
 | n8n | Dispara processamento, envios e tarefas agendadas do worker; recebe resultados de controle, sem texto da conversa nem GPS. | Oito fluxos importados. W01/W04/W06/W08 ativos e com execuções recentes bem-sucedidas; W07 publicado para erros. W02/W03/W05 são subfluxos sem agenda própria. |
 | Evolution, Redis e banco da sessão | Conexão dedicada do WhatsApp, envio, recebimento e callbacks de entrega. | Instância `vanrides-hml` em OPEN, separada dos outros projetos. |
 | APK e páginas de vínculo/início | Arquivos HTTPS e links que abrem o aplicativo do motorista. | APK baixado e hash conferido. Vincular e iniciar pelo canal da equipe ainda requer o motorista participante. |
@@ -96,7 +106,8 @@ O passageiro já cadastrado continua do mesmo convite com seu perfil existente.
 
 ## Jornada completa: motorista e passageiro
 
-Esta sequência descreve a implementação a validar no ambiente compartilhado; não é uma declaração de que o percurso já passou.
+As etapas de cadastro e vínculo já foram exercitadas no WhatsApp. Use o
+mesmo vínculo e uma rotina de teste para passar à presença e ao GPS no Android.
 
 1. **Preparar o motorista.** Libere o novo número como **Motorista** na área da equipe e use **Copiar código do motorista**. Entregue o código em privado. O motorista envia somente o código a partir do WhatsApp liberado e segue as perguntas de nome e aceite. `AJUDA` permite conferir a resposta e retomar a conversa.
 2. **Configurar a rotina.** Envie `CRIAR ROTINA`, informe o nome, o sentido, os dias, o horário e o ponto fixo do destino. O bot aceita sentido, dias e horário juntos, por exemplo `IDA, SEGUNDA A SEXTA, 07:30`. Confira o fuso e salve pelo resumo. Ida e volta são rotinas separadas. Para testar hoje, inclua o dia atual.
@@ -132,21 +143,22 @@ Na issue da funcionalidade, anote: versão do APK, revisão da API informada pel
 
 ## Código publicado, main e contribuições
 
-A `main` atualiza automaticamente **a API e sua interface**. O workflow tem
-construção/publicação da imagem e deploy por digest com verificação de saúde.
-Ele não executa suítes de testes e não publica n8n, Evolution, receptor, worker
-ou APK. O primeiro ciclo completo levou **2 min 22 s**; o build do PR levou
-33 s no total. [Execução da ativação](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/actions/runs/42643485312).
+Crie uma branch a partir da `main` atualizada, combine a tarefa na issue,
+rode os testes do componente e abra um PR. Para continuar um PR já aberto,
+traga as mudanças da `main` para a branch dele e rode os testes da parte
+alterada antes de pedir revisão. [Guia de contribuição](../../CONTRIBUTING.md)
 
-| Referência | Conteúdo nesta conferência |
-| --- | --- |
-| Primeira ativação `f433dbf` / PR #108 | Integração preservando PRs #105/#106 e a API anterior, área da equipe e CI/CD simples. |
-| API/interface | Publicadas pelo Actions; a imagem efetiva e a revisão ficam no resumo de cada execução. |
-| Receptor de mensagens | Admissão pela API habilitada; permite contatos liberados pela equipe e ignora desconhecidos. |
-| Migração V39 | Aplicada. Backup anterior restaurado e conteúdo de 74 tabelas conferido em instância isolada. |
-| PR #107 | Trabalho incorporado à integração do #108; não usar sua revisão antiga como API hospedada. |
+O GitHub Actions constrói a API no PR. Um push na `main` publica a API e a
+interface da equipe. Confira a revisão e a saúde no resumo do Actions antes
+do teste real. Testes de comportamento são feitos localmente e registrados
+no PR. Publicação de worker, n8n, receptor e APK é combinada com o mantenedor.
+[Procedimento de deploy](../../deploy/homologacao/AUTOMATICO.md)
 
-Para desenvolver, siga [CONTRIBUTING.md](../../CONTRIBUTING.md) e abra uma branch a partir da `main` atualizada. Para reproduzir a integração antes de ela entrar na `main`, use a branch do PR correspondente quando estiver publicada. Combine a tarefa na issue para evitar alterações simultâneas no mesmo fluxo. Mudanças locais não aparecem no bot hospedado.
+A simplificação do cadastro entrou nos PRs
+[#118](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/pull/118) e
+[#119](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/pull/119), sobre
+a V41 do banco. A ativação da área da equipe e da publicação automática está
+registrada no [PR #108](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/pull/108).
 
 ## Referências e versões
 

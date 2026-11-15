@@ -18,20 +18,22 @@ Universidade Feevale, 2026/2.
 | Entender uma tarefa e o que falta | [Backlog](docs/07-como-ler-o-backlog.md) e [issues do MVP](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues?q=is%3Aissue+is%3Aopen+label%3Amvp) |
 | Preparar o computador e contribuir | [Guia de contribuição](CONTRIBUTING.md) |
 | Testar uma versão com o grupo | [Homologação da equipe](docs/desenvolvimento/homologacao-da-equipe.md) |
+| Testar o cadastro no WhatsApp | [Cadastro de motorista e passageiro](docs/desenvolvimento/cadastro-guiado-whatsapp.md) |
 | Consultar a entrega da disciplina | [STACK](STACK.docx), [BACKLOG](BACKLOG.xlsx) e [Canvas](docs/06-canvas-mvp.md) |
 
 ## Situação do MVP
 
-Cadastros, vínculos, rotinas e presença possuem implementação e ensaios de
-laboratório. O aplicativo de localização está implementado para Android/iPhone;
-a integração recente foi ensaiada no Android, com o aparelho parado.
+A API, a área da equipe, o APK Android e o bot já estão disponíveis em
+homologação. Em 15/11/2026, validamos no WhatsApp real a emissão imediata do
+convite por link, a solicitação de vínculo e a aprovação e correção do ponto
+de embarque. O [guia de cadastro](docs/desenvolvimento/cadastro-guiado-whatsapp.md)
+documenta os comandos, o teste com um só WhatsApp e os resultados da rodada.
 
-A consulta da van passou no ensaio integrado com canal simulado. A regra de aproximação passou nos testes de banco e aguarda avaliação em percurso. A API, o APK e o canal estão publicados em homologação; perfil básico de passageiro, ajuda e retomada já foram validados no WhatsApp real. Faltam validar as jornadas completas nesse canal e concluir o encerramento automático.
-O bot exige admissão individual: na conferência de 04/11 há um passageiro liberado,
-e ainda falta motorista participante. O APK e a saúde da API são acessíveis ao
-time inteiro pelo [guia de testes](docs/desenvolvimento/homologacao-da-equipe.md).
-Os testes físicos do iPhone estão pausados. **O piloto ainda não está liberado.**
-CI aprovada confirma a construção da API/imagem; não comprova testes de negócio, WhatsApp real ou percurso.
+Presença e consulta da van passaram em ambiente de teste com canal simulado.
+O GPS do Android foi exercitado com o aparelho parado. O próximo teste em
+homologação liga presença, saída e localização com motorista e passageiro.
+Aproximação aguarda percurso para ser ativada, o encerramento automático
+segue pendente e os testes físicos do iPhone estão pausados.
 
 ## Código e desenvolvimento
 
