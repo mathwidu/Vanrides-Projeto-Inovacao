@@ -117,6 +117,15 @@ Uma rota legado exposta pelo proxy, uso de provedor real, vazamento entre integr
 
 ## Validação
 
+Em 15/11, um `AJUDA` entregue pelo WhatsApp foi descartado antes da fila de
+atendimento. A observação temporária identificou o mesmo alias principal e
+alternativo de um contato admitido. O receptor `47aba5b` passou a remover
+somente a repetição exata. Os 40 testes do receptor passaram e a homologação
+continuou descartando o contato sintético desconhecido. O `AJUDA` real do
+mantenedor foi processado e a resposta chegou às 13h36 de Brasília. A validação
+com o motorista e dois passageiros está pendente. A observação temporária foi
+retirada antes da publicação do receptor. [Issue #91](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/91)
+
 Testes de configuração/HTTP e de integração com PostgreSQL, gates de contratos, CI, verificação da imagem e restore em banco descartável. Depois da publicação autorizada, confirmar TLS, digest e a operação real do colega. Ver o [roteiro do ambiente](../../docs/runbooks/whatsapp-mvp/homologacao-api.md).
 
 ## Rollout

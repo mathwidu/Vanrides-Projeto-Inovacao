@@ -7,8 +7,8 @@ seu cadastro e aceitar o aviso de dados no WhatsApp.
 
 **Disponível em 09/11/2026:** [abrir área da equipe](https://vanrides-inovacao-api.matheusduarte.dev.br/equipe).
 Login real do mantenedor, consulta/liberação do passageiro e recuperação do
-convite de motorista foram verificados no ambiente online. O primeiro login
-com a conta de outro integrante ainda precisa ser confirmado por ele.
+convite de motorista foram verificados no ambiente online. A equipe também
+confirmou acesso ao painel em testes com contas individuais.
 
 ## Preparar um teste
 
@@ -17,13 +17,17 @@ com a conta de outro integrante ainda precisa ser confirmado por ele.
 2. Informe o WhatsApp pessoal do participante com país e DDD. Confirme que ele
    concordou com o teste. O número do bot não substitui o número do participante.
 3. Escolha **Passageiro** ou **Motorista** e libere o contato.
-4. Passageiro: oriente a enviar `AJUDA` e `QUERO ME CADASTRAR` ao bot.
-   Motorista: copie as instruções e entregue o convite em conversa privada.
-   Ele envia somente o código ao bot, antes de concluir o cadastro.
-5. Use **Consultar cadastro** para acompanhar liberação, papel e convite.
+4. Siga a próxima etapa mostrada no resultado. Use **Abrir conversa com o bot**
+   ou o contato já compartilhado pela equipe. Para testar a resposta, envie
+   `AJUDA` pelo WhatsApp do participante.
+5. Para motorista, use **Copiar código do motorista** e entregue o código em
+   conversa privada. O motorista envia o código isolado ao bot e segue as
+   perguntas de nome e aceite. Para passageiro com convite de vínculo, envie
+   a mensagem `PASSAGEIRO <código>` e faça o cadastro dentro dessa conversa.
+6. Use **Consultar cadastro** para acompanhar liberação, papel e convite.
    Um convite de motorista expirado e não utilizado pode ser renovado.
    Convites são individuais e valem 24 horas.
-6. Depois, siga a [jornada de testes](homologacao-da-equipe.md).
+7. Depois, siga a [jornada de testes](homologacao-da-equipe.md).
 
 Repetir a operação após uma falha de rede reutiliza o mesmo identificador e não
 cria outra liberação. Uma conta já ativa em outro papel não é convertida pela
@@ -34,11 +38,12 @@ ativo recupera o convite elegível sem estender sua validade.
 
 Use quando não houver um segundo número para fazer o papel de motorista.
 
-1. Libere seu número como **Passageiro** e conclua nome e aviso no bot.
+1. Libere seu número como **Passageiro**.
 2. Em **Motorista de teste da equipe**, toque em **Gerar convite de passageiro**.
-3. Pelo WhatsApp do passageiro, envie ao bot a mensagem `PASSAGEIRO <código>`
-   exibida. O convite tem um uso e vale 24 horas.
-4. Siga as perguntas até confirmar o resumo com `CONFIRMAR`.
+3. Use **Copiar mensagem do passageiro** e envie `PASSAGEIRO <código>` pelo
+   WhatsApp do passageiro. O convite tem um uso e vale 24 horas.
+4. Siga as perguntas. No primeiro cadastro, informe o nome e leia o aviso
+   de dados. Confirme o resumo quando o bot pedir.
 5. Toque em **Atualizar pedidos** e escolha a ação do motorista: aprovar
    vínculo e ponto, pedir correção do ponto, recusar, aprovar novo ponto ou
    encerrar o vínculo.

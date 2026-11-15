@@ -4,26 +4,30 @@ import { readFileSync } from 'node:fs';
 import { runInNewContext } from 'node:vm';
 import { randomUUID } from 'node:crypto';
 const source = readFileSync(new URL('../../src/backend/src/main/resources/static/equipe/app.js', import.meta.url), 'utf8');
+const html = readFileSync(new URL('../../src/backend/src/main/resources/static/equipe/index.html', import.meta.url), 'utf8');
 const session = { login: 'synthetic-user', csrfToken: 'c'.repeat(43) };
 const response = (data, status = 200) => ({ ok: status >= 200 && status < 300, status, json: async () => data });
 const flush = () => new Promise(resolve => setImmediate(resolve));
-async function page(handler) {
-  const nodes = new Map(), calls = [];
+async function page(handler, { auth = response(session), bot = () => response({}) } = {}) {
+  const nodes = new Map(), calls = [], clipboard = [];
   const node = id => {
-    if (!nodes.has(id)) nodes.set(id, { value: '', checked: false, hidden: true, disabled: false, textContent: '',
-      classList: { toggle() {} }, events: {}, addEventListener(event, fn) { this.events[event] = fn; } });
+    if (!nodes.has(id)) nodes.set(id, { value: '', checked: false, hidden: true, disabled: false, textContent: '', attributes: {},
+      classList: { toggle() {} }, events: {}, addEventListener(event, fn) { this.events[event] = fn; },
+      setAttribute(name, value) { this.attributes[name] = value; }, removeAttribute(name) { delete this.attributes[name]; } });
     return nodes.get(id);
   };
   node('role').value = 'driver'; node('phone').value = '+15550000001'; node('consent').checked = true;
+  node('bot-fallback').hidden = false;
   runInNewContext(source, { document: { getElementById: node }, URLSearchParams, crypto: { randomUUID },
-    window: { location: { search: '' }, confirm: () => true }, navigator: { clipboard: { writeText: async () => {} } },
+    window: { location: { search: '' }, confirm: () => true }, navigator: { clipboard: { writeText: async text => clipboard.push(text) } },
     fetch: async (url, options) => {
       calls.push({ url, options });
-      if (url.endsWith('/session')) return response(session);
+      if (url.endsWith('/session')) return auth;
+      if (url.endsWith('/bot')) return bot(node);
       return handler(url, options);
     } });
   await flush();
-  return { node, calls, submit: async () => { node('participant-form').events.submit({ preventDefault() {} }); await flush(); } };
+  return { node, calls, clipboard, submit: async () => { node('participant-form').events.submit({ preventDefault() {} }); await flush(); } };
 }
 const result = (id, extras = {}) => ({ admissionStatus: 'ADMITTED', inviteStatus: 'ACTIVE', operationId: id,
   inviteId: 'synthetic-invite', driverInviteCode: 'a'.repeat(43), expiresAt: '2026-11-10T12:00:00Z', ...extras });
@@ -58,10 +62,128 @@ test('malformed or unrelated success never clears a pending operation', async ()
 test('expired invitation exposes renewal; rejection and session expiry clear stale access', async () => {
   const ui = await page(async (url, options) => url.endsWith('/status')
     ? response(result(undefined, { driverInviteCode: undefined, inviteStatus: 'EXPIRED' }))
-    : response({ code: 'INVALID_CREDENTIAL' }, 401));
+    : response({ code: 'INVALID_CREDENTIAL' }, 401), { bot: () => response({ phoneNumber: '15550000002' }) });
   await ui.node('status').events.click();
   assert.equal(ui.node('renew').hidden, false); assert.equal(ui.node('invitation').hidden, true);
+  assert.match(ui.node('result-description').textContent, /Gerar novo convite de motorista/);
   await ui.submit();
   assert.equal(ui.node('workspace').hidden, true); assert.equal(ui.node('login').hidden, false);
   assert.equal(ui.node('phone').disabled, false);
+  assert.equal(ui.node('bot-link').hidden, true);
+  assert.equal(ui.node('bot-link').attributes.href, undefined);
+});
+
+test('copy preserves the driver code and the complete passenger command without extra text', async () => {
+  const passengerCode = 'b'.repeat(43);
+  const ui = await page(async (url, options) => {
+    const { operationId } = JSON.parse(options.body);
+    return url.endsWith('/test-driver')
+      ? response({ operationId, passengerInviteCode: passengerCode, expiresAt: '2026-11-10T12:00:00Z' })
+      : response(result(operationId));
+  });
+  await ui.submit();
+  assert.match(ui.node('result-description').textContent, /somente o código ao bot.*AJUDA/);
+  assert.match(ui.node('expiry').textContent, /válido até.*Brasília/);
+  await ui.node('copy').events.click();
+  await ui.node('test-invite').events.click();
+  await flush();
+  assert.equal(ui.node('test-invitation').hidden, false);
+  await ui.node('test-copy').events.click();
+  assert.deepEqual(ui.clipboard, ['a'.repeat(43), 'PASSAGEIRO ' + passengerCode]);
+  assert.equal(ui.calls.filter(call => call.options.method === 'POST').length, 2);
+});
+
+test('participant status explains the next step without revealing codes or making changes', async () => {
+  const activeInvite = { inviteStatus: 'ACTIVE', expiresAt: '2026-11-10T12:00:00Z' };
+  const passengerOnboarding = { profileRole: 'PASSENGER', profileStatus: 'ONBOARDING' };
+  const passengerActive = { ...passengerOnboarding, profileStatus: 'ACTIVE' };
+  const cases = [
+    ['passenger', { admissionStatus: 'NOT_ADMITTED' }, /Liberar passageiro/],
+    ['driver', { admissionStatus: 'NOT_ADMITTED' }, /Liberar motorista/],
+    ['passenger', {}, /pode conversar com o bot.*AJUDA/],
+    ['driver', {}, /Liberar motorista.*gerar o convite/],
+    ['driver', { ...passengerOnboarding, ...activeInvite }, /recuperar o mesmo convite com a validade original/],
+    ['driver', { profileRole: 'DRIVER', profileStatus: 'ONBOARDING', inviteStatus: 'CONSUMED' }, /código já foi utilizado.*AJUDA/],
+    ['driver', { profileRole: 'DRIVER', profileStatus: 'ACTIVE', inviteStatus: 'CONSUMED' }, /Cadastro concluído.*ROTINAS/],
+    ['driver', passengerActive, /cadastro como passageiro/],
+    ['passenger', passengerOnboarding, /cadastro está em andamento.*AJUDA/],
+    ['passenger', passengerActive, /Cadastro concluído.*convite/],
+    ['passenger', activeInvite, /convite de motorista ativo.*Selecione Motorista/],
+  ];
+  for (const [role, data, instruction] of cases) {
+    const ui = await page(async () => response({ admissionStatus: 'ADMITTED', inviteStatus: 'NONE', ...data }));
+    ui.node('role').value = role;
+    await ui.node('status').events.click();
+    assert.match(ui.node('result-description').textContent, instruction);
+    assert.equal(ui.node('invitation').hidden, true);
+    assert.equal(ui.node('renew').hidden, true);
+    assert.deepEqual(ui.calls.filter(call => call.options.method === 'POST').map(call => call.url), ['/equipe/api/participants/status']);
+  }
+});
+
+test('bot link is authenticated and opens only the validated WhatsApp destination', async () => {
+  const markup = html.match(/<a id="bot-link"[^>]+>/)?.[0];
+  assert.match(markup, /\bhidden\b/);
+  assert.doesNotMatch(markup, /\bhref=/);
+  assert.match(markup, /target="_blank"/);
+  assert.match(markup, /rel="noopener noreferrer"/);
+  assert.match(markup, /referrerpolicy="no-referrer"/);
+
+  for (const auth of [response({}, 401), response({ ...session, csrfToken: '' })]) {
+    const denied = await page(undefined, { auth });
+    assert.deepEqual(denied.calls.map(call => call.url), ['/equipe/api/session']);
+    assert.equal(denied.node('workspace').hidden, true);
+    assert.equal(denied.node('bot-link').hidden, true);
+  }
+  const ui = await page(undefined, { bot: node => {
+    assert.equal(node('workspace').hidden, false);
+    assert.equal(node('username').textContent, session.login);
+    return response({ phoneNumber: '15550000002', code: 'a'.repeat(43) });
+  } });
+  assert.deepEqual(ui.calls.map(call => call.url), ['/equipe/api/session', '/equipe/api/bot']);
+  assert.equal(ui.calls[1].options.method, 'GET');
+  assert.equal(ui.calls[1].options.credentials, 'same-origin');
+  assert.equal(ui.calls[1].options.cache, 'no-store');
+  assert.equal(ui.calls[1].options.redirect, 'error');
+  assert.equal(ui.node('bot-link').attributes.href, 'https://wa.me/15550000002');
+  assert.equal(ui.node('bot-link').hidden, false);
+  assert.equal(ui.node('bot-fallback').hidden, true);
+});
+
+test('the bot link falls back on bad or unavailable data without blocking operations', async () => {
+  for (const payload of [{}, { phoneNumber: '15550000002?text=code' }, { phoneNumber: '+15550000002' }, { phoneNumber: 15550000002 }]) {
+    const ui = await page(undefined, { bot: () => response(payload) });
+    assert.equal(ui.node('bot-link').attributes.href, undefined);
+    assert.equal(ui.node('bot-link').hidden, true);
+    assert.equal(ui.node('bot-fallback').hidden, false);
+  }
+  const ui = await page(async (url, options) => response(result(JSON.parse(options.body).operationId)),
+    { bot: () => response(null, 404) });
+  assert.equal(ui.node('bot-link').hidden, true);
+  assert.equal(ui.node('bot-fallback').hidden, false);
+  await ui.submit();
+  assert.equal(ui.node('invitation').hidden, false);
+
+  const expired = await page(undefined, { bot: () => response({ phoneNumber: '15550000002' }, 401) });
+  assert.equal(expired.node('workspace').hidden, true);
+  assert.equal(expired.node('login').hidden, false);
+  assert.match(expired.node('message').textContent, /sessão terminou/);
+  assert.equal(expired.node('bot-link').hidden, true);
+});
+
+test('logout invalidates a pending bot lookup before the logout response', async () => {
+  let finishLookup, finishLogout;
+  const lookup = new Promise(resolve => { finishLookup = resolve; });
+  const logout = new Promise(resolve => { finishLogout = resolve; });
+  const ui = await page(() => logout, { bot: () => lookup });
+  const signingOut = ui.node('logout').events.click();
+  finishLookup(response({ phoneNumber: '15550000002' }));
+  await flush();
+  assert.equal(ui.node('bot-link').hidden, true);
+  assert.equal(ui.node('bot-link').attributes.href, undefined);
+  finishLogout(response({}, 204));
+  await signingOut;
+  assert.equal(ui.node('workspace').hidden, true);
+  assert.equal(ui.node('login').hidden, false);
+  assert.equal(ui.node('bot-link').hidden, true);
 });

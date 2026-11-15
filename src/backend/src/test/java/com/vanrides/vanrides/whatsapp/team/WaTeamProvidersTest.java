@@ -64,6 +64,19 @@ class WaTeamProvidersTest {
             """))).isInstanceOfSatisfying(WaTeamProblem.class, problem -> assertThat(problem.code).isEqualTo(WaTeamProblem.Code.WHATSAPP_NOT_FOUND));
     }
 
+    @Test
+    void botContactIsOnlyThePhoneOfTheConfiguredConnectedInstance() throws Exception {
+        String connected = """
+            [{"name":"synthetic-hml","connectionStatus":"open","ownerJid":"12025550101@s.whatsapp.net",
+              "token":"must-not-leave-provider-response"}]
+            """;
+        assertThat(WaTeamEvolution.botPhone("synthetic-hml", response(connected))).isEqualTo("12025550101");
+        assertThat(WaTeamEvolution.botPhone("other-hml", response(connected))).isNull();
+        assertThat(WaTeamEvolution.botPhone("synthetic-hml", response(connected.replace("open", "close")))).isNull();
+        assertThat(WaTeamEvolution.botPhone("synthetic-hml", response(connected.replace("@s.whatsapp.net", "@lid")))).isNull();
+        assertThat(WaTeamEvolution.botPhone("synthetic-hml", new WaTeamRemote.Reply(503, null))).isNull();
+    }
+
     private static WaTeamRemote.Reply githubRepo(String name, String role) {
         var payload = WaJson.MAPPER.createObjectNode().put("total_count", 1);
         payload.putArray("repositories").addObject().put("full_name", name).putObject("permissions").put(role, true);

@@ -80,6 +80,15 @@ public final class WaTeamController {
         return Map.of("login", current.actor.login(), "csrfToken", current.csrf);
     }
 
+    @GetMapping("/equipe/api/bot")
+    public Map<String, String> bot(HttpServletRequest request) {
+        String sessionCookie = cookie(request, SESSION_COOKIE);
+        var current = sessions.require(sessionCookie, null, false);
+        String phone = evolution.botPhone();
+        sessions.assertLive(sessionCookie, current);
+        return phone == null ? Map.of() : Map.of("phoneNumber", phone);
+    }
+
     @PostMapping("/equipe/api/logout")
     public ResponseEntity<Void> logout(HttpServletRequest request, HttpServletResponse response) {
         WaJson.fields(body(request));

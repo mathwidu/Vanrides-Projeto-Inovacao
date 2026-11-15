@@ -75,6 +75,20 @@ class WaTeamWebBoundaryTest {
     }
 
     @Test
+    void botContactRouteOnlyAcceptsExactTeamGetWithNoPublicCaching() throws Exception {
+        String path = "/equipe/api/bot";
+        check(request("GET", path), 404, false);
+        when(team.enabled()).thenReturn(true);
+        when(team.origin()).thenReturn(ORIGIN);
+        check(request("POST", path), 404, false);
+        check(request("GET", path + "/"), 404, false);
+        var get = request("GET", path);
+        assertThat(check(get, 200, true).getHeader("Cache-Control")).isEqualTo("no-store");
+        get.addHeader("Origin", "https://foreign.invalid");
+        check(get, 403, false);
+    }
+
+    @Test
     void dynamicIngressHandshakeRequiresStrictModeOnTheAuthenticatedChannelInstance() throws Exception {
         var request = request("POST", "/integrations/whatsapp/v1/team-events");
         request.addHeader("Authorization", "Bearer " + key(5));
