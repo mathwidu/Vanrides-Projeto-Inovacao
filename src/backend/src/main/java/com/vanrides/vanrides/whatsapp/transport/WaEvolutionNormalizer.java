@@ -11,6 +11,7 @@ import java.time.OffsetDateTime;
 import java.util.Base64;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Pattern;
 import org.springframework.stereotype.Component;
 
 /** Evolution 2.3.7/Baileys webhook adapter. The provider envelope is never a stored payload. */
@@ -23,8 +24,14 @@ public final class WaEvolutionNormalizer {
     }
     private static final Set<String> STATUSES = Set.of("SERVER_ACK", "DELIVERY_ACK", "READ", "PLAYED", "ERROR");
     private static final Set<String> CONNECTIONS = Set.of("open", "connecting", "close", "refused");
-    private static final java.util.regex.Pattern PASSENGER_LINK = java.util.regex.Pattern.compile(
+    private static final Pattern PASSENGER_LINK = Pattern.compile(
         "(?iu)wa\\.me/[0-9]+\\?text=PASSAGEIRO(?:%20|\\+)[A-Za-z0-9_-]{43}");
+    private static final String POINT_COMMAND = "(?i)PONTO[\\s\\p{Z}]+";
+    private static final String DECIMAL = "([+-]?[0-9]{1,3}(?:\\.[0-9]+)?)";
+    private static final Pattern TEXT_PIN = Pattern.compile(POINT_COMMAND + DECIMAL + "\\h*,\\h*" + DECIMAL);
+    private static final Pattern TEXT_PIN_PREFIX = Pattern.compile(
+        POINT_COMMAND + "(?:[+−\\-0-9.,]|NaN\\b|Infinity\\b|https?://)");
+    private static final Pattern POINT_SELECTION = Pattern.compile(POINT_COMMAND + "(?:[1-9][0-9]?|100)[.!?]?\\h*");
     private final WaCrypto crypto;
 
     public WaEvolutionNormalizer(WaCrypto crypto) { this.crypto = crypto; }
@@ -74,10 +81,7 @@ public final class WaEvolutionNormalizer {
             JsonNode latitude = location.get("degreesLatitude"), longitude = location.get("degreesLongitude");
             if (!coordinate(latitude, 90) || !coordinate(longitude, 180))
                 return unsupported(id, aliases, "INVALID_PIN");
-            ObjectNode payload = object();
-            payload.putObject("pin").put("latitude", latitude.doubleValue()).put("longitude", longitude.doubleValue());
-            messageMetadata(envelope, data, message, payload);
-            return new Event("MESSAGE", id, null, "PIN", payload, "PENDING", aliases);
+            return pin(envelope, data, message, id, aliases, latitude.doubleValue(), longitude.doubleValue());
         }
         String conversation = string(message.get("conversation"));
         String extended = string(message.path("extendedTextMessage").get("text"));
@@ -85,8 +89,20 @@ public final class WaEvolutionNormalizer {
             return unsupported(id, aliases, "AMBIGUOUS_CONTENT");
         String text = conversation != null ? conversation : extended;
         if (!validText(text)) return unsupported(id, aliases, "UNSUPPORTED_CONTENT");
-        ObjectNode payload = object();
         String code = text.strip();
+        var coordinates = TEXT_PIN.matcher(code);
+        if (coordinates.matches()) {
+            double latitude = Double.parseDouble(coordinates.group(1));
+            double longitude = Double.parseDouble(coordinates.group(2));
+            if (!coordinate(latitude, 90) || !coordinate(longitude, 180)
+                    || quoted(data.path("contextInfo")) || quoted(message.path("extendedTextMessage").path("contextInfo")))
+                return unsupported(id, aliases, "INVALID_PIN");
+            return pin(envelope, data, message, id, aliases, latitude, longitude);
+        }
+        // Keep numbered point selections as text while dropping malformed coordinate commands.
+        if (TEXT_PIN_PREFIX.matcher(code).lookingAt() && !POINT_SELECTION.matcher(code).matches())
+            return unsupported(id, aliases, "INVALID_PIN");
+        ObjectNode payload = object();
         if (PASSENGER_LINK.matcher(code).find()) {
             payload.put("reason", "PASSENGER_INVITE_CONTENT");
             messageMetadata(envelope, data, message, payload);
@@ -148,6 +164,13 @@ public final class WaEvolutionNormalizer {
     private static Event unsupported(String id, List<Alias> aliases, String reason) {
         return new Event("MESSAGE", id, null, "UNSUPPORTED", reason(reason), "PENDING", aliases);
     }
+    private static Event pin(ObjectNode envelope, JsonNode data, JsonNode message, String id,
+                             List<Alias> aliases, double latitude, double longitude) {
+        ObjectNode payload = object();
+        payload.putObject("pin").put("latitude", latitude).put("longitude", longitude);
+        messageMetadata(envelope, data, message, payload);
+        return new Event("MESSAGE", id, null, "PIN", payload, "PENDING", aliases);
+    }
     private static Event callback(String category, String key, String state, ObjectNode payload) {
         return new Event(category, null, key, "UNSUPPORTED", payload, state, List.of());
     }
@@ -177,7 +200,13 @@ public final class WaEvolutionNormalizer {
         return bytes.length == 32 && Base64.getUrlEncoder().withoutPadding().encodeToString(bytes).equals(value);
     }
     private static boolean coordinate(JsonNode value, int limit) {
-        return value != null && value.isNumber() && Double.isFinite(value.doubleValue()) && Math.abs(value.doubleValue()) <= limit;
+        return value != null && value.isNumber() && coordinate(value.doubleValue(), limit);
+    }
+    private static boolean coordinate(double value, int limit) {
+        return Double.isFinite(value) && Math.abs(value) <= limit;
+    }
+    private static boolean quoted(JsonNode context) {
+        return context.hasNonNull("stanzaId") || context.hasNonNull("quotedMessage");
     }
     private static Instant instant(String value) {
         if (value == null || value.length() > 80) return null;

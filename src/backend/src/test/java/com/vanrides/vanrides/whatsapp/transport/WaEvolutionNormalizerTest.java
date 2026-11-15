@@ -64,6 +64,62 @@ class WaEvolutionNormalizerTest {
         assertThat(normalizer.normalize(envelope).kind()).isEqualTo("PIN");
     }
 
+    @Test void shouldNormalizeAnExplicitTextPointExactlyLikeANativePin() {
+        ObjectNode envelope = fixture("message-pin-zero");
+        ObjectNode message = (ObjectNode) envelope.path("data").path("message");
+        ((ObjectNode) message.path("locationMessage"))
+            .put("degreesLatitude", -29.68123).put("degreesLongitude", -51.13123);
+        var expected = normalizer.normalize(envelope);
+
+        message.removeAll().put("conversation", "PONTO -29.68123, -51.13123");
+        assertThat(normalizer.normalize(envelope)).isEqualTo(expected);
+        message.removeAll().putObject("extendedTextMessage").put("text", "  ponto -29.68123,-51.13123  ");
+        assertThat(normalizer.normalize(envelope)).isEqualTo(expected);
+
+        message.removeAll().put("conversation", "PONTO +90.0, -180");
+        var boundary = normalizer.normalize(envelope);
+        assertThat(boundary.kind()).isEqualTo("PIN");
+        assertThat(boundary.payload().path("pin")).isEqualTo(WaJson.object("{\"latitude\":90.0,\"longitude\":-180.0}"));
+    }
+
+    @Test void shouldRejectMalformedTextPointsWithoutKeepingTheInput() {
+        ObjectNode envelope = fixture("message-text-pn-lid");
+        ObjectNode message = (ObjectNode) envelope.path("data").path("message");
+        for (String input : List.of("PONTO -90.1, 0", "PONTO 0, +180.01", "PONTO NaN, 0",
+                "PONTO 0, Infinity", "PONTO 1e1, 0", "PONTO -29,68123, -51,13123",
+                "PONTO -29.68123 -51.13123", "PONTO 0, 0 e depois", "PONTO https://maps.example.invalid/?q=0,0")) {
+            message.put("conversation", input);
+            assertUnsupported(normalizer.normalize(envelope), "INVALID_PIN");
+        }
+    }
+
+    @Test void shouldKeepCommonPointCommandsAndPlainLinksAsText() {
+        ObjectNode envelope = fixture("message-text-pn-lid");
+        ObjectNode message = (ObjectNode) envelope.path("data").path("message");
+        for (String input : List.of("PONTO COMUM", "PONTO 1", "ponto\u00a08!", "PONTO 100",
+                "https://maps.example.invalid/?q=0,0", "-29.68123, -51.13123")) {
+            message.put("conversation", input);
+            var event = normalizer.normalize(envelope);
+            assertThat(event.kind()).isEqualTo("TEXT");
+            assertThat(event.payload().path("text").asText()).isEqualTo(input);
+        }
+    }
+
+    @Test void shouldRejectTextPointRepliesAndNeverUseCoordinatesFromAQuote() {
+        ObjectNode envelope = fixture("message-extended-reply");
+        ObjectNode data = (ObjectNode) envelope.path("data");
+        ObjectNode extended = (ObjectNode) data.path("message").path("extendedTextMessage");
+        ObjectNode context = (ObjectNode) extended.path("contextInfo");
+        context.putObject("quotedMessage").put("conversation", "PONTO 0, 0");
+        assertThat(normalizer.normalize(envelope).kind()).isEqualTo("TEXT");
+        assertThat(normalizer.normalize(envelope).payload().path("text").asText()).isEqualTo("Concordo");
+
+        extended.put("text", "PONTO -29.68123, -51.13123");
+        assertUnsupported(normalizer.normalize(envelope), "INVALID_PIN");
+        data.set("contextInfo", extended.remove("contextInfo"));
+        assertUnsupported(normalizer.normalize(envelope), "INVALID_PIN");
+    }
+
     @Test void shouldNeverExtractALiveOrInvalidPinAsCoordinates() {
         assertUnsupported(normalizer.normalize(fixture("message-live-location")), "LIVE_LOCATION");
         for (String invalid : List.of("{\"degreesLatitude\":91,\"degreesLongitude\":0}",

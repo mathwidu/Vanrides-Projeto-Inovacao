@@ -112,6 +112,19 @@ aprovação de vínculo e ponto. A execução geral foi encerrada nesse marco,
 antes das verificações de presença e rastreamento. O contêiner temporário
 foi removido.
 
+### Testes pelo Mac
+
+O texto `PONTO` com coordenadas cria o mesmo ponto fixo enviado pelo
+WhatsApp móvel. O agente recebe uma referência ao ponto. As confirmações
+de rotina e de embarque e as regras de validade seguem no backend.
+
+O painel oferece uma conversa fictícia no navegador e um ensaio de
+cadastro com o WhatsApp real do passageiro. Neste último, o motorista de
+teste já existente gera o convite e decide sobre o embarque pelo painel.
+Os testes locais cobriram a interface, o parser e os pontos de rotina,
+embarque e ponto comum. Passaram 61 testes Java, com PostgreSQL isolado,
+e 13 testes Node do painel. A publicação usa a API existente e o schema V41.
+
 ## Dependências
 
 040 (autenticação) e 070 (contratos de conversa) concluídos. A homologação usa dados fictícios e tem aceite próprio. Os aceites de canal, percurso, iPhone, encerramento e piloto permanecem no plano do MVP.

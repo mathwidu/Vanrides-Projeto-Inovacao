@@ -36,6 +36,28 @@ class WaDriverWizardIntegrationTest {
             AND destination_latitude=0 AND destination_longitude=0 AND stop_order_pending AND destination_source_event_id IS NOT NULL
             """, actor));
     }
+    @Test void textPointStaysPrivateAndSavesTheDestinationAfterConfirmation() {
+        UUID actor = f.driver();
+        f.send(actor, "CRIAR");
+        f.send(actor, "Rotina Sintética");
+        f.send(actor, "IDA");
+        f.send(actor, "SEGUNDA A SEXTA");
+        f.send(actor, "06:00");
+        var destination = f.send(actor, "MANTER");
+        assertTrue(destination.text().contains("\nPONTO -29.68123, -51.13123\n"));
+
+        var review = f.send(actor, "PONTO -12.25, +34.5");
+        assertEquals(json().put("type", "STATIC_PIN_REFERENCE").put("sourceMessageId", "event_" + review.lease().id()),
+            review.lease().message());
+        assertEquals("REVIEW", f.draft(actor).path("stage").asText());
+        assertEquals(0, f.count("routine", actor));
+
+        f.confirm(actor, review);
+        assertEquals(1, f.s.number("""
+            SELECT count(*) FROM wa.routine WHERE driver_id=? AND destination_latitude=-12.25
+            AND destination_longitude=34.5 AND destination_source_event_id=?
+            """, actor, review.lease().id()));
+    }
     @Test void returnIsIndependentAndNeverInvertedFromOutbound() {
         UUID actor = f.driver(); f.routine(actor); f.confirm(actor, f.review(actor, "VOLTA"));
         assertEquals(1, f.s.number("SELECT count(*) FROM wa.routine WHERE driver_id=? AND direction='OUTBOUND'", actor));

@@ -6,16 +6,22 @@
   <meta name="referrer" content="no-referrer">
   <title>Equipe · VanRides</title>
   <link rel="stylesheet" href="/equipe/style.css">
+  <script src="/equipe/simulador.js" defer></script>
   <script src="/equipe/app.js" defer></script>
 </head>
 <body>
 <header><a class="brand" href="/equipe/">VanRides<span>Equipe</span></a><span class="environment">Desenvolvimento compartilhado</span></header>
 <main>
-  <section class="intro"><p class="eyebrow">Preparar um teste</p><h1>Todo mundo a bordo.</h1><p>Libere um participante e deixe que ele conclua o cadastro pelo WhatsApp.</p></section>
+  <section class="intro"><h1>Testes do VanRides</h1><p>Pratique a conversa no navegador ou acompanhe o cadastro de um passageiro no WhatsApp.</p></section>
   <p id="message" role="status" aria-live="polite">Conferindo seu acesso…</p>
   <section id="login" class="panel" hidden><h2>Entre com sua conta do GitHub</h2><p>Os integrantes com permissão de escrita no repositório podem preparar os testes. Cada ação fica associada à pessoa que a realizou.</p><a class="button" href="/equipe/login">Entrar com GitHub</a></section>
   <section id="workspace" hidden>
     <div class="session"><span>Conectado como <strong id="username"></strong></span><button type="button" id="logout" class="quiet">Sair</button></div>
+    <nav class="workspace-nav" aria-label="Modos de teste">
+      <a href="#simulator">Simular conversas</a>
+      <a href="#test-driver">Testar com o WhatsApp</a>
+      <a href="#participant-form">Liberar um número</a>
+    </nav>
     <div class="columns">
       <section class="panel"><h2>Liberar participante</h2><form id="participant-form">
         <label for="phone">WhatsApp do participante</label><input id="phone" name="phone" type="tel" inputmode="tel" autocomplete="off" placeholder="+55 (51) 90000-0000" maxlength="24" required aria-describedby="phone-help"><p id="phone-help" class="hint">Informe país e DDD. Use o número pessoal da pessoa, diferente do número do bot.</p>
@@ -33,16 +39,40 @@
       </aside>
     </div>
     <section id="result" class="panel result" hidden aria-labelledby="result-title"><h2 id="result-title">Resultado e próxima etapa</h2><p id="result-description"></p><dl><div><dt>Liberação</dt><dd id="admission"></dd></div><div><dt>Cadastro</dt><dd id="profile"></dd></div><div><dt>Convite de motorista</dt><dd id="invite-status"></dd></div></dl><div id="invitation" hidden><label for="invite-code">Código individual do motorista</label><input id="invite-code" readonly autocomplete="off" spellcheck="false"><div class="actions"><button id="copy" type="button">Copiar código do motorista</button></div></div><p id="expiry" class="hint" hidden></p><button id="renew" type="button" class="secondary" hidden>Gerar novo convite de motorista</button></section>
-    <section id="test-driver" class="panel" aria-labelledby="test-driver-title"><h2 id="test-driver-title">Motorista de teste da equipe</h2><p>Gera um convite de passageiro em nome de um motorista fictício, com uma rotina de ida todos os dias às 07:30. Use para testar o cadastro do passageiro sem um segundo número.</p>
+    <section id="test-driver" class="panel result" aria-labelledby="test-driver-title"><h2 id="test-driver-title">Motorista de teste da equipe</h2><p>Use o painel como motorista e seu WhatsApp como passageiro. Libere o número do passageiro acima, gere um convite e envie a mensagem preparada na conversa com o bot.</p>
+      <p class="hint">A rotina de ida às 07:30 e os pedidos abaixo são compartilhados pela equipe.</p>
       <div class="actions"><button type="button" id="test-invite">Gerar convite de passageiro</button><button type="button" id="test-refresh" class="secondary">Atualizar pedidos</button></div>
       <div id="test-invitation" hidden>
         <label for="test-invite-code">Envie esta mensagem ao bot pelo WhatsApp do passageiro</label><input id="test-invite-code" readonly autocomplete="off" spellcheck="false">
         <p id="test-expiry" class="hint"></p>
-        <p>Com o número liberado, envie a mensagem inteira em uma única mensagem. Se a pessoa ainda estiver sem cadastro, o próprio convite já inicia essa etapa.</p>
-        <div class="actions"><button id="test-copy" type="button">Copiar mensagem do passageiro</button></div>
+        <p>Abra o convite no WhatsApp do passageiro e toque em Enviar. Se for usar a conversa já aberta no Mac, copie e cole a mensagem inteira.</p>
+        <div class="actions">
+          <a id="test-wa-link" class="button" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer" hidden>Abrir convite no WhatsApp</a>
+          <button id="test-copy" type="button" class="secondary">Copiar mensagem do passageiro</button>
+        </div>
       </div>
       <h3>Pedidos de vínculo</h3><ul id="test-links"></ul><p id="test-empty" class="hint">Use “Atualizar pedidos” depois que o passageiro confirmar o resumo.</p>
       <p class="hint">Este motorista não tem WhatsApp. O que no fluxo real iria para ele (pedido novo, troca de ponto, encerramento pelo passageiro) aparece só nesta lista. O passageiro recebe pelo WhatsApp os mesmos avisos que receberia de um motorista real. Presença, saída e GPS não acontecem com este motorista.</p></section>
+    <section id="simulator" class="panel result" aria-labelledby="sim-title">
+      <div class="sim-header">
+        <div><h2 id="sim-title">Simular conversas no navegador</h2>
+          <p>Pratique com motorista e passageiro fictícios. As mensagens ficam nesta página.</p>
+        </div>
+        <button id="sim-reset" type="button" class="secondary">Recomeçar</button>
+      </div>
+      <label for="sim-role">Papel na simulação</label>
+      <select id="sim-role"><option value="motorista">Motorista</option><option value="passageiro">Passageiro</option></select>
+      <ol id="sim-log" role="log" aria-label="Conversa simulada"></ol>
+      <p id="sim-hint" class="hint" aria-live="polite"></p>
+      <div id="sim-options" class="actions"></div>
+      <form id="sim-form" hidden>
+        <label for="sim-input">Nome fictício</label>
+        <div class="sim-entry">
+          <input id="sim-input" type="text" maxlength="40" required autocomplete="off">
+          <button type="submit">Enviar</button>
+        </div>
+      </form>
+    </section>
   </section>
   <footer>VanRides · Área de testes da equipe. <a href="/motorista/VanRides.apk">Baixar APK do motorista</a></footer>
 </main>

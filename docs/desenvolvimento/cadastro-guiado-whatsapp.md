@@ -2,13 +2,15 @@
 
 O motorista cria a rotina, convida passageiros e aprova seus pedidos na conversa com o VanRides. O passageiro informa o nome, lê o aviso de dados, escolhe seus dias e indica o ponto de embarque pelo próprio WhatsApp. O aplicativo do motorista entra quando for compartilhar o GPS de uma saída.
 
-Este roteiro é da versão em preparação. A homologação compartilhada só terá as novas mensagens e convites depois que a API com a migração V41 e o agente forem publicados juntos.
+O cadastro guiado e os convites entraram na homologação com a V41. A [área da
+equipe](area-da-equipe.md) também permite praticar os dois papéis no navegador
+ou usar um motorista de teste com o WhatsApp real de um passageiro.
 
 ## Primeiro cadastro do motorista
 
 1. Use um WhatsApp diferente do número do bot e dos números que testarão como passageiros. A equipe libera o motorista uma vez na [área da equipe](area-da-equipe.md) e entrega o convite individual em privado.
 2. No chat com o VanRides, envie `AJUDA` para entender o produto. Envie o convite recebido, informe seu nome e leia o aviso. Responda `ACEITO` se concordar com o uso dos dados explicado pelo bot.
-3. Envie `CRIAR ROTINA`. O bot pede o nome do trajeto, sentido, dias, horário, fuso e destino. Envie um ponto fixo pela opção **Localização** do WhatsApp. Confira o resumo e envie a confirmação exibida na conversa.
+3. Envie `CRIAR ROTINA`. O bot pede o nome do trajeto, sentido, dias, horário, fuso e destino. Envie um ponto fixo [pelo Mac ou pelo celular](#enviar-um-ponto-fixo-no-mac). Confira o resumo e envie a confirmação exibida na conversa.
 4. Pergunte, por exemplo, “Como convido passageiros?” ou “Como vinculo o aplicativo?”. Use `AJUDA` para retomar a etapa. Uma dúvida não aplica mudanças na rotina nem renova um resumo em revisão.
 
 ## Convidar e cadastrar passageiros
@@ -20,9 +22,18 @@ Este roteiro é da versão em preparação. A homologação compartilhada só te
 
 O opt-in de convites vale por 24 horas e pode ser retirado com `PARAR CONVITES`. Se a pessoa ainda não falou com o bot, não deu permissão ou se ela venceu, encaminhe um link. Se a conexão do bot impedir a apresentação do link, o código em texto continua disponível para um contato liberado pela equipe. A autorização de convites é diferente do aceite do aviso de dados e da escolha de lembretes. [Política do WhatsApp Business](https://business.whatsapp.com/policy/preview?lang=pt_BR)
 
-1. O passageiro confere o motorista indicado e responde às perguntas. Envia um ponto fixo pelo WhatsApp e, se necessário, uma referência como “portão lateral”.
+1. O passageiro confere o motorista indicado e responde às perguntas. Envia um [ponto fixo](#enviar-um-ponto-fixo-no-mac) pelo WhatsApp e, se necessário, uma referência como “portão lateral”.
 2. Após revisar e confirmar, o passageiro aguarda a aprovação. O motorista recebe uma mensagem, usa `PASSAGEIROS` e escolhe o pedido a aprovar ou corrigir.
 3. O passageiro recebe o resultado no mesmo chat. Para verificar presença e GPS depois desse ponto, siga o [roteiro de homologação](homologacao-da-equipe.md).
+
+## Enviar um ponto fixo no Mac
+
+Quando o bot pedir o destino ou o ponto de embarque, abra o Google Maps no
+computador, clique com o botão direito no ponto desejado e clique nas
+coordenadas para copiá-las. No WhatsApp, digite `PONTO`, dê um espaço e cole.
+Exemplo com um ponto fictício: `PONTO -29.68123, -51.13123`. Confira o ponto
+no mapa antes de enviar. Pelo celular, você também pode usar o botão de
+localização e escolher um ponto fixo. [Ajuda do Google Maps](https://support.google.com/maps/answer/18539?hl=pt-BR)
 
 ## Aceite no canal real
 

@@ -36,14 +36,17 @@ ativo recupera o convite elegível sem estender sua validade.
 
 ## Testar o passageiro com o motorista de teste
 
-Use quando não houver um segundo número para fazer o papel de motorista.
+Use **Testar com o WhatsApp** quando quiser confirmar a jornada real com um
+único número de passageiro. O papel de motorista fica no painel.
 
 1. Libere seu número como **Passageiro**.
 2. Em **Motorista de teste da equipe**, toque em **Gerar convite de passageiro**.
-3. Use **Copiar mensagem do passageiro** e envie `PASSAGEIRO <código>` pelo
-   WhatsApp do passageiro. O convite tem um uso e vale 24 horas.
+3. Use **Abrir convite no WhatsApp** e envie a mensagem preenchida. Se a
+   conversa já estiver aberta no Mac, use **Copiar mensagem do passageiro**
+   e cole no chat. O convite tem um uso e vale 24 horas.
 4. Siga as perguntas. No primeiro cadastro, informe o nome e leia o aviso
-   de dados. Confirme o resumo quando o bot pedir.
+   de dados. Quando chegar ao embarque no Mac, envie `PONTO` com as
+   coordenadas copiadas do mapa. Confirme o resumo quando o bot pedir.
 5. Toque em **Atualizar pedidos** e escolha a ação do motorista: aprovar
    vínculo e ponto, pedir correção do ponto, recusar, aprovar novo ponto ou
    encerrar o vínculo.
@@ -52,6 +55,16 @@ O passageiro recebe no WhatsApp os mesmos avisos que receberia de um motorista
 real. O que iria para o motorista aparece só na lista da área. Presença, saída,
 GPS e avisos de aproximação não acontecem com esse motorista; para esses
 testes, use um motorista real.
+
+## Simular conversas no navegador
+
+Abra **Simular conversas** e comece no papel de motorista. Siga as opções de
+cadastro, rotina e convite, depois troque para **Passageiro** para usar o
+convite e indicar o embarque. Volte a **Motorista** para aprovar o pedido.
+A simulação guarda o progresso enquanto a página permanece aberta. Use
+**Recomeçar** para praticar o outro formato de convite. Ela usa dados fictícios
+e o estado fica no navegador. Para conferir o bot, a entrega de mensagens e a
+API da homologação, siga a jornada real da seção anterior.
 
 ## Acesso e responsabilidades
 

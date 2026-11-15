@@ -93,6 +93,25 @@ test('copy preserves the driver code and the complete passenger command without 
   assert.equal(ui.calls.filter(call => call.options.method === 'POST').length, 2);
 });
 
+test('the test-driver shortcut prefills only the validated invitation and clears it on logout', async () => {
+  const code = 'c'.repeat(43);
+  const ui = await page(async (url, options) => {
+    if (url.endsWith('/logout')) return response({}, 204);
+    return response({ operationId: JSON.parse(options.body).operationId,
+      passengerInviteCode: code, expiresAt: '2030-01-01T12:00:00Z' });
+  }, { bot: () => response({ phoneNumber: '15550000002' }) });
+  const link = ui.node('test-wa-link');
+  assert.equal(link.hidden, true);
+  await ui.node('test-invite').events.click();
+  await flush();
+  assert.equal(link.attributes.href, 'https://wa.me/15550000002?text=PASSAGEIRO%20' + code);
+  assert.equal(link.hidden, false);
+  await ui.node('logout').events.click();
+  assert.equal(link.hidden, true);
+  assert.equal(link.attributes.href, undefined);
+  assert.equal(ui.node('test-invite-code').value, '');
+});
+
 test('participant status explains the next step without revealing codes or making changes', async () => {
   const activeInvite = { inviteStatus: 'ACTIVE', expiresAt: '2026-11-10T12:00:00Z' };
   const passengerOnboarding = { profileRole: 'PASSENGER', profileStatus: 'ONBOARDING' };
