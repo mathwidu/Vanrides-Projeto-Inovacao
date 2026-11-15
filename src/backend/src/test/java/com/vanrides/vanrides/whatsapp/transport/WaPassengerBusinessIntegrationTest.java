@@ -162,16 +162,23 @@ class WaPassengerBusinessIntegrationTest {
     }
 
     @Test
-    void driverPublishesCommonPointAndPassengerSelectionKeepsOwnSourceAndOriginForeignKey() {
+    void driverPublishesCommonPointByTextAndPassengerSelectionKeepsOwnSourceAndOriginForeignKey() {
         fixture.send(driver, "PONTO COMUM");
-        fixture.send(driver, "Portaria pública");
-        var review = fixture.pin(driver);
+        var prompt = fixture.send(driver, "Portaria pública");
+        assertTrue(prompt.text().endsWith("PONTO -29.68123, -51.13123"));
+        var review = fixture.send(driver, "PONTO -12.25, +34.5");
+        assertEquals("STATIC_PIN_REFERENCE", review.lease().message().path("type").asText());
+        assertEquals(0, fixture.count("common_pickup_point"));
         fixture.confirm(driver, review);
         UUID common =
                 fixture.transport.jdbc.queryForObject(
-                        "SELECT id FROM wa.common_pickup_point WHERE driver_id=?",
+                        """
+                        SELECT id FROM wa.common_pickup_point WHERE driver_id=? AND latitude=-12.25
+                        AND longitude=34.5 AND source_inbox_event_id=?
+                        """,
                         UUID.class,
-                        driver);
+                        driver,
+                        review.lease().id());
         fixture.open(passenger, code);
         fixture.send(passenger, "CONTINUAR");
         fixture.send(passenger, "Passageiro Sintético");

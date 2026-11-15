@@ -29,8 +29,8 @@ final class WaDriverTexts {
             case "TIME" -> "Qual é o horário local? Responda HH:mm, por exemplo 07:30.";
             case "TIMEZONE" -> "Fuso atual: " + ZONES.getOrDefault(draft.path("timezone").asText(), "Brasília")
                 + ". Qual fuso usar? MANTER, BRASÍLIA, MANAUS, RIO BRANCO ou NORONHA. O resumo mostrará sua escolha.";
-            case "DESTINATION" -> "Onde termina este trajeto? No WhatsApp, use o clipe ou o botão +, toque em Localização e escolha o ponto no mapa. "
-                + "Envie o ponto fixo do destino. Em edição, responda MANTER para usar o destino atual.";
+            case "DESTINATION" -> "Onde termina este trajeto? No celular, use o clipe ou o botão +, toque em Localização e envie o ponto fixo do destino.\n\n"
+                + WaConversationResponses.COMPUTER_POINT + "\n\nEm edição, envie MANTER para usar o destino atual.";
             case "ORDER" -> "Pontos de " + routine(draft.path("routineDisplay")) + ": " + stops(draft.path("stopChoices"), null)
                 + " Informe todos pelos números, na ordem desejada, sem repetir nem omitir. Exemplo: 2,1. Sem pontos, responda SEM PONTOS.";
             case "DATE" -> "Qual data cancelar? Use AAAA-MM-DD. Isso não inicia viagem nem altera presença.";

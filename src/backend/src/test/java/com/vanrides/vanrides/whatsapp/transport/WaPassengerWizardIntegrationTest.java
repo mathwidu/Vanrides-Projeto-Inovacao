@@ -201,6 +201,35 @@ class WaPassengerWizardIntegrationTest {
         assertEquals(0, fixture.count("pickup_point"));
     }
 
+    @Test
+    void textPointRequiresTheSameReferenceAndConfirmationAsANativePickupPin() {
+        UUID passenger = fixture.passenger();
+        fixture.review(passenger, code);
+        var prompt = fixture.send(passenger, "CORRIGIR PONTO");
+        assertTrue(prompt.text().endsWith("PONTO -29.68123, -51.13123"));
+
+        var point = fixture.send(passenger, "PONTO -12.25, +34.5");
+        assertEquals(
+                json().put("type", "STATIC_PIN_REFERENCE")
+                        .put("sourceMessageId", "event_" + point.lease().id()),
+                point.lease().message());
+        assertEquals("REFERENCE", fixture.draft(passenger).path("stage").asText());
+        var review = fixture.send(passenger, "Portão lateral");
+        assertTrue(review.text().contains("Portão lateral"));
+        assertEquals(0, fixture.count("pickup_point"));
+
+        fixture.confirm(passenger, review);
+        assertEquals(
+                1,
+                fixture.conversation.number(
+                        """
+                        SELECT count(*) FROM wa.pickup_point WHERE passenger_id=? AND latitude=-12.25
+                        AND longitude=34.5 AND source_inbox_event_id=? AND reference_text='Portão lateral'
+                        """,
+                        passenger,
+                        point.lease().id()));
+    }
+
     private record ObjectNodeHolder(String value) {}
 
     @Test

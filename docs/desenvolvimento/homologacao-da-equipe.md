@@ -107,10 +107,13 @@ Esta sequência descreve a implementação a validar no ambiente compartilhado; 
 7. **Iniciar e observar o GPS.** O motorista envia `INICIAR SAÍDA`, escolhe o número da ocorrência de hoje, revisa a lista e confirma. Recebe o link individual, válido por cinco minutos. Abre o app (ou toca em **Abrir VanRides Motorista** na página), permite localização precisa/notificações e toca em **Iniciar localização desta saída**. Aguarda **Posição recente recebida** e a confirmação do bot. Abrir o link não prova início: a API precisa aceitar uma posição válida. O passageiro elegível pode consultar `ONDE ESTÁ A VAN`; posição ausente ou antiga não deve ser apresentada como atual.
 8. **Terminar o ensaio.** Tocar em **Parar localização** no aplicativo e conferir o estado no receptor/API com o operador. Isso encerra a coleta, **não conclui a viagem**: ela pode ficar degradada ou com início falho. Os comandos de finalização da viagem ainda não estão disponíveis. Não presumir que fechar a tela encerra a coleta. Para repetir a coleta, usar `RETOMAR SAÍDA`, escolher a ocorrência, confirmar e abrir o novo link. O fim automático e o aviso de aproximação ficam para as etapas pendentes.
 
-O pin deve ser enviado pela função de **localização estática do WhatsApp**; texto com coordenadas ou link de mapa não substitui esse formato.
+No computador, envie o ponto fixo com `PONTO` e as coordenadas copiadas do mapa.
+No celular, também é possível usar a localização estática do WhatsApp.
+Confira o formato no [roteiro do cadastro guiado](cadastro-guiado-whatsapp.md#enviar-um-ponto-fixo-no-mac).
 
-Para a versão em preparação, o [roteiro do cadastro guiado](cadastro-guiado-whatsapp.md)
-mostra os convites por link e por telefone. Confira a versão antes de usar esse roteiro no ambiente compartilhado.
+O [roteiro do cadastro guiado](cadastro-guiado-whatsapp.md) mostra os convites
+por link e por telefone. A [área da equipe](area-da-equipe.md) tem a simulação
+no navegador e o teste com um motorista do painel.
 
 Os testes físicos do aplicativo iPhone continuam pausados. Usar o WhatsApp pessoal de um iPhone como passageiro é independente dessa pausa. Não há distribuição iOS pronta para o grupo pelo link do APK.
 

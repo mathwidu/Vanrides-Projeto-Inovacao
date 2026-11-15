@@ -97,6 +97,9 @@ public final class WaConversationResponses {
             default -> "O atendimento desta conversa está pausado para suporte humano.";
         };
     }
+    static final String COMPUTER_POINT = "No computador, clique com o botão direito no ponto no Google Maps. "
+        + "Clique nas coordenadas para copiar e envie no formato abaixo.\nPONTO -29.68123, -51.13123";
+
     static String text(String code, String stage, String role) {
         return switch (code) {
             case "HELP", "CONTINUE" -> prompt(stage, role);
@@ -104,7 +107,7 @@ public final class WaConversationResponses {
                 ? "Envie só o nome pelo qual prefere ser chamado, como Ana Silva. Use letras e espaços. Hífen e apóstrofo também são aceitos.\n\n" + GUIDANCE
                 : "Não consegui identificar o que você deseja. Escreva AJUDA para ver a próxima etapa ou FALAR COM SUPORTE para atendimento.";
             case "UNSUPPORTED_CONTENT" -> "Neste teste, envie texto ou um ponto de localização estático. Não processamos áudio, imagem, arquivos ou localização ao vivo.";
-            case "STATIC_PIN_REQUIRED" -> "Envie um ponto de localização estático pelo WhatsApp. A localização ao vivo e os pontos citados de outra mensagem não são usados.";
+            case "STATIC_PIN_REQUIRED" -> "Envie uma nova mensagem com um pin estático pelo WhatsApp.\n\n" + COMPUTER_POINT;
             case "FEATURE_PENDING" -> "Essa função ainda não está disponível nesta etapa do teste. Escreva AJUDA para continuar o cadastro.";
             case "STALE_MESSAGE" -> "Não foi possível confirmar a atualidade desta mensagem. Envie uma nova mensagem para continuar.";
             case "DRIVER_INVITE_REQUIRED" -> "Para começar como motorista, peça à equipe do VanRides seu convite de motorista e envie esse convite aqui.\n\n" + SUPPORT;

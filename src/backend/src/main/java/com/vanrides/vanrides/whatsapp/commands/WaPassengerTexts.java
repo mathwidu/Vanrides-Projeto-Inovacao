@@ -71,8 +71,8 @@ final class WaPassengerTexts {
             case "COMMON_NAME" ->
                     "Qual é o nome do ponto comum que você deseja publicar aos seus passageiros?";
             case "COMMON_PIN" ->
-                    "Envie um pin estático para esse ponto comum.\n\nLocalização ao vivo não serve"
-                            + " para o cadastro.";
+                    "Envie um pin estático para esse ponto comum.\n\n"
+                            + WaConversationResponses.COMPUTER_POINT;
             case "REVIEW" -> reviewHelp(draft.path("confirmation"));
             default ->
                     "Envie seu convite para iniciar ou CONTINUAR CADASTRO para retomar.\n\nPara"
@@ -223,9 +223,9 @@ final class WaPassengerTexts {
     private static String points(ObjectNode draft) {
         StringBuilder text =
                 new StringBuilder(
-                        "Envie um pin estático do ponto onde a van deve buscar você. Se estiver em"
-                            + " outro lugar, escolha o ponto no mapa antes de enviar.\n\nLocalização"
-                            + " ao vivo e endereço ambíguo precisam de um pin fixo.");
+                        "Envie um pin estático do ponto onde a van deve buscar você. No celular,"
+                            + " escolha o local de embarque no mapa do WhatsApp.\n\n"
+                            + WaConversationResponses.COMPUTER_POINT);
         if (draft.path("commonChoicesBlocked").asBoolean()) {
             text.append(
                     "\n\nO catálogo tem mais de oito pontos e não cabe nesta pergunta. Envie seu"

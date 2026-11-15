@@ -1,7 +1,7 @@
 'use strict';
 const $ = id => document.getElementById(id);
 let csrf = null, busy = false, pending = null, invitation = null, currentPhone = null, testPending = null, linkButtons = [];
-let botLookup = null;
+let botLookup = null, botPhoneNumber = null, testInvite = null;
 const messages = {
   INVALID_CREDENTIAL: 'Sua sessão terminou. Entre novamente pelo GitHub.',
   INVALID_PAYLOAD: 'Confira o número e o papel do participante.',
@@ -53,9 +53,11 @@ async function request(path, body) {
 }
 function clearBotLink() {
   botLookup = null;
+  botPhoneNumber = null;
   $('bot-link').hidden = true;
   $('bot-link').removeAttribute('href');
   $('bot-fallback').hidden = false;
+  renderTestInviteLink();
 }
 async function loadBotLink() {
   const lookup = request('bot');
@@ -63,16 +65,18 @@ async function loadBotLink() {
   const data = await lookup.catch(() => null);
   const number = data?.phoneNumber;
   if (botLookup !== lookup || typeof number !== 'string' || !/^[1-9][0-9]{7,14}$/.test(number)) return;
+  botPhoneNumber = number;
   $('bot-link').setAttribute('href', 'https://wa.me/' + number);
   $('bot-link').hidden = false;
   $('bot-fallback').hidden = true;
+  renderTestInviteLink();
 }
 function closeSession() {
   csrf = null;
   clearBotLink();
   clearInvitation();
-  $('test-invitation').hidden = true;
-  $('test-invite-code').value = '';
+  clearTestInvite();
+  window.resetTeamSimulator?.();
   $('workspace').hidden = true;
   $('login').hidden = false;
 }
@@ -218,9 +222,27 @@ async function refreshTestDriver(quiet = false) {
 function showTestInvite(data) {
   if (!/^[A-Za-z0-9_-]{43}$/.test(data.passengerInviteCode ?? '') || !Number.isFinite(Date.parse(data.expiresAt)))
     throw Error('O convite não está mais disponível. Gere outro convite.');
-  $('test-invite-code').value = 'PASSAGEIRO ' + data.passengerInviteCode;
+  testInvite = { text: 'PASSAGEIRO ' + data.passengerInviteCode, expires: Date.parse(data.expiresAt) };
+  $('test-invite-code').value = testInvite.text;
   $('test-expiry').textContent = 'Uso único. Válido até ' + new Date(data.expiresAt).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }) + ' (Brasília).';
   $('test-invitation').hidden = false;
+  renderTestInviteLink();
+}
+function clearTestInvite() {
+  testInvite = null;
+  $('test-invitation').hidden = true;
+  $('test-invite-code').value = '';
+  renderTestInviteLink();
+}
+function renderTestInviteLink() {
+  const link = $('test-wa-link');
+  if (!botPhoneNumber || !testInvite) {
+    link.hidden = true;
+    link.removeAttribute('href');
+    return;
+  }
+  link.setAttribute('href', 'https://wa.me/' + botPhoneNumber + '?text=' + encodeURIComponent(testInvite.text));
+  link.hidden = false;
 }
 async function testOperation(action, linkId) {
   if (busy) return;
@@ -238,7 +260,17 @@ async function testOperation(action, linkId) {
     message(error.message + (testPending ? ' A resposta não foi confirmada. Repita a mesma ação para conferir o pedido.' : ''), true);
   } finally { controls(false); }
 }
-$('test-invite').addEventListener('click', () => { $('test-invitation').hidden = true; testOperation('ISSUE_TEST_PASSENGER_INVITE'); });
+$('test-invite').addEventListener('click', () => {
+  if (busy) return;
+  clearTestInvite();
+  testOperation('ISSUE_TEST_PASSENGER_INVITE');
+});
+$('test-wa-link').addEventListener('click', event => {
+  if (testInvite?.expires > Date.now()) return;
+  event.preventDefault();
+  clearTestInvite();
+  message('O convite expirou. Gere outro convite para continuar.', true);
+});
 $('test-refresh').addEventListener('click', async () => {
   if (busy) return;
   try { controls(true); await refreshTestDriver(); } catch (error) { message(error.message, true); } finally { controls(false); }
