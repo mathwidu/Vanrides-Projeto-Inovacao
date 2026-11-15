@@ -19,9 +19,11 @@ final class WaDriverWizard {
     WaDriverWizard(WaDriverTargets targets) { this.targets = targets; }
     static String text(WaInboxAccess.Context event) { return WaConversationPolicy.normalize(event.normalizedPayload().path("text").asText()); }
     static boolean starts(String text) {
-        return List.of("rotinas", "menu motorista", "configurar rotina", "criar rotina", "criar", "convidar", "revogar", "resumo").contains(text)
+        return List.of("rotinas", "menu motorista", "configurar rotina", "criar rotina", "criar minha rotina", "criar", "convidar",
+                "convidar passageiro", "convidar um passageiro", "convidar link", "gerar link de convite", "revogar", "resumo").contains(text)
             || text.matches("(?:editar|ordem|pausar|retomar|cancelar|revogar) (?:[1-9][0-9]?|100)");
     }
+    static ObjectNode inviteDraft() { return WaDriverDraftStore.json().put("stage", "USES").put("action", "CREATE_INVITE"); }
     ObjectNode advance(UUID actor, WaInboxAccess.Context event, ObjectNode old) {
         ObjectNode d = old.deepCopy(); String text = text(event);
         long revision = d.path("revision").asLong() + 1;
@@ -36,6 +38,7 @@ final class WaDriverWizard {
             if (d.path("action").asText().equals("CONFIGURE_ROUTINE")) d.put("stage", "NAME"); else d = menu(actor);
         }
         else if (text.equals("voltar")) {
+            if (d.has("inviteRecipient")) return inviteDraft().put("revision", revision);
             int index = FIELDS.indexOf(stage);
             if (!d.path("action").asText().equals("CONFIGURE_ROUTINE")) d.put("stage", switch (d.path("action").asText()) {
                 case "CREATE_INVITE" -> stage.equals("REVIEW") ? "TTL" : "USES";
@@ -82,7 +85,9 @@ final class WaDriverWizard {
                 } catch (java.time.DateTimeException invalid) { /* Keep the question. */ }
             }
             case "USES" -> {
-                if (text.equals("padrao")) d.put("maxUses", 1).put("ttlMinutes", 1440).put("stage", "REVIEW");
+                d.remove("inviteContactUnavailable");
+                if (List.of("padrao", "link", "convidar link", "gerar link de convite").contains(text))
+                    d.put("maxUses", 1).put("ttlMinutes", 1440).put("stage", "REVIEW");
                 else if (text.matches("(?:[1-9]|10)")) d.put("maxUses", Integer.parseInt(text)).put("stage", "TTL");
             }
             case "TTL" -> {
@@ -115,11 +120,16 @@ final class WaDriverWizard {
         return value;
     }
     private void select(UUID actor, ObjectNode d, String text) {
-        if (List.of("criar", "criar rotina").contains(text)) {
+        if (List.of("criar", "criar rotina", "criar minha rotina").contains(text)) {
             d.removeAll(); d.put("stage", "NAME").put("action", "CONFIGURE_ROUTINE").put("creating", true)
                 .put("routineId", UUID.randomUUID().toString()).put("timezone", "America/Sao_Paulo"); return;
         }
-        if (text.equals("convidar")) { d.removeAll(); d.put("stage", "USES").put("action", "CREATE_INVITE"); return; }
+        if (List.of("convidar", "convidar passageiro", "convidar um passageiro", "convidar link", "gerar link de convite").contains(text)) {
+            d.removeAll(); d.setAll(inviteDraft());
+            if (text.equals("convidar link") || text.equals("gerar link de convite"))
+                d.put("maxUses", 1).put("ttlMinutes", 1440).put("stage", "REVIEW");
+            return;
+        }
         if (!text.matches("(?:editar|ordem|pausar|retomar|cancelar|revogar) (?:[1-9][0-9]?|100)")) return;
         String[] parts = text.split(" "); boolean invite = parts[0].equals("revogar");
         JsonNode choices = d.path(invite ? "inviteChoices" : "routineChoices"); int index = Integer.parseInt(parts[1]) - 1;

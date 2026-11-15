@@ -4,6 +4,13 @@
 
 **Conferência de 09/11/2026:** API respondendo UP e nove serviços com uma réplica em execução. Um passageiro está admitido e um novo motorista recebeu liberação técnica e convite privado; ele ainda precisa concluir o cadastro e criar a rotina. As provas anteriores de cadastro básico do passageiro permanecem registradas; a jornada completa e o percurso ainda precisam de validação.
 
+Em 15/11, o receptor passou a remover a repetição exata do identificador que
+a Evolution enviava em dois campos. Antes disso, a API ignorava a mensagem
+de teste mesmo com o contato liberado. Após publicar o receptor `47aba5b`,
+um `AJUDA` real foi processado e a resposta chegou ao WhatsApp às 13h36
+de Brasília. A rodada do motorista e dois passageiros continua pendente.
+[Registro do canal #91](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/91)
+
 Usamos um único ambiente de desenvolvimento compartilhado. Os nomes técnicos ainda dizem “hml”; não existe produção real liberada para usuários. Stage e produção separados ficam para a versão 1.0.
 
 **Ativo:** push/merge na `main` constrói a API/imagem e publica automaticamente
@@ -76,20 +83,22 @@ O GPS segue outro caminho: **aplicativo do motorista → API → PostgreSQL**. O
 
 ## Primeiro teste: passageiro sem motorista
 
-1. Combine seu papel e peça a admissão do contato ao operador. Não publique número nem convite na issue.
-2. Abra a conversa com o bot e envie `AJUDA`. Se não responder, confira primeiro se o contato já foi liberado; não reinstale o app do motorista para resolver isso.
+1. Combine seu papel e libere o contato na área da equipe. Guarde o número e o convite em um canal privado.
+2. Use **Abrir conversa com o bot** ou o contato já compartilhado. Envie `AJUDA` do WhatsApp liberado. Se ficar sem resposta, registre o horário e se a entrega foi confirmada.
 3. Envie `QUERO ME CADASTRAR` e siga as perguntas. Informe o nome; leia o aviso de dados e responda `ACEITO` apenas se concordar.
 4. Envie `AJUDA` ou `CONTINUAR CADASTRO`. Para perfil pronto e sem vínculo, a resposta deve orientar pedir e enviar o convite do motorista.
 5. Envie `VOU HOJE`. Sem rotina elegível, o bot deve informar ausência de ocorrência. Isso **não cria uma presença**.
 6. Envie `AJUDA` novamente. A conversa deve continuar normalmente, sem exigir `ABANDONAR` para sair de uma lista vazia.
 
-Esse roteiro cobre perfil básico e orientação. Não cobre dias, ponto ou vínculo aprovado. Um passageiro já cadastrado pode seguir a partir do convite sem apagar o perfil.
+Esse roteiro cobre perfil básico e orientação. Para testar cadastro e ponto no
+mesmo fluxo, libere o número e comece direto pelo convite `PASSAGEIRO <código>`.
+O passageiro já cadastrado continua do mesmo convite com seu perfil existente.
 
 ## Jornada completa: motorista e passageiro
 
 Esta sequência descreve a implementação a validar no ambiente compartilhado; não é uma declaração de que o percurso já passou.
 
-1. **Preparar o motorista.** O operador admite o contato no lote da equipe e no receptor, e fornece convite individual. O novo motorista envia **somente o código recebido**, antes de concluir o aceite do cadastro. Depois usa `AJUDA` e segue nome e `ACEITO`. Escrever `SOU MOTORISTA` sozinho não habilita acesso; um passageiro já ativo não deve ser convertido improvisadamente.
+1. **Preparar o motorista.** Libere o novo número como **Motorista** na área da equipe e use **Copiar código do motorista**. Entregue o código em privado. O motorista envia somente o código a partir do WhatsApp liberado e segue as perguntas de nome e aceite. `AJUDA` permite conferir a resposta e retomar a conversa.
 2. **Configurar a rotina.** Usar `ROTINAS → CRIAR`, informar nome, `IDA` ou `VOLTA`, dias numéricos (ex.: `1,2,3,4,5`), horário `HH:mm`, fuso (`BRASÍLIA` ou `MANTER`) e pin estático do destino. Revisar e enviar `CONFIRMAR <marcador recebido>`. Ida e volta são rotinas separadas; para testar hoje, incluir o dia atual.
 3. **Convidar o passageiro.** O motorista usa `ROTINAS → CONVIDAR → PADRÃO` e confirma o resumo (um uso, 24 horas) e o passageiro envia somente `PASSAGEIRO <código recebido>` ao bot, sem copiar o texto explicativo ou a validade junto. Confere o motorista apresentado e segue as perguntas de preferências, rotina, dias, pin estático e referência. Use as opções e a confirmação oferecidas na própria conversa; não reutilize códigos de confirmação de outro teste.
 4. **Aprovar vínculo e ponto.** O motorista usa `PASSAGEIROS → APROVAR N`, revisa e confirma. Depois usa `ROTINAS → ORDEM N`, informa todos os pontos na ordem desejada e confirma o novo resumo. Ponto inválido precisa de correção; pedido não aprovado não deve produzir presença elegível.
@@ -99,6 +108,9 @@ Esta sequência descreve a implementação a validar no ambiente compartilhado; 
 8. **Terminar o ensaio.** Tocar em **Parar localização** no aplicativo e conferir o estado no receptor/API com o operador. Isso encerra a coleta, **não conclui a viagem**: ela pode ficar degradada ou com início falho. Os comandos de finalização da viagem ainda não estão disponíveis. Não presumir que fechar a tela encerra a coleta. Para repetir a coleta, usar `RETOMAR SAÍDA`, escolher a ocorrência, confirmar e abrir o novo link. O fim automático e o aviso de aproximação ficam para as etapas pendentes.
 
 O pin deve ser enviado pela função de **localização estática do WhatsApp**; texto com coordenadas ou link de mapa não substitui esse formato.
+
+Para a versão em preparação, o [roteiro do cadastro guiado](cadastro-guiado-whatsapp.md)
+mostra os convites por link e por telefone. Confira a versão antes de usar esse roteiro no ambiente compartilhado.
 
 Os testes físicos do aplicativo iPhone continuam pausados. Usar o WhatsApp pessoal de um iPhone como passageiro é independente dessa pausa. Não há distribuição iOS pronta para o grupo pelo link do APK.
 

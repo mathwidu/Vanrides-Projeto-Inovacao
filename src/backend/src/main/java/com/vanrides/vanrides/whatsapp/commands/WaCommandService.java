@@ -9,6 +9,8 @@ import com.vanrides.vanrides.whatsapp.auth.WaPrincipal;
 import com.vanrides.vanrides.whatsapp.config.WaClock;
 import com.vanrides.vanrides.whatsapp.config.WaSettings;
 import com.vanrides.vanrides.whatsapp.pairing.WaPairingService;
+import com.vanrides.vanrides.whatsapp.team.WaTeamEvolution;
+import com.vanrides.vanrides.whatsapp.team.WaTeamSettings;
 import com.vanrides.vanrides.whatsapp.transport.WaFoundationResponses;
 import com.vanrides.vanrides.whatsapp.transport.WaPassengerResponses;
 import java.sql.Timestamp;
@@ -17,6 +19,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Function;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -45,10 +49,23 @@ public class WaCommandService {
 
     public WaCommandService(JdbcTemplate jdbc, WaInboxAccess inbox, WaCommandStore store, WaOnboardingCommands onboarding,
                             WaPairingService pairing, WaSettings settings, WaClock clock, WaCrypto crypto) {
+        this(jdbc, inbox, store, onboarding, pairing, settings, clock, crypto, instance -> null);
+    }
+
+    @Autowired
+    public WaCommandService(JdbcTemplate jdbc, WaInboxAccess inbox, WaCommandStore store, WaOnboardingCommands onboarding,
+                            WaPairingService pairing, WaSettings settings, WaClock clock, WaCrypto crypto,
+                            WaTeamEvolution evolution, WaTeamSettings team) {
+        this(jdbc, inbox, store, onboarding, pairing, settings, clock, crypto,
+            instance -> team.strictIngress(instance) ? evolution.botPhone() : null);
+    }
+
+    public WaCommandService(JdbcTemplate jdbc, WaInboxAccess inbox, WaCommandStore store, WaOnboardingCommands onboarding,
+                            WaPairingService pairing, WaSettings settings, WaClock clock, WaCrypto crypto, Function<String, String> botPhone) {
         this.jdbc = jdbc; this.inbox = inbox; this.store = store; this.onboarding = onboarding;
         this.pairing = pairing; this.settings = settings; this.clock = clock; this.crypto = crypto;
         this.conversation = new WaConversationPolicy(jdbc, clock, settings.environment());
-        this.driver = new WaDriverSetup(jdbc, clock, crypto);
+        this.driver = new WaDriverSetup(jdbc, clock, crypto, botPhone);
         this.passenger = new WaPassengerSetup(jdbc, clock, crypto, settings);
         this.attendance = new WaAttendanceConversation(jdbc, clock, settings, crypto);
         this.runs = new WaRunConversation(jdbc, clock, settings, crypto);
@@ -132,8 +149,10 @@ public class WaCommandService {
         // A formerly offered proposal may expire before this request. Its authenticated
         // message still needs a durable rejection so the serial inbox can advance.
         WaDriverSetup.Result driverResult = driverCommand
-            ? allowed(actor, event).contains(type) ? driver.execute(actor, event, type, payload, responseId) : WaDriverSetup.unavailable()
+            ? allowed(actor, event).contains(type) ? driver.execute(actor, event, type, payload, responseId, worker.instanceId()) : WaDriverSetup.unavailable()
             : null;
+        UUID inviteResponseId = driverResult != null && driverResult.delivery() != null && driverResult.delivery().recipient() != null
+            ? UUID.randomUUID() : null;
         WaDecision decision = locationCommand ? locationResult == null ? WaDecision.error(WaProblem.Code.ACTION_NOT_ALLOWED) : locationResult.decision()
             : runCommand ? runResult.decision() : attendanceCommand ? attendanceResult.decision() : passengerCommand ? passengerResult.decision()
             : driverCommand ? driverResult.decision() : apply(type, payload, actor, event, correlation);
@@ -150,6 +169,7 @@ public class WaCommandService {
             result.put("nextStep", step(current));
             var responseIds = result.putArray("responseIds").add(responseId.toString());
             if (peerResponseId != null) responseIds.add(peerResponseId.toString());
+            if (inviteResponseId != null) responseIds.add(inviteResponseId.toString());
             result.put("correlationId", correlation);
             decision = WaDecision.ok(result);
         }
@@ -175,6 +195,7 @@ public class WaCommandService {
         } else if (driverCommand) {
             WaFoundationResponses.saveDriver(jdbc, responseId, commandId, actor.identityId(), response, clock.now());
             driver.attach(responseId, commandId, actor.identityId(), driverResult);
+            if (inviteResponseId != null) driver.queuePassenger(inviteResponseId, commandId, driverResult);
         } else WaFoundationResponses.saveConversation(jdbc, responseId, commandId, actor.identityId(), response, clock.now());
         store.audit(actor.identityId(), worker, actor.role(), type, commandId, correlation);
         // A nested handler can wait for pairing/device locks. Expiry rolls its entire effect back.
@@ -211,18 +232,28 @@ public class WaCommandService {
         if(settings.teamApiOnly() && type.equals("RESPOND_TO_MESSAGE"))
             return "Este ambiente permite somente o cadastro sintético de teste. Use o roteiro recebido para iniciar e conferir o resultado.";
         if (type.equals("RESPOND_TO_MESSAGE")) {
-            String help = null;
-            if (Set.of("HELP", "CONTINUE").contains(payload.path("responseCode").asText())) {
-                help = runs.help(actor);
-                if (help == null) help = attendance.help(actor, event);
-                if (help == null) help = passenger.help(actor);
-                if (help == null) help = driver.help(actor);
+            String code = payload.path("responseCode").asText();
+            if (code.equals("FAQ")) {
+                var question = conversation.question(event);
+                if (question == WaConversationResponses.Question.REGISTRATION && activeHelp(actor, event) != null)
+                    return "Envie AJUDA para ver qual é a sua etapa atual e como continuar por aqui.";
+                return WaConversationResponses.faq(question, registration, actor.role());
             }
-            return help == null ? WaConversationResponses.text(payload.path("responseCode").asText(), registration) : help;
+            String help = Set.of("HELP", "CONTINUE").contains(code) ? activeHelp(actor, event) : null;
+            return help == null ? WaConversationResponses.text(code, registration, actor.role()) : help;
         }
         if (type.equals("REQUEST_SUPPORT")) return WaConversationResponses.support();
         String text = WaFoundationResponses.text(type);
-        return Set.of("ASK_NOTICE", "PAIRING").contains(registration) ? text + " " + WaConversationResponses.prompt(registration) : text;
+        boolean nextStep = Set.of("CLAIM_DRIVER_INVITE", "ACCEPT_NOTICE", "CONFIRM_PAIRING").contains(type)
+            || Set.of("ASK_NOTICE", "PAIRING").contains(registration);
+        return nextStep ? text + "\n\n" + WaConversationResponses.prompt(registration, actor.role()) : text;
+    }
+
+    private String activeHelp(WaProfileState actor, WaInboxAccess.Context event) {
+        String help = runs.help(actor);
+        if (help == null) help = attendance.help(actor, event);
+        if (help == null) help = passenger.help(actor);
+        return help == null ? driver.help(actor) : help;
     }
 
     private List<String> allowed(WaProfileState actor, WaInboxAccess.Context event) {
@@ -234,7 +265,7 @@ public class WaCommandService {
         }
         List<String> commands = new ArrayList<>();
         commands.add("RESPOND_TO_MESSAGE");
-        if (!conversation.freshness(event).equals("CURRENT")) return List.copyOf(commands);
+        if (!conversation.freshness(event).equals("CURRENT") || conversation.question(event) != null) return List.copyOf(commands);
         if (conversation.explicitSupport(event)) commands.add("REQUEST_SUPPORT");
         if (locations.offer(actor,event)) { commands.add("GET_DRIVER_LOCATION"); return List.copyOf(commands); }
         var runOffer = runOffer(actor, event);
@@ -261,27 +292,25 @@ public class WaCommandService {
     }
 
     private WaPassengerSetup.Offer passengerOffer(WaProfileState actor, WaInboxAccess.Context event) {
-        if (actor.blocked() || !settings.enabled() || conversation.paused(actor.identityId())
-                || !conversation.freshness(event).equals("CURRENT") || conversation.isHelp(event) || conversation.explicitSupport(event)) return null;
-        return passenger.offer(actor, event);
+        return canOfferWorkflow(actor, event) ? passenger.offer(actor, event) : null;
     }
 
     private WaRunConversation.Offer runOffer(WaProfileState actor, WaInboxAccess.Context event) {
-        if (actor.blocked() || !settings.enabled() || conversation.paused(actor.identityId())
-                || !conversation.freshness(event).equals("CURRENT") || conversation.isHelp(event) || conversation.explicitSupport(event)) return null;
-        return runs.offer(actor, event);
+        return canOfferWorkflow(actor, event) ? runs.offer(actor, event) : null;
     }
 
     private WaAttendanceConversation.Offer attendanceOffer(WaProfileState actor, WaInboxAccess.Context event) {
-        if (actor.blocked() || !settings.enabled() || conversation.paused(actor.identityId())
-                || !conversation.freshness(event).equals("CURRENT") || conversation.isHelp(event) || conversation.explicitSupport(event)) return null;
-        return attendance.offer(actor, event);
+        return canOfferWorkflow(actor, event) ? attendance.offer(actor, event) : null;
     }
 
     private WaDriverSetup.Offer driverOffer(WaProfileState actor, WaInboxAccess.Context event) {
-        if (actor.blocked() || !settings.enabled() || conversation.paused(actor.identityId())
-                || !conversation.freshness(event).equals("CURRENT") || conversation.isHelp(event) || conversation.explicitSupport(event)) return null;
-        return driver.offer(actor, event);
+        return canOfferWorkflow(actor, event) ? driver.offer(actor, event) : null;
+    }
+
+    private boolean canOfferWorkflow(WaProfileState actor, WaInboxAccess.Context event) {
+        return !actor.blocked() && settings.enabled() && !conversation.paused(actor.identityId())
+            && conversation.freshness(event).equals("CURRENT") && !conversation.isHelp(event)
+            && !conversation.explicitSupport(event) && conversation.question(event) == null;
     }
 
     private String step(WaProfileState actor) {

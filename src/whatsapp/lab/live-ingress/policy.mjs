@@ -78,7 +78,8 @@ function evaluateEvent(envelope, config, now, onDrop) {
   } else return drop('HML_DROP_MESSAGE_SHAPE');
   if (Object.hasOwn(data, 'messageType') && data.messageType !== messageType) return drop('HML_DROP_MESSAGE_TYPE');
   const cleanKey = { id: key.id, fromMe: false, remoteJid: key.remoteJid };
-  if (Object.hasOwn(key, 'remoteJidAlt')) cleanKey.remoteJidAlt = key.remoteJidAlt;
+  // Evolution may duplicate the primary identifier. The API expects an alternate only for a distinct alias.
+  if (aliases.length === 2 && (!dynamic || aliases[0] !== aliases[1])) cleanKey.remoteJidAlt = key.remoteJidAlt;
   const cleanData = { key: cleanKey, message: cleanMessage ?? { conversation: content } };
   if (isHml(config)) {
     // Same precedence as WaEvolutionNormalizer; quoted bodies/identity metadata never pass.

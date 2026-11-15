@@ -35,6 +35,7 @@ public class WaOutboxService {
     private final WaDeliveryMaintenance maintenance;
     private final WaDeliveryQuota quota;
     private final WaPrivateInviteDelivery privateInvites;
+    private final WaPassengerInviteChannel passengerInvites;
     private final WaPassengerDelivery passengers;
     private final WaAttendanceDelivery attendance;
     private final com.vanrides.vanrides.whatsapp.tracking.WaStartDelivery starts;
@@ -49,6 +50,7 @@ public class WaOutboxService {
         this.maintenance = new WaDeliveryMaintenance(jdbc, settings, clock);
         this.quota = new WaDeliveryQuota(jdbc, settings.environment());
         this.privateInvites = new WaPrivateInviteDelivery(jdbc, clock, new WaCrypto(settings));
+        this.passengerInvites = new WaPassengerInviteChannel(jdbc, clock);
         this.passengers = new WaPassengerDelivery(jdbc, settings, access, clock);
         this.attendance = new WaAttendanceDelivery(jdbc, settings, access, clock);
         this.starts = new com.vanrides.vanrides.whatsapp.tracking.WaStartDelivery(jdbc, clock, settings);
@@ -57,13 +59,15 @@ public class WaOutboxService {
         this.teamNotices = new WaTeamPassengerNotices(jdbc, settings);
     }
     private record Item(UUID id, UUID actor, String policy, String state, String payload, Instant expires, UUID credential,
-                        String tokenHash, long generation, Instant leaseExpires, String purpose, UUID run, boolean location) {
+                        String tokenHash, long generation, Instant leaseExpires, String purpose, UUID run, boolean location,
+                        boolean directInvite) {
         static Item read(ResultSet rs, int row) throws SQLException {
             Timestamp deadline = rs.getTimestamp("lease_expires_at");
             return new Item(rs.getObject("id", UUID.class), rs.getObject("recipient_identity_id", UUID.class),
                 rs.getString("policy_version"), rs.getString("state"), rs.getString("payload_json"), rs.getTimestamp("expires_at").toInstant(),
                 rs.getObject("lease_credential_id", UUID.class), rs.getString("lease_token_hash"), rs.getLong("lease_generation"),
-                deadline == null ? null : deadline.toInstant(),rs.getString("purpose"),rs.getObject("run_id",UUID.class),rs.getBoolean("location_requested"));
+                deadline == null ? null : deadline.toInstant(),rs.getString("purpose"),rs.getObject("run_id",UUID.class),
+                rs.getBoolean("location_requested"), WaPrivateInviteDelivery.PASSENGER_PART.equals(rs.getString("response_part")));
         }
     }
     private record Retry(String state, Instant notBefore) {
@@ -89,7 +93,8 @@ public class WaOutboxService {
             for (Item item : selected) {
                 privateInvites.cancelInvalid(item.actor());
                 if ("CANCELED".equals(jdbc.queryForObject("SELECT state FROM wa.message_outbox WHERE id=?", String.class, item.id()))) continue;
-                if (!access.allowedIdentity(item.actor()) || !relevant(item, grant.instance(), false) || !starts.relevant(item.id())) {
+                if (!access.allowedIdentity(item.actor()) || !relevant(item, grant.instance(), false) || !starts.relevant(item.id())
+                        || item.directInvite() && inviteRoute(item, grant, false) == null) {
                     jdbc.update("UPDATE wa.message_outbox SET state='CANCELED',private_payload_ciphertext=NULL,start_payload_ciphertext=NULL,version=version+1 WHERE id=?", item.id());
                     continue;
                 }
@@ -130,15 +135,15 @@ public class WaOutboxService {
         }
         if (!connection.open(grant.instance())) return WaDecision.error(WaProblem.Code.DEPENDENCY_UNAVAILABLE);
         // Fence changes to the recipient's eligibility through the reservation commit.
-        boolean relevant = true;
-        if (routed(item)) relevant = relevant(item, grant.instance(), true);
-        else jdbc.queryForList("SELECT identity_id FROM wa.profile WHERE identity_id=? FOR SHARE", item.actor());
+        var direct = inviteRoute(item, grant, true);
+        boolean relevant = routed(item) ? relevant(item, grant.instance(), true) : lockRecipient(item, direct);
         fence(grant, item);
         if (!access.allowedIdentity(item.actor()) || !relevant) {
             jdbc.update("UPDATE wa.message_outbox SET state='CANCELED',private_payload_ciphertext=NULL,start_payload_ciphertext=NULL,version=version+1 WHERE id=?", id);
             return WaDecision.error(WaProblem.Code.ACTION_NOT_ALLOWED);
         }
-        var aliases = approach(item) ? approaches.aliases(item.id(),grant.instance()) : reminder(item) ? attendance.aliases(item.id(), grant.instance())
+        var aliases = direct != null ? List.of(Map.<String, Object>of("alias_type", "PN", "alias_value", direct.address()))
+            : approach(item) ? approaches.aliases(item.id(),grant.instance()) : reminder(item) ? attendance.aliases(item.id(), grant.instance())
             : teamNotice(item) ? teamNotices.aliases(item.id(), grant.instance()) : passenger(item) ? passengers.aliases(item.id(), grant.instance()) : jdbc.queryForList("""
             SELECT a.alias_type,a.alias_value FROM wa.identity_alias a
             JOIN wa.integration_inbox e ON a.id::text=e.payload_json->>'senderAliasId'
@@ -180,7 +185,7 @@ public class WaOutboxService {
             jdbc.update("UPDATE wa.message_outbox SET state='EXPIRED',private_payload_ciphertext=NULL,start_payload_ciphertext=NULL,version=version+1 WHERE id=?", id);
             return WaDecision.error(WaProblem.Code.INTENT_EXPIRED);
         }
-        Instant intentDeadline = minimum(item.expires(), runDeadline,
+        Instant intentDeadline = minimum(item.expires(), runDeadline, inviteDeadline(direct),
             approach(item) ? approaches.deadline(id) : reminder(item) ? attendance.deadline(id) : passenger(item) ? passengers.deadline(id) : Instant.MAX,
             item.location() && "STATIC_PIN".equals(content.path("type").asText()) ? locations.deadline(item.actor(),item.run()) : Instant.MAX,
             "STATIC_PIN".equals(content.path("type").asText()) ? Instant.parse(content.path("capturedAt").asText()).plusSeconds(20) : Instant.MAX);
@@ -199,7 +204,7 @@ public class WaOutboxService {
             """, UUID.randomUUID(), id, attemptNumber, item.generation(), WaCrypto.digest(attempt), grant.instance(),
             grant.credentialId(), ts(before), ts(clock.now()));
         fence(grant, item);
-        if (!runDeadline.isAfter(clock.now())) throw new WaProblem(WaProblem.Code.INTENT_EXPIRED);
+        if (!runDeadline.isAfter(clock.now()) || !inviteDeadline(direct).isAfter(clock.now())) throw new WaProblem(WaProblem.Code.INTENT_EXPIRED);
         return WaDecision.ok(Map.of("outboxId", id.toString(), "attemptToken", attempt, "submitBefore", before.toString(),
             "recipient", Map.of("addressType", type.equals("LID") ? "LID" : "JID", "address", address),
             "content", content, "serverTime", clock.now().toString()));
@@ -271,15 +276,18 @@ public class WaOutboxService {
         if (!"SUBMITTING".equals(attempt.get("state"))
                 || item.generation() != ((Number) attempt.get("lease_generation")).longValue()) return Retry.terminal("UNKNOWN");
         if (!item.expires().isAfter(clock.now())) return Retry.terminal("EXPIRED");
-        if (routed(item)) {
-            if (!relevant(item, grant.instance(), true)) return Retry.terminal("CANCELED");
-        } else jdbc.queryForList("SELECT identity_id FROM wa.profile WHERE identity_id=? FOR SHARE", item.actor());
+        // This receipt proves zero POST. The next reservation fences the channel before revealing anything.
+        var direct = inviteRoute(item, grant, false);
+        if (!(routed(item) ? relevant(item, grant.instance(), true) : lockRecipient(item, direct))) return Retry.terminal("CANCELED");
         access.revalidate(grant);
         if (!settings.enabled() || !access.allowedIdentity(item.actor()) || !starts.relevant(item.id())) return Retry.terminal("CANCELED");
-        ObjectNode payload = starts.reveal(item.id(), item.actor(), privateInvites.reveal(item.id(), item.actor(), content(item.payload())));
-        access.revalidate(grant);
-        if (payload == null) return Retry.terminal("CANCELED");
-        Instant deadline = minimum(item.expires(), approach(item) ? approaches.deadline(item.id()) : reminder(item) ? attendance.deadline(item.id())
+        if (!item.directInvite()) {
+            ObjectNode payload = starts.reveal(item.id(), item.actor(), privateInvites.reveal(item.id(), item.actor(), content(item.payload())));
+            access.revalidate(grant);
+            if (payload == null) return Retry.terminal("CANCELED");
+        }
+        Instant deadline = minimum(item.expires(), inviteDeadline(direct),
+            approach(item) ? approaches.deadline(item.id()) : reminder(item) ? attendance.deadline(item.id())
             : passenger(item) ? passengers.deadline(item.id()) : Instant.MAX);
         int number = ((Number) attempt.get("attempt_number")).intValue();
         Instant notBefore = clock.now().plusSeconds(number == 1 ? 5 : 15);
@@ -292,6 +300,15 @@ public class WaOutboxService {
     private static boolean attendancePolicy(Item item) { return reminder(item) || item.policy().equals("attendance-v1"); }
     private static boolean teamNotice(Item item) { return item.policy().equals(WaTeamPassengerNotices.POLICY); }
     private static boolean routed(Item item) { return passenger(item) || attendancePolicy(item) || approach(item) || teamNotice(item); }
+    private WaPassengerInviteChannel.Route inviteRoute(Item item, WaTransportAccess.Grant grant, boolean lock) {
+        return item.directInvite() ? passengerInvites.current(item.id(), item.actor(), grant.instance(), settings.environment(), lock) : null;
+    }
+    private static Instant inviteDeadline(WaPassengerInviteChannel.Route direct) { return direct == null ? Instant.MAX : direct.expiresAt(); }
+    private boolean lockRecipient(Item item, WaPassengerInviteChannel.Route direct) {
+        if (item.directInvite()) return direct != null;
+        jdbc.queryForList("SELECT identity_id FROM wa.profile WHERE identity_id=? FOR SHARE", item.actor());
+        return true;
+    }
     private boolean relevant(Item item, String instance, boolean lock) {
         if (approach(item)) return approaches.current(item.id(),instance,lock);
         if (reminder(item)) return attendance.current(item.id(), instance, lock);

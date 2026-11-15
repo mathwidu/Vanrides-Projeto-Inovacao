@@ -2,6 +2,7 @@ package com.vanrides.vanrides.whatsapp.transport;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.vanrides.vanrides.whatsapp.admission.WaAdmissionStore;
+import com.vanrides.vanrides.whatsapp.admission.WaLinkInviteAdmission;
 import com.vanrides.vanrides.whatsapp.api.WaJson;
 import com.vanrides.vanrides.whatsapp.api.WaProblem;
 import com.vanrides.vanrides.whatsapp.auth.WaCrypto;
@@ -12,6 +13,8 @@ import com.vanrides.vanrides.whatsapp.team.WaTeamSettings;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.sql.Timestamp;
+import java.time.Instant;
+import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -26,6 +29,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class WaEventService {
     private record Identity(UUID id, UUID senderAliasId, String ignoredReason) { }
     private record Admitted(UUID identity, WaEvolutionNormalizer.Alias lidToBind) { }
+    private record Duplicate(UUID id, UUID identity) { }
     private final JdbcTemplate jdbc;
     private final WaTransportAccess access;
     private final WaEvolutionNormalizer normalizer;
@@ -33,6 +37,7 @@ public class WaEventService {
     private final WaClock clock;
     private final WaTeamSettings team;
     private final WaAdmissionStore admission;
+    private final WaLinkInviteAdmission linkInvites;
     private final WaDeliveryConnection connection;
 
     public WaEventService(JdbcTemplate jdbc, WaTransportAccess access, WaEvolutionNormalizer normalizer,
@@ -45,6 +50,7 @@ public class WaEventService {
                           WaSettings settings, WaClock clock, WaTeamSettings team, WaAdmissionStore admission) {
         this.jdbc = jdbc; this.access = access; this.normalizer = normalizer; this.settings = settings; this.clock = clock;
         this.team = team; this.admission = admission;
+        this.linkInvites = new WaLinkInviteAdmission(jdbc, admission, clock);
         this.connection = new WaDeliveryConnection(jdbc, settings, clock);
     }
 
@@ -64,20 +70,21 @@ public class WaEventService {
         // Message and callback namespaces are deliberately distinct.
         String dedup = event.category().equals("MESSAGE") ? event.messageId() : event.category() + "\0" + event.eventKey();
         lock("EVENT", instance, dedup, grant);
+        List<Duplicate> duplicate = event.category().equals("MESSAGE")
+            ? jdbc.query("SELECT id,identity_id FROM wa.integration_inbox WHERE instance_id=? AND message_id=? AND category='MESSAGE'",
+                (rs, i) -> new Duplicate(rs.getObject(1, UUID.class), rs.getObject(2, UUID.class)), instance, event.messageId())
+            : jdbc.query("SELECT id,identity_id FROM wa.integration_inbox WHERE provider='EVOLUTION' AND instance_id=? AND category=? AND event_key=?",
+                (rs, i) -> new Duplicate(rs.getObject(1, UUID.class), rs.getObject(2, UUID.class)), instance, event.category(), event.eventKey());
         Admitted admitted = null;
         if (strict && event.humanMessage()) {
             if (!settings.enabled()) return ignored(grant);
-            admitted = resolveAdmitted(instance, event.aliases(), grant);
-            if (admitted == null) return ignored(grant);
+            admitted = admitStrict(instance, event, grant, duplicate.isEmpty());
+            if (admitted == null || !duplicate.isEmpty() && !admitted.identity().equals(duplicate.get(0).identity()))
+                return ignored(grant);
         }
-        List<UUID> duplicate = event.category().equals("MESSAGE")
-            ? jdbc.query("SELECT id FROM wa.integration_inbox WHERE instance_id=? AND message_id=? AND category='MESSAGE'",
-                (rs, i) -> rs.getObject(1, UUID.class), instance, event.messageId())
-            : jdbc.query("SELECT id FROM wa.integration_inbox WHERE provider='EVOLUTION' AND instance_id=? AND category=? AND event_key=?",
-                (rs, i) -> rs.getObject(1, UUID.class), instance, event.category(), event.eventKey());
         if (!duplicate.isEmpty()) {
             access.revalidate(grant);
-            return receipt(duplicate.get(0), "DUPLICATE");
+            return receipt(duplicate.get(0).id(), "DUPLICATE");
         }
         UUID identity = null;
         String state = event.state();
@@ -103,8 +110,39 @@ public class WaEventService {
         return receipt(id, state.equals("SKIPPED") ? "IGNORED" : "PERSISTED");
     }
 
-    private Admitted resolveAdmitted(String instance, List<WaEvolutionNormalizer.Alias> aliases, WaTransportAccess.Grant grant) {
+    private Admitted admitStrict(String instance, WaEvolutionNormalizer.Event event, WaTransportAccess.Grant grant, boolean original) {
+        var aliases = event.aliases();
         admission.lockAliases(instance, aliases);
+        String hash = event.payload().path("passengerInviteCodeHash").asText();
+        UUID issuer = null;
+        boolean newSender = false;
+        Instant occurred = null;
+        if (original && !settings.teamApiOnly() && !hash.isEmpty()) {
+            Admitted candidate = resolveAdmitted(instance, aliases, grant, false);
+            newSender = candidate == null && linkInvites.newSender(instance, aliases);
+            if (candidate != null || newSender) {
+                occurred = occurred(event.payload());
+                issuer = linkInvites.lockIssuer(instance, settings.environment(), team.cohort(), hash, occurred,
+                    candidate == null ? null : candidate.identity());
+            }
+        }
+        Admitted admitted = newSender ? null : resolveAdmitted(instance, aliases, grant, true);
+        if (issuer != null && (newSender || admitted != null)) {
+            access.revalidate(grant);
+            UUID identity = linkInvites.claim(issuer, instance, team.cohort(), hash, occurred,
+                newSender ? null : admitted.identity(), aliases);
+            if (newSender && identity != null) return new Admitted(identity, null);
+        }
+        return admitted;
+    }
+
+    private static Instant occurred(ObjectNode payload) {
+        try { return Instant.parse(payload.path("occurredAt").asText()); }
+        catch (DateTimeParseException ignored) { return null; }
+    }
+
+    private Admitted resolveAdmitted(String instance, List<WaEvolutionNormalizer.Alias> aliases, WaTransportAccess.Grant grant,
+                                     boolean lockIdentity) {
         access.revalidate(grant);
         UUID identity = null;
         WaEvolutionNormalizer.Alias lidToBind = null;
@@ -121,10 +159,12 @@ public class WaEventService {
         if (identity == null) return null;
         try {
             admission.requireCohort(settings.environment(), team.cohort(), false);
-            admission.requireIdentity(identity, team.cohort(), true);
+            admission.requireIdentity(identity, team.cohort(), lockIdentity);
             for (var alias : aliases) admission.requireCompatible(instance, identity, alias);
         } catch (WaProblem denied) { return null; }
-        if (!access.allowedIdentity(identity) || !admission.hasPhone(instance, identity) || !admission.teamAdmitted(identity))
+        if (!access.allowedIdentity(identity) || !admission.hasPhone(instance, identity)
+                || !(admission.teamAdmitted(identity)
+                    || linkInvites.liveGrant(instance, settings.environment(), team.cohort(), identity)))
             return null;
         return new Admitted(identity, lidToBind);
     }

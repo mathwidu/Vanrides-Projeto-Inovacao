@@ -20,7 +20,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 /** Conversation state never owns a lease. Only the authenticated inbox authorizes a human effect. */
 final class WaConversationPolicy {
     static final Set<String> RESPONSES = Set.of("HELP", "CLARIFY", "UNSUPPORTED_CONTENT", "STATIC_PIN_REQUIRED",
-        "FEATURE_PENDING", "STALE_MESSAGE", "CONTINUE", "DRIVER_INVITE_REQUIRED");
+        "FEATURE_PENDING", "STALE_MESSAGE", "CONTINUE", "DRIVER_INVITE_REQUIRED", "FAQ");
     private static final Set<String> HELP = Set.of("ajuda", "help", "menu", "o que voce faz");
     private static final Set<String> SUPPORT = Set.of("falar com suporte", "quero falar com suporte", "falar com atendente",
         "quero atendimento humano", "atendimento humano");
@@ -68,16 +68,29 @@ final class WaConversationPolicy {
         return hasText(event) && SUPPORT.contains(text(event));
     }
     boolean isHelp(WaInboxAccess.Context event) { return hasText(event) && HELP.contains(text(event)); }
+    WaConversationResponses.Question question(WaInboxAccess.Context event) {
+        if (!hasText(event)) return null;
+        var invitePermission = event.normalizedPayload().path("invitePermission");
+        if (invitePermission.isBoolean()) {
+            String original = event.normalizedPayload().path("text").asText().strip().toLowerCase(Locale.ROOT);
+            if (invitePermission.asBoolean() && original.equals("aceito receber convites"))
+                return WaConversationResponses.Question.INVITES_ALLOWED;
+            if (!invitePermission.asBoolean() && original.equals("parar convites"))
+                return WaConversationResponses.Question.INVITES_STOPPED;
+        }
+        return WaConversationResponses.question(text(event));
+    }
     boolean replyAllowed(String code, WaProfileState actor, WaInboxAccess.Context event) {
         String reason = event.normalizedPayload().path("reason").asText();
         return switch (code) {
             case "HELP" -> isHelp(event);
+            case "FAQ" -> freshness(event).equals("CURRENT") && question(event) != null;
             case "CLARIFY" -> hasText(event) && !isHelp(event) && !explicitSupport(event);
             case "UNSUPPORTED_CONTENT" -> event.normalizedKind().equals("UNSUPPORTED") && !hasCode(event);
             case "STATIC_PIN_REQUIRED" -> event.normalizedKind().equals("UNSUPPORTED") && Set.of("LIVE_LOCATION", "INVALID_PIN").contains(reason);
             case "FEATURE_PENDING" -> !hasCode(event) && (hasText(event) || event.normalizedKind().equals("PIN"));
             case "STALE_MESSAGE" -> !freshness(event).equals("CURRENT");
-            case "CONTINUE" -> !hasCode(event) && hasText(event);
+            case "CONTINUE" -> hasText(event) && question(event) == null;
             case "DRIVER_INVITE_REQUIRED" -> !actor.role().equals("DRIVER") && (hasText(event) || hasCode(event));
             default -> false;
         };

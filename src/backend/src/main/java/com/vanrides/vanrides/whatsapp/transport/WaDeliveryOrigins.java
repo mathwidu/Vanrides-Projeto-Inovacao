@@ -12,6 +12,14 @@ final class WaDeliveryOrigins {
             WHERE r.command_id=o.command_id AND e.provider='EVOLUTION'
               AND e.instance_id=delivery_scope.instance_id AND
         (""" + WaFoundationResponses.ELIGIBLE + """
+        OR (o.purpose='RESPONSE' AND o.policy_version='driver-setup-v1' AND o.response_part='driver-invite-passenger'
+          AND r.command_type='CREATE_INVITE' AND e.category='MESSAGE' AND r.identity_id<>o.recipient_identity_id
+          AND EXISTS(SELECT 1 FROM wa.driver_invite i
+            JOIN wa.identity d ON d.id=i.driver_id
+            JOIN wa.identity p ON p.id=i.onboarding_identity_id AND p.test_cohort_id=d.test_cohort_id
+            JOIN wa.test_cohort c ON c.id=d.test_cohort_id
+            WHERE i.id=o.private_invite_id AND i.driver_id=r.identity_id AND p.id=o.recipient_identity_id
+              AND NOT i.allow_first_contact AND c.environment=delivery_scope.environment))
         OR (r.identity_id=o.recipient_identity_id AND o.policy_version='driver-location-v1'
           AND o.response_part='driver-location' AND r.command_type='GET_DRIVER_LOCATION')
         OR (r.identity_id=o.recipient_identity_id AND o.policy_version='run-gps-v1'

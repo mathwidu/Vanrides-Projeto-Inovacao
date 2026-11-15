@@ -30,11 +30,14 @@ public final class WaFoundationResponses {
     }
     public static String text(String type) {
         return switch (type) {
-            case "START_ONBOARDING" -> "Vamos fazer seu cadastro no VanRides. Como você prefere ser chamado?";
-            case "SET_PROFILE_NAME" -> "Seu nome foi atualizado no VanRides.";
-            case "ACCEPT_NOTICE" -> "Sua confirmação do aviso de privacidade foi registrada.";
-            case "CLAIM_DRIVER_INVITE" -> "Seu acesso de motorista foi confirmado. Vamos continuar seu cadastro.";
-            case "CONFIRM_PAIRING" -> "Aparelho vinculado. Você pode voltar ao aplicativo VanRides Motorista.";
+            case "START_ONBOARDING" -> "Oi! Sou o VanRides e ajudo a organizar o transporte de van pelo WhatsApp. "
+                + "Como você prefere ser chamado? Se já recebeu um convite de passageiro ou de motorista, pode enviá-lo aqui agora. "
+                + "Para ver como funciona, envie AJUDA.";
+            case "SET_PROFILE_NAME" -> "Pronto, salvei seu nome.";
+            case "ACCEPT_NOTICE" -> "Pronto, aceite registrado.";
+            case "CLAIM_DRIVER_INVITE" -> "Convite aceito! Sou o VanRides. Vou ajudar você a organizar os embarques pelo WhatsApp. "
+                + "Primeiro, vamos concluir seu cadastro. Depois, você monta os dias e horários da van e convida os passageiros.";
+            case "CONFIRM_PAIRING" -> "Aparelho vinculado. Já dá para voltar ao aplicativo VanRides Motorista.";
             default -> throw new IllegalStateException("WA_RESPONSE_NOT_IMPLEMENTED");
         };
     }

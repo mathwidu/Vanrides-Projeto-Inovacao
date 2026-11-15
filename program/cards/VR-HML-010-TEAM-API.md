@@ -82,6 +82,36 @@ migração ou alteração da VPS. Não remover validações para obter aprovaç�
 
 A base local f85ec3e contém o mesmo runtime de dd12cf0, aprovado nas seis jornadas. A primeira fatia muda o perfil público do backend, o comando de teste para o colega e a receita de implantação. O domínio vanrides-inovacao-api.matheusduarte.dev.br resolve para a VPS. O serviço publicado ainda precisa de configuração, certificado válido e teste funcional. PostgreSQL e credenciais serão específicos da nova stack.
 
+### Cadastro guiado e convite pelo bot
+
+Nesta evolução o bot explica o produto, indica a etapa atual e responde dúvidas
+frequentes sem alterar o rascunho. Motoristas ativos geram um link de uso
+individual ou pedem envio a um passageiro identificado e autorizado no próprio
+WhatsApp. Quem inicia pelo link pode participar da homologação após prova do
+convite e do remetente; perfil e aceite continuam com a própria pessoa.
+
+O efeito fica no backend e no classificador de mensagens. Nenhum novo modelo ou
+serviço pago. A migração acrescenta campos com valores padrão compatíveis com
+convites antigos. Os testes verificam reserva individual, destinatário de envio,
+recusa de mensagens sem convite e continuidade do cadastro. Para retorno local,
+restaurar a versão anterior da API em banco descartável. Publicação com dados
+existentes exige ensaio do retorno e migração antes de preparar a homologação.
+
+Validação local de 15/11/2026. O JAR foi empacotado após 104 testes Java sem
+falhas nem pulos. O PostgreSQL 16 descartável exercitou a migração V40 → V41
+com convite anterior, a reserva para primeiro contato, a recusa do código em
+outro número e a revalidação do opt-in na entrega. O gate offline passou com
+714 testes Node e 303 Python. O ensaio local usou armazenamento temporário
+em RAM para o PostgreSQL. A VPS e o canal real ainda aguardam a publicação
+coordenada da API e do agente para o primeiro aceite.
+
+O ensaio HTTP de `63c7872` usou o JAR local, o agente, PostgreSQL e um receptor
+Evolution simulado. Passaram o cadastro do motorista, a criação de rotina,
+a emissão e revogação de convite e o cadastro de dois passageiros com
+aprovação de vínculo e ponto. A execução geral foi encerrada nesse marco,
+antes das verificações de presença e rastreamento. O contêiner temporário
+foi removido.
+
 ## Dependências
 
 040 (autenticação) e 070 (contratos de conversa) concluídos. A homologação usa dados fictícios e tem aceite próprio. Os aceites de canal, percurso, iPhone, encerramento e piloto permanecem no plano do MVP.
@@ -116,6 +146,15 @@ Uma rota legado exposta pelo proxy, uso de provedor real, vazamento entre integr
 - [ ] Um colega reproduz o cenário e a persistência do resultado e registra sua revisão.
 
 ## Validação
+
+Em 15/11, um `AJUDA` entregue pelo WhatsApp foi descartado antes da fila de
+atendimento. A observação temporária identificou o mesmo alias principal e
+alternativo de um contato admitido. O receptor `47aba5b` passou a remover
+somente a repetição exata. Os 40 testes do receptor passaram e a homologação
+continuou descartando o contato sintético desconhecido. O `AJUDA` real do
+mantenedor foi processado e a resposta chegou às 13h36 de Brasília. A validação
+com o motorista e dois passageiros está pendente. A observação temporária foi
+retirada antes da publicação do receptor. [Issue #91](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/91)
 
 Testes de configuração/HTTP e de integração com PostgreSQL, gates de contratos, CI, verificação da imagem e restore em banco descartável. Depois da publicação autorizada, confirmar TLS, digest e a operação real do colega. Ver o [roteiro do ambiente](../../docs/runbooks/whatsapp-mvp/homologacao-api.md).
 

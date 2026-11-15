@@ -50,6 +50,7 @@ class TeamAdmissionIntegrationTest {
     private Clock time;
     private WaTeamSettings team;
     private WaAdmissionStore admission;
+    private WaCrypto crypto;
     private WaPrincipal channel;
     private UUID cohort;
 
@@ -68,7 +69,7 @@ class TeamAdmissionIntegrationTest {
             .withProperty("vanrides.wa.response-key", key((byte) 2))
             .withProperty("vanrides.wa.operator-credential", key((byte) 3))
             .withProperty("vanrides.wa.operator-expires-at", "2035-01-01T00:00:00Z"));
-        var crypto = new WaCrypto(settings);
+        crypto = new WaCrypto(settings);
         team = mock(WaTeamSettings.class);
         cohort = UUID.randomUUID();
         when(team.enabled()).thenReturn(true);
@@ -232,6 +233,64 @@ class TeamAdmissionIntegrationTest {
         assertThat(count("wa.profile")).isZero();
     }
 
+    @Test
+    void firstContactLinkAdmitsOnlyTheFirstPhoneWithoutCreatingAProfileOrConsumingTheInvite() {
+        String text = passengerInvite(true, null), id = UUID.randomUUID().toString();
+        assertThat(event(PN, null).path("status").asText()).isEqualTo("IGNORED");
+        assertThat(event(LID, null, id, text).path("status").asText()).isEqualTo("IGNORED");
+        assertThat(event(PN, null, id, text, NOW.minusSeconds(301)).path("status").asText()).isEqualTo("IGNORED");
+        assertThat(event(LID, PN, id, text).path("status").asText()).isEqualTo("PERSISTED");
+        UUID passenger = jdbc.queryForObject("SELECT onboarding_identity_id FROM wa.driver_invite", UUID.class);
+        assertThat(passenger).isNotNull();
+        assertThat(admission.owner(INSTANCE, new WaEvolutionNormalizer.Alias("PN", PN))).isEqualTo(passenger);
+        assertThat(event(LID, null, id, text).path("status").asText()).isEqualTo("DUPLICATE");
+        assertThat(event(OTHER_PN, null, id, text).path("status").asText()).isEqualTo("IGNORED");
+        assertThat(event(OTHER_PN, null, UUID.randomUUID().toString(), text).path("status").asText()).isEqualTo("IGNORED");
+        assertThat(event(LID, null).path("status").asText()).isEqualTo("PERSISTED");
+        assertThat(jdbc.queryForList("SELECT identity_id FROM wa.integration_inbox", UUID.class))
+            .containsExactly(passenger, passenger);
+        assertThat(jdbc.queryForObject("SELECT use_count FROM wa.driver_invite", Long.class)).isZero();
+        assertThat(count("wa.profile")).isOne(); // Only the issuing driver.
+        assertThat(count("wa.driver_passenger_link")).isZero();
+        jdbc.update("UPDATE wa.driver_invite SET revoked_at=?", Timestamp.from(NOW));
+        assertThat(event(PN, null).path("status").asText()).isEqualTo("IGNORED");
+        assertThat(count("wa.identity")).isEqualTo(2);
+    }
+
+    @Test
+    void targetedAndLegacyInvitesCannotAdmitStrangersAndExistingPassengerCanReserveLink() {
+        UUID target = UUID.fromString(execute(request(ADMIT_PASSENGER), contact(PN, LID), UUID.randomUUID(), LIVE)
+            .path("identityId").asText());
+        for (String text : new String[]{passengerInvite(false, target), passengerInvite(false, null)}) {
+            assertThat(event(OTHER_PN, null, UUID.randomUUID().toString(), text).path("status").asText()).isEqualTo("IGNORED");
+        }
+        String text = passengerInvite(true, null);
+        assertThat(event(PN, LID, UUID.randomUUID().toString(), text).path("status").asText()).isEqualTo("PERSISTED");
+        assertThat(jdbc.queryForObject("SELECT onboarding_identity_id FROM wa.driver_invite WHERE allow_first_contact", UUID.class))
+            .isEqualTo(target);
+        assertThat(count("wa.integration_inbox")).isOne();
+    }
+
+    private String passengerInvite(boolean firstContact, UUID target) {
+        String pn = "12025550103@s.whatsapp.net";
+        UUID driver = admission.owner(INSTANCE, new WaEvolutionNormalizer.Alias("PN", pn));
+        if (driver == null) {
+            driver = legacyIdentity(pn);
+            jdbc.update("""
+                INSERT INTO wa.profile(identity_id,role,status,driver_enabled,notice_version,notice_accepted_at)
+                VALUES (?,'DRIVER','ACTIVE',true,'wa-mvp-v1',?)
+                """, driver, Timestamp.from(NOW));
+            jdbc.update("INSERT INTO wa.driver_authorization(driver_id) VALUES (?)", driver);
+        }
+        String token = WaCrypto.randomToken();
+        jdbc.update("""
+            INSERT INTO wa.driver_invite(id,driver_id,code_hash,expires_at,max_uses,created_at,allow_first_contact,onboarding_identity_id)
+            VALUES (?,?,?,?,1,?,?,?)
+            """, UUID.randomUUID(), driver, crypto.secretHash("passenger-invite", token), Timestamp.from(NOW.plusSeconds(600)),
+            Timestamp.from(NOW.minusSeconds(1)), firstContact, target);
+        return "PASSAGEIRO " + token;
+    }
+
     private WaTeamOperations.Request request(WaTeamOperations.Action action) {
         return new WaTeamOperations.Request(PHONE, action, UUID.randomUUID());
     }
@@ -264,11 +323,19 @@ class TeamAdmissionIntegrationTest {
     }
 
     private ObjectNode event(String remote, String alternate, String id) {
+        return event(remote, alternate, id, "synthetic test");
+    }
+
+    private ObjectNode event(String remote, String alternate, String id, String text) {
+        return event(remote, alternate, id, text, NOW);
+    }
+
+    private ObjectNode event(String remote, String alternate, String id, String text, Instant occurred) {
         ObjectNode envelope = WaJson.MAPPER.createObjectNode().put("event", "messages.upsert").put("instance", INSTANCE);
-        var data = envelope.putObject("data");
+        var data = envelope.putObject("data").put("messageTimestamp", occurred.getEpochSecond());
         var key = data.putObject("key").put("id", id).put("fromMe", false).put("remoteJid", remote);
         if (alternate != null) key.put("remoteJidAlt", alternate);
-        data.putObject("message").put("conversation", "synthetic test");
+        data.putObject("message").put("conversation", text);
         return tx.execute(status -> events.accept(channel, envelope));
     }
 

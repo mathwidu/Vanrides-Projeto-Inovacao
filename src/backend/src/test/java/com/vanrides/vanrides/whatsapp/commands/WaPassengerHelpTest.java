@@ -52,7 +52,7 @@ class WaPassengerHelpTest {
     @Test
     void existingPassengerDraftKeepsItsCurrentQuestion() {
         jdbc.context.set("passengerDraft", WaJson.object("{\"stage\":\"NAME\"}"));
-        assertThat(setup.help(passenger())).isEqualTo("Como você prefere ser chamado?");
+        assertThat(setup.help(passenger())).startsWith("Como você prefere ser chamado?").contains("Ana Silva");
         assertThat(jdbc.linkReads).isZero();
         assertThat(jdbc.writes).isEmpty();
     }

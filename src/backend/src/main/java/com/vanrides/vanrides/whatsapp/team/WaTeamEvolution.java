@@ -8,7 +8,7 @@ import java.util.Map;
 import org.springframework.stereotype.Component;
 
 @Component
-final class WaTeamEvolution {
+public final class WaTeamEvolution {
     private static final String PN_SUFFIX = "@s.whatsapp.net";
     private final WaTeamSettings settings;
     private final WaTeamRemote remote;
@@ -23,6 +23,27 @@ final class WaTeamEvolution {
     WaTeamEvolution(WaTeamSettings settings, WaTeamRemote remote) {
         this.settings = settings;
         this.remote = remote;
+    }
+
+    public String botPhone() {
+        if (!settings.enabled()) return null;
+        String instance = settings.instance();
+        try {
+            var reply = remote.exchange(settings.evolutionOrigin().resolve("/instance/fetchInstances?instanceName=" + instance),
+                Map.of("apikey", settings.evolutionKey()), null, settings.evolutionTls());
+            return botPhone(instance, reply);
+        } catch (WaProblem ignored) {
+            return null;
+        }
+    }
+
+    static String botPhone(String instance, WaTeamRemote.Reply reply) {
+        JsonNode body = reply.body();
+        if (reply.status() != 200 || body == null || !body.isArray() || body.size() != 1) return null;
+        JsonNode row = body.get(0);
+        if (!instance.equals(row.path("name").asText()) || !"open".equals(row.path("connectionStatus").asText())) return null;
+        String owner = row.path("ownerJid").asText("");
+        return owner.matches("[1-9][0-9]{7,14}@s\\.whatsapp\\.net") ? owner.substring(0, owner.length() - PN_SUFFIX.length()) : null;
     }
 
     Contact verify(String phone) {

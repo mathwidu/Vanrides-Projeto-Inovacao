@@ -1,6 +1,7 @@
 'use strict';
 const $ = id => document.getElementById(id);
 let csrf = null, busy = false, pending = null, invitation = null, currentPhone = null, testPending = null, linkButtons = [];
+let botLookup = null;
 const messages = {
   INVALID_CREDENTIAL: 'Sua sessão terminou. Entre novamente pelo GitHub.',
   INVALID_PAYLOAD: 'Confira o número e o papel do participante.',
@@ -43,17 +44,42 @@ async function request(path, body) {
     ...(body === undefined ? {} : { body: JSON.stringify(body) }) });
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
-    const error = Error(messages[data.code] || 'Não foi possível concluir esta etapa. Consulte o cadastro ou tente novamente.');
+    const error = Error(messages[data?.code] || 'Não foi possível concluir esta etapa. Consulte o cadastro ou tente novamente.');
     error.status = response.status;
-    if (response.status === 401) { csrf = null; $('workspace').hidden = true; $('login').hidden = false; clearInvitation(); $('test-invitation').hidden = true; $('test-invite-code').value = ''; }
+    if (response.status === 401 && csrf) { closeSession(); message(messages.UNAUTHORIZED, true); }
     throw error;
   }
   return data;
 }
+function clearBotLink() {
+  botLookup = null;
+  $('bot-link').hidden = true;
+  $('bot-link').removeAttribute('href');
+  $('bot-fallback').hidden = false;
+}
+async function loadBotLink() {
+  const lookup = request('bot');
+  botLookup = lookup;
+  const data = await lookup.catch(() => null);
+  const number = data?.phoneNumber;
+  if (botLookup !== lookup || typeof number !== 'string' || !/^[1-9][0-9]{7,14}$/.test(number)) return;
+  $('bot-link').setAttribute('href', 'https://wa.me/' + number);
+  $('bot-link').hidden = false;
+  $('bot-fallback').hidden = true;
+}
+function closeSession() {
+  csrf = null;
+  clearBotLink();
+  clearInvitation();
+  $('test-invitation').hidden = true;
+  $('test-invite-code').value = '';
+  $('workspace').hidden = true;
+  $('login').hidden = false;
+}
 function clearInvitation() { invitation = null; $('invite-code').value = ''; $('invitation').hidden = true; }
 const labels = { ADMITTED: 'Liberado', NOT_ADMITTED: 'Ainda não liberado', ACTIVE: 'Ativo', ONBOARDING: 'Em cadastro',
   PASSENGER: 'Passageiro', DRIVER: 'Motorista', NONE: 'Ainda não iniciado', AVAILABLE: 'Disponível', ISSUED: 'Disponível',
-  EXPIRED: 'Expirado', CONSUMED: 'Utilizado', REVOKED: 'Revogado', PENDING: 'Pendente' };
+  EXPIRED: 'Expirado', CONSUMED: 'Utilizado', REVOKED: 'Revogado', PENDING: 'Pendente', SUSPENDED: 'Suspenso', CLOSED: 'Encerrado' };
 function label(value, fallback) { return labels[value] || fallback; }
 function validResult(data) {
   if (!data || !['ADMITTED', 'NOT_ADMITTED'].includes(data.admissionStatus)
@@ -62,18 +88,57 @@ function validResult(data) {
     throw Error('O servidor não confirmou o resultado. Consulte o cadastro ou tente novamente.');
   return data;
 }
+function nextStep(data, driver) {
+  const role = driver ? 'DRIVER' : 'PASSENGER';
+  if (data.admissionStatus === 'NOT_ADMITTED') {
+    return driver ? 'Confirme a participação e use “Liberar motorista” para gerar o convite.'
+      : 'Confirme a participação e use “Liberar passageiro” para que a pessoa possa conversar com o bot.';
+  }
+  if (data.profileRole && data.profileRole !== role && !(driver && data.profileStatus === 'ONBOARDING')) {
+    return 'Este contato tem cadastro como ' + label(data.profileRole, 'outro papel').toLowerCase()
+      + '. Selecione o papel do cadastro atual ou peça uma revisão à equipe.';
+  }
+  if (data.profileStatus === 'SUSPENDED' || data.profileStatus === 'CLOSED') {
+    return 'Peça à equipe para revisar o cadastro antes de continuar.';
+  }
+  if (data.profileStatus === 'ACTIVE') {
+    return driver ? 'Cadastro concluído. No WhatsApp do motorista, envie ROTINAS para configurar uma rotina de teste.'
+      : 'Cadastro concluído. Para testar o vínculo, envie ao bot a mensagem do convite de passageiro.';
+  }
+  if (driver) {
+    switch (data.inviteStatus) {
+      case 'ACTIVE': return data.driverInviteCode
+        ? 'Entregue o código em privado. Pelo próprio WhatsApp, o motorista deve enviar somente o código ao bot, depois enviar AJUDA e seguir as instruções.'
+        : 'Se o motorista ainda precisar do código, use “Liberar motorista” para recuperar o mesmo convite com a validade original.';
+      case 'EXPIRED': return 'Use “Gerar novo convite de motorista” e entregue o novo código em privado.';
+      case 'CONSUMED': return 'O código já foi utilizado. Pelo WhatsApp do motorista, envie AJUDA e siga as instruções para concluir o cadastro.';
+      case 'REVOKED': return 'O convite foi revogado. Peça à equipe para revisar a liberação antes de continuar.';
+    }
+    if (data.profileRole !== 'DRIVER') return 'Use “Liberar motorista” para gerar o convite antes de concluir o cadastro pelo WhatsApp.';
+  } else if (data.inviteStatus === 'ACTIVE') {
+    return 'Este contato tem um convite de motorista ativo. Selecione Motorista para consultar esse convite.';
+  }
+  if (data.profileStatus === 'ONBOARDING') {
+    return 'O cadastro está em andamento. Pelo WhatsApp do participante, envie AJUDA e siga as instruções para concluir.';
+  }
+  return 'O número já pode conversar com o bot. Envie AJUDA para testar a resposta. Se já tiver um convite de passageiro, envie a mensagem do convite para iniciar o cadastro.';
+}
 function result(data) {
   validResult(data); clearInvitation();
+  const driver = $('role').value === 'driver';
   $('result').hidden = false;
   $('admission').textContent = label(data.admissionStatus, 'Consulte novamente');
   $('profile').textContent = [label(data.profileRole, ''), label(data.profileStatus, 'Ainda não iniciado')].filter(Boolean).join(' · ');
   $('invite-status').textContent = label(data.inviteStatus, 'Sem convite');
-  $('result-description').textContent = data.driverInviteCode ? 'Convite pronto. Entregue-o ao motorista para ele continuar pelo WhatsApp.' : 'Confira o estado do participante. Ele conclui o cadastro pelo WhatsApp.';
-  $('renew').hidden = $('role').value !== 'driver' || data.profileStatus === 'ACTIVE' || data.inviteStatus !== 'EXPIRED' || !data.inviteId;
-  if (data.driverInviteCode && /^[A-Za-z0-9_-]{43}$/.test(data.driverInviteCode)) {
+  $('result-description').textContent = nextStep(data, driver);
+  $('renew').hidden = !driver || (data.profileStatus && data.profileStatus !== 'ONBOARDING') || data.inviteStatus !== 'EXPIRED' || !data.inviteId;
+  $('expiry').hidden = data.inviteStatus !== 'ACTIVE' || !Number.isFinite(Date.parse(data.expiresAt));
+  if (!$('expiry').hidden) {
+    $('expiry').textContent = 'Convite válido até ' + new Date(data.expiresAt).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }) + ' (Brasília).';
+  }
+  if (data.inviteStatus === 'ACTIVE' && data.driverInviteCode) {
     invitation = { code: data.driverInviteCode, expiresAt: data.expiresAt };
     $('invite-code').value = invitation.code;
-    $('expiry').textContent = 'Válido até ' + new Date(data.expiresAt).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }) + ' (Brasília).';
     $('invitation').hidden = false;
   }
 }
@@ -106,8 +171,8 @@ $('renew').addEventListener('click', () => {
 });
 $('copy').addEventListener('click', async () => {
   if (!invitation) return;
-  try { await navigator.clipboard.writeText('Seu WhatsApp foi liberado como motorista no VanRides. Envie somente este código ao bot:\n\n' + invitation.code + '\n\nDepois envie AJUDA e siga as perguntas do cadastro. ' + $('expiry').textContent); message('Instruções copiadas. Envie em uma conversa privada com o participante.'); }
-  catch { message('Não foi possível copiar automaticamente. Selecione o convite e copie manualmente.', true); }
+  try { await navigator.clipboard.writeText(invitation.code); message('Código copiado. Entregue-o em uma conversa privada com o motorista.'); }
+  catch { message('Não foi possível copiar automaticamente. Selecione o código e copie manualmente.', true); }
 });
 const linkStates = { REQUESTED: 'Aguardando aprovação', APPROVED: 'Aprovado' };
 const decisions = {
@@ -184,13 +249,16 @@ $('test-copy').addEventListener('click', async () => {
 });
 $('logout').addEventListener('click', async () => {
   controls(true);
-  try { await request('logout', {}); csrf = null; pending = null; testPending = null; clearInvitation(); $('test-invitation').hidden = true; $('test-invite-code').value = ''; $('workspace').hidden = true; $('login').hidden = false; $('phone').value = ''; message('Você saiu da área da equipe.'); }
-  catch (error) { message(error.message, true); } finally { controls(false); }
+  clearBotLink();
+  try { await request('logout', {}); closeSession(); pending = null; testPending = null; $('phone').value = ''; message('Você saiu da área da equipe.'); }
+  catch (error) { message(error.message, true); if (csrf) loadBotLink(); } finally { controls(false); }
 });
 (async () => {
   try { const session = await request('session');
-    if (!/^[A-Za-z0-9-]{1,39}$/.test(session.login ?? '') || !/^[A-Za-z0-9_-]{43}$/.test(session.csrfToken ?? '')) throw Error('Não foi possível confirmar sua sessão.');
-    csrf = session.csrfToken; $('username').textContent = session.login; $('workspace').hidden = false; message('Acesso confirmado. Você pode preparar os testes da equipe.'); }
+    if (typeof session?.login !== 'string' || !/^[A-Za-z0-9-]{1,39}$/.test(session.login)
+      || typeof session.csrfToken !== 'string' || !/^[A-Za-z0-9_-]{43}$/.test(session.csrfToken)) throw Error('Não foi possível confirmar sua sessão.');
+    csrf = session.csrfToken; $('username').textContent = session.login; $('workspace').hidden = false;
+    message('Acesso confirmado. Você pode preparar os testes da equipe.'); loadBotLink(); }
   catch (error) {
     $('login').hidden = false;
     const auth = new URLSearchParams(window.location.search).get('auth');

@@ -1,13 +1,17 @@
 package com.vanrides.vanrides.whatsapp.team;
 
+import com.vanrides.vanrides.whatsapp.api.WaJson;
 import com.vanrides.vanrides.whatsapp.api.WaProblem;
 import com.vanrides.vanrides.whatsapp.auth.WaCrypto;
 import com.vanrides.vanrides.whatsapp.config.WaClock;
+import jakarta.servlet.http.Cookie;
+import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Instant;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.springframework.mock.web.MockHttpServletRequest;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -33,6 +37,32 @@ class WaTeamSessionsTest {
         when(github.exchange(eq(CODE), anyString())).thenReturn(token);
         when(github.actor(token)).thenReturn(actor);
         return sessions.begin(null);
+    }
+
+    @Test
+    void botContactRequiresALiveTeamSessionBeforeConsultingEvolution() {
+        var remote = mock(WaTeamRemote.class);
+        var settings = mock(WaTeamSettings.class);
+        when(settings.enabled()).thenReturn(true);
+        when(settings.instance()).thenReturn("synthetic-hml");
+        when(settings.evolutionOrigin()).thenReturn(URI.create("https://evolution.example.invalid"));
+        when(settings.evolutionKey()).thenReturn("synthetic-key");
+        var controller = new WaTeamController(sessions, new WaTeamEvolution(settings, remote), null, null);
+        var request = new MockHttpServletRequest();
+        assertThatThrownBy(() -> controller.bot(request)).isInstanceOfSatisfying(WaProblem.class,
+            failure -> assertThat(failure.code()).isEqualTo(WaProblem.Code.INVALID_CREDENTIAL));
+        verifyNoInteractions(remote);
+
+        var login = begin();
+        String cookie = sessions.finish(login.cookie, state, CODE, null);
+        request.setCookies(new Cookie("__Host-vanrides-team", cookie));
+        var providerBody = WaJson.MAPPER.createArrayNode();
+        providerBody.addObject().put("name", "synthetic-hml").put("connectionStatus", "open")
+            .put("ownerJid", "12025550101@s.whatsapp.net").put("token", "private-provider-field");
+        when(remote.exchange(any(URI.class), anyMap(), isNull(), isNull()))
+            .thenReturn(new WaTeamRemote.Reply(200, providerBody), new WaTeamRemote.Reply(503, null));
+        assertThat(controller.bot(request)).containsOnlyKeys("phoneNumber").containsEntry("phoneNumber", "12025550101");
+        assertThat(controller.bot(request)).isEmpty();
     }
 
     @Test
