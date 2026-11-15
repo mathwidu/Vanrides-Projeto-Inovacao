@@ -9,22 +9,23 @@ ou usar um motorista de teste com o WhatsApp real de um passageiro.
 ## Primeiro cadastro do motorista
 
 1. Use um WhatsApp diferente do número do bot e dos números que testarão como passageiros. A equipe libera o motorista uma vez na [área da equipe](area-da-equipe.md) e entrega o convite individual em privado.
-2. No chat com o VanRides, envie `AJUDA` para entender o produto. Envie o convite recebido, informe seu nome e leia o aviso. Responda `ACEITO` se concordar com o uso dos dados explicado pelo bot.
-3. Envie `CRIAR ROTINA`. O bot pede o nome do trajeto, sentido, dias, horário, fuso e destino. Envie um ponto fixo [pelo Mac ou pelo celular](#enviar-um-ponto-fixo-no-mac). Confira o resumo e envie a confirmação exibida na conversa.
+2. No chat com o VanRides, envie o convite recebido. O bot explica o cadastro, pede seu nome e mostra o aviso de dados. Responda `ACEITO` se concordar.
+3. Envie `CRIAR ROTINA` e dê um nome ao trajeto. Você pode enviar o sentido, os dias e o horário numa só mensagem, por exemplo `IDA, SEGUNDA A SEXTA, 07:30`. O bot sugere Brasília. Para ajustar o fuso, envie, por exemplo, `FUSO MANAUS` quando ele pedir o destino. Envie o [ponto fixo](#enviar-um-ponto-fixo-no-mac), use **Responder** no resumo e escreva `SALVAR ROTINA`.
 4. Pergunte, por exemplo, “Como convido passageiros?” ou “Como vinculo o aplicativo?”. Use `AJUDA` para retomar a etapa. Uma dúvida não aplica mudanças na rotina nem renova um resumo em revisão.
 
 ## Convidar e cadastrar passageiros
 
 | Caminho | O que fazer |
 | --- | --- |
-| Link compartilhado | O motorista envia `CONVIDAR LINK`, revisa e confirma. Encaminha o link individual em privado. O passageiro abre o chat e toca em **Enviar** na mensagem preenchida. Use um link por pessoa. |
-| Convite enviado pelo bot | O passageiro de teste já liberado ou cadastrado no mesmo ambiente envia `ACEITO RECEBER CONVITES` ao bot. O motorista envia `CONVIDAR` seguido do número com DDD, confere os quatro dígitos finais e confirma. O VanRides coloca o convite na fila para esse WhatsApp. |
+| Link compartilhado | Envie `CONVIDAR` e encaminhe o link individual em privado. O passageiro abre o link e toca em **Enviar** na mensagem preenchida. Gere um link por pessoa. |
+| Convite enviado pelo bot | O passageiro de teste já liberado ou cadastrado no mesmo ambiente envia `ACEITO RECEBER CONVITES` ao bot. O motorista envia `CONVIDAR` seguido do número com DDD, confere os quatro dígitos finais e confirma. |
 
 O opt-in de convites vale por 24 horas e pode ser retirado com `PARAR CONVITES`. Se a pessoa ainda não falou com o bot, não deu permissão ou se ela venceu, encaminhe um link. Se a conexão do bot impedir a apresentação do link, o código em texto continua disponível para um contato liberado pela equipe. A autorização de convites é diferente do aceite do aviso de dados e da escolha de lembretes. [Política do WhatsApp Business](https://business.whatsapp.com/policy/preview?lang=pt_BR)
 
-1. O passageiro confere o motorista indicado e responde às perguntas. Envia um [ponto fixo](#enviar-um-ponto-fixo-no-mac) pelo WhatsApp e, se necessário, uma referência como “portão lateral”.
-2. Após revisar e confirmar, o passageiro aguarda a aprovação. O motorista recebe uma mensagem, usa `PASSAGEIROS` e escolhe o pedido a aprovar ou corrigir.
-3. O passageiro recebe o resultado no mesmo chat. Para verificar presença e GPS depois desse ponto, siga o [roteiro de homologação](homologacao-da-equipe.md).
+1. O bot identifica o motorista e pede o nome e o aceite se ainda faltarem. Quando existe uma rotina, sugere os dias dela. O passageiro pode ajustar os dias ou escolher a rotina quando houver mais de uma.
+2. O passageiro envia um [ponto fixo](#enviar-um-ponto-fixo-no-mac) e confere um resumo com os dias e o local. Pode mandar `ALTERAR DIAS`, `CORRIGIR PONTO` ou `REFERÊNCIA Portão lateral`. Para escolher avisos, use as opções do resumo. A escolha anterior é preservada até o passageiro alterá-la e os avisos de uma conta nova começam desligados. Envie `CONFIRMAR` para pedir o embarque.
+3. O motorista envia `REVISAR PEDIDO`. Se houver um só, o bot mostra o resumo direto. Para consultar a lista, envie `PASSAGEIROS`. No resumo de aprovação, use **Responder** e escreva `APROVAR EMBARQUE`. Para corrigir um ponto inadequado, use a opção de correção na lista. Se o WhatsApp não permitir citar a mensagem, use a confirmação alternativa que o próprio resumo mostra.
+4. O passageiro recebe o resultado no mesmo chat. Para verificar presença e GPS depois desse ponto, siga o [roteiro de homologação](homologacao-da-equipe.md).
 
 ## Enviar um ponto fixo no Mac
 

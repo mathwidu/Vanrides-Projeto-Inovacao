@@ -15,7 +15,8 @@ final class WaAttendanceAnswers {
     private static final Pattern DAY = Pattern.compile("\\b(\\d{2}/\\d{2}/\\d{4}|\\d{4}-\\d{2}-\\d{2})\\b");
     private static final Set<String> ENTRY = Set.of("presenca", "presencas", "minha presenca", "minhas presencas",
         "quem vai", "resumo de presenca", "resumo das presencas", "resumo presencas");
-    private static final Set<String> INTERRUPT = Set.of("rotinas", "convidar", "passageiros", "menu passageiros",
+    private static final Set<String> INTERRUPT = Set.of("rotinas", "criar rotina", "convidar", "convidar link",
+        "passageiros", "menu passageiros", "revisar pedido",
         "ponto comum", "corrigir ponto", "continuar cadastro", "encerrar", "encerrar vinculo", "resumo");
 
     record Input(String text, String choice, boolean generic, Integer number, String day, String direction,

@@ -15,15 +15,15 @@ export async function registerCohort(chat, schedules = [['Ida escolar','IDA','06
   const driverStep = msg => send(driver, msg, 'ADVANCE_DRIVER_SETUP');
   await chat.bootstrap(driver, 'Alex Exemplo');
   for (const [name, direction, time] of schedules) {
-    for (const msg of ['ROTINAS','CRIAR',name,direction,'TODOS OS DIAS',time,zone]) await driverStep(msg);
+    for (const msg of ['ROTINAS', 'CRIAR', name, `${direction}, TODOS OS DIAS, ${time}`, `FUSO ${zone}`]) await driverStep(msg);
     await confirm(driver, await driverStep(pin), 'CONFIGURE_ROUTINE');
   }
-  await driverStep('CONVIDAR'); await driverStep('2');
+  await driverStep('CONVIDAR PERSONALIZADO'); await driverStep('2');
   const invite = extractPassengerInviteCode((await confirm(driver, await driverStep('PADRÃO'), 'CREATE_INVITE')).reply);
   demand(invite, 'ATTENDANCE_INVITE_MISSING');
   for (const [person, name, reminders] of [[passenger,'Lia Exemplo',remindersForFirst ? 'SIM' : 'NÃO'],[second,'Cris Exemplo','NÃO']]) {
     const step = msg => send(person, msg, setup);
-    for (const msg of ['PASSAGEIRO '+invite,'SIM',name,'ACEITO','SIM',reminders])
+    for (const msg of ['PASSAGEIRO '+invite, name, 'ACEITO'])
       await step(msg);
     let question = await step('1,2');
     for (const routine of ['Ida escolar', 'Volta escolar']) {
@@ -31,7 +31,7 @@ export async function registerCohort(chat, schedules = [['Ida escolar','IDA','06
       question = await step('TODOS OS DIAS');
     }
     await step(pin);
-    await confirm(person, await step('PULAR'), 'REQUEST_LINK', { notify: driver });
+    await confirm(person, await step(reminders === 'SIM' ? 'AVISOS TODOS' : 'AVISOS CHEGADA'), 'REQUEST_LINK', { notify: driver });
     const list = await send(driver, 'PASSAGEIROS', setup);
     const option = [1, 2].find(number => list.reply?.includes(`${number}: ${name} (solicitação)`));
     demand(option, 'ATTENDANCE_PASSENGER_REQUEST_MISSING');

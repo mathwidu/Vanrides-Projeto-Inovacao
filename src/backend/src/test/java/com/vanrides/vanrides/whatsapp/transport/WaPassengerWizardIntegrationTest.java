@@ -94,10 +94,11 @@ class WaPassengerWizardIntegrationTest {
                     + " VALUES (?,'PASSENGER','ACTIVE','Nome já aceito','wa-mvp-v1',?)",
                 passenger,
                 Timestamp.from(fixture.transport.clock.now()));
-        fixture.open(passenger, code);
-        var next = fixture.send(passenger, "CONTINUAR");
-        assertEquals("PREF_APPROACH", fixture.draft(passenger).path("stage").asText());
-        assertTrue(next.text().contains("aproximando"));
+        var next = fixture.open(passenger, code);
+        assertEquals("POINT", fixture.draft(passenger).path("stage").asText());
+        assertTrue(next.text().contains("ALTERAR DIAS"));
+        assertFalse(fixture.draft(passenger).path("approachMessages").asBoolean());
+        assertFalse(fixture.draft(passenger).path("attendanceReminders").asBoolean());
         assertEquals("Nome já aceito", fixture.draft(passenger).path("passengerName").asText());
         assertEquals(
                 "{}",
@@ -134,8 +135,9 @@ class WaPassengerWizardIntegrationTest {
     void noticeMustBeIssuedBeforeAcceptanceAndWithinItsOwnContext() {
         UUID passenger = fixture.passenger();
         fixture.open(passenger, code);
-        fixture.send(passenger, "CONTINUAR");
         fixture.send(passenger, "ACEITO");
+        assertEquals("NAME", fixture.draft(passenger).path("stage").asText());
+        fixture.send(passenger, "Nome sintético");
         assertEquals("NOTICE", fixture.draft(passenger).path("stage").asText());
         assertNull(
                 fixture.conversation.string(
@@ -167,7 +169,7 @@ class WaPassengerWizardIntegrationTest {
         assertFalse(fixture.draft(passenger).has("sourceEvent"));
         assertFalse(fixture.draft(passenger).has("confirmation"));
         fixture.pin(passenger);
-        var corrected = fixture.send(passenger, "Portão lateral");
+        var corrected = fixture.send(passenger, "REFERÊNCIA Portão lateral");
         assertTrue(corrected.text().contains("Portão lateral"));
         assertEquals("REVIEW", fixture.draft(passenger).path("stage").asText());
         assertEquals(0, fixture.count("driver_passenger_link"));
@@ -202,7 +204,7 @@ class WaPassengerWizardIntegrationTest {
     }
 
     @Test
-    void textPointRequiresTheSameReferenceAndConfirmationAsANativePickupPin() {
+    void textPointOpensTheSameReviewAsANativePickupPin() {
         UUID passenger = fixture.passenger();
         fixture.review(passenger, code);
         var prompt = fixture.send(passenger, "CORRIGIR PONTO");
@@ -213,8 +215,8 @@ class WaPassengerWizardIntegrationTest {
                 json().put("type", "STATIC_PIN_REFERENCE")
                         .put("sourceMessageId", "event_" + point.lease().id()),
                 point.lease().message());
-        assertEquals("REFERENCE", fixture.draft(passenger).path("stage").asText());
-        var review = fixture.send(passenger, "Portão lateral");
+        assertEquals("REVIEW", fixture.draft(passenger).path("stage").asText());
+        var review = fixture.send(passenger, "REFERÊNCIA Portão lateral");
         assertTrue(review.text().contains("Portão lateral"));
         assertEquals(0, fixture.count("pickup_point"));
 
@@ -235,7 +237,7 @@ class WaPassengerWizardIntegrationTest {
     @Test
     void switchingFromPassengerMenuToDriverInviteDiscardsTheIncompatibleDraft() {
         fixture.send(driver, "PASSAGEIROS");
-        fixture.driverFixture.send(driver, "CONVIDAR");
+        fixture.driverFixture.send(driver, "CONVIDAR PERSONALIZADO");
         fixture.driverFixture.send(driver, "PADRÃO");
         assertFalse(
                 fixture.conversation
@@ -254,9 +256,7 @@ class WaPassengerWizardIntegrationTest {
         fixture.open(passenger, code);
         fixture.send(passenger, "CONTINUAR");
         fixture.send(passenger, "Passageiro Sintético");
-        fixture.send(passenger, "ACEITO");
-        fixture.send(passenger, "SIM");
-        var routines = fixture.send(passenger, "NÃO");
+        var routines = fixture.send(passenger, "ACEITO");
         assertTrue(routines.text().contains("Rotina Sintética (ida)"), routines.text());
         var returnChoice =
                 java.util.regex.Pattern.compile("(\\d): Rotina Sintética \\(volta\\)")
@@ -286,8 +286,6 @@ class WaPassengerWizardIntegrationTest {
         fixture.send(passenger, "CONTINUAR");
         fixture.send(passenger, "Passageiro Sintético");
         fixture.send(passenger, "ACEITO");
-        fixture.send(passenger, "SIM");
-        fixture.send(passenger, "NÃO");
         var firstDays = fixture.send(passenger, "1,2");
         assertTrue(firstDays.text().contains("Rotina Sintética"), firstDays.text());
         var secondDays = fixture.send(passenger, "1,3,5");

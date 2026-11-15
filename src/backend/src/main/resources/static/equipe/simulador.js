@@ -44,7 +44,7 @@
       reply(driver, 'Convidar passageiro pelo bot', 'invited', 'O convite direto foi entregue à conta fictícia do passageiro nesta simulação.');
       bot(passenger, `Você recebeu um convite direto de ${state.names[driver]} para a rotina ${routine}.`);
     } else {
-      reply(driver, 'CONVIDAR LINK', 'invited', `Link de exemplo: ${inviteLink}`);
+      reply(driver, 'CONVIDAR', 'invited', `Link individual de exemplo: ${inviteLink}`);
     }
   }
 
@@ -55,7 +55,7 @@
   }
 
   function requestPickup() {
-    reply(passenger, 'Confirmar ponto de embarque', 'requested', 'Pedido enviado ao motorista. Aguarde a aprovação do vínculo e do ponto.');
+    reply(passenger, 'CONFIRMAR', 'requested', 'Pedido enviado ao motorista. Aguarde a aprovação do vínculo e do ponto.');
     state.steps[driver] = 'pending';
     bot(driver, `${state.names[passenger]} pediu vínculo para a rotina Ida ao Campus, de segunda a sexta às 07:30. Ponto fixo: ${pickup}.`);
   }
@@ -80,14 +80,20 @@
     }),
     routineReview: () => ({
       hint: 'Confira o sentido, os dias, o horário e o destino antes de confirmar.',
-      actions: [['Confirmar rotina', () => reply(driver, 'Confirmar rotina', 'routineReady', 'Rotina criada. Você já pode convidar o passageiro de exemplo.')]],
+      actions: [['Confirmar rotina', () => reply(driver, 'Salvar rotina', 'routineReady', 'Rotina criada. Envie CONVIDAR para receber um link individual.')]],
     }),
     routineReady: () => ({
       hint: state.acceptsDirectInvite
-        ? 'O passageiro permitiu o envio direto. Se preferir, gere um link de exemplo.'
+        ? 'O link é o caminho principal. O passageiro também permitiu o envio direto.'
         : 'Gere um link de exemplo ou mude para Passageiro para autorizar o envio direto.',
       actions: state.acceptsDirectInvite
-        ? [['Gerar link de convite', () => invite('link')], ['Enviar convite direto', () => invite('direct')]]
+        ? [['Gerar link de convite', () => invite('link')], ['Revisar envio direto', () => reply(driver, 'Pedir envio direto', 'inviteReview', 'Confira o destinatário fictício antes de enviar o convite.')]]
+        : [['Gerar link de convite', () => invite('link')]],
+    }),
+    inviteReview: () => ({
+      hint: state.acceptsDirectInvite ? 'Confirme o envio ao passageiro fictício.' : 'O passageiro retirou a permissão. Use o convite por link.',
+      actions: state.acceptsDirectInvite
+        ? [['Confirmar envio direto', () => invite('direct')], ['Gerar link de convite', () => invite('link')]]
         : [['Gerar link de convite', () => invite('link')]],
     }),
     invited: () => ({
@@ -137,12 +143,17 @@
     }),
     consent: () => ({
       hint: 'Simule o aceite para continuar até o ponto de embarque.',
-      actions: [['Aceitar aviso de dados', () => reply(passenger, 'ACEITO', 'pickupReview',
-        `Confira o embarque de exemplo: Ida ao Campus, segunda a sexta às 07:30, com ponto fixo em ${pickup}.`)]],
+      actions: [['Aceitar aviso de dados', () => reply(passenger, 'ACEITO', 'pickup',
+        'Você foi convidado para a ida ao Campus de segunda a sexta às 07:30. Envie seu ponto de embarque.')]],
+    }),
+    pickup: () => ({
+      hint: 'No WhatsApp, envie o ponto fixo de embarque.',
+      actions: [['Enviar ponto de exemplo', () => reply(passenger, 'Enviar ponto fixo', 'pickupReview',
+        `Confira o pedido: Ida ao Campus, segunda a sexta às 07:30. Embarque em ${pickup}.`)]],
     }),
     pickupReview: () => ({
-      hint: 'Confirme o ponto fictício para enviar o pedido ao motorista.',
-      actions: [['Confirmar ponto de embarque', requestPickup]],
+      hint: 'Confira dias e ponto e confirme uma vez para enviar o pedido ao motorista.',
+      actions: [['Enviar pedido ao motorista', requestPickup]],
     }),
     requested: () => ({
       hint: 'Selecione Motorista para revisar e aprovar seu pedido.',

@@ -4,6 +4,8 @@ import static org.junit.jupiter.api.Assertions.*;
 import static com.vanrides.vanrides.whatsapp.transport.WaDriverTestSupport.json;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.vanrides.vanrides.whatsapp.api.WaProblem;
+import com.vanrides.vanrides.whatsapp.auth.WaCrypto;
+import java.sql.Timestamp;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -42,8 +44,7 @@ class WaDriverWizardIntegrationTest {
         f.send(actor, "Rotina Sintética");
         f.send(actor, "IDA");
         f.send(actor, "SEGUNDA A SEXTA");
-        f.send(actor, "06:00");
-        var destination = f.send(actor, "MANTER");
+        var destination = f.send(actor, "06:00");
         assertTrue(destination.text().contains("\nPONTO -29.68123, -51.13123\n"));
 
         var review = f.send(actor, "PONTO -12.25, +34.5");
@@ -57,6 +58,50 @@ class WaDriverWizardIntegrationTest {
             SELECT count(*) FROM wa.routine WHERE driver_id=? AND destination_latitude=-12.25
             AND destination_longitude=34.5 AND destination_source_event_id=?
             """, actor, review.lease().id()));
+    }
+    @Test void groupedScheduleAndQuotedReviewSaveOnlyTheCurrentRoutine() {
+        UUID actor = f.driver();
+        f.send(actor, "CRIAR");
+        f.send(actor, "Rotina com dias agrupados");
+        f.send(actor, "VOLTA, 1,1,3, 18:45");
+        assertEquals("DIRECTION", f.draft(actor).path("stage").asText());
+        var destination = f.send(actor, "VOLTA, 1,3, 18:45");
+        assertTrue(destination.text().contains("Fuso: Brasília"));
+        assertTrue(f.send(actor, "FUSO MANAUS").text().contains("Fuso: Manaus"));
+
+        var olderReview = f.pin(actor);
+        var currentReview = f.send(actor, "SALVAR ROTINA");
+        assertTrue(currentReview.text().contains("Use Responder nesta mensagem"));
+        assertEquals(0, f.count("routine", actor));
+
+        String oldMessage = submitted(olderReview);
+        String currentMessage = submitted(currentReview);
+        assertTrue(quoted(actor, oldMessage).text().contains("não corresponde"));
+        assertEquals(0, f.count("routine", actor));
+
+        assertTrue(quoted(actor, currentMessage).text().contains("Rotina salva"));
+        assertEquals(1, f.s.number("""
+            SELECT count(*) FROM wa.routine WHERE driver_id=? AND direction='RETURN' AND state='ACTIVE'
+              AND weekdays=ARRAY[1,3]::smallint[] AND local_time='18:45' AND timezone='America/Manaus'
+            """, actor));
+    }
+    private WaDriverTestSupport.Step quoted(UUID actor, String messageId) {
+        ObjectNode body = json();
+        body.putObject("extendedTextMessage").put("text", "SALVAR ROTINA").putObject("contextInfo").put("stanzaId", messageId);
+        return f.execute(f.s.claim(f.s.pending(actor, body, f.h.clock.now())), true);
+    }
+    private String submitted(WaDriverTestSupport.Step step) {
+        UUID box = UUID.fromString(step.response().path("responseIds").get(0).asText());
+        String external = "synthetic-driver-review-" + UUID.randomUUID();
+        Timestamp now = Timestamp.from(f.h.clock.now());
+        f.h.jdbc.update("UPDATE wa.message_outbox SET state='SUBMITTED' WHERE id=?", box);
+        f.h.jdbc.update("""
+            INSERT INTO wa.message_attempt(id,outbox_id,attempt_number,lease_generation,submit_token_hash,state,instance_id,
+              external_message_id,started_at,completed_at,credential_id,submit_before)
+            VALUES (?,?,1,1,?,'SUBMITTED',?,?,?,?,?,?)
+            """, UUID.randomUUID(), box, WaCrypto.digest(UUID.randomUUID().toString()), WaTransportTestSupport.INSTANCE,
+            external, now, now, f.s.delivery.credentialId(), Timestamp.from(f.h.clock.now().plusSeconds(10)));
+        return external;
     }
     @Test void returnIsIndependentAndNeverInvertedFromOutbound() {
         UUID actor = f.driver(); f.routine(actor); f.confirm(actor, f.review(actor, "VOLTA"));

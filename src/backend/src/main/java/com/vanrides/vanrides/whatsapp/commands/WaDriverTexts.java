@@ -12,7 +12,7 @@ import java.util.Map;
 /** Human-facing copy lives in outbox, never in context labels. */
 final class WaDriverTexts {
     private WaDriverTexts() { }
-    static final String MENU = "Envie CRIAR para montar uma rotina, CONVIDAR para incluir um passageiro ou RESUMO para conferir tudo. "
+    static final String MENU = "Envie CRIAR para montar uma rotina, CONVIDAR para receber um link para um passageiro ou RESUMO para conferir tudo. "
         + "Para gerenciar pela lista, envie EDITAR N, ORDEM N, PAUSAR N, RETOMAR N, CANCELAR N ou REVOGAR N. Troque N pelo número da opção. "
         + "VOLTAR retorna uma etapa. CORRIGIR recomeça. ABANDONAR descarta o rascunho.";
     static final String LIST_LIMIT = "A lista não foi exibida integralmente: excede 2000 caracteres/100 opções ou contém identificação sem formato suportado. "
@@ -24,21 +24,23 @@ final class WaDriverTexts {
     static String prompt(ObjectNode draft) {
         return switch (draft.path("stage").asText("MENU")) {
             case "NAME" -> "Como quer chamar este trajeto que se repete? Pode usar, por exemplo, Faculdade manhã. Em edição, responda MANTER para usar o nome atual.";
-            case "DIRECTION" -> "Qual é o sentido desta rotina? Responda IDA ou VOLTA. Cada sentido é configurado separadamente.";
+            case "DIRECTION" -> "Qual é o sentido desta rotina? Envie IDA ou VOLTA. Se já souber os dias e o horário, pode enviar tudo junto, por exemplo IDA, SEGUNDA A SEXTA, 07:30.";
             case "DAYS" -> "Em quais dias? Use 1=segunda até 7=domingo, como 1,2,3,4,5, ou SEGUNDA A SEXTA.";
             case "TIME" -> "Qual é o horário local? Responda HH:mm, por exemplo 07:30.";
             case "TIMEZONE" -> "Fuso atual: " + ZONES.getOrDefault(draft.path("timezone").asText(), "Brasília")
                 + ". Qual fuso usar? MANTER, BRASÍLIA, MANAUS, RIO BRANCO ou NORONHA. O resumo mostrará sua escolha.";
             case "DESTINATION" -> "Onde termina este trajeto? No celular, use o clipe ou o botão +, toque em Localização e envie o ponto fixo do destino.\n\n"
-                + WaConversationResponses.COMPUTER_POINT + "\n\nEm edição, envie MANTER para usar o destino atual.";
+                + WaConversationResponses.COMPUTER_POINT + "\n\nFuso: " + ZONES.getOrDefault(draft.path("timezone").asText(), "Brasília")
+                + ". Para mudar, envie FUSO seguido da opção: BRASÍLIA, MANAUS, RIO BRANCO ou NORONHA."
+                + (draft.path("creating").asBoolean() ? "" : " Envie MANTER para usar o destino atual.");
             case "ORDER" -> "Pontos de " + routine(draft.path("routineDisplay")) + ": " + stops(draft.path("stopChoices"), null)
                 + " Informe todos pelos números, na ordem desejada, sem repetir nem omitir. Exemplo: 2,1. Sem pontos, responda SEM PONTOS.";
             case "DATE" -> "Qual data cancelar? Use AAAA-MM-DD. Isso não inicia viagem nem altera presença.";
             case "USES" -> (draft.path("inviteContactUnavailable").asBoolean() ? shareInstead() + " " : "")
-                + "Envie LINK para receber um convite de 24 horas para encaminhar. Se o passageiro já escreveu ACEITO RECEBER CONVITES para mim, "
+                + "Se o passageiro já escreveu ACEITO RECEBER CONVITES para mim, "
                 + "você também pode enviar o WhatsApp dele com DDD e revisar o envio. Para personalizar o convite, informe quantos usos terá, de 1 a 10.";
             case "TTL" -> "Qual validade em minutos? De 5 a 1440. PADRÃO significa 24 horas (1440 minutos).";
-            case "REVIEW" -> "Há um resumo aguardando confirmação. Use CONFIRMAR e o marcador daquele resumo. CONTINUAR gera um novo resumo; SIM não confirma.";
+            case "REVIEW" -> "Há um resumo aguardando confirmação. Siga a instrução naquele resumo ou envie CONTINUAR para receber um novo.";
             default -> menu(draft);
         };
     }
@@ -122,10 +124,11 @@ final class WaDriverTexts {
     private static String bounded(String value) { if (value.length() > 2000) throw WaProblem.denied(); return value; }
     static String review(ObjectNode d, String marker) {
         String description = switch (d.path("action").asText()) {
-            case "CONFIGURE_ROUTINE" -> "Rotina: " + d.path("name").asText() + "; sentido "
-                + (d.path("direction").asText().equals("OUTBOUND") ? "IDA" : "VOLTA") + "; dias " + d.path("weekdays")
-                + "; horário " + d.path("time").asText() + "; fuso " + ZONES.getOrDefault(d.path("timezone").asText(), "selecionado")
-                + "; destino: pin estático recebido. Rotina sem passageiros é válida; ordem fica pendente até haver pontos aprovados.";
+            case "CONFIGURE_ROUTINE" -> "Confira a rotina " + d.path("name").asText() + " ("
+                + (d.path("direction").asText().equals("OUTBOUND") ? "ida" : "volta") + ").\n"
+                + WaPassengerAnswers.dayNames(d.path("weekdays")) + " às " + d.path("time").asText()
+                + " (fuso de " + ZONES.getOrDefault(d.path("timezone").asText(), "sua escolha") + ").\n"
+                + (d.hasNonNull("destinationEvent") ? "Destino: ponto recebido." : "Destino: ponto atual mantido.");
             case "CREATE_INVITE" -> d.hasNonNull("inviteRecipient")
                 ? "Vou enviar um convite individual ao WhatsApp com final " + d.path("inviteLastDigits").asText()
                     + ". O convite vale por 24 horas. Confira o final do número antes de confirmar."
@@ -137,6 +140,10 @@ final class WaDriverTexts {
             case "REVOKE_INVITE" -> "Revogar o convite " + invite(d.path("inviteDisplay")) + ". O código deixará de permitir novos pedidos; vínculos existentes serão preservados.";
             default -> throw new IllegalStateException("WA_DRIVER_ACTION_INVALID");
         };
+        if (d.path("action").asText().equals("CONFIGURE_ROUTINE")) {
+            return bounded(description + "\n\nUse Responder nesta mensagem e escreva SALVAR ROTINA. "
+                + "Se não conseguir citar, envie CONFIRMAR " + marker + ". Você tem 5 minutos ou pode enviar CONTINUAR para renovar o resumo.");
+        }
         return bounded(description + " Para aplicar, responda CONFIRMAR " + marker + ". Esse marcador vale por 5 minutos e somente para este resumo.");
     }
 }

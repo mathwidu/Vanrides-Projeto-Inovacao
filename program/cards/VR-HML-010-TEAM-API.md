@@ -138,6 +138,23 @@ destinatário confirmado e preserva os dois registros. Passaram 30 testes
 focados, incluindo a recusa sem verificação ou sem opt-in e a rechecagem
 do destinatário na entrega.
 
+### Cadastro com convite por link como padrão
+
+As issues #28 e #49 pedem uma conversa mais curta. A emissão do link de uso
+individual acontece na mensagem `CONVIDAR`. O motorista ainda escolhe se vai
+compartilhá-lo. Envio a um número continua dependendo da autorização do
+destinatário e da conferência do número. O passageiro inicia pelo link,
+recebe os dias sugeridos se houver uma única rotina e revisa o ponto uma vez
+antes de enviar o pedido. As escolhas de avisos são explícitas. A aprovação
+do motorista pode citar o resumo correto sem copiar o código.
+
+Impacto na API da homologação, conversa, simulador e guias. O worker mantém
+os mesmos comandos e o banco permanece na V41. O deploy automático atualiza
+a API pela main. Em caso de regressão, o retorno é para a imagem anterior
+da API, preservando os dados e as entregas já registradas. A prova inclui
+testes direcionados de idempotência, preferências, autorização, ponto e
+revisão, seguidos do teste real com os números do mantenedor.
+
 ## Dependências
 
 040 (autenticação) e 070 (contratos de conversa) concluídos. A homologação usa dados fictícios e tem aceite próprio. Os aceites de canal, percurso, iPhone, encerramento e piloto permanecem no plano do MVP.

@@ -100,7 +100,7 @@ class WaDriverFencingIntegrationTest {
         } finally { executor.shutdownNow(); assertTrue(executor.awaitTermination(10, TimeUnit.SECONDS)); }
     }
     @Test void concurrentConfirmationReplayCreatesOneInvitationAndOneDeliveryCipher() throws Exception {
-        UUID actor = f.driver(); f.send(actor, "CONVIDAR"); var review = f.send(actor, "PADRÃO");
+        UUID actor = f.driver(); f.send(actor, "CONVIDAR PERSONALIZADO"); var review = f.send(actor, "PADRÃO");
         var lease = f.s.text(actor, "CONFIRMAR " + f.marker(review)); var body = f.s.body(lease, "CREATE_INVITE", f.payload(f.context(lease), "CREATE_INVITE"));
         var executor = Executors.newFixedThreadPool(2); CountDownLatch start = new CountDownLatch(1);
         try {

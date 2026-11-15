@@ -87,7 +87,7 @@ class WaPassengerHelpTest {
 
     private static void assertInvitationHelp(String text) {
         assertThat(text).contains("Peça ao seu motorista um convite de passageiro do VanRides",
-                "envie esse convite aqui", "o vínculo depende da aprovação do motorista", "FALAR COM SUPORTE")
+                "Abra o link", "envie a mensagem que aparecer", "antes de aprovar o pedido", "FALAR COM SUPORTE")
                 .doesNotContain("próximas etapas", "aplicativo", "PASSAGEIROS", "CORRIGIR PONTO");
     }
 

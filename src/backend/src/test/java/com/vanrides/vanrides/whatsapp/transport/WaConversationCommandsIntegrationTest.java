@@ -195,7 +195,7 @@ class WaConversationCommandsIntegrationTest {
         c.finish(claimed);
         Lease accepted = c.text(actor, "ACEITO");
         c.execute(accepted, "ACCEPT_NOTICE", json().put("noticeVersion", "wa-mvp-v1")).requireSuccess();
-        assertThat(response(accepted)).contains("ROTINAS e depois CRIAR", "CONVIDAR", "código de pareamento", "FALAR COM SUPORTE");
+        assertThat(response(accepted)).contains("cadastro de motorista está pronto", "CRIAR ROTINA", "CONVIDAR", "FALAR COM SUPORTE");
     }
 
     private String response(Lease event) {

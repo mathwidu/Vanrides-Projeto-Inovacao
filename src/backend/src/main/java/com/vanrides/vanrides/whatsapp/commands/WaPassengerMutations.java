@@ -76,7 +76,7 @@ final class WaPassengerMutations {
                             + ".\n\n"
                             + data.selectionSummary(link)
                             + reference(draft)
-                            + "\n\nEnvie PASSAGEIROS para revisar.");
+                            + "\n\nEnvie REVISAR PEDIDO para conferir o ponto.");
         }
         UUID pickup =
                 prepared.point() == null
@@ -245,7 +245,7 @@ final class WaPassengerMutations {
                         + ".\n\n"
                         + data.selectionSummary(link)
                         + reference(draft)
-                        + "\n\nEnvie PASSAGEIROS para revisar vínculo e ponto.");
+                        + "\n\nEnvie REVISAR PEDIDO para conferir vínculo e ponto.");
     }
 
     private UUID insertPoint(

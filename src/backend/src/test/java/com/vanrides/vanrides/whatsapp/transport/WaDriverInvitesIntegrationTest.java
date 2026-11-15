@@ -48,8 +48,8 @@ class WaDriverInvitesIntegrationTest {
                 AND NOT allow_first_contact AND onboarding_identity_id IS NULL
             """, Long.class, invite));
     }
-    @Test void invitationExistsOnlyAfterExplicitConfirmationWithShownDefaults() {
-        UUID actor = f.driver(); f.send(actor, "CONVIDAR"); var review = f.send(actor, "PADRÃO");
+    @Test void customizedInvitationStillUsesExplicitConfirmation() {
+        UUID actor = f.driver(); f.send(actor, "CONVIDAR PERSONALIZADO"); var review = f.send(actor, "PADRÃO");
         assertTrue(review.text().contains("1 uso(s); validade 1440 minutos")); assertEquals(0, f.count("driver_invite", actor));
         f.confirm(actor, review);
         assertEquals(1, f.s.number("SELECT count(*) FROM wa.driver_invite WHERE driver_id=? AND max_uses=1 AND use_count=0 AND expires_at=created_at+interval '24 hours'", actor));
@@ -58,14 +58,21 @@ class WaDriverInvitesIntegrationTest {
     @Test void shareableLinkContainsPrefilledCommandAndPastingTheLinkDoesNotExposeTheCode() {
         f = new WaDriverTestSupport(f.h, "12025550109");
         UUID driver = f.driver();
-        var review = f.send(driver, "CONVIDAR LINK");
-        assertTrue(review.text().contains("mensagem para encaminhar"));
-        f.confirm(driver, review);
+        var step = f.execute(f.s.text(driver, "CONVIDAR LINK"), false);
+        var replay = f.s.execute(step.lease(), step.body(), "synthetic-080-" + step.lease().id()).requireSuccess();
+        assertEquals(step.response(), replay);
+        f.s.finish(step.lease());
         String text = f.s.authorize(f.privateItem(driver)).path("content").path("text").asText();
         String secret = code(text);
         String link = "https://wa.me/12025550109?text=PASSAGEIRO%20" + secret;
         assertTrue(text.contains(link));
-        assertEquals(1, f.s.number("SELECT count(*) FROM wa.driver_invite WHERE driver_id=? AND allow_first_contact", driver));
+        assertFalse(text.contains("CONFIRMAR"));
+        assertEquals(1, f.s.number("""
+            SELECT count(*) FROM wa.driver_invite WHERE driver_id=? AND allow_first_contact AND max_uses=1
+            AND use_count=0 AND expires_at=created_at+interval '24 hours'
+            """, driver));
+        assertEquals("ADVANCE_DRIVER_SETUP", step.body().path("commandType").asText());
+        assertEquals(1, step.response().path("responseIds").size());
         var pasted = f.s.text(driver, link);
         assertEquals("UNSUPPORTED", pasted.message().path("type").asText());
         assertFalse(f.s.stored(pasted.id()).toString().contains(secret));
@@ -89,6 +96,18 @@ class WaDriverInvitesIntegrationTest {
         assertTrue(text.contains("Seu motorista convidou você"));
         assertFalse(driverResult.text().contains(code(text)));
         assertEquals(1, f.s.number("SELECT count(*) FROM wa.driver_invite WHERE driver_id=? AND onboarding_identity_id=?", driver, passenger));
+    }
+    @Test void switchingToALinkDiscardsAnUnconfirmedDirectDelivery() {
+        UUID driver = f.driver();
+        UUID passenger = admittedPassenger(driver);
+        f.s.finish(f.s.text(passenger, "ACEITO RECEBER CONVITES"));
+        var direct = f.send(driver, "CONVIDAR +12025550103");
+        assertTrue(direct.text().contains("final 0103"));
+        assertEquals(1, f.send(driver, "CONVIDAR LINK").response().path("responseIds").size());
+        var oldConfirmation = f.s.text(driver, "CONFIRMAR " + f.marker(direct));
+        assertFalse(f.context(oldConfirmation).path("allowedCommands").toString().contains("CREATE_INVITE"));
+        assertEquals(1, f.s.number("SELECT count(*) FROM wa.driver_invite WHERE driver_id=? AND onboarding_identity_id IS NULL", driver));
+        assertEquals(0, f.count("message_outbox", passenger));
     }
     @Test void optOutAfterQueueingCancelsDeliveryAndOfferFallsBackToShareableLink() {
         UUID driver = f.driver();
@@ -200,7 +219,7 @@ class WaDriverInvitesIntegrationTest {
         assertEquals(1, f.count("driver_invite", actor)); assertEquals(1, f.s.number("SELECT count(*) FROM wa.message_attempt WHERE outbox_id=?", box));
     }
     @Test void expiryBeforeAuthorizationDoesNotDiscloseCodeAndPurgesCipher() {
-        UUID actor = f.driver(); f.send(actor, "CONVIDAR"); f.send(actor, "1"); f.confirm(actor, f.send(actor, "5"));
+        UUID actor = f.driver(); f.send(actor, "CONVIDAR PERSONALIZADO"); f.send(actor, "1"); f.confirm(actor, f.send(actor, "5"));
         var item = f.privateItem(actor); UUID box = UUID.fromString(item.path("outboxId").asText()); f.h.time.advance(301);
         assertThrows(WaProblem.class, () -> f.s.authorize(item));
         f.s.outboxClaim();
@@ -232,7 +251,7 @@ class WaDriverInvitesIntegrationTest {
         assertEquals("UNSUPPORTED", lease.message().path("type").asText()); assertFalse(f.s.stored(lease.id()).toString().contains(secret));
     }
     @Test void invalidLimitsNeverReachReviewAndCallerSuppliedLimitsAreRejected() {
-        UUID actor = f.driver(); f.send(actor, "CONVIDAR"); f.send(actor, "11"); assertEquals("USES", f.draft(actor).path("stage").asText());
+        UUID actor = f.driver(); f.send(actor, "CONVIDAR PERSONALIZADO"); f.send(actor, "11"); assertEquals("USES", f.draft(actor).path("stage").asText());
         f.send(actor, "10"); f.send(actor, "4"); assertEquals("TTL", f.draft(actor).path("stage").asText());
         var review = f.send(actor, "1440"); var lease = f.s.text(actor, "CONFIRMAR " + f.marker(review));
         var payload = f.payload(f.context(lease), "CREATE_INVITE").put("maxUses", 10);

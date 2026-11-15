@@ -1,5 +1,6 @@
 package com.vanrides.vanrides.whatsapp.commands;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.vanrides.vanrides.whatsapp.api.WaJson;
 import com.vanrides.vanrides.whatsapp.auth.WaCrypto;
@@ -104,9 +105,12 @@ final class WaPassengerDraftStore {
         var confirmation = draft.path("confirmation");
         boolean coded = needsCode(actor) || confirmation.has("markerHash");
         String text = WaDriverWizard.text(event);
-        if (coded
+        String approval = WaPassengerTexts.approvalReply(draft.path("action").asText());
+        boolean quotedApproval = coded && !approval.isEmpty() && approval.equals(text)
+                && event.normalizedPayload().hasNonNull("replyTo");
+        if (!quotedApproval && (coded
                 ? !text.matches("confirmar [bcdfghjkmnpqrstvwxyz]{8}")
-                : !WaPassengerAnswers.loose(text).equals("confirmar")) {
+                : !WaPassengerAnswers.loose(text).equals("confirmar"))) {
             return false;
         }
         try {
@@ -117,7 +121,7 @@ final class WaPassengerDraftStore {
                     && !received.isBefore(issued.truncatedTo(ChronoUnit.SECONDS))
                     && !event.eventId().toString().equals(confirmation.path("sourceInbox").asText())
                     && digest(draft).equals(confirmation.path("draftDigest").asText())
-                    && (!coded
+                    && (!coded || quotedApproval
                             || WaCrypto.same(
                                     confirmation.path("markerHash").asText(),
                                     crypto.secretHash(
@@ -139,10 +143,21 @@ final class WaPassengerDraftStore {
                                     Boolean.class,
                                     UUID.fromString(confirmation.path("outboxId").asText()),
                                     actor.identityId(),
-                                    UUID.fromString(confirmation.path("sourceInbox").asText())));
+                                    UUID.fromString(confirmation.path("sourceInbox").asText())))
+                    && (!quotedApproval || isReviewReply(event, confirmation));
         } catch (IllegalArgumentException | java.time.DateTimeException invalid) {
             return false;
         }
+    }
+
+    private boolean isReviewReply(WaInboxAccess.Context event, JsonNode confirmation) {
+        return Boolean.TRUE.equals(jdbc.queryForObject("""
+                SELECT EXISTS(SELECT 1 FROM wa.message_attempt attempt
+                    JOIN wa.integration_inbox inbox ON inbox.instance_id=attempt.instance_id
+                    WHERE attempt.outbox_id=? AND inbox.id=? AND attempt.external_message_id=?
+                      AND attempt.state IN ('SUBMITTED','DELIVERED','READ'))
+                """, Boolean.class, UUID.fromString(confirmation.path("outboxId").asText()),
+                event.eventId(), event.normalizedPayload().path("replyTo").asText()));
     }
 
     static ObjectNode json() {
