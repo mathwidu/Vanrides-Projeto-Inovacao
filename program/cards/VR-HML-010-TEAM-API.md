@@ -82,6 +82,29 @@ migração ou alteração da VPS. Não remover validações para obter aprovaç�
 
 A base local f85ec3e contém o mesmo runtime de dd12cf0, aprovado nas seis jornadas. A primeira fatia muda o perfil público do backend, o comando de teste para o colega e a receita de implantação. O domínio vanrides-inovacao-api.matheusduarte.dev.br resolve para a VPS. O serviço publicado ainda precisa de configuração, certificado válido e teste funcional. PostgreSQL e credenciais serão específicos da nova stack.
 
+### Cadastro guiado e convite pelo bot
+
+Nesta evolução o bot explica o produto, indica a etapa atual e responde dúvidas
+frequentes sem alterar o rascunho. Motoristas ativos geram um link de uso
+individual ou pedem envio a um passageiro identificado e autorizado no próprio
+WhatsApp. Quem inicia pelo link pode participar da homologação após prova do
+convite e do remetente; perfil e aceite continuam com a própria pessoa.
+
+O efeito fica no backend e no classificador de mensagens. Nenhum novo modelo ou
+serviço pago. A migração acrescenta campos com valores padrão compatíveis com
+convites antigos. Os testes verificam reserva individual, destinatário de envio,
+recusa de mensagens sem convite e continuidade do cadastro. Para retorno local,
+restaurar a versão anterior da API em banco descartável. Publicação com dados
+existentes exige ensaio do retorno e migração antes de preparar a homologação.
+
+Validação local de 15/11/2026. O JAR foi empacotado após 104 testes Java sem
+falhas nem pulos. O PostgreSQL 16 descartável exercitou a migração V40 → V41
+com convite anterior, a reserva para primeiro contato, a recusa do código em
+outro número e a revalidação do opt-in na entrega. O gate offline passou com
+714 testes Node e 303 Python. O ensaio local usou armazenamento temporário
+em RAM para o PostgreSQL. A VPS e o canal real ainda aguardam a publicação
+coordenada da API e do agente para o primeiro aceite.
+
 ## Dependências
 
 040 (autenticação) e 070 (contratos de conversa) concluídos. A homologação usa dados fictícios e tem aceite próprio. Os aceites de canal, percurso, iPhone, encerramento e piloto permanecem no plano do MVP.

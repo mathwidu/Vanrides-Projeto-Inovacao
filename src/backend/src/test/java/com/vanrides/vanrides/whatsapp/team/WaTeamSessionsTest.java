@@ -43,6 +43,7 @@ class WaTeamSessionsTest {
     void botContactRequiresALiveTeamSessionBeforeConsultingEvolution() {
         var remote = mock(WaTeamRemote.class);
         var settings = mock(WaTeamSettings.class);
+        when(settings.enabled()).thenReturn(true);
         when(settings.instance()).thenReturn("synthetic-hml");
         when(settings.evolutionOrigin()).thenReturn(URI.create("https://evolution.example.invalid"));
         when(settings.evolutionKey()).thenReturn("synthetic-key");

@@ -23,6 +23,8 @@ public final class WaEvolutionNormalizer {
     }
     private static final Set<String> STATUSES = Set.of("SERVER_ACK", "DELIVERY_ACK", "READ", "PLAYED", "ERROR");
     private static final Set<String> CONNECTIONS = Set.of("open", "connecting", "close", "refused");
+    private static final java.util.regex.Pattern PASSENGER_LINK = java.util.regex.Pattern.compile(
+        "(?iu)wa\\.me/[0-9]+\\?text=PASSAGEIRO(?:%20|\\+)[A-Za-z0-9_-]{43}");
     private final WaCrypto crypto;
 
     public WaEvolutionNormalizer(WaCrypto crypto) { this.crypto = crypto; }
@@ -85,6 +87,11 @@ public final class WaEvolutionNormalizer {
         if (!validText(text)) return unsupported(id, aliases, "UNSUPPORTED_CONTENT");
         ObjectNode payload = object();
         String code = text.strip();
+        if (PASSENGER_LINK.matcher(code).find()) {
+            payload.put("reason", "PASSENGER_INVITE_CONTENT");
+            messageMetadata(envelope, data, message, payload);
+            return new Event("MESSAGE", id, null, "UNSUPPORTED", payload, "PENDING", aliases);
+        }
         var passenger = java.util.regex.Pattern.compile("(?iu)PASSAGEIRO[\\s\\p{Z}]+([A-Za-z0-9_-]{43})(?![A-Za-z0-9_-])").matcher(code);
         if (passenger.find()) {
             String secret = passenger.group(1);
@@ -97,7 +104,7 @@ public final class WaEvolutionNormalizer {
         } else if (code.matches("[BCDFGHJKMNPQRSTVWXYZ]{8}"))
             payload.put("pairingCodeHash", crypto.secretHash("pairing-code", code));
         else if (canonicalToken(code)) payload.put("driverInviteCodeHash", crypto.secretHash("driver-bootstrap", code));
-        else payload.put("text", text);
+        else if (!WaInviteMessage.normalize(payload, text, crypto)) payload.put("text", text);
         messageMetadata(envelope, data, message, payload);
         return new Event("MESSAGE", id, null, "TEXT", payload, "PENDING", aliases);
     }

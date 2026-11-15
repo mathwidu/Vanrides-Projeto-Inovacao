@@ -90,11 +90,13 @@ final class WaPassengerData {
                         SELECT to_jsonb(i)||jsonb_build_object('driverName',p.display_name) FROM wa.driver_invite i
                         JOIN wa.profile p ON p.identity_id=i.driver_id WHERE i.code_hash=? AND i.revoked_at IS NULL AND i.expires_at>?
                         AND i.use_count<i.max_uses AND p.role='DRIVER' AND p.status='ACTIVE' AND p.driver_enabled
+                        AND (i.onboarding_identity_id=? OR (NOT i.allow_first_contact AND i.onboarding_identity_id IS NULL))
                         """
                                 + (lock ? " FOR UPDATE OF i" : ""),
                         (rs, i) -> WaJson.object(rs.getString(1)),
                         hash,
-                        Timestamp.from(clock.now()));
+                        Timestamp.from(clock.now()),
+                        actor);
         if (rows.size() != 1) {
             throw new WaProblem(WaProblem.Code.INTENT_EXPIRED);
         }

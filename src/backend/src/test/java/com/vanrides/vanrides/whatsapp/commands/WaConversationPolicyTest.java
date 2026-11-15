@@ -30,6 +30,16 @@ class WaConversationPolicyTest {
         for (String text : List.of("ajuda", "não quero falar com suporte", "falar com suporte amanhã", "quero atendimento", "falarcomsuporte"))
             assertThat(policy.explicitSupport(event(text))).isFalse();
     }
+    @Test void questionsAreBoundToTheAuthenticatedTextAndCannotRenewThePrompt() {
+        var question = event("  PRECISO baixar o aplicativo?  ");
+        var actor = WaProfileState.absent(question.identityId());
+        assertThat(policy.question(question)).isEqualTo(WaConversationResponses.Question.APP);
+        assertThat(policy.replyAllowed("FAQ", actor, question)).isTrue();
+        assertThat(policy.replyAllowed("CONTINUE", actor, question)).isFalse();
+        assertThat(policy.replyAllowed("FAQ", actor, event("Não preciso baixar o aplicativo"))).isFalse();
+        question.normalizedPayload().put("occurredAt", NOW.minusSeconds(301).toString());
+        assertThat(policy.replyAllowed("FAQ", actor, question)).isFalse();
+    }
     @Test void normalizationRemovesOnlyOneFinalPunctuationAndDoesNotEraseNegation() {
         assertThat(WaConversationPolicy.normalize(" áceÍto! ")).isEqualTo("aceito");
         assertThat(WaConversationPolicy.normalize("ACEITO!!")).isEqualTo("aceito!");

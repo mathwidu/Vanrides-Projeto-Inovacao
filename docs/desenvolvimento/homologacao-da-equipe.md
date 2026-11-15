@@ -109,6 +109,9 @@ Esta sequência descreve a implementação a validar no ambiente compartilhado; 
 
 O pin deve ser enviado pela função de **localização estática do WhatsApp**; texto com coordenadas ou link de mapa não substitui esse formato.
 
+Para a versão em preparação, o [roteiro do cadastro guiado](cadastro-guiado-whatsapp.md)
+mostra os convites por link e por telefone. Confira a versão antes de usar esse roteiro no ambiente compartilhado.
+
 Os testes físicos do aplicativo iPhone continuam pausados. Usar o WhatsApp pessoal de um iPhone como passageiro é independente dessa pausa. Não há distribuição iOS pronta para o grupo pelo link do APK.
 
 ## Registrar um teste ou investigar uma falha

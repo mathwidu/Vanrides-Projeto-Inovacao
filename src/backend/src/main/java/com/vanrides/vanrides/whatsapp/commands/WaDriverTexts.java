@@ -12,8 +12,9 @@ import java.util.Map;
 /** Human-facing copy lives in outbox, never in context labels. */
 final class WaDriverTexts {
     private WaDriverTexts() { }
-    static final String MENU = "Rotinas: CRIAR; EDITAR N; ORDEM N; PAUSAR N; RETOMAR N; CANCELAR N; CONVIDAR; REVOGAR N; RESUMO. "
-        + "N é o número da lista. VOLTAR retorna uma etapa; CORRIGIR reinicia a coleta; ABANDONAR descarta o rascunho.";
+    static final String MENU = "Envie CRIAR para montar uma rotina, CONVIDAR para incluir um passageiro ou RESUMO para conferir tudo. "
+        + "Para gerenciar pela lista, envie EDITAR N, ORDEM N, PAUSAR N, RETOMAR N, CANCELAR N ou REVOGAR N. Troque N pelo número da opção. "
+        + "VOLTAR retorna uma etapa. CORRIGIR recomeça. ABANDONAR descarta o rascunho.";
     static final String LIST_LIMIT = "A lista não foi exibida integralmente: excede 2000 caracteres/100 opções ou contém identificação sem formato suportado. "
         + "Nenhuma opção numerada está disponível. Para atendimento, envie FALAR COM SUPORTE.";
     static final String ORDER_LIMIT = "Não foi possível exibir todos os pontos e sua nova ordem dentro do limite da mensagem. "
@@ -22,21 +23,27 @@ final class WaDriverTexts {
         "America/Rio_Branco", "Rio Branco", "America/Noronha", "Noronha");
     static String prompt(ObjectNode draft) {
         return switch (draft.path("stage").asText("MENU")) {
-            case "NAME" -> "Qual é o nome da rotina? Até 80 caracteres. Em edição, MANTER conserva o valor atual.";
+            case "NAME" -> "Como quer chamar este trajeto que se repete? Pode usar, por exemplo, Faculdade manhã. Em edição, responda MANTER para usar o nome atual.";
             case "DIRECTION" -> "Qual é o sentido desta rotina? Responda IDA ou VOLTA. Cada sentido é configurado separadamente.";
             case "DAYS" -> "Em quais dias? Use 1=segunda até 7=domingo, como 1,2,3,4,5, ou SEGUNDA A SEXTA.";
             case "TIME" -> "Qual é o horário local? Responda HH:mm, por exemplo 07:30.";
             case "TIMEZONE" -> "Fuso atual: " + ZONES.getOrDefault(draft.path("timezone").asText(), "Brasília")
                 + ". Qual fuso usar? MANTER, BRASÍLIA, MANAUS, RIO BRANCO ou NORONHA. O resumo mostrará sua escolha.";
-            case "DESTINATION" -> "Envie agora o pin estático do destino desta rotina. Não usamos localização ao vivo nem coordenadas de texto. Em edição, MANTER conserva o destino atual.";
+            case "DESTINATION" -> "Onde termina este trajeto? No WhatsApp, use o clipe ou o botão +, toque em Localização e escolha o ponto no mapa. "
+                + "Envie o ponto fixo do destino. Em edição, responda MANTER para usar o destino atual.";
             case "ORDER" -> "Pontos de " + routine(draft.path("routineDisplay")) + ": " + stops(draft.path("stopChoices"), null)
                 + " Informe todos pelos números, na ordem desejada, sem repetir nem omitir. Exemplo: 2,1. Sem pontos, responda SEM PONTOS.";
             case "DATE" -> "Qual data cancelar? Use AAAA-MM-DD. Isso não inicia viagem nem altera presença.";
-            case "USES" -> "Quantos usos terá o convite? De 1 a 10. PADRÃO escolhe 1 uso com validade de 24 horas.";
+            case "USES" -> (draft.path("inviteContactUnavailable").asBoolean() ? shareInstead() + " " : "")
+                + "Envie LINK para receber um convite de 24 horas para encaminhar. Se o passageiro já escreveu ACEITO RECEBER CONVITES para mim, "
+                + "você também pode enviar o WhatsApp dele com DDD e revisar o envio. Para personalizar o convite, informe quantos usos terá, de 1 a 10.";
             case "TTL" -> "Qual validade em minutos? De 5 a 1440. PADRÃO significa 24 horas (1440 minutos).";
             case "REVIEW" -> "Há um resumo aguardando confirmação. Use CONFIRMAR e o marcador daquele resumo. CONTINUAR gera um novo resumo; SIM não confirma.";
             default -> menu(draft);
         };
+    }
+    static String shareInstead() {
+        return "O envio direto está indisponível para esse contato. Envie LINK para compartilhar o convite você mesmo.";
     }
     private static String menu(ObjectNode draft) {
         if (draft.path("catalogBlocked").asBoolean() || !menuFits(draft)) return LIST_LIMIT;
@@ -119,8 +126,11 @@ final class WaDriverTexts {
                 + (d.path("direction").asText().equals("OUTBOUND") ? "IDA" : "VOLTA") + "; dias " + d.path("weekdays")
                 + "; horário " + d.path("time").asText() + "; fuso " + ZONES.getOrDefault(d.path("timezone").asText(), "selecionado")
                 + "; destino: pin estático recebido. Rotina sem passageiros é válida; ordem fica pendente até haver pontos aprovados.";
-            case "CREATE_INVITE" -> "Convite para passageiro: " + d.path("maxUses").asInt() + " uso(s); validade "
-                + d.path("ttlMinutes").asInt() + " minutos. Você receberá o texto para compartilhar; não enviaremos a contatos.";
+            case "CREATE_INVITE" -> d.hasNonNull("inviteRecipient")
+                ? "Vou enviar um convite individual ao WhatsApp com final " + d.path("inviteLastDigits").asText()
+                    + ". O convite vale por 24 horas. Confira o final do número antes de confirmar."
+                : "Convite para passageiro: " + d.path("maxUses").asInt() + " uso(s); validade "
+                    + d.path("ttlMinutes").asInt() + " minutos. Você receberá a mensagem para encaminhar pelo WhatsApp.";
             case "SET_STOP_ORDER" -> "Nova ordem de " + routine(d.path("routineDisplay")) + ": " + stops(d.path("stopChoices"), d.path("orderNumbers"));
             case "SET_ROUTINE_STATE" -> "A rotina " + routine(d.path("routineDisplay")) + " ficará " + (d.path("routineState").asText().equals("PAUSED") ? "PAUSADA" : "ATIVA") + ". Viagens existentes serão preservadas.";
             case "CANCEL_OCCURRENCE" -> "Cancelar somente " + routine(d.path("routineDisplay")) + " na data " + d.path("date").asText() + ". Nenhuma presença ou viagem será criada.";

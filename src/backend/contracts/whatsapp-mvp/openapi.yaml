@@ -5442,14 +5442,15 @@
               "FEATURE_PENDING",
               "STALE_MESSAGE",
               "CONTINUE",
-              "DRIVER_INVITE_REQUIRED"
+              "DRIVER_INVITE_REQUIRED",
+              "FAQ"
             ]
           }
         },
         "required": [
           "responseCode"
         ],
-        "description": "Catálogo fixo da API, revalidado contra o estado e a mensagem autenticada. Sem texto livre, endereço, ator ou URL."
+        "description": "Catálogo fixo da API, revalidado contra o estado e a mensagem autenticada. FAQ responde a uma pergunta reconhecida sem avançar o cadastro. Sem texto livre, endereço, ator ou URL."
       },
       "RespondToMessageCommand": {
         "type": "object",

@@ -8,7 +8,7 @@ import java.util.Map;
 import org.springframework.stereotype.Component;
 
 @Component
-final class WaTeamEvolution {
+public final class WaTeamEvolution {
     private static final String PN_SUFFIX = "@s.whatsapp.net";
     private final WaTeamSettings settings;
     private final WaTeamRemote remote;
@@ -25,7 +25,8 @@ final class WaTeamEvolution {
         this.remote = remote;
     }
 
-    String botPhone() {
+    public String botPhone() {
+        if (!settings.enabled()) return null;
         String instance = settings.instance();
         try {
             var reply = remote.exchange(settings.evolutionOrigin().resolve("/instance/fetchInstances?instanceName=" + instance),

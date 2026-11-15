@@ -6,22 +6,26 @@ import com.vanrides.vanrides.whatsapp.auth.WaCrypto;
 import com.vanrides.vanrides.whatsapp.config.WaClock;
 import com.vanrides.vanrides.whatsapp.transport.WaPrivateInviteDelivery;
 import java.sql.Timestamp;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.UUID;
+import java.util.function.Function;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 /** Final effects only, after the confirmation and captured aggregate snapshot were revalidated. */
 final class WaDriverMutations {
-    record Result(String text, UUID invite, String privateText, java.time.Instant expires) { }
+    record Result(String text, UUID invite, String privateText, Instant expires, UUID recipient) { }
     private final JdbcTemplate jdbc;
     private final WaClock clock;
     private final WaCrypto crypto;
     private final WaDriverTargets targets;
-    WaDriverMutations(JdbcTemplate jdbc, WaClock clock, WaCrypto crypto, WaDriverTargets targets) {
+    private final Function<String, String> botPhone;
+    WaDriverMutations(JdbcTemplate jdbc, WaClock clock, WaCrypto crypto, WaDriverTargets targets, Function<String, String> botPhone) {
         this.jdbc = jdbc; this.clock = clock; this.crypto = crypto; this.targets = targets;
+        this.botPhone = botPhone;
     }
-    Result apply(UUID actor, ObjectNode d) {
+    Result apply(UUID actor, ObjectNode d, String instance) {
         switch (d.path("action").asText()) {
             case "CONFIGURE_ROUTINE" -> configure(actor, d);
             case "SET_STOP_ORDER" -> {
@@ -39,28 +43,52 @@ final class WaDriverMutations {
                     Timestamp.from(clock.now()), UUID.fromString(d.path("inviteId").asText()), actor);
                 new WaPrivateInviteDelivery(jdbc, clock, crypto).cancelInvalid(actor);
             }
-            case "CREATE_INVITE" -> {
-                UUID id = UUID.randomUUID(); String secret = WaCrypto.randomToken();
-                var expires = clock.now().plusSeconds(d.path("ttlMinutes").asLong() * 60);
-                jdbc.update("INSERT INTO wa.driver_invite(id,driver_id,code_hash,expires_at,max_uses,created_at) VALUES (?,?,?,?,?,?)",
-                    id, actor, crypto.secretHash("passenger-invite", secret), Timestamp.from(expires), d.path("maxUses").asInt(), Timestamp.from(clock.now()));
-                String until = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy 'às' HH:mm", java.util.Locale.forLanguageTag("pt-BR"))
-                    .withZone(ZoneId.of("America/Sao_Paulo")).format(expires);
-                String text = "Convite VanRides: PASSAGEIRO " + secret + ". Válido até " + until + " (horário de Brasília)"
-                    + "; máximo " + d.path("maxUses").asInt() + " uso(s). Não enviamos este convite a nenhum contato.";
-                return new Result("Convite confirmado. O código será entregue somente nesta resposta privada.", id, text, expires);
-            }
+            case "CREATE_INVITE" -> { return createInvite(actor, d, instance); }
             default -> throw WaProblem.invalid();
         }
         String text = switch (d.path("action").asText()) {
-            case "CONFIGURE_ROUTINE" -> "Rotina salva.";
+            case "CONFIGURE_ROUTINE" -> "Rotina salva. Envie CONVIDAR para adicionar um passageiro ou RESUMO para ver suas rotinas.";
             case "SET_STOP_ORDER" -> "Ordem dos pontos atualizada.";
             case "SET_ROUTINE_STATE" -> d.path("routineState").asText().equals("PAUSED") ? "Rotina pausada." : "Rotina retomada.";
             case "CANCEL_OCCURRENCE" -> "Ocorrência da data selecionada cancelada.";
             case "REVOKE_INVITE" -> "Convite revogado.";
             default -> throw WaProblem.invalid();
         };
-        return new Result(text, null, null, null);
+        return new Result(text, null, null, null, null);
+    }
+    private Result createInvite(UUID actor, ObjectNode draft, String instance) {
+        UUID id = UUID.randomUUID();
+        UUID recipient = draft.hasNonNull("inviteRecipient") ? UUID.fromString(draft.path("inviteRecipient").asText()) : null;
+        String secret = WaCrypto.randomToken();
+        String phone = botPhone.apply(instance);
+        String link = phone != null && phone.matches("[1-9][0-9]{7,14}")
+            ? "https://wa.me/" + phone + "?text=PASSAGEIRO%20" + secret : null;
+        Instant now = clock.now();
+        Instant expires = now.plusSeconds(draft.path("ttlMinutes").asLong() * 60);
+        int uses = draft.path("maxUses").asInt();
+        jdbc.update("""
+            INSERT INTO wa.driver_invite(id,driver_id,code_hash,expires_at,max_uses,created_at,onboarding_identity_id,allow_first_contact)
+            VALUES (?,?,?,?,?,?,?,?)
+            """, id, actor, crypto.secretHash("passenger-invite", secret), Timestamp.from(expires), uses, Timestamp.from(now),
+            recipient, recipient == null && uses == 1 && link != null);
+        String until = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy 'às' HH:mm", java.util.Locale.forLanguageTag("pt-BR"))
+            .withZone(ZoneId.of("America/Sao_Paulo")).format(expires);
+        String instructions = "Envie no WhatsApp do VanRides esta mensagem:\nPASSAGEIRO " + secret
+            + "\nVálido até " + until + " (horário de Brasília).";
+        String text = link == null ? instructions : "Abra este link e envie a mensagem que aparece no chat:\n" + link
+            + "\nSe precisar, use o código abaixo. " + instructions;
+        if (recipient != null) {
+            return new Result("Convite colocado na fila para o WhatsApp com final " + draft.path("inviteLastDigits").asText()
+                + ". O passageiro entra pelo bot. Depois do cadastro e da indicação do ponto de embarque, revise o pedido aqui.",
+                id, "Olá! Seu motorista convidou você para organizar seus embarques com o VanRides. " + text
+                    + "\nEu vou explicar o cadastro e como indicar o ponto de embarque.", expires, recipient);
+        }
+        String access = link == null
+            ? "\nEnquanto o link estiver indisponível, a equipe precisa liberar o contato para usar o código."
+            : uses == 1 ? "" : "\nEste convite é para contatos já liberados pela equipe.";
+        return new Result("Convite confirmado. O código será entregue somente nesta resposta privada.", id,
+            "Encaminhe a mensagem abaixo a quem vai embarcar. " + text + "\nO convite permite " + uses + " uso(s)." + access,
+            expires, null);
     }
     private void configure(UUID actor, ObjectNode d) {
         UUID id = UUID.fromString(d.path("routineId").asText());

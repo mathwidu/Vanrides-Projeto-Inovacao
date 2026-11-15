@@ -37,6 +37,8 @@ class WaConversationCommandsIntegrationTest {
         assertThat(c.number("SELECT count(*) FROM wa.command_receipt")).isEqualTo(1);
         assertThat(c.number("SELECT count(*) FROM wa.message_outbox WHERE policy_version='conversation-v1' AND response_part='conversation'")).isEqualTo(1);
         assertThat(c.number("SELECT count(*) FROM wa.support_case")).isZero();
+        assertThat(response(event)).contains("transporte de van pelo WhatsApp", "Passageiro: abra o link enviado pelo seu motorista",
+            "Motorista: envie aqui o convite de motorista", "FALAR COM SUPORTE");
     }
 
     @Test void unicodeWhitespaceSupportIsAdvertisedByRealContextAndCreatesItsCaseReplyAndPause() {
@@ -113,6 +115,39 @@ class WaConversationCommandsIntegrationTest {
         assertThat(c.number("SELECT count(*) FROM wa.profile WHERE status='ACTIVE'")).isZero();
     }
 
+    @Test void answeringAnAuthenticatedQuestionKeepsTheOriginalNoticeAndDoesNotAcceptIt() {
+        UUID actor = c.actor(); c.registeredName(actor);
+        String question = c.string("SELECT question_ref::text FROM wa.conversation_state WHERE identity_id=?", actor);
+        long version = c.number("SELECT version FROM wa.conversation_state WHERE identity_id=?", actor);
+        Lease event = c.text(actor, "  Preciso baixar o aplicativo?  ");
+        assertThat(c.commands.context(c.worker, event.id(), event.token()).path("allowedCommands").toString())
+            .isEqualTo("[\"RESPOND_TO_MESSAGE\"]");
+        assertThat(c.execute(event, "RESPOND_TO_MESSAGE", reply("FAQ")).requireSuccess().path("outcome").asText())
+            .isEqualTo("NO_CHANGE");
+        assertThat(response(event)).contains("Quem viaja de van usa só o WhatsApp", "AJUDA");
+        assertThat(c.string("SELECT question_ref::text FROM wa.conversation_state WHERE identity_id=?", actor)).isEqualTo(question);
+        assertThat(c.number("SELECT version FROM wa.conversation_state WHERE identity_id=?", actor)).isEqualTo(version);
+        assertThat(c.number("SELECT count(*) FROM wa.profile WHERE notice_accepted_at IS NOT NULL")).isZero();
+        c.finish(event);
+        Lease unrelated = c.text(actor, "Pode me chamar de Ana");
+        assertThat(c.execute(unrelated, "RESPOND_TO_MESSAGE", reply("FAQ")).error()).isEqualTo(WaProblem.Code.ACTION_NOT_ALLOWED);
+    }
+
+    @Test void exactInvitationPreferencesGetAcknowledgedWithoutCreatingAProfile() {
+        UUID actor = c.actor();
+        Lease allowed = c.text(actor, "Aceito receber convites");
+        assertThat(c.stored(allowed.id()).path("invitePermission").booleanValue()).isTrue();
+        c.execute(allowed, "RESPOND_TO_MESSAGE", reply("FAQ")).requireSuccess();
+        assertThat(response(allowed)).contains("24 horas", "PARAR CONVITES");
+        c.finish(allowed);
+        Lease stopped = c.text(actor, "PARAR CONVITES");
+        assertThat(c.stored(stopped.id()).path("invitePermission").isBoolean()).isTrue();
+        assertThat(c.stored(stopped.id()).path("invitePermission").booleanValue()).isFalse();
+        c.execute(stopped, "RESPOND_TO_MESSAGE", reply("FAQ")).requireSuccess();
+        assertThat(response(stopped)).contains("foi interrompido", "ACEITO RECEBER CONVITES");
+        assertThat(c.number("SELECT count(*) FROM wa.profile WHERE identity_id=?", actor)).isZero();
+    }
+
     @Test void consentOlderThanARenewedNoticeIsRejectedButSameSecondPrecisionRemainsUsable() {
         UUID actor = c.actor(); c.registeredName(actor); var old = c.h.clock.now();
         c.h.time.advance(10);
@@ -148,6 +183,26 @@ class WaConversationCommandsIntegrationTest {
         assertThat(c.string("SELECT role FROM wa.profile WHERE identity_id=?", owner)).isEqualTo("DRIVER");
         assertThat(c.number("SELECT count(*) FROM wa.profile WHERE identity_id=?", stranger)).isZero();
         assertThat(c.number("SELECT count(*) FROM wa.driver_bootstrap_invite WHERE consumed_at IS NOT NULL")).isEqualTo(1);
+        assertThat(response(own)).contains("Convite aceito", "organizar os embarques pelo WhatsApp", "Como você prefere ser chamado?");
+    }
+
+    @Test void aDriverWhoAlreadyHasANameGetsTheNoticeAndThenTheFirstRoutineInstructions() {
+        UUID actor = c.actor(); c.registeredName(actor);
+        Lease claimed = c.text(actor, c.invite(actor));
+        c.execute(claimed, "CLAIM_DRIVER_INVITE", json()).requireSuccess();
+        assertThat(response(claimed)).contains("Convite aceito", "envia sua localização", "ACEITO")
+            .doesNotContain("Como você prefere ser chamado?");
+        c.finish(claimed);
+        Lease accepted = c.text(actor, "ACEITO");
+        c.execute(accepted, "ACCEPT_NOTICE", json().put("noticeVersion", "wa-mvp-v1")).requireSuccess();
+        assertThat(response(accepted)).contains("ROTINAS e depois CRIAR", "CONVIDAR", "código de pareamento", "FALAR COM SUPORTE");
+    }
+
+    private String response(Lease event) {
+        return c.string("""
+            SELECT o.payload_json->>'text' FROM wa.message_outbox o
+            JOIN wa.command_receipt r ON r.command_id=o.command_id WHERE r.inbox_event_id=?
+            """, event.id());
     }
 
     @Test void rawCodeCompatibilityStillRequiresTheSameHashAndInvalidHashNeverPromotes() {

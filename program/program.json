@@ -5938,7 +5938,8 @@
           "src/whatsapp/scripts/070-operator-batch.mjs",
           "src/whatsapp/scripts/070-operator-batch.test.mjs",
           "src/whatsapp/scripts/070-worker-lifecycle.mjs",
-          "src/whatsapp/scripts/070-worker-smoke.test.mjs"
+          "src/whatsapp/scripts/070-worker-smoke.test.mjs",
+          "src/whatsapp/agent/"
         ],
         "backend": [
           "src/main/",

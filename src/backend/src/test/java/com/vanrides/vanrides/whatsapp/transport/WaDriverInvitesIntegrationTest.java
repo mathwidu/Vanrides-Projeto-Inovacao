@@ -3,11 +3,14 @@ package com.vanrides.vanrides.whatsapp.transport;
 import static org.junit.jupiter.api.Assertions.*;
 import static com.vanrides.vanrides.whatsapp.transport.WaDriverTestSupport.json;
 import com.vanrides.vanrides.whatsapp.api.WaProblem;
+import java.sql.Timestamp;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 import java.util.regex.Pattern;
+import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -18,11 +21,93 @@ class WaDriverInvitesIntegrationTest {
     private static final WaTransportTestDatabase DATABASE = new WaTransportTestDatabase(POSTGRES);
     WaDriverTestSupport f;
     @BeforeEach void setup() { f = new WaDriverTestSupport(DATABASE.fixture()); }
+    @Test void migratingFromV40PreservesAnExistingMultiUseInvitation() {
+        f.h.jdbc.execute("CREATE DATABASE wa_invites_upgrade");
+        String url = POSTGRES.getJdbcUrl().replace("/wa_driver_invites", "/wa_invites_upgrade");
+        var source = new DriverManagerDataSource(url, POSTGRES.getUsername(), POSTGRES.getPassword());
+        Flyway.configure().dataSource(source).target("40").load().migrate();
+        var old = new WaTransportTestSupport(source, true);
+        UUID driver = old.identity();
+        UUID invite = UUID.randomUUID();
+        old.jdbc.update("INSERT INTO wa.profile(identity_id,role,status,display_name) VALUES (?,'DRIVER','ONBOARDING','Motorista sintético')", driver);
+        old.jdbc.update("INSERT INTO wa.driver_authorization(driver_id) VALUES (?)", driver);
+        old.jdbc.update("""
+            INSERT INTO wa.driver_invite(id,driver_id,code_hash,expires_at,max_uses,use_count,created_at)
+            VALUES (?,?,?,?,3,1,?)
+            """, invite, driver, "f".repeat(64), Timestamp.from(old.clock.now().plusSeconds(600)), Timestamp.from(old.clock.now()));
+        assertEquals(1, Flyway.configure().dataSource(source).load().migrate().migrationsExecuted);
+        assertEquals(1L, old.jdbc.queryForObject("""
+            SELECT count(*) FROM wa.driver_invite WHERE id=? AND max_uses=3 AND use_count=1
+                AND NOT allow_first_contact AND onboarding_identity_id IS NULL
+            """, Long.class, invite));
+    }
     @Test void invitationExistsOnlyAfterExplicitConfirmationWithShownDefaults() {
         UUID actor = f.driver(); f.send(actor, "CONVIDAR"); var review = f.send(actor, "PADRÃO");
         assertTrue(review.text().contains("1 uso(s); validade 1440 minutos")); assertEquals(0, f.count("driver_invite", actor));
         f.confirm(actor, review);
         assertEquals(1, f.s.number("SELECT count(*) FROM wa.driver_invite WHERE driver_id=? AND max_uses=1 AND use_count=0 AND expires_at=created_at+interval '24 hours'", actor));
+        assertEquals(0, f.s.number("SELECT count(*) FROM wa.driver_invite WHERE driver_id=? AND allow_first_contact", actor));
+    }
+    @Test void shareableLinkContainsPrefilledCommandAndPastingTheLinkDoesNotExposeTheCode() {
+        f = new WaDriverTestSupport(f.h, "12025550109");
+        UUID driver = f.driver();
+        var review = f.send(driver, "CONVIDAR LINK");
+        assertTrue(review.text().contains("mensagem para encaminhar"));
+        f.confirm(driver, review);
+        String text = f.s.authorize(f.privateItem(driver)).path("content").path("text").asText();
+        String secret = code(text);
+        String link = "https://wa.me/12025550109?text=PASSAGEIRO%20" + secret;
+        assertTrue(text.contains(link));
+        assertEquals(1, f.s.number("SELECT count(*) FROM wa.driver_invite WHERE driver_id=? AND allow_first_contact", driver));
+        var pasted = f.s.text(driver, link);
+        assertEquals("UNSUPPORTED", pasted.message().path("type").asText());
+        assertFalse(f.s.stored(pasted.id()).toString().contains(secret));
+    }
+    @Test void directInvitationIsSentOnlyToTheOptedInPassengerAndDuplicateConfirmationDoesNotQueueAgain() {
+        UUID driver = f.driver();
+        UUID passenger = admittedPassenger(driver);
+        f.s.finish(f.s.text(passenger, "ACEITO RECEBER CONVITES"));
+        var review = f.send(driver, "CONVIDAR +1 (202) 555-0103");
+        assertTrue(review.text().contains("final 0103"));
+        assertFalse(review.lease().message().toString().contains("555-0103"));
+        assertFalse(f.s.stored(review.lease().id()).toString().contains("12025550103"));
+        var driverResult = f.confirm(driver, review);
+        assertEquals(2, driverResult.response().path("responseIds").size());
+        assertTrue(driverResult.text().contains("fila"));
+        var repeated = f.confirm(driver, f.send(driver, "CONVIDAR +12025550103"));
+        assertTrue(repeated.text().contains("convite ativo"));
+        assertEquals(1, f.count("driver_invite", driver));
+        var item = f.privateItem(passenger);
+        String text = f.s.authorize(item).path("content").path("text").asText();
+        assertTrue(text.contains("Seu motorista convidou você"));
+        assertFalse(driverResult.text().contains(code(text)));
+        assertEquals(1, f.s.number("SELECT count(*) FROM wa.driver_invite WHERE driver_id=? AND onboarding_identity_id=?", driver, passenger));
+    }
+    @Test void optOutAfterQueueingCancelsDeliveryAndOfferFallsBackToShareableLink() {
+        UUID driver = f.driver();
+        UUID passenger = admittedPassenger(driver);
+        assertTrue(f.send(driver, "CONVIDAR +12025550103").text().contains("Envie LINK"));
+        f.s.finish(f.s.text(passenger, "ACEITO RECEBER CONVITES"));
+        f.confirm(driver, f.send(driver, "+12025550103"));
+        var item = f.privateItem(passenger);
+        f.h.time.advance(1);
+        f.s.finish(f.s.text(passenger, "PARAR CONVITES"));
+        UUID box = UUID.fromString(item.path("outboxId").asText());
+        var result = f.s.outbox.authorize(f.s.delivery, box, json().put("leaseToken", item.path("leaseToken").asText()));
+        assertEquals(WaProblem.Code.ACTION_NOT_ALLOWED, result.error());
+        assertEquals("CANCELED", f.s.string("SELECT state FROM wa.message_outbox WHERE id=?", box));
+        assertNull(f.h.jdbc.queryForObject("SELECT private_payload_ciphertext FROM wa.message_outbox WHERE id=?", byte[].class, box));
+        assertTrue(f.send(driver, "CONVIDAR +12025550103").text().contains("Envie LINK"));
+    }
+    private UUID admittedPassenger(UUID driver) {
+        UUID passenger = f.h.identity();
+        f.h.jdbc.update("UPDATE wa.identity SET test_cohort_id=(SELECT test_cohort_id FROM wa.identity WHERE id=?) WHERE id=?", driver, passenger);
+        f.h.alias(passenger, "PN", "12025550103@s.whatsapp.net");
+        f.h.jdbc.update("""
+            INSERT INTO wa.team_admission_operation(id,github_actor_id,github_login,action,request_fingerprint,identity_id,correlation_id,created_at)
+            VALUES (?,1,'synthetic-test','ADMIT_PASSENGER',?, ?,?,?)
+            """, UUID.randomUUID(), "0".repeat(64), passenger, UUID.randomUUID(), Timestamp.from(f.h.clock.now()));
+        return passenger;
     }
     @Test void invitationCiphertextIsNotAReceiptDraftOrPublicOutboxPayload() {
         UUID actor = f.driver(); var result = f.invite(actor); var item = f.privateItem(actor); var reservation = f.s.authorize(item);

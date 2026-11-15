@@ -35,12 +35,15 @@ final class WaConversationTestSupport {
         this(new WaTransportTestSupport(postgres));
     }
     WaConversationTestSupport(WaTransportTestSupport transport) {
+        this(transport, instance -> null);
+    }
+    WaConversationTestSupport(WaTransportTestSupport transport, java.util.function.Function<String, String> botPhone) {
         h = transport;
         channel = h.principal(WaPrincipal.Kind.CHANNEL); worker = h.principal(WaPrincipal.Kind.CONVERSATION_WORKER);
         delivery = h.principal(WaPrincipal.Kind.DELIVERY_WORKER);
         pairing = h.proxy(new WaPairingService(h.jdbc, h.settings, h.clock, h.crypto));
         commands = h.proxy(new WaCommandService(h.jdbc, new WaInboxAccess(h.jdbc, h.settings, h.clock),
-            new WaCommandStore(h.jdbc, h.clock), new WaOnboardingCommands(h.jdbc, h.crypto, h.clock), pairing, h.settings, h.clock, h.crypto));
+            new WaCommandStore(h.jdbc, h.clock), new WaOnboardingCommands(h.jdbc, h.crypto, h.clock), pairing, h.settings, h.clock, h.crypto, botPhone));
         inbox = h.proxy(new WaInboxService(h.jdbc, h.access, h.settings, h.clock));
         outbox = h.proxy(new WaOutboxService(h.jdbc, h.access, new WaDeliveryReconciler(h.jdbc, h.clock), h.settings, h.clock));
         events = h.proxy(new WaEventService(h.jdbc, h.access, new WaEvolutionNormalizer(h.crypto), h.settings, h.clock));

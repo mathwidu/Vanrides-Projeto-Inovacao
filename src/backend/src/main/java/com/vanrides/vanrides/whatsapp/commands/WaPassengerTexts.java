@@ -24,7 +24,8 @@ final class WaPassengerTexts {
         return new WaPrompt(
                 "Seu convite é do motorista "
                         + driverName
-                        + ".\nVocê quer se cadastrar com este motorista?",
+                        + ". Posso ajudar você a escolher os horários, indicar o local de embarque e decidir quais avisos receber."
+                        + "\nVocê quer se cadastrar com este motorista?",
                 WaPrompt.Kind.BUTTONS,
                 List.of(
                         new WaPrompt.Option("YES", "Sim", List.of()),
@@ -51,7 +52,7 @@ final class WaPassengerTexts {
         return switch (stage) {
             case "DRIVER_CONFIRM" ->
                     driverConfirm(draft.path("driverName").asText()).text() + NAVIGATION_HINT;
-            case "NAME" -> "Como você prefere ser chamado?";
+            case "NAME" -> "Como você prefere ser chamado? Mande seu nome, como Ana Silva.";
             case "NOTICE" ->
                     "Usaremos seu nome, conversa, ponto de embarque e participação nas rotinas para"
                         + " organizar seu transporte. Os avisos serão escolhidos separadamente."

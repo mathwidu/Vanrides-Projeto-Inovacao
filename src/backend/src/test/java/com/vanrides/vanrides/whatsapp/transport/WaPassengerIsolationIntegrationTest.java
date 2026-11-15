@@ -133,4 +133,27 @@ class WaPassengerIsolationIntegrationTest {
                 fixture.conversation.number(
                         "SELECT use_count FROM wa.driver_invite WHERE driver_id=?", driver));
     }
+
+    @Test
+    void aLinkReservedByAnotherPassengerCannotBeOpenedOrConfirmed() {
+        var review = fixture.review(passenger, code);
+        UUID target = fixture.passenger(), stranger = fixture.passenger();
+        fixture.transport.jdbc.update("""
+                UPDATE wa.driver_invite SET allow_first_contact=true,onboarding_identity_id=?
+                WHERE driver_id=?
+                """, target, driver);
+
+        var forwarded = fixture.conversation.text(stranger, "PASSAGEIRO " + code);
+        assertEquals(WaProblem.Code.INTENT_EXPIRED,
+                fixture.decide(forwarded, "ADVANCE_PASSENGER_SETUP", json()).error());
+        assertEquals(0, fixture.conversation.number(
+                "SELECT count(*) FROM wa.profile WHERE identity_id=?", stranger));
+
+        var confirmation = fixture.conversation.text(passenger, fixture.confirmation(passenger, review));
+        assertEquals(WaProblem.Code.INTENT_EXPIRED,
+                fixture.decide(confirmation, "REQUEST_LINK", fixture.payload(fixture.context(confirmation))).error());
+        assertEquals(0, fixture.count("driver_passenger_link"));
+        assertEquals(0, fixture.conversation.number(
+                "SELECT use_count FROM wa.driver_invite WHERE driver_id=?", driver));
+    }
 }

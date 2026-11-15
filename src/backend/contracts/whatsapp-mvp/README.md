@@ -157,7 +157,9 @@ usado na consulta. A variante com código bruto preserva compatibilidade e deve
 corresponder ao mesmo hash. Nenhum hash/ator/referência livre é aceito no payload.
 
 `RESPOND_TO_MESSAGE` seleciona apenas `responseCode` enumerado e permitido pela
-mensagem/estado. `REQUEST_SUPPORT` exige pedido humano explícito, abre caso
+mensagem/estado. `FAQ` responde perguntas reconhecidas no evento autenticado
+sem avançar o cadastro nem renovar o aviso de privacidade.
+`REQUEST_SUPPORT` exige pedido humano explícito, abre caso
 mínimo e pausa a conversa sem suspender o perfil. Detail livre não é persistido.
 Retomada assistida e operação completa pertencem a140; W01 não substitui equipe.
 
@@ -291,14 +293,18 @@ aprovados. Pausa não muda run; cancelamento por data apenas cria/atualiza a
 ocorrência CANCELED, rejeitando execução iniciada/encerrada e preservando snapshot.
 Presença e execução continuam100/110.
 
-Convite emitido é texto encaminhável PASSAGEIRO+token, não link wa.me final170.
-Defaults exibidos:1uso/24h; limites1–10usos/5–1440min. Só existe hash purpose
-passenger-invite em driver_invite; texto privado cifrado na outbox usa AAD de
-ambiente/outbox/comando/ator. A decifra ocorre apenas em authorize-submit, com
-revalidação de TTL/revogação/limite. Resultado/expiração/cancelamento apagam a
-cifra; purge integral operacional pertence150. Não guardar token em recibo,
-payload_json, draft, contexto ou logs. REQUEST_LINK090 reserva um uso apenas
-quando o novo pedido fica durável; replay não reconsome.080 não comprova T02 E2E.
+O convite padrão tem um uso e vale 24 horas. Na instância da equipe com
+admissão ativa, pode incluir um link `wa.me` que preenche `PASSAGEIRO <código>`.
+O primeiro remetente autenticado elegível reserva o convite, sem consumir seu
+uso. Convites personalizados de vários usos e o modo legado exigem admissão prévia.
+O envio pelo bot vincula o código ao destinatário da mesma instância/coorte e
+requer opt-in explícito e recente. A entrega verifica o destinatário novamente.
+
+Somente o hash do código entra em `driver_invite`. O texto privado fica cifrado
+na outbox e só é aberto em `authorize-submit`. Resultado, expiração ou
+cancelamento apagam a cifra. `REQUEST_LINK` consome um uso quando o pedido fica
+gravado. Uma repetição do comando não consome outro. Código, link e contato
+completo não integram recibo, contexto do agente nem logs.
 
 ## Passageiro090
 

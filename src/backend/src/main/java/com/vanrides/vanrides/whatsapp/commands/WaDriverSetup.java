@@ -7,10 +7,14 @@ import com.vanrides.vanrides.whatsapp.api.WaJson;
 import com.vanrides.vanrides.whatsapp.api.WaProblem;
 import com.vanrides.vanrides.whatsapp.auth.WaCrypto;
 import com.vanrides.vanrides.whatsapp.config.WaClock;
+import com.vanrides.vanrides.whatsapp.transport.WaInviteMessage;
+import com.vanrides.vanrides.whatsapp.transport.WaPassengerInviteChannel;
 import com.vanrides.vanrides.whatsapp.transport.WaPrivateInviteDelivery;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.sql.Timestamp;
+import java.util.function.Function;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 /** Public command/context seam; draft interpretation and aggregate authority remain in the API. */
@@ -24,11 +28,15 @@ final class WaDriverSetup {
     private final WaDriverWizard wizard;
     private final WaDriverMutations mutations;
     private final WaPrivateInviteDelivery privateDelivery;
+    private final WaPassengerInviteChannel inviteChannel;
     private final WaCrypto crypto;
     private final JdbcTemplate jdbc;
-    WaDriverSetup(JdbcTemplate jdbc, WaClock clock, WaCrypto crypto) {
-        this.crypto = crypto; this.jdbc = jdbc; store = new WaDriverDraftStore(jdbc, clock, crypto); targets = new WaDriverTargets(jdbc, clock);
-        wizard = new WaDriverWizard(targets); mutations = new WaDriverMutations(jdbc, clock, crypto, targets);
+    private final WaClock clock;
+    WaDriverSetup(JdbcTemplate jdbc, WaClock clock, WaCrypto crypto, Function<String, String> botPhone) {
+        this.crypto = crypto; this.jdbc = jdbc; this.clock = clock;
+        store = new WaDriverDraftStore(jdbc, clock, crypto); targets = new WaDriverTargets(jdbc, clock);
+        wizard = new WaDriverWizard(targets); mutations = new WaDriverMutations(jdbc, clock, crypto, targets, botPhone);
+        inviteChannel = new WaPassengerInviteChannel(jdbc, clock);
         privateDelivery = new WaPrivateInviteDelivery(jdbc, clock, crypto);
     }
     private boolean eligible(WaProfileState actor) {
@@ -43,12 +51,13 @@ final class WaDriverSetup {
         if (text.equals("resumo")) return new Offer("GET_SUMMARY", WaDriverDraftStore.options().add(
             WaDriverDraftStore.option("SUMMARY", summaryRef(actor, event))));
         if (store.confirms(actor, event, draft)) return new Offer(draft.path("action").asText(), options(draft));
-        if (draft.isEmpty() && !WaDriverWizard.starts(text)) return null;
+        if (draft.isEmpty() && !WaDriverWizard.starts(text)
+                && !event.normalizedPayload().path("inviteContactExplicit").asBoolean()) return null;
         if (event.normalizedPayload().has("driverInviteCodeHash") || event.normalizedPayload().has("pairingCodeHash")
                 || event.normalizedPayload().has("passengerInviteCodeHash")) return null;
         return new Offer("ADVANCE_DRIVER_SETUP", WaDriverDraftStore.options());
     }
-    Result execute(WaProfileState actor, WaInboxAccess.Context event, String type, ObjectNode payload, UUID outbox) {
+    Result execute(WaProfileState actor, WaInboxAccess.Context event, String type, ObjectNode payload, UUID outbox, String instance) {
         Offer offer = offer(actor, event);
         if (offer == null || !offer.command().equals(type)) return unavailable();
         ObjectNode expected = WaDriverDraftStore.json();
@@ -70,7 +79,8 @@ final class WaDriverSetup {
             ObjectNode draft;
             String response;
             try {
-                draft = wizard.advance(actor.identityId(), event, state.draft());
+                draft = WaInviteMessage.hasContact(event.normalizedPayload())
+                    ? inviteContact(actor, event, state.draft()) : wizard.advance(actor.identityId(), event, state.draft());
                 response = draft.isEmpty() ? "Rascunho descartado. Envie ROTINAS para abrir o menu." : WaDriverTexts.prompt(draft);
                 if (draft.path("stage").asText().equals("REVIEW")) {
                     String snapshot = targets.snapshot(actor.identityId(), draft);
@@ -91,9 +101,30 @@ final class WaDriverSetup {
         } catch (WaProblem conflict) {
             return recoverTarget(actor, event, state, conflict);
         }
-        WaDriverMutations.Result result = mutations.apply(actor.identityId(), draft);
+        UUID recipient = draft.hasNonNull("inviteRecipient") ? UUID.fromString(draft.path("inviteRecipient").asText()) : null;
+        if (recipient != null && !inviteChannel.eligible(event.eventId(), actor.identityId(), recipient)) {
+            ObjectNode fallback = WaDriverWizard.inviteDraft();
+            store.save(actor, event, state, fallback);
+            return new Result(WaDecision.error(WaProblem.Code.ACTION_NOT_ALLOWED), WaDriverTexts.shareInstead(), null);
+        }
+        if (recipient != null && hasActiveDelivery(actor.identityId(), recipient)) {
+            store.save(actor, event, state, WaDriverDraftStore.json());
+            return new Result(WaDecision.ok(Map.of("changed", false)),
+                "Já existe um convite ativo para esse WhatsApp. Envie ROTINAS se quiser consultar ou revogar seus convites.", null);
+        }
+        WaDriverMutations.Result result = mutations.apply(actor.identityId(), draft, instance);
         store.save(actor, event, state, WaDriverDraftStore.json());
         return new Result(WaDecision.ok(Map.of("changed", true)), result.text(), result);
+    }
+    private boolean hasActiveDelivery(UUID actor, UUID recipient) {
+        return Boolean.TRUE.equals(jdbc.queryForObject("""
+            SELECT EXISTS (
+                SELECT 1 FROM wa.driver_invite i JOIN wa.message_outbox o ON o.private_invite_id=i.id
+                WHERE i.driver_id=? AND i.onboarding_identity_id=? AND NOT i.allow_first_contact
+                  AND i.revoked_at IS NULL AND i.expires_at>? AND i.use_count<i.max_uses
+                  AND o.state NOT IN ('CANCELED','EXPIRED','FAILED')
+            )
+            """, Boolean.class, actor, recipient, Timestamp.from(clock.now())));
     }
     /** Only preparation/target validation reaches here; never catch a partially applied mutation. */
     private Result recoverTarget(WaProfileState actor, WaInboxAccess.Context event, WaDriverDraftStore.State state, WaProblem conflict) {
@@ -116,9 +147,25 @@ final class WaDriverSetup {
             "Esse resumo não está mais disponível para confirmação. Nenhuma rotina ou convite foi alterado. "
                 + "Envie ROTINAS para continuar.", null);
     }
+    private ObjectNode inviteContact(WaProfileState actor, WaInboxAccess.Context event, ObjectNode current) {
+        boolean pickingInvite = current.path("action").asText().equals("CREATE_INVITE");
+        boolean startedFromMenu = (current.isEmpty() || current.path("stage").asText().equals("MENU"))
+            && event.normalizedPayload().path("inviteContactExplicit").asBoolean();
+        if (!pickingInvite && !startedFromMenu) return current.deepCopy();
+        ObjectNode draft = WaDriverWizard.inviteDraft().put("revision", current.path("revision").asLong() + 1);
+        String digits = WaInviteMessage.contact(event.normalizedPayload(), crypto);
+        UUID recipient = digits == null ? null : inviteChannel.recipient(event.eventId(), actor.identityId(), digits);
+        if (recipient == null) return draft.put("inviteContactUnavailable", true);
+        return draft.put("inviteRecipient", recipient.toString()).put("inviteLastDigits", digits.substring(digits.length() - 4))
+            .put("maxUses", 1).put("ttlMinutes", 1440).put("stage", "REVIEW");
+    }
     void attach(UUID box, UUID command, UUID actor, Result result) {
-        if (result.delivery() != null && result.delivery().invite() != null) privateDelivery.attach(box, command, actor,
+        if (result.delivery() != null && result.delivery().invite() != null && result.delivery().recipient() == null) privateDelivery.attach(box, command, actor,
             result.delivery().invite(), result.delivery().privateText(), result.delivery().expires());
+    }
+    void queuePassenger(UUID box, UUID command, Result result) {
+        var invite = result.delivery();
+        privateDelivery.queuePassenger(box, command, invite.recipient(), invite.invite(), invite.privateText(), invite.expires());
     }
     String help(WaProfileState actor) {
         if (!eligible(actor)) return null;

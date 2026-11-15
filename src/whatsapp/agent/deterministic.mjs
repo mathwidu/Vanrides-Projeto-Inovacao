@@ -15,7 +15,21 @@ const isRunCommand = value => runCommands.has(value);
 const steps = new Set(['WELCOME', 'ASK_NAME', 'ASK_NOTICE', 'PAIRING', 'READY', 'PAUSED']);
 const kinds = new Set(['TEXT', 'REPLY', 'UNSUPPORTED', 'STATIC_PIN_REFERENCE']);
 const responseCodes = new Set(['HELP', 'CLARIFY', 'UNSUPPORTED_CONTENT', 'STATIC_PIN_REQUIRED',
-  'FEATURE_PENDING', 'STALE_MESSAGE', 'CONTINUE', 'DRIVER_INVITE_REQUIRED']);
+  'FEATURE_PENDING', 'STALE_MESSAGE', 'CONTINUE', 'DRIVER_INVITE_REQUIRED', 'FAQ']);
+// Match the closed phrases in WaConversationResponses. The API selects the actual answer.
+const questions = new Set([
+  'como funciona', 'como funciona o vanrides', 'o que e o vanrides', 'o que e vanrides',
+  'como me cadastro', 'como faco meu cadastro', 'como faco para me cadastrar',
+  'preciso baixar o app', 'preciso baixar o aplicativo', 'preciso instalar o aplicativo', 'como vinculo o aplicativo',
+  'como crio uma rotina', 'como faco para criar uma rotina',
+  'como convido passageiros', 'como convido um passageiro', 'como envio um convite',
+  'como confirmo minha presenca', 'como aviso que vou',
+  'tenho uma duvida', 'posso tirar uma duvida',
+]);
+const invitePreferences = new Set(['aceito receber convites', 'parar convites']);
+const onboardingRequests = new Set(['oi', 'ola', 'bom dia', 'boa tarde', 'boa noite', 'cadastrar',
+  'quero me cadastrar', 'sou passageiro', 'cadastro', 'iniciar cadastro', 'quero ser passageiro',
+  'quero me cadastrar como passageiro', 'quero cadastrar meu perfil', 'quero comecar meu cadastro']);
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 export const normalizeText = value => value.normalize('NFD').replace(/\p{M}/gu, '')
   .toLocaleLowerCase('pt-BR').trim().replace(/\s+/gu, ' ');
@@ -106,6 +120,7 @@ export function decideDeterministically(message, context) {
   if (['falar com suporte', 'quero falar com suporte', 'falar com atendente',
     'quero atendimento humano', 'atendimento humano'].includes(text))
     return command('REQUEST_SUPPORT', { reason: 'HELP', detail: 'Pedido explícito na mensagem autenticada.' });
+  if (questions.has(text) || invitePreferences.has(message.text?.trim().toLowerCase())) return reply('FAQ');
   // The server recognizes the invitation and interprets every private draft field.
   // Its offer must be copied even when the guest has no profile or text projection.
   // Even private replies without a text projection can advance an API-bound run review.
@@ -127,22 +142,23 @@ export function decideDeterministically(message, context) {
   if (passenger) return passenger;
   // A copied/expired confirmation marker is never a free-text model request.
   if (/^confirmar [a-z]{8}$/u.test(text)) return reply('CONTINUE');
-  if (['continuar', 'continuar cadastro', 'voltar', 'nao aceito'].includes(text)) return reply('CONTINUE');
-  if (['sou motorista', 'quero ser motorista', 'cadastro de motorista'].includes(text))
+  if (['continuar', 'continuar cadastro', 'voltar', 'nao aceito', 'retomar cadastro',
+    'quero retomar meu cadastro'].includes(text)) return reply('CONTINUE');
+  if (['sou motorista', 'quero ser motorista', 'cadastro de motorista', 'quero me cadastrar como motorista'].includes(text))
     return reply(context.actorState === 'DRIVER' ? 'CONTINUE' : 'DRIVER_INVITE_REQUIRED');
   if (attendanceIntent(message.text)) return reply('FEATURE_PENDING');
   if (text !== 'iniciar cadastro'
       && /^(iniciar|comecar|finalizar|parar|cancelar|apagar|excluir|alterar ponto|onde esta)\b/u.test(text))
     return reply('FEATURE_PENDING');
   if (context.registrationStep === 'WELCOME') {
-    if (['oi', 'ola', 'bom dia', 'boa tarde', 'boa noite', 'cadastrar', 'quero me cadastrar',
-      'sou passageiro', 'cadastro', 'iniciar cadastro'].includes(text)) return command('START_ONBOARDING');
+    if (onboardingRequests.has(text)) return command('START_ONBOARDING');
     return reply('CLARIFY');
   }
   if (context.registrationStep === 'ASK_NOTICE')
     return text === 'aceito' && allowed.has('ACCEPT_NOTICE')
       ? command('ACCEPT_NOTICE', { noticeVersion: 'wa-mvp-v1' }) : reply('CONTINUE');
   if (context.registrationStep === 'ASK_NAME') {
+    if (onboardingRequests.has(text)) return reply('CLARIFY');
     const name = message.text.trim().replace(/^(?:me chamo|meu nome [ée]|pode me chamar de)\s+/iu, '');
     const words = normalizeText(name).split(' ');
     const controlWords = new Set(['ignore', 'instrucoes', 'instrucao', 'sistema', 'admin', 'administrador',
