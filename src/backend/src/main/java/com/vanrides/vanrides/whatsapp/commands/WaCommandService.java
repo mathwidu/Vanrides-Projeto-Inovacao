@@ -241,6 +241,8 @@ public class WaCommandService {
             return "Este ambiente permite somente o cadastro sintético de teste. Use o roteiro recebido para iniciar e conferir o resultado.";
         if (type.equals("RESPOND_TO_MESSAGE")) {
             String code = payload.path("responseCode").asText();
+            if (code.equals("UNSUPPORTED_CONTENT") && conversation.replyAllowed("STATIC_PIN_REQUIRED", actor, event))
+                code = "STATIC_PIN_REQUIRED";
             if (code.equals("FAQ")) {
                 var question = conversation.question(event);
                 if (question == WaConversationResponses.Question.REGISTRATION && activeHelp(actor, event) != null)

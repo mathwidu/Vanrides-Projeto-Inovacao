@@ -88,6 +88,16 @@ class WaConversationCommandsIntegrationTest {
         assertThat(c.number("SELECT count(*) FROM wa.profile")).isZero();
     }
 
+    @Test void invalidTextPointGetsActionableGuidanceEvenWithTheGenericWorkerResponse() {
+        UUID actor = c.actor();
+        Lease badPoint = c.text(actor, "PONTO 999, 999");
+        assertThat(badPoint.message().path("type").asText()).isEqualTo("UNSUPPORTED");
+        c.execute(badPoint, "RESPOND_TO_MESSAGE", reply("UNSUPPORTED_CONTENT")).requireSuccess();
+        assertThat(response(badPoint)).contains("Não consegui usar essa localização", "ponto fixo", "No computador")
+            .doesNotContain("999");
+        assertThat(c.number("SELECT count(*) FROM wa.pickup_point")).isZero();
+    }
+
     @Test void nameEmitsTheApprovedNoticeAndOnlyExplicitCurrentConsentActivatesTheProfile() {
         UUID actor = c.actor(); c.registeredName(actor);
         assertThat(c.string("SELECT context_json->>'noticeVersion' FROM wa.conversation_state WHERE identity_id=?", actor)).isEqualTo("wa-mvp-v1");

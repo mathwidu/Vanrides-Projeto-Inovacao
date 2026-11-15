@@ -47,7 +47,7 @@ export async function runPassengerScenarios(runtime) {
 
     for (const msg of ['Lia Exemplo', 'ACEITO', '1', '1,3,5']) await p(msg);
     const live = await send(passenger, { liveLocationMessage: { degreesLatitude: 0, degreesLongitude: 0 } }, 'RESPOND_TO_MESSAGE');
-    demand(live.reply?.includes('estático'), 'PASSENGER_FIXED_PIN_GUIDANCE_MISSING');
+    demand(live.reply?.includes('ponto fixo'), 'PASSENGER_FIXED_PIN_GUIDANCE_MISSING');
     await p('Não sei o endereço exato');
     demand(points('PROPOSED') === 0 && tools.count(`SELECT count(*) FROM wa.conversation_state
       WHERE identity_id=${quote(passenger.actor)} AND context_json->'passengerDraft'->>'stage'='POINT'

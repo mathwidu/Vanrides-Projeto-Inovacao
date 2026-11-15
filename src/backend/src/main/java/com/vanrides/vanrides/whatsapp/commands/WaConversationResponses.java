@@ -107,7 +107,8 @@ public final class WaConversationResponses {
                 ? "Envie só o nome pelo qual prefere ser chamado, como Ana Silva. Use letras e espaços. Hífen e apóstrofo também são aceitos.\n\n" + GUIDANCE
                 : "Não consegui identificar o que você deseja. Escreva AJUDA para ver a próxima etapa ou FALAR COM SUPORTE para atendimento.";
             case "UNSUPPORTED_CONTENT" -> "Neste teste, envie texto ou um ponto de localização estático. Não processamos áudio, imagem, arquivos ou localização ao vivo.";
-            case "STATIC_PIN_REQUIRED" -> "Envie uma nova mensagem com um pin estático pelo WhatsApp.\n\n" + COMPUTER_POINT;
+            case "STATIC_PIN_REQUIRED" -> "Não consegui usar essa localização. No celular, toque em + ou no clipe, escolha Localização e envie um ponto fixo.\n\n"
+                + COMPUTER_POINT;
             case "FEATURE_PENDING" -> "Essa função ainda não está disponível nesta etapa do teste. Escreva AJUDA para continuar o cadastro.";
             case "STALE_MESSAGE" -> "Não foi possível confirmar a atualidade desta mensagem. Envie uma nova mensagem para continuar.";
             case "DRIVER_INVITE_REQUIRED" -> "Para começar como motorista, peça à equipe do VanRides seu convite de motorista e envie esse convite aqui.\n\n" + SUPPORT;
