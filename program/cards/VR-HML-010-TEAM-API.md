@@ -105,6 +105,13 @@ outro número e a revalidação do opt-in na entrega. O gate offline passou com
 em RAM para o PostgreSQL. A VPS e o canal real ainda aguardam a publicação
 coordenada da API e do agente para o primeiro aceite.
 
+O ensaio HTTP de `63c7872` usou o JAR local, o agente, PostgreSQL e um receptor
+Evolution simulado. Passaram o cadastro do motorista, a criação de rotina,
+a emissão e revogação de convite e o cadastro de dois passageiros com
+aprovação de vínculo e ponto. A execução geral foi encerrada nesse marco,
+antes das verificações de presença e rastreamento. O contêiner temporário
+foi removido.
+
 ## Dependências
 
 040 (autenticação) e 070 (contratos de conversa) concluídos. A homologação usa dados fictícios e tem aceite próprio. Os aceites de canal, percurso, iPhone, encerramento e piloto permanecem no plano do MVP.
