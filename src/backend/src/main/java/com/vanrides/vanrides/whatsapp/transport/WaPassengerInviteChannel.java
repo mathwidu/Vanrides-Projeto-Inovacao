@@ -9,6 +9,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
+import java.util.function.BiFunction;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 /** Resolves opted-in recipients from admitted inbox senders on the same Evolution channel. */
@@ -18,6 +19,7 @@ public final class WaPassengerInviteChannel {
     private final WaClock clock;
 
     private record Scope(String instance, UUID cohort) {}
+    private record Owner(String address, UUID identity) {}
     private record Origin(UUID event, UUID driver, Instant expiresAt) {}
     record Permission(boolean accepted, boolean knownSender, Instant received, Instant occurred) {
         Instant revocationTime() { return occurred == null ? received : occurred; }
@@ -29,12 +31,14 @@ public final class WaPassengerInviteChannel {
         this.clock = clock;
     }
 
-    public UUID recipient(UUID sourceEvent, UUID driver, String digits) {
+    public UUID recipient(UUID sourceEvent, UUID driver, String digits, BiFunction<String, String, String> confirmPn) {
         if (digits == null || !digits.matches("[1-9][0-9]{7,14}")) return null;
         Scope scope = scope(sourceEvent, driver, null, null);
         if (scope == null) return null;
-        UUID candidate = owner(scope.instance(), digits);
-        return route(scope, driver, candidate) == null ? null : candidate;
+        Owner candidate = owner(scope.instance(), digits, confirmPn);
+        if (candidate == null) return null;
+        Route route = route(scope, driver, candidate.identity());
+        return route != null && route.address().equals(candidate.address()) ? candidate.identity() : null;
     }
 
     public boolean eligible(UUID sourceEvent, UUID driver, UUID passenger) {
@@ -90,21 +94,24 @@ public final class WaPassengerInviteChannel {
         if (addresses.size() != 1) return null;
         String address = addresses.get(0);
         if (!address.matches("[1-9][0-9]{7,14}@s\\.whatsapp\\.net")) return null;
-        String digits = address.substring(0, address.length() - PN_SUFFIX.length());
-        if (!passenger.equals(owner(scope.instance(), digits))) return null;
+        // The confirmed draft or queued invite already binds the recipient identity.
+        // Route only to its own PN and recheck its consent; never try the other variant here.
         Instant permissionEnd = permissionEnd(scope.instance(), passenger);
         return permissionEnd == null ? null : new Route(address, permissionEnd);
     }
 
-    private UUID owner(String instance, String digits) {
+    private Owner owner(String instance, String digits, BiFunction<String, String, String> confirmPn) {
         var numbers = phoneVariants(digits);
         var owners = jdbc.query("""
-            SELECT DISTINCT identity_id FROM wa.identity_alias
+            SELECT alias_value,identity_id FROM wa.identity_alias
             WHERE provider='EVOLUTION' AND instance_id=? AND alias_type='PN' AND alias_value IN (?,?)
             LIMIT 2
-            """, (rs, n) -> rs.getObject(1, UUID.class), instance,
+            """, (rs, n) -> new Owner(rs.getString(1), rs.getObject(2, UUID.class)), instance,
             numbers.get(0) + PN_SUFFIX, numbers.get(1) + PN_SUFFIX);
-        return owners.size() == 1 ? owners.get(0) : null;
+        if (owners.size() == 1) return owners.get(0);
+        if (owners.size() != 2 || owners.get(0).identity().equals(owners.get(1).identity())) return null;
+        String confirmed = confirmPn.apply(instance, digits);
+        return owners.stream().filter(owner -> owner.address().equals(confirmed)).findFirst().orElse(null);
     }
 
     private Instant permissionEnd(String instance, UUID passenger) {

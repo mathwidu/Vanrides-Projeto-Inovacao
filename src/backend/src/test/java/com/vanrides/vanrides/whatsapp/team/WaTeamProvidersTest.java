@@ -65,6 +65,34 @@ class WaTeamProvidersTest {
     }
 
     @Test
+    void inviteConfirmationUsesTheAuthenticatedInstanceAndRejectsUnverifiedReplies() throws Exception {
+        var settings = mock(WaTeamSettings.class);
+        when(settings.instance()).thenReturn("synthetic-team");
+        when(settings.evolutionOrigin()).thenReturn(URI.create("https://provider.example.invalid"));
+        when(settings.evolutionKey()).thenReturn("synthetic-evolution-key");
+        var remote = mock(WaTeamRemote.class);
+        var endpoint = URI.create("https://provider.example.invalid/chat/whatsappNumbers/synthetic-team");
+        var headers = Map.of("apikey", "synthetic-evolution-key", "Content-Type", "application/json");
+        String request = "{\"numbers\":[\"5511987654321\"]}";
+        when(remote.exchange(endpoint, headers, request, null))
+            .thenReturn(response("""
+                [{"exists":true,"number":"5511987654321","jid":"551187654321@s.whatsapp.net"}]
+                """), response("""
+                [{"exists":true,"jid":"551187654322@s.whatsapp.net"}]
+                """), response("""
+                [{"exists":true,"jid":"1234@lid"}]
+                """), response("""
+                [{"exists":false}]
+                """), new WaTeamRemote.Reply(401, null))
+            .thenThrow(WaTeamRemote.unavailable());
+        var evolution = new WaTeamEvolution(settings, remote);
+
+        assertThat(evolution.confirmedInvitePn("5511987654321")).isEqualTo("551187654321@s.whatsapp.net");
+        for (int i = 0; i < 5; i++) assertThat(evolution.confirmedInvitePn("5511987654321")).isNull();
+        verify(remote, times(6)).exchange(endpoint, headers, request, null);
+    }
+
+    @Test
     void botContactIsOnlyThePhoneOfTheConfiguredConnectedInstance() throws Exception {
         String connected = """
             [{"name":"synthetic-hml","connectionStatus":"open","ownerJid":"12025550101@s.whatsapp.net",

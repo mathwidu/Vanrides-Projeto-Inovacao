@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -57,15 +58,22 @@ public class WaCommandService {
                             WaPairingService pairing, WaSettings settings, WaClock clock, WaCrypto crypto,
                             WaTeamEvolution evolution, WaTeamSettings team) {
         this(jdbc, inbox, store, onboarding, pairing, settings, clock, crypto,
-            instance -> team.strictIngress(instance) ? evolution.botPhone() : null);
+            instance -> team.strictIngress(instance) ? evolution.botPhone() : null,
+            (instance, digits) -> team.strictIngress(instance) ? evolution.confirmedInvitePn(digits) : null);
     }
 
     public WaCommandService(JdbcTemplate jdbc, WaInboxAccess inbox, WaCommandStore store, WaOnboardingCommands onboarding,
                             WaPairingService pairing, WaSettings settings, WaClock clock, WaCrypto crypto, Function<String, String> botPhone) {
+        this(jdbc, inbox, store, onboarding, pairing, settings, clock, crypto, botPhone, (instance, digits) -> null);
+    }
+
+    private WaCommandService(JdbcTemplate jdbc, WaInboxAccess inbox, WaCommandStore store, WaOnboardingCommands onboarding,
+                             WaPairingService pairing, WaSettings settings, WaClock clock, WaCrypto crypto,
+                             Function<String, String> botPhone, BiFunction<String, String, String> confirmInvitePn) {
         this.jdbc = jdbc; this.inbox = inbox; this.store = store; this.onboarding = onboarding;
         this.pairing = pairing; this.settings = settings; this.clock = clock; this.crypto = crypto;
         this.conversation = new WaConversationPolicy(jdbc, clock, settings.environment());
-        this.driver = new WaDriverSetup(jdbc, clock, crypto, botPhone);
+        this.driver = new WaDriverSetup(jdbc, clock, crypto, botPhone, confirmInvitePn);
         this.passenger = new WaPassengerSetup(jdbc, clock, crypto, settings);
         this.attendance = new WaAttendanceConversation(jdbc, clock, settings, crypto);
         this.runs = new WaRunConversation(jdbc, clock, settings, crypto);

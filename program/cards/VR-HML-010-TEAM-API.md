@@ -125,6 +125,19 @@ Os testes locais cobriram a interface, o parser e os pontos de rotina,
 embarque e ponto comum. Passaram 61 testes Java, com PostgreSQL isolado,
 e 13 testes Node do painel. A publicação usa a API existente e o schema V41.
 
+A publicação do PR #116 foi exercitada no Mac. A simulação passou com convites
+por link e envio direto. No WhatsApp real, o motorista concluiu o cadastro,
+salvou uma rotina com destino digitado e gerou um link que abriu o cadastro
+do passageiro. O motorista de teste do painel aprovou o vínculo e o ponto
+digitado pelo passageiro. O aviso de aprovação foi recebido no WhatsApp.
+
+O primeiro ensaio de envio direto encontrou dois registros de homologação
+para as variantes brasileiras de um número. Nessa condição, a Evolution
+confirma o endereço atual antes do convite. O backend exige o opt-in do
+destinatário confirmado e preserva os dois registros. Passaram 30 testes
+focados, incluindo a recusa sem verificação ou sem opt-in e a rechecagem
+do destinatário na entrega.
+
 ## Dependências
 
 040 (autenticação) e 070 (contratos de conversa) concluídos. A homologação usa dados fictícios e tem aceite próprio. Os aceites de canal, percurso, iPhone, encerramento e piloto permanecem no plano do MVP.
