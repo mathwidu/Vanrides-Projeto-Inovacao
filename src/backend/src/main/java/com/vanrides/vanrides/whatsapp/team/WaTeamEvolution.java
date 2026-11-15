@@ -55,6 +55,14 @@ public final class WaTeamEvolution {
         return verified(digits, reply);
     }
 
+    public String confirmedInvitePn(String digits) {
+        try {
+            return verify("+" + digits).pn;
+        } catch (WaProblem | WaTeamProblem ignored) {
+            return null;
+        }
+    }
+
     static Contact verified(String digits, WaTeamRemote.Reply reply) {
         JsonNode body = reply.body();
         if (reply.status() != 200 || body == null || !body.isArray() || body.size() != 1)

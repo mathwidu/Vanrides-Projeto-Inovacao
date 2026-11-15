@@ -3,6 +3,7 @@ package com.vanrides.vanrides.whatsapp.transport;
 import static org.junit.jupiter.api.Assertions.*;
 import static com.vanrides.vanrides.whatsapp.transport.WaDriverTestSupport.json;
 import com.vanrides.vanrides.whatsapp.api.WaProblem;
+import com.vanrides.vanrides.whatsapp.team.WaTeamEvolutionTestSupport;
 import java.sql.Timestamp;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
@@ -10,6 +11,9 @@ import java.util.regex.Pattern;
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
@@ -19,6 +23,9 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 class WaDriverInvitesIntegrationTest {
     @Container static final PostgreSQLContainer<?> POSTGRES = WaTransportTestSupport.postgres("wa_driver_invites");
     private static final WaTransportTestDatabase DATABASE = new WaTransportTestDatabase(POSTGRES);
+    private static final String TYPED_DIGITS = "5511987654321";
+    private static final String CANONICAL_DIGITS = "551187654321";
+    private static final String CANONICAL_PN = CANONICAL_DIGITS + "@s.whatsapp.net";
     WaDriverTestSupport f;
     @BeforeEach void setup() { f = new WaDriverTestSupport(DATABASE.fixture()); }
     @Test void migratingFromV40PreservesAnExistingMultiUseInvitation() {
@@ -99,10 +106,75 @@ class WaDriverInvitesIntegrationTest {
         assertNull(f.h.jdbc.queryForObject("SELECT private_payload_ciphertext FROM wa.message_outbox WHERE id=?", byte[].class, box));
         assertTrue(f.send(driver, "CONVIDAR +12025550103").text().contains("Envie LINK"));
     }
-    private UUID admittedPassenger(UUID driver) {
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void verifiedVariantOnlyRoutesToItsOwnIdentityAndStillRechecksConsent(boolean optsOutBeforeDelivery) {
+        var evolution = teamVerification(true, CANONICAL_PN);
+        UUID driver = f.driver();
+        UUID canonical = admittedPassenger(driver, CANONICAL_DIGITS);
+        UUID other = admittedPassenger(driver, TYPED_DIGITS);
+        f.s.finish(f.s.text(canonical, "ACEITO RECEBER CONVITES"));
+        var review = f.send(driver, "CONVIDAR +" + TYPED_DIGITS);
+        assertTrue(review.text().contains("final 4321"));
+        assertEquals(2, f.confirm(driver, review).response().path("responseIds").size());
+        assertEquals(1, f.s.number("SELECT count(*) FROM wa.driver_invite WHERE driver_id=? AND onboarding_identity_id=?", driver, canonical));
+        assertEquals(0, f.s.number("SELECT count(*) FROM wa.message_outbox WHERE recipient_identity_id=? AND private_invite_id IS NOT NULL", other));
+        var item = f.privateItem(canonical);
+        if (optsOutBeforeDelivery) {
+            f.h.time.advance(1);
+            f.s.finish(f.s.text(canonical, "PARAR CONVITES"));
+            f.s.finish(f.s.text(other, "ACEITO RECEBER CONVITES"));
+            UUID box = UUID.fromString(item.path("outboxId").asText());
+            var result = f.s.outbox.authorize(f.s.delivery, box, json().put("leaseToken", item.path("leaseToken").asText()));
+            assertEquals(WaProblem.Code.ACTION_NOT_ALLOWED, result.error());
+            assertEquals("CANCELED", f.s.string("SELECT state FROM wa.message_outbox WHERE id=?", box));
+        } else {
+            var authorization = f.s.authorize(item);
+            assertEquals(CANONICAL_PN, authorization.path("recipient").path("address").asText());
+            assertTrue(authorization.path("content").path("text").asText().contains("Seu motorista convidou você"));
+        }
+        assertEquals(other, f.h.jdbc.queryForObject("SELECT identity_id FROM wa.identity_alias WHERE alias_value=?",
+            UUID.class, TYPED_DIGITS + "@s.whatsapp.net"));
+        evolution.assertLookupCount(1);
+    }
+
+    @ParameterizedTest
+    @NullSource
+    @ValueSource(strings = {CANONICAL_PN, "551187654322@s.whatsapp.net"})
+    void ambiguousInviteCannotFallBackToTheTypedOwnerEvenIfThatOwnerOptedIn(String confirmedPn) {
+        var evolution = teamVerification(true, confirmedPn);
+        UUID driver = f.driver();
+        admittedPassenger(driver, CANONICAL_DIGITS);
+        UUID typed = admittedPassenger(driver, TYPED_DIGITS);
+        f.s.finish(f.s.text(typed, "ACEITO RECEBER CONVITES"));
+        assertTrue(f.send(driver, "CONVIDAR +" + TYPED_DIGITS).text().contains("Envie LINK"));
+        assertFalse(f.draft(driver).has("inviteRecipient"));
+        assertEquals(0, f.count("driver_invite", driver));
+        evolution.assertLookupCount(1);
+    }
+
+    @Test void ambiguousInviteDoesNotQueryEvolutionOutsideTheStrictTeamInstance() {
+        var evolution = teamVerification(false, CANONICAL_PN);
+        UUID driver = f.driver();
+        UUID canonical = admittedPassenger(driver, CANONICAL_DIGITS);
+        admittedPassenger(driver, TYPED_DIGITS);
+        f.s.finish(f.s.text(canonical, "ACEITO RECEBER CONVITES"));
+        assertTrue(f.send(driver, "CONVIDAR +" + TYPED_DIGITS).text().contains("Envie LINK"));
+        assertEquals(0, f.count("driver_invite", driver));
+        evolution.assertLookupCount(0);
+    }
+
+    private WaTeamEvolutionTestSupport teamVerification(boolean strict, String confirmedPn) {
+        var provider = new WaTeamEvolutionTestSupport(WaTransportTestSupport.INSTANCE, strict, TYPED_DIGITS, confirmedPn);
+        f = new WaDriverTestSupport(new WaConversationTestSupport(f.h, provider.evolution(), provider.settings()));
+        return provider;
+    }
+
+    private UUID admittedPassenger(UUID driver) { return admittedPassenger(driver, "12025550103"); }
+    private UUID admittedPassenger(UUID driver, String digits) {
         UUID passenger = f.h.identity();
         f.h.jdbc.update("UPDATE wa.identity SET test_cohort_id=(SELECT test_cohort_id FROM wa.identity WHERE id=?) WHERE id=?", driver, passenger);
-        f.h.alias(passenger, "PN", "12025550103@s.whatsapp.net");
+        f.h.alias(passenger, "PN", digits + "@s.whatsapp.net");
         f.h.jdbc.update("""
             INSERT INTO wa.team_admission_operation(id,github_actor_id,github_login,action,request_fingerprint,identity_id,correlation_id,created_at)
             VALUES (?,1,'synthetic-test','ADMIT_PASSENGER',?, ?,?,?)

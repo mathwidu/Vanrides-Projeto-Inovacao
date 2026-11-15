@@ -14,6 +14,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.sql.Timestamp;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import org.springframework.jdbc.core.JdbcTemplate;
 
@@ -29,11 +30,14 @@ final class WaDriverSetup {
     private final WaDriverMutations mutations;
     private final WaPrivateInviteDelivery privateDelivery;
     private final WaPassengerInviteChannel inviteChannel;
+    private final BiFunction<String, String, String> confirmInvitePn;
     private final WaCrypto crypto;
     private final JdbcTemplate jdbc;
     private final WaClock clock;
-    WaDriverSetup(JdbcTemplate jdbc, WaClock clock, WaCrypto crypto, Function<String, String> botPhone) {
+    WaDriverSetup(JdbcTemplate jdbc, WaClock clock, WaCrypto crypto, Function<String, String> botPhone,
+                  BiFunction<String, String, String> confirmInvitePn) {
         this.crypto = crypto; this.jdbc = jdbc; this.clock = clock;
+        this.confirmInvitePn = confirmInvitePn;
         store = new WaDriverDraftStore(jdbc, clock, crypto); targets = new WaDriverTargets(jdbc, clock);
         wizard = new WaDriverWizard(targets); mutations = new WaDriverMutations(jdbc, clock, crypto, targets, botPhone);
         inviteChannel = new WaPassengerInviteChannel(jdbc, clock);
@@ -154,7 +158,7 @@ final class WaDriverSetup {
         if (!pickingInvite && !startedFromMenu) return current.deepCopy();
         ObjectNode draft = WaDriverWizard.inviteDraft().put("revision", current.path("revision").asLong() + 1);
         String digits = WaInviteMessage.contact(event.normalizedPayload(), crypto);
-        UUID recipient = digits == null ? null : inviteChannel.recipient(event.eventId(), actor.identityId(), digits);
+        UUID recipient = inviteChannel.recipient(event.eventId(), actor.identityId(), digits, confirmInvitePn);
         if (recipient == null) return draft.put("inviteContactUnavailable", true);
         return draft.put("inviteRecipient", recipient.toString()).put("inviteLastDigits", digits.substring(digits.length() - 4))
             .put("maxUses", 1).put("ttlMinutes", 1440).put("stage", "REVIEW");
