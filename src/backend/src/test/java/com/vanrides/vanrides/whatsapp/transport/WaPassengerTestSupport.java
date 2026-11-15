@@ -170,15 +170,16 @@ final class WaPassengerTestSupport {
 
     Step review(UUID passenger, String code) {
         open(passenger, code);
-        send(passenger, "CONTINUAR");
         send(passenger, "Passageiro Sintético");
         send(passenger, "ACEITO");
-        send(passenger, "SIM");
-        send(passenger, "NÃO");
-        send(passenger, "1");
+        if (draft(passenger).path("stage").asText().equals("ROUTINES")) {
+            send(passenger, "1");
+        } else {
+            send(passenger, "ALTERAR DIAS");
+        }
         send(passenger, "1,3,5");
         pin(passenger);
-        return send(passenger, "PULAR");
+        return send(passenger, "AVISOS CHEGADA");
     }
 
     String marker(Step review) {
@@ -192,7 +193,7 @@ final class WaPassengerTestSupport {
         if (match.find()) {
             return match.group();
         }
-        assertTrue(review.text().contains("responda CONFIRMAR."), review.text());
+        assertTrue(review.text().contains("responda CONFIRMAR.") || review.text().contains("envie CONFIRMAR em"), review.text());
         return "CONFIRMAR";
     }
 

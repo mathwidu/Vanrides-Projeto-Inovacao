@@ -183,10 +183,9 @@ class WaPassengerBusinessIntegrationTest {
         fixture.send(passenger, "CONTINUAR");
         fixture.send(passenger, "Passageiro Sintético");
         fixture.send(passenger, "ACEITO");
-        fixture.send(passenger, "NÃO");
-        fixture.send(passenger, "SIM");
-        fixture.send(passenger, "1");
+        fixture.send(passenger, "ALTERAR DIAS");
         var points = fixture.send(passenger, "1,3");
+        fixture.send(passenger, "AVISOS PRESENÇA");
         assertTrue(points.text().contains("PONTO 1: Portaria pública"));
         var selected = fixture.send(passenger, "PONTO 1");
         fixture.confirm(passenger, fixture.send(passenger, "PULAR"));
@@ -220,11 +219,7 @@ class WaPassengerBusinessIntegrationTest {
         fixture.open(other, code);
         fixture.send(other, "CONTINUAR");
         fixture.send(other, "Outro Sintético");
-        fixture.send(other, "ACEITO");
-        fixture.send(other, "NÃO");
-        fixture.send(other, "NÃO");
-        fixture.send(other, "1");
-        var points = fixture.send(other, "1,3");
+        var points = fixture.send(other, "ACEITO");
         assertFalse(points.text().contains("Casa privada"));
         assertTrue(fixture.draft(other).path("commonChoices").isEmpty());
     }

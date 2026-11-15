@@ -20,6 +20,20 @@ final class WaPassengerDriverWizard {
 
     ObjectNode advance(
             WaProfileState actor, WaInboxAccess.Context event, ObjectNode draft, String text) {
+        if (text.equals("revisar pedido")) {
+            ObjectNode menu = driverMenu(actor.identityId());
+            ArrayNode pending = WaDriverDraftStore.options();
+            for (JsonNode link : menu.path("allLinkChoices")) {
+                if (link.hasNonNull("pickupId")) {
+                    pending.add(link);
+                }
+            }
+            if (pending.size() == 1) {
+                menu.set("linkChoices", pending);
+                return advance(actor, event, menu, "aprovar 1");
+            }
+            return menu;
+        }
         if (text.equals("passageiros")
                 || text.equals("menu passageiros")
                 || draft.isEmpty() && !text.equals("ponto comum")) {

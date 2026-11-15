@@ -55,7 +55,7 @@ export async function runDriverScenarios({ input, tools, actor, instance, addres
     demand(item.command === expectedCommand && uuid(item.outboxId) && expectedResult,
       'DRIVER_COMMAND_OR_OUTBOX_MISMATCH');
     if (item.private) {
-      demand(expectedCommand === 'CREATE_INVITE' && item.hasCipher && /^[0-9a-f]{64}$/u.test(item.inviteHash),
+      demand(expectedCommand === 'ADVANCE_DRIVER_SETUP' && item.hasCipher && /^[0-9a-f]{64}$/u.test(item.inviteHash),
         'INVITE_PRIVATE_DELIVERY_NOT_PREPARED');
       const stored = tools.sql(`SELECT json_build_object('outbox',o.payload_json,'receipt',to_jsonb(r),
         'context',c.context_json,'invite',to_jsonb(i)) FROM wa.message_outbox o
@@ -109,7 +109,7 @@ export async function runDriverScenarios({ input, tools, actor, instance, addres
     passed('driver_bootstrap_name_notice_without_company_or_paired_device');
 
     await advance('ROTINAS'); await advance('CRIAR');
-    for (const text of ['Ida Sintética', 'IDA', 'SEGUNDA A SEXTA', '06:00', 'MANTER']) await advance(text);
+    for (const text of ['Ida Sintética', 'IDA, SEGUNDA A SEXTA, 06:00']) await advance(text);
     let review = await advance({ staticPin: true });
     const oldMarker = marker(review);
     demand(routineCount() === 0, 'ROUTINE_CREATED_BEFORE_CONFIRMATION');
@@ -163,7 +163,7 @@ export async function runDriverScenarios({ input, tools, actor, instance, addres
     'SINGLE_DATE_CANCEL_CHANGED_ROUTINE');
     passed('cancel_one_future_date_preserves_recurring_routine');
 
-    await advance('CONVIDAR'); review = await advance('PADRÃO'); await confirm(review, 'CREATE_INVITE');
+    await advance('CONVIDAR');
     demand(tools.count(`SELECT count(*) FROM wa.driver_invite WHERE driver_id=${quote(actor)} AND max_uses=1
       AND use_count=0 AND revoked_at IS NULL;`) === 1 && privateInviteVerified, 'PRIVATE_INVITE_NOT_VERIFIED');
     await replayLast();

@@ -20,9 +20,9 @@ import java.util.UUID;
 final class WaPassengerSetup {
     private static final String INVITATION_HELP =
             "Seu perfil de passageiro está pronto, mas você ainda não tem vínculo com um motorista."
-                    + " Peça ao seu motorista um convite de passageiro do VanRides e envie esse"
-                    + " convite aqui. Você vai revisar o motorista, as rotinas e o ponto de embarque;"
-                    + " o vínculo depende da aprovação do motorista. Para atendimento, escreva"
+                    + " Peça ao seu motorista um convite de passageiro do VanRides. Abra o link e"
+                    + " envie a mensagem que aparecer. O motorista vai conferir seu ponto de embarque"
+                    + " antes de aprovar o pedido. Para atendimento, escreva"
                     + " FALAR COM SUPORTE.";
 
     static final Set<String> COMMANDS =

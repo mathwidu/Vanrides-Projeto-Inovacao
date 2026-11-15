@@ -30,6 +30,11 @@ class WaAttendanceOwnershipIntegrationTest {
         f.routine(driver);
         passenger = f.passenger();
         f.open(passenger, f.invite(driver, 3));
+        // Preserve coverage of a wizard opened with the earlier preferences sequence.
+        f.transport.jdbc.update("""
+            UPDATE wa.conversation_state SET context_json=context_json #- '{passengerDraft,simpleSignup}'
+            WHERE identity_id=?
+            """, passenger);
         for (String text : java.util.List.of("CONTINUAR", "Passageiro sintético", "ACEITO")) {
             f.send(passenger, text);
         }
@@ -75,6 +80,18 @@ class WaAttendanceOwnershipIntegrationTest {
         f.send(passenger, "Portão lateral");
         assertEquals("REVIEW", f.draft(passenger).path("stage").asText());
         assertEquals("Portão lateral", f.draft(passenger).path("reference").asText());
+    }
+
+    @Test void reviewingThePendingPickupTakesPrecedenceOverTheDriverAttendanceMenu() {
+        eligiblePickupCorrection();
+        f.confirm(passenger, f.send(passenger, "Portão lateral"));
+        attendance(driver, "PRESENÇAS");
+        assertEquals("ATTENDANCE", owner(driver));
+        var result = f.send(driver, "REVISAR PEDIDO");
+        assertEquals("ADVANCE_PASSENGER_SETUP", f.command(result.context()));
+        assertTrue(result.text().contains("APROVAR PONTO"), result.text());
+        assertTrue(result.text().contains("Portão lateral"), result.text());
+        assertEquals("PASSENGER_SETUP", owner(driver));
     }
 
     @Test void numericDaysAndDriverReviewRemainInTheRoutineWizard() {
@@ -158,7 +175,11 @@ class WaAttendanceOwnershipIntegrationTest {
     }
 
     private UUID attendance(String text) {
-        var lease = f.conversation.text(passenger, text);
+        return attendance(passenger, text);
+    }
+
+    private UUID attendance(UUID actor, String text) {
+        var lease = f.conversation.text(actor, text);
         var context = f.conversation.commands.context(f.conversation.worker, lease.id(), lease.token());
         assertTrue(context.path("allowedCommands").toString().contains("ADVANCE_ATTENDANCE"));
         var result = f.conversation.execute(lease, "ADVANCE_ATTENDANCE", json()).requireSuccess();

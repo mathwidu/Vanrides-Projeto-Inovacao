@@ -20,11 +20,10 @@ public final class WaConversationResponses {
     private static final String DRIVER_NOTICE = DATA_USE
         + "O aplicativo VanRides Motorista envia sua localização durante um acompanhamento iniciado por você. "
         + "Você pode interromper o compartilhamento pelo aplicativo." + CONSENT;
-    private static final String INVITE_PASSENGERS = "Com a rotina ativa, envie CONVIDAR para ver as opções. "
-        + "CONVIDAR LINK gera um link que você pode compartilhar. CONVIDAR seguido do número envia o convite pelo bot "
-        + "quando o passageiro já autorizou o recebimento neste WhatsApp.";
-    private static final String ROUTINE = "Para criar uma rotina com os dias e horários da van, envie ROTINAS e depois CRIAR. "
-        + "Com a rotina ativa, envie CONVIDAR para adicionar passageiros.";
+    private static final String INVITE_PASSENGERS = "Envie CONVIDAR para receber um link individual e encaminhá-lo ao passageiro. "
+        + "Para enviar pelo bot, escreva CONVIDAR seguido do número com DDD. O passageiro precisa autorizar esse envio primeiro.";
+    private static final String ROUTINE = "Envie CRIAR ROTINA para configurar os dias e o horário da van. "
+        + "Quando estiver pronta, envie CONVIDAR para receber um link de passageiro.";
     private static final String PAIRING = "Para compartilhar sua localização durante um trajeto, vincule o aplicativo VanRides Motorista. "
         + "Abra o aplicativo pelo ícone e envie aqui o código de pareamento exibido.";
     private static final String ATTENDANCE = "Com o vínculo com seu motorista aprovado e uma viagem disponível, envie PRESENÇA para informar se vai na ida ou na volta.";
@@ -90,7 +89,8 @@ public final class WaConversationResponses {
             case "WELCOME" -> PRODUCT + "\n\n" + INVITATIONS + "\n\n" + SUPPORT;
             case "ASK_NAME" -> "Como você prefere ser chamado? Envie seu nome em texto.\n\n" + SUPPORT;
             case "ASK_NOTICE" -> role.equals("DRIVER") ? DRIVER_NOTICE : NOTICE;
-            case "PAIRING" -> ROUTINE + "\n\n" + PAIRING + "\n\n" + HELP_AND_SUPPORT;
+            case "PAIRING" -> "Seu cadastro de motorista está pronto. " + ROUTINE
+                + "\n\nQuando for enviar sua localização, eu ajudo a vincular o aplicativo. " + HELP_AND_SUPPORT;
             case "READY" -> (role.equals("DRIVER") ? ROUTINE
                 : "Se ainda precisa se vincular a um motorista, peça a ele um convite de passageiro do VanRides e envie aqui. "
                     + ATTENDANCE) + "\n\n" + HELP_AND_SUPPORT;

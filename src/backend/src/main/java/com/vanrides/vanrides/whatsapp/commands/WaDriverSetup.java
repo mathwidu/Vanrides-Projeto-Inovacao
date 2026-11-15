@@ -80,6 +80,13 @@ final class WaDriverSetup {
                 "A mensagem citada não corresponde à etapa atual das rotinas. Responda à última pergunta do bot ou envie AJUDA para retomar.", null);
         if (type.equals("GET_SUMMARY")) return new Result(WaDecision.ok(Map.of("changed", false)), targets.summary(actor.identityId()), null);
         if (type.equals("ADVANCE_DRIVER_SETUP")) {
+            if (!WaInviteMessage.hasContact(event.normalizedPayload())
+                    && WaDriverWizard.requestsLink(WaDriverWizard.text(event), state.draft())) {
+                ObjectNode share = WaDriverWizard.inviteDraft().put("maxUses", 1).put("ttlMinutes", 1440);
+                WaDriverMutations.Result result = mutations.apply(actor.identityId(), share, instance);
+                store.save(actor, event, state, WaDriverDraftStore.json());
+                return new Result(WaDecision.ok(Map.of("changed", true)), result.text(), result);
+            }
             ObjectNode draft;
             String response;
             try {

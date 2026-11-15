@@ -60,7 +60,7 @@ final class WaDriverTestSupport {
     }
     Step review(UUID actor, String direction) {
         send(actor, "ROTINAS"); send(actor, "CRIAR"); send(actor, "Rotina Sintética"); send(actor, direction);
-        send(actor, "SEGUNDA A SEXTA"); send(actor, "06:00"); send(actor, "MANTER"); return pin(actor);
+        send(actor, "SEGUNDA A SEXTA"); send(actor, "06:00"); return pin(actor);
     }
     String marker(Step review) {
         var match = Pattern.compile("CONFIRMAR ([BCDFGHJKMNPQRSTVWXYZ]{8})").matcher(review.text());
@@ -68,7 +68,7 @@ final class WaDriverTestSupport {
     }
     Step confirm(UUID actor, Step review) { return send(actor, "CONFIRMAR " + marker(review)); }
     UUID routine(UUID actor) { confirm(actor, review(actor, "IDA")); return UUID.fromString(s.string("SELECT id::text FROM wa.routine WHERE driver_id=?", actor)); }
-    Step invite(UUID actor) { send(actor, "CONVIDAR"); return confirm(actor, send(actor, "PADRÃO")); }
+    Step invite(UUID actor) { return send(actor, "CONVIDAR"); }
     ObjectNode draft(UUID actor) { return WaJson.object(s.string("SELECT context_json::text FROM wa.conversation_state WHERE identity_id=?", actor)).with("driverDraft"); }
     long count(String table, UUID actor) { return s.number("SELECT count(*) FROM wa." + table + " WHERE " + (table.equals("message_outbox") ? "recipient_identity_id" : "driver_id") + "=?", actor); }
     ObjectNode privateItem(UUID actor) {

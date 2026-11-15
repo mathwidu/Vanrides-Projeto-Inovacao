@@ -293,7 +293,10 @@ aprovados. Pausa não muda run; cancelamento por data apenas cria/atualiza a
 ocorrência CANCELED, rejeitando execução iniciada/encerrada e preservando snapshot.
 Presença e execução continuam100/110.
 
-O convite padrão tem um uso e vale 24 horas. Na instância da equipe com
+O convite padrão tem um uso e vale 24 horas. A mensagem `CONVIDAR` solicita
+o link diretamente por `ADVANCE_DRIVER_SETUP`, com emissão e resposta
+privada na mesma transação. O convite personalizado e o envio pelo bot
+mantêm a revisão e usam `CREATE_INVITE`. Na instância da equipe com
 admissão ativa, pode incluir um link `wa.me` que preenche `PASSAGEIRO <código>`.
 O primeiro remetente autenticado elegível reserva o convite, sem consumir seu
 uso. Convites personalizados de vários usos e o modo legado exigem admissão prévia.
@@ -327,8 +330,12 @@ reason ou reference livre deixa de ser aceito nesses payloads090.
 
 A confirmação final do passageiro é a palavra CONFIRMAR, sem código. Ela só vale
 com o resumo já enviado (SUBMITTED, DELIVERED ou READ), recebida não antes do segundo em que ele foi emitido (os eventos têm precisão de
-segundos), em até 5 minutos e com rascunho e perfil inalterados. O motorista continua confirmando com
-`CONFIRMAR <código>`.
+segundos), em até 5 minutos e com rascunho e perfil inalterados. O motorista
+pode responder citando o resumo atual com `SALVAR ROTINA`,
+`APROVAR EMBARQUE`, `APROVAR PONTO` ou `PEDIR CORREÇÃO` no fluxo
+correspondente. A resposta citada precisa referenciar a tentativa de entrega
+do próprio resumo. A alternativa `CONFIRMAR <código>` segue disponível e
+continua exigida no convite direto e nas ações destrutivas.
 
 Ator e dono são sempre derivados do evento autenticado. Aprovações pertencem
 ao motorista elegível em PAIRING/READY, e a API revalida a dupla, etapa e versões.

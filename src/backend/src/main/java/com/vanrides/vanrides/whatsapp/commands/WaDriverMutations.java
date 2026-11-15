@@ -13,7 +13,7 @@ import java.util.UUID;
 import java.util.function.Function;
 import org.springframework.jdbc.core.JdbcTemplate;
 
-/** Final effects only, after the confirmation and captured aggregate snapshot were revalidated. */
+/** Final effects after the conversation has authorized a reviewed action or a request for a shareable link. */
 final class WaDriverMutations {
     record Result(String text, UUID invite, String privateText, Instant expires, UUID recipient) { }
     private final JdbcTemplate jdbc;
@@ -86,9 +86,9 @@ final class WaDriverMutations {
         String access = link == null
             ? "\nEnquanto o link estiver indisponível, a equipe precisa liberar o contato para usar o código."
             : uses == 1 ? "" : "\nEste convite é para contatos já liberados pela equipe.";
-        return new Result("Convite confirmado. O código será entregue somente nesta resposta privada.", id,
-            "Encaminhe a mensagem abaixo a quem vai embarcar. " + text + "\nO convite permite " + uses + " uso(s)." + access,
-            expires, null);
+        String limit = uses == 1 ? "Este convite vale para uma pessoa." : "Este convite permite " + uses + " usos.";
+        return new Result("Convite criado. O acesso será entregue somente nesta resposta privada.", id,
+            "Encaminhe esta mensagem em privado para quem vai embarcar.\n\n" + text + "\n\n" + limit + access, expires, null);
     }
     private void configure(UUID actor, ObjectNode d) {
         UUID id = UUID.fromString(d.path("routineId").asText());

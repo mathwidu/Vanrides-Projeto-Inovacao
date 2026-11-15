@@ -31,22 +31,21 @@ export async function runPassengerScenarios(runtime) {
     await chat.bootstrap(driver, 'Alex Exemplo');
     await chat.bootstrap(otherDriver, 'Nilo Exemplo');
     for (const [label, direction, time] of [['Ida escolar', 'IDA', '06:00'], ['Volta escolar', 'VOLTA', '18:00']]) {
-      for (const msg of ['ROTINAS', 'CRIAR', label, direction, 'SEGUNDA A SEXTA', time, 'MANTER']) await advanceDriver(msg);
+      for (const msg of ['ROTINAS', 'CRIAR', label, `${direction}, SEGUNDA A SEXTA, ${time}`]) await advanceDriver(msg);
       await confirm(driver, await advanceDriver(pin(0)), 'CONFIGURE_ROUTINE');
     }
     await review('PONTO COMUM'); await review('Ponto escolar compartilhado');
     await confirm(driver, await review(pin(0.001)), setup);
     demand(tools.count(`SELECT count(*) FROM wa.common_pickup_point WHERE driver_id=${quote(driver.actor)}
       AND state='PUBLISHED' AND longitude=0.001;`) === 1, 'PASSENGER_COMMON_POINT_NOT_PUBLISHED');
-    await advanceDriver('CONVIDAR');
-    const issued = await confirm(driver, await advanceDriver('PADRÃO'), 'CREATE_INVITE');
+    const issued = await advanceDriver('CONVIDAR');
     let invite = extractPassengerInviteCode(issued.reply);
     demand(invite !== null && uses() === 0, 'PASSENGER_INVITATION_NOT_ISSUED');
     const opened = await p('PASSAGEIRO ' + invite); invite = null;
     demand(opened.reply.includes('Alex Exemplo') && uses() === 0 && links('REQUESTED') === 0, 'PASSENGER_DRIVER_PREVIEW_REQUIRED');
     passed('invitation_from_driver_conversation_opens_draft_without_reserving_a_use');
 
-    for (const msg of ['SIM', 'Lia Exemplo', 'ACEITO', 'SIM', 'NÃO', '1', '1,3,5']) await p(msg);
+    for (const msg of ['Lia Exemplo', 'ACEITO', '1', '1,3,5']) await p(msg);
     const live = await send(passenger, { liveLocationMessage: { degreesLatitude: 0, degreesLongitude: 0 } }, 'RESPOND_TO_MESSAGE');
     demand(live.reply?.includes('estático'), 'PASSENGER_FIXED_PIN_GUIDANCE_MISSING');
     await p('Não sei o endereço exato');
@@ -55,7 +54,7 @@ export async function runPassengerScenarios(runtime) {
       AND NOT ((context_json->'passengerDraft') ?| ARRAY['sourceEvent','selectionEvent','commonId']);`) === 1,
     'PASSENGER_LIVE_OR_AMBIGUOUS_INPUT_BECAME_PICKUP');
     await p(pin(0));
-    const summary = await p('PULAR');
+    const summary = await p('AVISOS CHEGADA');
     await chat.restart();
     const sent = await confirm(passenger, summary, 'REQUEST_LINK', { notify: driver });
     demand(uses() === 1 && links('REQUESTED') === 1 && links('APPROVED') === 0 && points('PROPOSED') === 1
@@ -117,14 +116,13 @@ export async function runPassengerScenarios(runtime) {
       'PASSENGER_CLOSURE_OR_REPLAY_INVALID');
     passed('closure_notifies_counterparty_removes_membership_and_survives_duplicate_after_restart');
 
-    await advanceDriver('CONVIDAR');
-    const secondInvite = await confirm(driver, await advanceDriver('PADRÃO'), 'CREATE_INVITE');
+    const secondInvite = await advanceDriver('CONVIDAR');
     const secondCode = extractPassengerInviteCode(secondInvite.reply);
     demand(secondCode, 'PASSENGER_SECOND_INVITE_MISSING');
     await p('PASSAGEIRO ' + secondCode);
     // Existing name and notice are retained. The passenger can choose a different direction and notifications.
-    for (const msg of ['SIM', 'NÃO', 'SIM', '2', '2,4', 'PONTO 1']) await p(msg);
-    await confirm(passenger, await p('PULAR'), 'REQUEST_LINK', { notify: driver });
+    for (const msg of ['2', '2,4', 'PONTO 1']) await p(msg);
+    await confirm(passenger, await p('AVISOS PRESENÇA'), 'REQUEST_LINK', { notify: driver });
     await review('PASSAGEIROS');
     const rejected = await confirm(driver, await review('RECUSAR 1'), 'CLOSE_LINK', { notify: passenger });
     demand(rejected.peer && !mapPoint(rejected.peer) && links('REJECTED') === 1 && links('APPROVED') === 0

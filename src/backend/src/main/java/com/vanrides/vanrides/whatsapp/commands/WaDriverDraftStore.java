@@ -56,7 +56,9 @@ final class WaDriverDraftStore {
         if (!draft.path("stage").asText().equals("REVIEW") || !draft.path("confirmation").isObject()) return false;
         var confirmation = draft.path("confirmation");
         String text = WaConversationPolicy.normalize(event.normalizedPayload().path("text").asText());
-        if (!text.matches("confirmar [bcdfghjkmnpqrstvwxyz]{8}")) return false;
+        boolean quotedSave = draft.path("action").asText().equals("CONFIGURE_ROUTINE") && text.equals("salvar rotina")
+            && event.normalizedPayload().hasNonNull("replyTo");
+        if (!quotedSave && !text.matches("confirmar [bcdfghjkmnpqrstvwxyz]{8}")) return false;
         try {
             Instant issued = Instant.parse(confirmation.path("issuedAt").asText());
             Instant received = Instant.parse(event.normalizedPayload().path("occurredAt").asText());
@@ -65,14 +67,18 @@ final class WaDriverDraftStore {
                 && !received.isBefore(issued.truncatedTo(ChronoUnit.SECONDS))
                 && !event.eventId().toString().equals(confirmation.path("sourceInbox").asText())
                 && digest(draft).equals(confirmation.path("draftDigest").asText())
-                && WaCrypto.same(confirmation.path("markerHash").asText(), crypto.secretHash("driver-confirmation",
-                    actor.identityId() + ":" + text.substring(10).toUpperCase(java.util.Locale.ROOT)))
+                && (quotedSave || WaCrypto.same(confirmation.path("markerHash").asText(), crypto.secretHash("driver-confirmation",
+                    actor.identityId() + ":" + text.substring(10).toUpperCase(java.util.Locale.ROOT))))
                 && Boolean.TRUE.equals(jdbc.queryForObject("""
                     SELECT EXISTS(SELECT 1 FROM wa.message_outbox o JOIN wa.command_receipt r ON r.command_id=o.command_id
                       WHERE o.id=? AND o.recipient_identity_id=? AND r.inbox_event_id=? AND o.policy_version='driver-setup-v1'
-                        AND o.state NOT IN ('CANCELED','EXPIRED'))
+                        AND o.state NOT IN ('CANCELED','EXPIRED') AND (NOT ? OR EXISTS (
+                          SELECT 1 FROM wa.message_attempt a JOIN wa.integration_inbox e ON e.id=?
+                          WHERE a.outbox_id=o.id AND a.instance_id=e.instance_id AND a.external_message_id=?
+                            AND a.state IN ('SUBMITTED','DELIVERED','READ') AND a.credential_id IS NOT NULL)))
                     """, Boolean.class, UUID.fromString(confirmation.path("outboxId").asText()), actor.identityId(),
-                    UUID.fromString(confirmation.path("sourceInbox").asText())));
+                    UUID.fromString(confirmation.path("sourceInbox").asText()), quotedSave, event.eventId(),
+                    event.normalizedPayload().path("replyTo").asText()));
         } catch (java.time.DateTimeException | IllegalArgumentException invalid) { return false; }
     }
     static String digest(ObjectNode draft) {

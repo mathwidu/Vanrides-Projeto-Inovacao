@@ -32,6 +32,11 @@ final class WaPassengerTexts {
                         new WaPrompt.Option("NO", "Não", List.of())));
     }
 
+    static String inviteLead(ObjectNode draft) {
+        return "Seu convite é do motorista " + draft.path("driverName").asText()
+                + ". Vou ajudar você a indicar seu embarque. Se o convite não for para você, envie ABANDONAR.\n\n";
+    }
+
     static String clock(String time) {
         return time.matches("\\d\\d:\\d\\d:00") ? time.substring(0, 5) : time;
     }
@@ -162,11 +167,32 @@ final class WaPassengerTexts {
         if (!details.isEmpty()) {
             sections.add(String.join("\n", details));
         }
-        sections.add(
-                "Para confirmar este resumo em até 5 minutos, responda CONFIRMAR"
-                        + (marker.isEmpty() ? "" : " " + marker)
-                        + ".\nUse CORRIGIR ou ABANDONAR para revisar.");
+        if (draft.path("simpleSignup").asBoolean() && action.equals("REQUEST_LINK")) {
+            sections.add("Se estiver tudo certo, envie CONFIRMAR em até 5 minutos. O motorista vai conferir seu pedido.");
+            sections.add("Para ajustar, envie ALTERAR DIAS, CORRIGIR PONTO ou REFERÊNCIA seguido de um detalhe."
+                    + " Para escolher avisos, envie AVISOS TODOS, AVISOS CHEGADA, AVISOS PRESENÇA ou AVISOS NENHUM.");
+        } else {
+            String approval = approvalReply(action);
+            String confirm = "Para confirmar este resumo em até 5 minutos, responda CONFIRMAR"
+                    + (marker.isEmpty() ? "" : " " + marker) + ".";
+            sections.add(approval.isEmpty() ? confirm + "\nUse CORRIGIR ou ABANDONAR para revisar."
+                    : "Responda a esta mensagem com " + (approval.equals("pedir correcao")
+                            ? "PEDIR CORREÇÃO" : approval.toUpperCase(java.util.Locale.ROOT))
+                    + " em até 5 minutos. Se preferir, envie CONFIRMAR " + marker + ".");
+            if (action.equals("APPROVE_LINK") || action.equals("APPROVE_PICKUP")) {
+                sections.add("Se o ponto precisar mudar, envie PASSAGEIROS e escolha RETIFICAR para o pedido.");
+            }
+        }
         return String.join("\n\n", sections);
+    }
+
+    static String approvalReply(String action) {
+        return switch (action) {
+            case "APPROVE_LINK" -> "aprovar embarque";
+            case "APPROVE_PICKUP" -> "aprovar ponto";
+            case "RECTIFY" -> "pedir correcao";
+            default -> "";
+        };
     }
 
     private static String reviewHelp(JsonNode confirmation) {
@@ -226,6 +252,12 @@ final class WaPassengerTexts {
                         "Envie um pin estático do ponto onde a van deve buscar você. No celular,"
                             + " escolha o local de embarque no mapa do WhatsApp.\n\n"
                             + WaConversationResponses.COMPUTER_POINT);
+        if (draft.path("simpleSignup").asBoolean() && draft.path("selections").size() == 1) {
+            JsonNode selection = draft.path("selections").path(0);
+            text.insert(0, "Sua rotina: " + routineLabel(selection.path("name").asText(),
+                    selection.path("direction").asText(), selection.path("local_time").asText())
+                    + ", " + WaPassengerAnswers.dayNames(selection.path("selectedDays")) + ". Para mudar os dias, envie ALTERAR DIAS.\n\n");
+        }
         if (draft.path("commonChoicesBlocked").asBoolean()) {
             text.append(
                     "\n\nO catálogo tem mais de oito pontos e não cabe nesta pergunta. Envie seu"

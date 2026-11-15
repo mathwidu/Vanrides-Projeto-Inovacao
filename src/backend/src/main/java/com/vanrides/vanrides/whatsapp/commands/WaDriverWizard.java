@@ -11,19 +11,29 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeSet;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 /** Only the authenticated inbox is parsed. No worker-supplied business value enters this wizard. */
 final class WaDriverWizard {
     private static final List<String> FIELDS = List.of("NAME", "DIRECTION", "DAYS", "TIME", "TIMEZONE", "DESTINATION", "REVIEW");
+    private static final List<String> SHARE_LINK = List.of("convidar", "convidar passageiro", "convidar um passageiro",
+        "convidar link", "gerar link de convite");
+    private static final String TIME = "(?:[01][0-9]|2[0-3]):[0-5][0-9]";
+    private static final Pattern SCHEDULE = Pattern.compile("(ida|volta) *, *(segunda a sexta|todos os dias|[1-7](?:[, ]+[1-7]){0,6}) *, *(" + TIME + ")");
     private final WaDriverTargets targets;
     WaDriverWizard(WaDriverTargets targets) { this.targets = targets; }
     static String text(WaInboxAccess.Context event) { return WaConversationPolicy.normalize(event.normalizedPayload().path("text").asText()); }
     static boolean starts(String text) {
-        return List.of("rotinas", "menu motorista", "configurar rotina", "criar rotina", "criar minha rotina", "criar", "convidar",
-                "convidar passageiro", "convidar um passageiro", "convidar link", "gerar link de convite", "revogar", "resumo").contains(text)
+        return SHARE_LINK.contains(text) || List.of("rotinas", "menu motorista", "configurar rotina", "criar rotina",
+                "criar minha rotina", "criar", "convidar personalizado", "revogar", "resumo").contains(text)
             || text.matches("(?:editar|ordem|pausar|retomar|cancelar|revogar) (?:[1-9][0-9]?|100)");
     }
     static ObjectNode inviteDraft() { return WaDriverDraftStore.json().put("stage", "USES").put("action", "CREATE_INVITE"); }
+    static boolean requestsLink(String text, ObjectNode draft) {
+        boolean inviteDraft = draft.path("action").asText().equals("CREATE_INVITE");
+        return (inviteDraft || draft.path("stage").asText("MENU").equals("MENU"))
+            && (SHARE_LINK.contains(text) || inviteDraft && text.equals("link"));
+    }
     ObjectNode advance(UUID actor, WaInboxAccess.Context event, ObjectNode old) {
         ObjectNode d = old.deepCopy(); String text = text(event);
         long revision = d.path("revision").asLong() + 1;
@@ -43,8 +53,10 @@ final class WaDriverWizard {
             if (!d.path("action").asText().equals("CONFIGURE_ROUTINE")) d.put("stage", switch (d.path("action").asText()) {
                 case "CREATE_INVITE" -> stage.equals("REVIEW") ? "TTL" : "USES";
                 case "SET_STOP_ORDER" -> "ORDER"; case "CANCEL_OCCURRENCE" -> "DATE"; default -> "MENU";
-            }); else d.put("stage", index > 0 ? FIELDS.get(index - 1) : "MENU");
+            }); else if (stage.equals("DESTINATION") && d.path("creating").asBoolean()) d.put("stage", "TIME");
+            else d.put("stage", index > 0 ? FIELDS.get(index - 1) : "MENU");
         } else if (text.equals("continuar")) { /* Re-emit this question or issue a fresh review marker. */ }
+        else if (SHARE_LINK.contains(text)) { /* Finish the current draft before starting a second action. */ }
         else switch (stage) {
             case "MENU" -> select(actor, d, text);
             case "NAME" -> {
@@ -55,23 +67,37 @@ final class WaDriverWizard {
                 }
             }
             case "DIRECTION" -> {
-                if (List.of("ida", "volta").contains(text)) d.put("direction", text.equals("ida") ? "OUTBOUND" : "RETURN").put("stage", "DAYS");
+                if (List.of("ida", "volta").contains(text)) {
+                    d.put("direction", direction(text)).put("stage", "DAYS");
+                } else {
+                    var schedule = SCHEDULE.matcher(text);
+                    if (schedule.matches()) {
+                        ArrayNode weekdays = days(schedule.group(2));
+                        if (weekdays != null) {
+                            d.put("direction", direction(schedule.group(1)));
+                            d.set("weekdays", weekdays);
+                            applyTime(d, schedule.group(3));
+                        }
+                    }
+                }
             }
             case "DAYS" -> {
                 ArrayNode days = days(text);
                 if (days != null) { d.set("weekdays", days); d.put("stage", "TIME"); }
             }
             case "TIME" -> {
-                if (text.matches("(?:[01][0-9]|2[0-3]):[0-5][0-9]")) d.put("time", LocalTime.parse(text).toString()).put("stage", "TIMEZONE");
+                if (text.matches(TIME)) applyTime(d, text);
             }
             case "TIMEZONE" -> {
-                String zone = Map.of("manter", d.path("timezone").asText("America/Sao_Paulo"), "brasilia", "America/Sao_Paulo",
-                    "manaus", "America/Manaus", "rio branco", "America/Rio_Branco", "noronha", "America/Noronha").get(text);
+                String zone = timezone(d, text);
                 if (zone != null) d.put("timezone", zone).put("stage", "DESTINATION");
             }
             case "DESTINATION" -> {
                 if (event.normalizedKind().equals("PIN")) {
                     targets.pin(actor, event.eventId().toString()); d.put("destinationEvent", event.eventId().toString()).put("stage", "REVIEW");
+                } else if (text.startsWith("fuso ")) {
+                    String zone = timezone(d, text.substring(5));
+                    if (zone != null) d.put("timezone", zone);
                 } else if (text.equals("manter") && !d.path("creating").asBoolean()) d.put("stage", "REVIEW");
             }
             case "ORDER" -> order(d, text);
@@ -124,10 +150,8 @@ final class WaDriverWizard {
             d.removeAll(); d.put("stage", "NAME").put("action", "CONFIGURE_ROUTINE").put("creating", true)
                 .put("routineId", UUID.randomUUID().toString()).put("timezone", "America/Sao_Paulo"); return;
         }
-        if (List.of("convidar", "convidar passageiro", "convidar um passageiro", "convidar link", "gerar link de convite").contains(text)) {
+        if (text.equals("convidar personalizado")) {
             d.removeAll(); d.setAll(inviteDraft());
-            if (text.equals("convidar link") || text.equals("gerar link de convite"))
-                d.put("maxUses", 1).put("ttlMinutes", 1440).put("stage", "REVIEW");
             return;
         }
         if (!text.matches("(?:editar|ordem|pausar|retomar|cancelar|revogar) (?:[1-9][0-9]?|100)")) return;
@@ -158,6 +182,15 @@ final class WaDriverWizard {
             case "cancelar" -> d.put("action", "CANCEL_OCCURRENCE").put("stage", "DATE").put("occurrenceId", UUID.randomUUID().toString());
             default -> throw WaProblem.invalid();
         }
+    }
+    private static String direction(String text) { return text.equals("ida") ? "OUTBOUND" : "RETURN"; }
+    private static void applyTime(ObjectNode draft, String time) {
+        draft.put("time", LocalTime.parse(time).toString())
+            .put("stage", draft.path("creating").asBoolean() ? "DESTINATION" : "TIMEZONE");
+    }
+    private static String timezone(ObjectNode draft, String text) {
+        return Map.of("manter", draft.path("timezone").asText("America/Sao_Paulo"), "brasilia", "America/Sao_Paulo",
+            "manaus", "America/Manaus", "rio branco", "America/Rio_Branco", "noronha", "America/Noronha").get(text);
     }
     private static ArrayNode days(String text) {
         if (text.equals("segunda a sexta")) text = "1,2,3,4,5";

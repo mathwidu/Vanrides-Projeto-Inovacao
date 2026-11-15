@@ -110,8 +110,9 @@ test('o convite por link libera o pedido e a presença só aparece após a aprov
   assert.match(ui.transcript(), /convite é de Lara Demo/);
   ui.click('Usar nome Caio Demo');
   ui.click('Aceitar aviso de dados');
+  ui.click('Enviar ponto de exemplo');
   assert.match(ui.transcript(), /Praça Exemplo, portão azul/);
-  ui.click('Confirmar ponto de embarque');
+  ui.click('Enviar pedido ao motorista');
   assert.deepEqual(ui.buttons(), []);
   assert.match(ui.node('hint').textContent, /Motorista/);
 
@@ -140,7 +141,7 @@ test('o envio direto só é oferecido com permissão atual do passageiro', () =>
   assert.match(ui.transcript(), /ACEITO RECEBER CONVITES/);
 
   ui.choose('motorista');
-  assert.deepEqual(ui.buttons(), ['Gerar link de convite', 'Enviar convite direto']);
+  assert.deepEqual(ui.buttons(), ['Gerar link de convite', 'Revisar envio direto']);
   const priorOption = ui.node('options').children[1];
   ui.choose('passageiro');
   ui.click('Retirar permissão de convite direto');
@@ -152,7 +153,9 @@ test('o envio direto só é oferecido com permissão atual do passageiro', () =>
   ui.choose('passageiro');
   ui.click('Permitir convite direto');
   ui.choose('motorista');
-  const oneUseOption = ui.click('Enviar convite direto');
+  ui.click('Revisar envio direto');
+  assert.doesNotMatch(ui.transcript(), /convite direto foi entregue/);
+  const oneUseOption = ui.click('Confirmar envio direto');
   oneUseOption.events.click();
   const deliveries = ui.transcript().match(/convite direto foi entregue/g);
   assert.equal(deliveries.length, 1);
@@ -175,7 +178,8 @@ test('reinício e encerramento de sessão descartam convite, permissão, convers
     ui.choose('passageiro');
     ui.click('Permitir convite direto');
     ui.choose('motorista');
-    ui.click('Enviar convite direto');
+    ui.click('Revisar envio direto');
+    ui.click('Confirmar envio direto');
     ui.choose('passageiro');
     ui.click('Usar convite recebido');
     ui.node('input').value = 'Rascunho Demo';
