@@ -36,8 +36,10 @@ Teste também um número sem opt-in, a retirada da autorização antes do envio 
 2. Faça o backup da homologação e prepare a aprovação da V41 para a revisão que chegará à `main`, conforme o [guia de publicação](../../deploy/homologacao/AUTOMATICO.md). Atualize a API antes do agente. A `main` publica a API. A atualização do agente é uma operação separada.
 3. Confira saúde, versão, conexão e `AJUDA`. Execute primeiro o roteiro acima com os números de teste do mantenedor. A liberação para o grupo vem após o aceite desse ensaio.
 
-Se for necessário retornar à API V40 após a emissão de novos convites, pause o
-processamento do WhatsApp e invalide os convites ainda abertos emitidos por esta
-versão antes de reativar o canal. A API anterior desconhece a restrição ao
-destinatário da V41. Preserve os vínculos já aprovados e use o procedimento de
-retorno da homologação com backup verificado.
+Para retornar à API V40, pause o processamento do WhatsApp e restaure o agente
+anterior. Preserve o receptor com a correção de identidade do #114. A API V40
+desconhece a restrição ao destinatário e o envio direto. Depois de usar os novos
+convites, prefira corrigir em V41. Se o retorno for indispensável, revogue os
+convites da V41 ainda abertos, descarte as revisões de envio direto em aberto e
+reconcilie suas entregas antes de reativar o canal. Preserve vínculos aprovados e
+use o retorno da homologação com backup verificado.
