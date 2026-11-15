@@ -91,6 +91,11 @@ Uma allowlist do ingresso não cadastra nem vincula identidades na API.
 CHANNEL/instance/environment precisam corresponder e o backend com coortes
 restritas precisa ter os contatos/aliases aprovados preparados separadamente.
 
+Em HML com admissão pela API, a Evolution pode enviar o mesmo identificador
+em `remoteJid` e `remoteJidAlt`. Após validar o formato, o receptor envia esse
+identificador uma única vez. Identificadores distintos seguem para a conferência
+de admissão da API.
+
 ## Conteúdo e callbacks
 
 Apenas PN/LID explicitamente aprovados podem produzir mensagem humana.

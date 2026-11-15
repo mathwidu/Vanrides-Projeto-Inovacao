@@ -182,6 +182,35 @@ test('HML preserves backend IGNORED receipts and rejects a missing or foreign en
 });
 
 
+test('Evolution repeated sender reaches strict API admission as one alias', async t => {
+  const raw = rawConfig(); raw.admissionMode = 'API'; raw.contacts = [];
+  const repeated = human();
+  repeated.data.key.remoteJidAlt = repeated.data.key.remoteJid;
+  const conflict = human('B');
+  conflict.data.key.remoteJidAlt = repeated.data.key.remoteJid;
+  const pair = human('C');
+  const invalid = human('D');
+  invalid.data.key.remoteJidAlt = null;
+  const observed = [];
+  const upstream = await server(t, { raw, fetchImpl: async (_url, init) => {
+    const key = JSON.parse(init.body).data.key;
+    observed.push(key);
+    const distinctSameType = key.remoteJid === key.remoteJidAlt || key.remoteJidAlt?.endsWith('@s.whatsapp.net');
+    const response = receipt(distinctSameType ? 'IGNORED' : 'PERSISTED');
+    response.headers.set('X-Vanrides-Admission-Policy', 'TEAM_V1');
+    return response;
+  } });
+  assert.equal(JSON.parse((await request(upstream.port, repeated)).body).status, 'PERSISTED');
+  assert.equal(observed[0].remoteJid, repeated.data.key.remoteJid);
+  assert.equal(Object.hasOwn(observed[0], 'remoteJidAlt'), false);
+  assert.equal(JSON.parse((await request(upstream.port, conflict)).body).status, 'IGNORED');
+  assert.equal(observed[1].remoteJidAlt, conflict.data.key.remoteJidAlt);
+  assert.equal(JSON.parse((await request(upstream.port, pair)).body).status, 'PERSISTED');
+  assert.equal(observed[2].remoteJidAlt, pair.data.key.remoteJidAlt);
+  assert.equal((await request(upstream.port, invalid)).status, 204);
+  assert.equal(observed.length, 3);
+});
+
 test('API admission uses authenticated backend policy, without keeping a static contact list', async t => {
   const raw = rawConfig(); raw.admissionMode = 'API'; raw.contacts = [];
   const config = validateConfig(raw), event = human();
