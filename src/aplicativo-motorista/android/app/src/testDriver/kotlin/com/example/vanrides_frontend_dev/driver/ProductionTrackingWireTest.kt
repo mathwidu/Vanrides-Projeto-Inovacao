@@ -11,6 +11,24 @@ class ProductionTrackingWireTest {
         .put("serverTime", "2026-10-31T12:00:00Z").put("leaseExpiresAt", "2026-10-31T12:05:00Z")
         .put("action", "CONTINUE").put("gpsState", "FRESH").put("stopRequestRef", JSONObject.NULL)
 
+    @Test fun terminalRunIsPreservedWithoutEquatingItToSensorStop() {
+        val wire = ProductionTrackingWire()
+        val path = "/driver-app/v1/tracking-status"
+        val status = control().put("runId", id).put("runState", "COMPLETED")
+            .put("trackingSessionId", id).put("sessionState", "STOP_PENDING")
+            .put("credentialExpiresAt", "2026-11-01T12:00:00Z").put("action", "STOP")
+        val normalized = TrackingWire.status(wire.response(path, status.toString()))
+        assertEquals("COMPLETED", wire.runState)
+        assertEquals("STOP_PENDING", normalized.sessionState)
+        wire.response("$route/state", control().put("runId", id).put("state", "CANCELED").put("action", "STOP").toString())
+        assertEquals("CANCELED", wire.runState)
+        try { wire.response(path, status.put("runState", "PRIVATE_TEXT").toString()); fail("Expected closed run states") }
+        catch (_: IllegalArgumentException) { }
+        assertEquals("CANCELED", wire.runState)
+        wire.response(path, status.put("runState", JSONObject.NULL).put("trackingSessionId", JSONObject.NULL).toString())
+        assertNull(wire.runState)
+    }
+
     @Test fun stateRetryRetainsItsKeyButANewHeartbeatGetsANewKey() {
         val wire = ProductionTrackingWire()
         val state = TrackingWire.state(SessionOwner(id, 2), false)

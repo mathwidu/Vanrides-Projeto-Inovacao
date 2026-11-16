@@ -208,6 +208,7 @@ class DriverTrackingStatus {
     this.rejected = 0,
     this.dropped = 0,
     this.gpsState = 'UNKNOWN',
+    this.runState,
     this.leaseExpiresAt,
     this.reason,
     this.stopRequestedAt,
@@ -226,13 +227,23 @@ class DriverTrackingStatus {
     };
     const permissions = {'UNKNOWN', 'DENIED', 'APPROXIMATE', 'GRANTED'};
     const gpsStates = {'UNKNOWN', 'FRESH', 'STALE', 'CLOCK_SKEW'};
+    const runStates = {
+      'PLANNED',
+      'STARTING',
+      'START_FAILED',
+      'TRACKING',
+      'DEGRADED',
+      'COMPLETED',
+      'CANCELED',
+    };
     if (!states.contains(data['state']) ||
         data['credentialConfigured'] is! bool ||
         !permissions.contains(data['permission']) ||
         !gpsStates.contains(data['gpsState']) ||
         (data.containsKey('notificationPermissionGranted') &&
             data['notificationPermissionGranted'] is! bool) ||
-        (data.containsKey('stopPending') && data['stopPending'] is! bool)) {
+        (data.containsKey('stopPending') && data['stopPending'] is! bool) ||
+        (data['runState'] != null && !runStates.contains(data['runState']))) {
       throw const FormatException('INVALID_NATIVE_STATUS');
     }
     int counter(String key) {
@@ -270,6 +281,7 @@ class DriverTrackingStatus {
       rejected: counter('rejected'),
       dropped: counter('dropped'),
       gpsState: data['gpsState']! as String,
+      runState: data['runState'] as String?,
       leaseExpiresAt: instant('leaseExpiresAt'),
       reason: reason as String?,
       stopRequestedAt: instant('stopRequestedAt'),
@@ -289,12 +301,14 @@ class DriverTrackingStatus {
   final int rejected;
   final int dropped;
   final String gpsState;
+  final String? runState;
   final int? leaseExpiresAt;
   final String? reason;
   final int? stopRequestedAt;
   final int? stoppedAt;
   final DriverTrackingDiagnostics diagnostics;
   bool get isActive => state == 'STARTING' || state == 'TRACKING';
+  bool get isRunTerminal => runState == 'COMPLETED' || runState == 'CANCELED';
 
   /// Rebuild from typed fields instead of exporting the original native map.
   Map<String, Object?> toSanitizedMap() => {
@@ -304,6 +318,7 @@ class DriverTrackingStatus {
     'notificationPermissionGranted': notificationPermissionGranted,
     'stopPending': stopPending,
     'gpsState': gpsState,
+    'runState': runState,
     'queued': queued,
     'accepted': accepted,
     'duplicates': duplicates,

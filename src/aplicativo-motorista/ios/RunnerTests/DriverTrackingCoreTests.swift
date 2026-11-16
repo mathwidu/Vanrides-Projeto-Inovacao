@@ -5,6 +5,23 @@ import XCTest
 #endif
 
 final class DriverTrackingCoreTests: XCTestCase {
+  func testTerminalRunIsSeparateFromSensorStopAndRejectsUnknownMetadata() throws {
+    let id = "12345678-1234-1234-1234-123456789012"
+    let wire = DriverProductionTrackingWire()
+    let path = "/driver-app/v1/tracking-status"
+    var value: [String: Any] = ["runState": "COMPLETED", "trackingSessionId": id,
+      "sessionState": "STOP_PENDING", "generation": 2, "serverTime": "2026-10-31T12:00:00Z",
+      "credentialExpiresAt": "2026-11-01T12:00:00Z", "leaseExpiresAt": "2026-10-31T12:05:00Z", "gpsState": "STALE"]
+    let normalized = try wire.incoming(path: path, data: JSONSerialization.data(withJSONObject: value))
+    XCTAssertEqual(wire.runState, "COMPLETED")
+    XCTAssertEqual((normalized["session"] as? [String: Any])?["state"] as? String, "STOP_PENDING")
+    value["runState"] = "PRIVATE_TEXT"
+    XCTAssertThrowsError(try wire.incoming(path: path, data: JSONSerialization.data(withJSONObject: value)))
+    XCTAssertEqual(wire.runState, "COMPLETED")
+    value["runState"] = NSNull(); value["trackingSessionId"] = NSNull()
+    _ = try wire.incoming(path: path, data: JSONSerialization.data(withJSONObject: value))
+    XCTAssertNil(wire.runState)
+  }
   private func control(expiry: Int64 = 310_000, server: Int64 = 10_000) throws -> DriverTrackingControl {
     try DriverTrackingControl(["schemaVersion": 1, "environment": "gps-spike", "sessionId": "synthetic",
       "generation": 1, "serverTime": server, "leaseExpiresAt": expiry, "action": "CONTINUE", "gpsState": "UNKNOWN"])
@@ -198,7 +215,7 @@ struct DriverTrackingCoreTestMain {
   static func main() {
     let suite = DriverTrackingCoreTests.defaultTestSuite
     suite.run()
-    guard let run = suite.testRun, run.executionCount == 14, run.totalFailureCount == 0 else { exit(1) }
+    guard let run = suite.testRun, run.executionCount == 15, run.totalFailureCount == 0 else { exit(1) }
   }
 }
 #endif
