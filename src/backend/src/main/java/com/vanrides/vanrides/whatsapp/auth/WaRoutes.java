@@ -19,6 +19,7 @@ public final class WaRoutes {
         service("POST", "/inbox/claim", WaPrincipal.Kind.CONVERSATION_WORKER, true, false),
         service("POST", "/inbox/" + UUID + "/result", WaPrincipal.Kind.CONVERSATION_WORKER, true, true),
         service("POST", "/jobs/tick", WaPrincipal.Kind.SYSTEM_JOB, true, true),
+        service("POST", "/privacy/tick", WaPrincipal.Kind.SYSTEM_JOB, true, true),
         service("POST", "/outbox/claim", WaPrincipal.Kind.DELIVERY_WORKER, true, false),
         service("POST", "/outbox/" + UUID + "/authorize-submit", WaPrincipal.Kind.DELIVERY_WORKER, true, false),
         service("POST", "/outbox/" + UUID + "/result", WaPrincipal.Kind.DELIVERY_WORKER, true, true),

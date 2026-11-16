@@ -13,7 +13,7 @@ import java.util.Set;
 /** Server-issued, short-lived continuation; callers cannot choose scope or skip a locked prefix. */
 public final class WaPrivacyCursor {
     public record Value(String family, ObjectNode position) { }
-    private static final Set<String> FAMILIES = Set.of("TERMINAL_7D", "TECHNICAL_7D", "PROFILE_30D", "HISTORY_90D");
+    private static final Set<String> FAMILIES = Set.of("TERMINAL_7D", "TECHNICAL_7D", "PROFILE_30D", "HISTORY_PROJECTION_90D", "HISTORY_90D");
     private final WaCrypto crypto;
     private final WaClock clock;
     public WaPrivacyCursor(WaCrypto crypto, WaClock clock) { this.crypto = crypto; this.clock = clock; }
