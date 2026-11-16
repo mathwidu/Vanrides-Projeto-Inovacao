@@ -135,7 +135,7 @@ no navegador e o teste com um motorista do painel.
 
 Em 16/11, o iPhone 13 recebeu o aplicativo 0.4.0+14 assinado; instalação e abertura pelo Mac passaram. O perfil gratuito vence em 23/11/2026 às 08:27 (Brasília). A automação de tela ainda aguarda a liberação do iOS, e GPS/parada desse build permanecem pendentes. O link do APK continua sendo apenas para Android.
 
-Na nova rodada do WhatsApp real, passaram vínculo, ponto, presença de amanhã, alteração para ausência e consulta correspondente pelo motorista. Após aprovação ou mudança da rotina, aguarde a agenda de até um minuto antes de repetir a presença. Isso não dispensa conferir a data e o sentido indicados na resposta. Percurso, bateria e aceite final serão feitos depois que os artefatos estiverem prontos. Aproximação e fim automático ainda dependem de habilitar o ensaio controlado.
+Na nova rodada do WhatsApp real, passaram vínculo, ponto, presença de amanhã, alteração para ausência e consulta correspondente pelo motorista. Após aprovação ou mudança da rotina, aguarde a próxima execução da agenda, programada a cada minuto, antes de repetir a presença. Isso não dispensa conferir a data e o sentido indicados na resposta. Percurso, bateria e aceite final serão feitos depois que os artefatos estiverem prontos. Aproximação e fim automático ainda dependem de habilitar o ensaio controlado.
 
 ## Registrar um teste ou investigar uma falha
 
