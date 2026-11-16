@@ -113,12 +113,37 @@ internal object TrackingProtocolChecks {
         check(!preservesStop(hasNativeRequest = true))
         check(!preservesStop(hasPendingStop = true))
     }
+    fun failedCheckpointStoreNeverStartsHttp() {
+        var requests = 0
+        var reads = 0
+        for (throws in listOf(false, true)) {
+            check(!TrackingStartCheckpoint.requestAfterPersist(
+                persist = { if (throws) throw java.io.IOException("synthetic store failure") else false },
+                verifyPersisted = { reads++; true }, request = { requests++ }))
+        }
+        check(requests == 0 && reads == 0)
+    }
+    fun persistedAckInvalidationMustBeVisibleBeforeTheFirstRequest() {
+        var diskAck: Long? = 1_000_000L
+        var diskState = "STOPPED"
+        var requests = 0
+        // A silent/noncommitted store write or failed read must not trust the old ACK.
+        check(!TrackingStartCheckpoint.requestAfterPersist({ true }, { diskAck == null && diskState == "STARTING" }, { requests++ }))
+        check(requests == 0 && diskAck != null)
+        val order = mutableListOf<String>()
+        check(TrackingStartCheckpoint.requestAfterPersist(
+            persist = { order.add("persist"); diskAck = null; diskState = "STARTING"; true },
+            verifyPersisted = { order.add("read"); diskAck == null && diskState == "STARTING" },
+            request = { check(diskAck == null && diskState == "STARTING"); order.add("http"); requests++ }))
+        check(requests == 1 && order == listOf("persist", "read", "http"))
+    }
     @JvmStatic fun main(args: Array<String>) {
         endpointIsolation(); leaseConservativeAndReplay(); leaseBoundsAndCredential()
         boundedQueueAndAge(); explicitAcknowledgmentsOnly(); ownerAndFiniteNumbers()
         stopFailureClassification()
         acknowledgedIdleStopSurvivesLaterCredentialFailure(); unknownOrUnacknowledgedStopNeverBecomesConfirmed()
         collectingOwnedProviderOrPendingStopCannotUseAnOldAcknowledgment()
-        println("PASS: 10 Android protocol scenarios (7 existing + 3 confirmed-stop guards)")
+        failedCheckpointStoreNeverStartsHttp(); persistedAckInvalidationMustBeVisibleBeforeTheFirstRequest()
+        println("PASS: 12 Android protocol scenarios (7 existing + 3 confirmed-stop guards + 2 durable start checkpoints)")
     }
 }

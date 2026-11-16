@@ -189,7 +189,9 @@ internal class DriverTrackingRuntime private constructor(private val context: Co
         value > reference -> "FUTURE"
         else -> "VALID"
     }
-    private fun persist() { try { store.saveDiagnostics(snapshotUnchecked()) } catch (_: Exception) { /* No sensitive fallback logs. */ } }
+    private fun persist(): Boolean = try {
+        store.saveDiagnostics(snapshotUnchecked()); true
+    } catch (_: Exception) { false } // No sensitive fallback logs.
     private fun now(): Long = SystemClock.elapsedRealtime()
     private fun wall(): Long = System.currentTimeMillis()
 
@@ -252,25 +254,32 @@ internal class DriverTrackingRuntime private constructor(private val context: Co
         state = "STARTING"; reason = null; startingReply = reply
         stopRequestedAt = null; stoppedAt = null; nativeStopCalledAt = null; nativeStopCompletedAt = null
         stopRequestedElapsedMs = null; stoppedElapsedMs = null; nativeStopCalledElapsedMs = null; nativeStopCompletedElapsedMs = null
-        remoteStopAcknowledgedAt = null; lease.clear(); gpsState = "UNKNOWN"; persist()
-        // Reconciliation is online and mandatory before *each* explicit activation.
-        send(value, "/driver-app/v1/status", null) { response ->
-            if (token != epoch) return@send
-            if (!successful(response)) { finishStart(handleFailure(response)); return@send }
-            val status = try { TrackingWire.status(response.body!!) } catch (_: Exception) {
-                fail("INVALID_CONTRACT"); finishStart("INVALID_CONTRACT"); return@send
+        remoteStopAcknowledgedAt = null; lease.clear(); gpsState = "UNKNOWN"
+        // An older ACK must be durably invalidated before a new run can make any HTTP request.
+        val checkpointed = TrackingStartCheckpoint.requestAfterPersist(::persist, {
+            val saved = store.loadDiagnostics()
+            saved.optString("state") == "STARTING" && saved.has("remoteStopAcknowledgedAt") && saved.isNull("remoteStopAcknowledgedAt")
+        }) {
+            // Reconciliation is online and mandatory before *each* explicit activation.
+            send(value, "/driver-app/v1/status", null) { response ->
+                if (token != epoch) return@send
+                if (!successful(response)) { finishStart(handleFailure(response)); return@send }
+                val status = try { TrackingWire.status(response.body!!) } catch (_: Exception) {
+                    fail("INVALID_CONTRACT"); finishStart("INVALID_CONTRACT"); return@send
+                }
+                credentialExpiry = status.credentialExpiresAt
+                if (!visible) { stop("UI_NOT_VISIBLE"); return@send }
+                if (spike && status.owner != null && status.sessionState in setOf("RUNNING", "STOP_PENDING")) {
+                    reconcile(status.owner); finishStart("NEW_INTENT_REQUIRED"); return@send
+                }
+                if (status.owner != null && status.sessionState == "STOP_PENDING") {
+                    reconcile(status.owner); finishStart("NEW_INTENT_REQUIRED"); return@send
+                }
+                activationGuard.observe(status)
+                activate(value, intentId, token, activation)
             }
-            credentialExpiry = status.credentialExpiresAt
-            if (!visible) { stop("UI_NOT_VISIBLE"); return@send }
-            if (spike && status.owner != null && status.sessionState in setOf("RUNNING", "STOP_PENDING")) {
-                reconcile(status.owner); finishStart("NEW_INTENT_REQUIRED"); return@send
-            }
-            if (status.owner != null && status.sessionState == "STOP_PENDING") {
-                reconcile(status.owner); finishStart("NEW_INTENT_REQUIRED"); return@send
-            }
-            activationGuard.observe(status)
-            activate(value, intentId, token, activation)
         }
+        if (!checkpointed) finishStart("STOP_STORAGE_ERROR")
     }
     private fun activate(value: DriverCredential, intentId: String, token: Long, activation: String?) {
         send(value, "/driver-app/v1/start-intents/$intentId/activate", activation ?: "{\"schemaVersion\":1}") { response ->

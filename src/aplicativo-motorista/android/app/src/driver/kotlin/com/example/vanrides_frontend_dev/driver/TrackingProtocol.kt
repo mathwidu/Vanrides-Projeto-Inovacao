@@ -31,6 +31,16 @@ internal object TrackingProtocol {
     }
 }
 
+/** A failed durable invalidation cannot authorize even the first start-related HTTP request. */
+internal object TrackingStartCheckpoint {
+    fun requestAfterPersist(persist: () -> Boolean, verifyPersisted: () -> Boolean, request: () -> Unit): Boolean {
+        val durable = try { persist() && verifyPersisted() } catch (_: Exception) { false }
+        if (!durable) return false
+        request()
+        return true
+    }
+}
+
 internal data class SessionOwner(val id: String, val generation: Long) {
     init { TrackingProtocol.id(id); require(generation >= 1) { "INVALID_GENERATION" } }
 }

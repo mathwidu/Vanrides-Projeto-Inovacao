@@ -13,6 +13,8 @@ class TrackingProtocolTest {
     @Test fun acknowledgedIdleStopSurvivesLaterCredentialFailure() = TrackingProtocolChecks.acknowledgedIdleStopSurvivesLaterCredentialFailure()
     @Test fun unknownOrUnacknowledgedStopNeverBecomesConfirmed() = TrackingProtocolChecks.unknownOrUnacknowledgedStopNeverBecomesConfirmed()
     @Test fun collectingOwnedProviderOrPendingStopCannotUseAnOldAcknowledgment() = TrackingProtocolChecks.collectingOwnedProviderOrPendingStopCannotUseAnOldAcknowledgment()
+    @Test fun failedCheckpointStoreNeverStartsHttp() = TrackingProtocolChecks.failedCheckpointStoreNeverStartsHttp()
+    @Test fun persistedAckInvalidationMustBeVisibleBeforeTheFirstRequest() = TrackingProtocolChecks.persistedAckInvalidationMustBeVisibleBeforeTheFirstRequest()
     @Test fun strictControlsAndStatus() = TrackingWireChecks.strictControlsAndStatus()
     @Test fun ackAndMissingSequences() = TrackingWireChecks.ackAndMissingSequences()
     @Test fun byteBoundsAndExactRetryBody() = TrackingWireChecks.byteBoundsAndExactRetryBody()
