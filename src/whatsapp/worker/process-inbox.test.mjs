@@ -33,6 +33,17 @@ test('empty inbox does not call context or commands', async () => {
   const f = fixture({ claim: { status: 200, body: { items: [] } } });
   assert.equal((await f.process()).status, 'IDLE'); assert.equal(f.calls.length, 1);
 });
+test('withheld capabilities consume a paused message without model or business command', async () => {
+  let decisions = 0;
+  const f = fixture({ processor: { decide: () => { decisions++; throw Error('MUST_NOT_CALL_MODEL'); } } });
+  f.context.allowedCommands = [];
+  f.context.registrationStep = 'PAUSED';
+  f.context.step = 'PAUSED';
+  assert.equal((await f.process()).status, 'PROCESSED');
+  assert.equal(decisions, 0);
+  assert.equal(f.calls.some(c => c.path.endsWith('/commands')), false);
+  assert.deepEqual(f.calls.at(-1).options.body, { outcome: 'COMPLETED' });
+});
 test('malformed/expired claim cannot select endpoint or execute a command', async () => {
   for (const bad of [{}, { inboxEventId: '../../commands', inboxLease: 'A'.repeat(43) }]) {
     const f = fixture({ claim: { status: 200, body: { items: [bad] } } });

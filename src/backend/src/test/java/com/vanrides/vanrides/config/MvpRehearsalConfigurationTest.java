@@ -51,6 +51,8 @@ class MvpRehearsalConfigurationTest {
                 .isInstanceOf(IllegalStateException.class).hasMessageNotContaining(id);
         for(String key:new String[]{"vanrides.wa.mvp-rehearsal-routines","vanrides.wa.new-starts-enabled"})
             for(String value:new String[]{"TRUE","yes","1",""})
-                assertThatThrownBy(()->new WaSettings(rehearsal().withProperty(key,value))).isInstanceOf(IllegalStateException.class);
+                assertThatThrownBy(()->new WaSettings(rehearsal().withProperty(key,value)))
+                    .isInstanceOf(key.endsWith("mvp-rehearsal-routines") ? IllegalStateException.class : IllegalArgumentException.class)
+                    .hasMessageContaining("CONFIGURATION_INVALID");
     }
 }

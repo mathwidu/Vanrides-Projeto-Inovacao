@@ -40,6 +40,9 @@ export function createInboxProcessor({ api, now = Date.now, decide = decideDeter
       });
       if (context.status !== 200) return await finish('RETRY', 'DEPENDENCY_UNAVAILABLE');
       validateContext(context.body, item.inboxEventId);
+      // The API has withheld all capabilities (for example during support). Consume the event
+      // without a model call or command so it cannot block later stop/finish operations.
+      if (context.body.allowedCommands.length === 0) return await finish('COMPLETED');
       // Preserve time for the command and ACK. The model shares this deadline
       // across retries; a slow/expired proposal cannot reach the command API.
       const decisionDeadline = Math.min(now() + 20000, end - 10000, Date.parse(item.leaseExpiresAt) - 10000);

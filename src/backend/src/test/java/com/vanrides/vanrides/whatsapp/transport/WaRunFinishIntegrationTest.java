@@ -145,6 +145,9 @@ class WaRunFinishIntegrationTest {
         assertNull(t.f.s.execute(support,"REQUEST_SUPPORT",WaJson.object("{}").put("reason","HELP").put("detail","Pedido sintético de suporte.")).error());
         t.f.s.finish(support);
         String supportId=t.f.s.string("SELECT context_json->>'supportCaseId' FROM wa.conversation_state WHERE identity_id=?",t.f.driver);
+        var blocked=t.f.s.text(t.f.driver,"ROTINAS");
+        assertTrue(t.f.s.commands.context(t.f.s.worker,blocked.id(),blocked.token()).path("allowedCommands").isEmpty());
+        t.f.s.finish(blocked);
         send("FINALIZAR"); assertPausedSupport(supportId);
         send("ABANDONAR"); assertPausedSupport(supportId); assertEquals("TRACKING",t.runState());
         t.h.time.advance(1); // Keep the second review newer than the abandoned review in this fixed-clock fixture.
