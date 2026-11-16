@@ -128,6 +128,18 @@ struct DriverTrackingStopRequest {
   }
 }
 
+enum DriverTrackingStopContinuity {
+  static func reusesAttestation(state: String, stoppedAt: Int64?, providerPresent: Bool, forceNewRecord: Bool = false) -> Bool {
+    (state == "STOPPED" || state == "ERROR") && stoppedAt != nil && !providerPresent && !forceNewRecord
+  }
+
+  static func preservesConfirmation(state: String, stoppedAt: Int64?, providerPresent: Bool,
+                                    pending: Bool, sessionID: String?, generation: Int64) -> Bool {
+    state == "STOPPED" && reusesAttestation(state: state, stoppedAt: stoppedAt, providerPresent: providerPresent)
+      && !pending && sessionID != nil && generation >= 1
+  }
+}
+
 struct DriverTrackingStopRetry {
   private(set) var nextAttemptAt: Double?
   private var nextDelay: Double = 2

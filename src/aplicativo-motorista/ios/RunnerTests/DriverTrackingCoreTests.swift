@@ -5,6 +5,30 @@ import XCTest
 #endif
 
 final class DriverTrackingCoreTests: XCTestCase {
+  func testConfirmedStopKeepsItsAttestationAndConfirmationAcrossRepeatedFailures() {
+    XCTAssertTrue(DriverTrackingStopContinuity.reusesAttestation(state: "STOPPED", stoppedAt: 101, providerPresent: false))
+    XCTAssertTrue(DriverTrackingStopContinuity.preservesConfirmation(state: "STOPPED", stoppedAt: 101,
+      providerPresent: false, pending: false, sessionID: "synthetic-session", generation: 2))
+  }
+
+  func testErrorWithPendingStopReusesItsRecordWithoutClaimingConfirmation() {
+    XCTAssertTrue(DriverTrackingStopContinuity.reusesAttestation(state: "ERROR", stoppedAt: 101, providerPresent: false))
+    XCTAssertFalse(DriverTrackingStopContinuity.preservesConfirmation(state: "ERROR", stoppedAt: 101,
+      providerPresent: false, pending: true, sessionID: "synthetic-session", generation: 2))
+  }
+
+  func testStartingWithHistoricalStopTimestampRequiresNewStopRecord() {
+    XCTAssertFalse(DriverTrackingStopContinuity.reusesAttestation(state: "STARTING", stoppedAt: 101, providerPresent: false))
+    XCTAssertFalse(DriverTrackingStopContinuity.reusesAttestation(state: "TRACKING", stoppedAt: 101, providerPresent: true))
+  }
+
+  func testOrphanClosureAlwaysForcesNewStopAttestation() {
+    XCTAssertFalse(DriverTrackingStopContinuity.reusesAttestation(state: "STOPPED", stoppedAt: 101,
+      providerPresent: false, forceNewRecord: true))
+    XCTAssertFalse(DriverTrackingStopContinuity.preservesConfirmation(state: "STOPPED", stoppedAt: 101,
+      providerPresent: false, pending: true, sessionID: "synthetic-session", generation: 2))
+  }
+
   func testTerminalRunIsSeparateFromSensorStopAndRejectsUnknownMetadata() throws {
     let id = "12345678-1234-1234-1234-123456789012"
     let wire = DriverProductionTrackingWire()
@@ -245,7 +269,7 @@ struct DriverTrackingCoreTestMain {
   static func main() {
     let suite = DriverTrackingCoreTests.defaultTestSuite
     suite.run()
-    guard let run = suite.testRun, run.executionCount == 16, run.totalFailureCount == 0 else { exit(1) }
+    guard let run = suite.testRun, run.executionCount == 20, run.totalFailureCount == 0 else { exit(1) }
   }
 }
 #endif

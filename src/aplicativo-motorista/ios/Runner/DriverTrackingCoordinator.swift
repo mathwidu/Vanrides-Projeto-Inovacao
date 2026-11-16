@@ -350,8 +350,8 @@ final class DriverTrackingCoordinator: NSObject, CLLocationManagerDelegate {
   }
 
   private func stopLocally(reason newReason: String, cancelOperation: Bool = true, forceNewRecord: Bool = false) {
-    let wasStopped = (state == "STOPPED" || state == "ERROR") && stoppedAt != nil
-      && provider == nil && !forceNewRecord
+    let wasStopped = DriverTrackingStopContinuity.reusesAttestation(state: state, stoppedAt: stoppedAt,
+      providerPresent: provider != nil, forceNewRecord: forceNewRecord)
     lifecycle &+= 1
     requestID = nil
     task?.cancel(); task = nil
@@ -714,8 +714,8 @@ final class DriverTrackingCoordinator: NSObject, CLLocationManagerDelegate {
   }
 
   private func failClosed(_ failure: DriverTrackingFailure) {
-    let confirmedStop = state == "STOPPED" && stoppedAt != nil && provider == nil
-      && pendingStop == nil && sessionID != nil && sessionGeneration >= 1
+    let confirmedStop = DriverTrackingStopContinuity.preservesConfirmation(state: state, stoppedAt: stoppedAt,
+      providerPresent: provider != nil, pending: stopPending, sessionID: sessionID, generation: sessionGeneration)
     let previousStop = pendingStop
     let reply = operation
     operation = nil
