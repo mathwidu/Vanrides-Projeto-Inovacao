@@ -50,7 +50,12 @@ class Executor:
                              'name': name, 'namespace': namespace})
         if 'psql' in args:
             return O.encode(self.metrics if data.decode() == O.AGGREGATES else self.target)
-        if 'wget' in args: return O.encode(self.health)
+        if 'wget' in args:
+            # Swarm DNS contains an underscore; Tomcat rejects that default Host.
+            header = args.index('--header') if '--header' in args else -1
+            if header < 0 or args[header + 1] != 'Host: vanrides-inovacao-api.matheusduarte.dev.br':
+                raise O.Blocked('OPS_API_INVALID_HOST')
+            return O.encode(self.health)
         if 'node' in args: return O.encode({'status': 'UP', 'role': 'WA070_WORKER'})
         raise AssertionError('Unexpected command')
 

@@ -40,7 +40,8 @@ WITH grants AS (SELECT * FROM wa.service_credential WHERE environment='vanrides-
 attempts AS (SELECT a.* FROM wa.message_attempt a JOIN wa.service_credential c ON c.id=a.credential_id
  WHERE c.environment='vanrides-mvp-hml' AND a.instance_id='vanrides-hml'),
 stops AS (SELECT s.* FROM wa.tracking_session s JOIN wa.driver_device d ON d.id=s.device_id
- WHERE d.environment='vanrides-mvp-hml' AND s.state='STOP_REQUESTED' AND s.stopped_at IS NULL)
+ WHERE d.environment='vanrides-mvp-hml' AND s.state IN ('STOP_REQUESTED','REVOKED','EXPIRED')
+ AND s.stop_requested_at IS NOT NULL AND s.stopped_at IS NULL)
 SELECT json_build_object(
  'delivery',(SELECT count(*) FROM grants WHERE principal='DELIVERY_WORKER'),
  'job',(SELECT count(*) FROM grants WHERE principal='SYSTEM_JOB'),
@@ -135,7 +136,8 @@ class Operations:
         if 'database' in self.containers and 'api' in self.containers:
             try:
                 body = object_json(self.call(['exec', self.containers['database'], '/bin/busybox', 'wget', '-T', '3',
-                    '-q', '-O', '-', 'http://vanrides-hml-api_api:8080/actuator/health']))
+                    '-q', '-O', '-', '--header', 'Host: vanrides-inovacao-api.matheusduarte.dev.br',
+                    'http://vanrides-hml-api_api:8080/actuator/health']))
                 require(body == {'status': 'UP'}, 'OPS_API_UNHEALTHY'); health['api'] = 'UP'
             except (Blocked, OSError, ValueError, TypeError):
                 health['api'] = 'UNHEALTHY'; alert('API_UNHEALTHY', 'api', 'Manter pausa de envio; restaurar API/DB e conferir STOP antes de retomar.')

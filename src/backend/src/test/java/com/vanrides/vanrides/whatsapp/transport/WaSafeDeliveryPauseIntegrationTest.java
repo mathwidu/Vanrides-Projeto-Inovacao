@@ -27,7 +27,7 @@ import static com.vanrides.vanrides.whatsapp.transport.WaTransportTestSupport.*;
 class WaSafeDeliveryPauseIntegrationTest {
     @Container static final PostgreSQLContainer<?> POSTGRES = postgres("wa_safe_delivery_pause");
 
-    @Test void deliveryRevocationPreservesStopAndReconciliationThenNewCredentialCannotReplayUnknown() {
+    @Test void deliveryRevocationPreservesStopAndReconciliationThenNewCredentialCannotReplayUnknown() throws Exception {
         var tracking = new WaTrackingTestSupport(POSTGRES);
         tracking.activate();
         tracking.tracking.samples(tracking.actor, tracking.session(), tracking.batch(tracking.sample(1, 0, 5)));
@@ -71,9 +71,19 @@ class WaSafeDeliveryPauseIntegrationTest {
         ObjectNode stop = tracking.tracking.status(tracking.actor);
         assertThat(stop.path("action").asText()).isEqualTo("STOP");
         assertThat(stop.path("sessionState").asText()).isEqualTo("STOP_PENDING");
+        String terminal = h.jdbc.queryForObject("SELECT state FROM wa.tracking_session WHERE id=?", String.class, tracking.session());
+        for (String state : List.of("STOP_REQUESTED", "REVOKED", "EXPIRED")) {
+            h.jdbc.update("UPDATE wa.tracking_session SET state=? WHERE id=?", state, tracking.session());
+            ObjectNode metrics = monitor(h);
+            assertThat(metrics.path("stopPending").asInt()).as(state).isEqualTo(1);
+            assertThat(metrics.path("stopOld").asInt()).as(state).isEqualTo(1);
+        }
+        h.jdbc.update("UPDATE wa.tracking_session SET state=? WHERE id=?", terminal, tracking.session());
         tracking.tracking.state(tracking.actor, tracking.session(), tracking.state("STOPPED")
             .put("stopRequestRef", stop.path("stopRequestRef").asText()), "safe-pause-stop-ack");
         assertThat(tracking.tracking.status(tracking.actor).path("sessionState").asText()).isEqualTo("STOPPED");
+        assertThat(monitor(h).path("stopPending").asInt()).isZero();
+        assertThat(monitor(h).path("stopOld").asInt()).isZero();
         assertThat(state(h, uncertain)).isEqualTo("UNKNOWN");
 
         h.time.advance(50); // The old pending lease expires; the UNKNOWN message is still within its original TTL.
@@ -99,6 +109,17 @@ class WaSafeDeliveryPauseIntegrationTest {
         UUID actor = s.actor(); var event = s.text(actor, "Olá");
         s.execute(event, "START_ONBOARDING", json("{}")).requireSuccess(); s.finish(event);
         return s.h.jdbc.queryForObject("SELECT id FROM wa.message_outbox WHERE recipient_identity_id=?", UUID.class, actor);
+    }
+    private ObjectNode monitor(WaTransportTestSupport h) throws Exception {
+        var root = java.nio.file.Path.of(System.getProperty("basedir", System.getProperty("user.dir")));
+        String source = java.nio.file.Files.readString(root.resolve("../../deploy/homologacao/operations.py"));
+        int start = source.indexOf("WITH grants AS", source.indexOf("AGGREGATES ="));
+        String sql = source.substring(start, source.indexOf("\nROLLBACK;", start))
+            .replace("'vanrides-mvp-hml'", "'" + h.settings.environment() + "'")
+            .replace("'vanrides-hml'", "'" + INSTANCE + "'")
+            .replace("clock_timestamp()", "TIMESTAMPTZ '" + h.clock.now().plusSeconds(61) + "'");
+        // Run the helper's real SELECT with only scope/clock adapted to this synthetic fixture.
+        return json(h.jdbc.queryForObject(sql, String.class));
     }
     private ObjectNode claim(WaOutboxService outbox, WaPrincipal worker) {
         var result = outbox.claim(worker, json("{\"batchLimit\":1,\"leaseSeconds\":60}"));

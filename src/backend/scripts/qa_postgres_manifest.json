@@ -490,6 +490,11 @@
       "seconds": 22.17
     },
     {
+      "className": "com.vanrides.vanrides.whatsapp.transport.WaSafeDeliveryPauseIntegrationTest",
+      "tests": 1,
+      "seconds": 2.676
+    },
+    {
       "className": "com.vanrides.vanrides.whatsapp.transport.WaStopCanceledNoticeIntegrationTest",
       "tests": 8,
       "seconds": 0
