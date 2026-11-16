@@ -32,6 +32,7 @@ final class TeamTestDriverTestSupport {
     static final Runnable LIVE = () -> { };
     final JdbcTemplate jdbc;
     final WaTeamTestDriverOperations operations;
+    final WaTeamOperations admissions;
     final WaTeamTestDriver drivers;
     final WaTeamTestDriverStore store;
     final WaCrypto crypto;
@@ -59,10 +60,11 @@ final class TeamTestDriverTestSupport {
         when(team.cohort()).thenReturn(cohort);
         when(team.strictIngress(INSTANCE)).thenReturn(true);
         var admission = new WaAdmissionStore(jdbc, crypto);
+        admissions = new WaTeamOperations(jdbc, admission, team, settings, crypto, clock);
         drivers = new WaTeamTestDriver(jdbc, clock, settings);
         store = new WaTeamTestDriverStore(jdbc);
         operations = new WaTeamTestDriverOperations(jdbc, admission,
-            new WaTeamOperations(jdbc, admission, team, settings, crypto, clock), drivers, store, team, settings, crypto, clock);
+            admissions, drivers, store, team, settings, crypto, clock);
         jdbc.update("INSERT INTO wa.test_cohort(id,environment,synthetic) VALUES (?,?,false)", cohort, ENV);
     }
 

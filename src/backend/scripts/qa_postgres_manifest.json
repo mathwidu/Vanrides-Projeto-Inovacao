@@ -160,6 +160,11 @@
       "seconds": 0
     },
     {
+      "className": "com.vanrides.vanrides.whatsapp.team.TeamConversationRecoveryIntegrationTest",
+      "tests": 4,
+      "seconds": 0
+    },
+    {
       "className": "com.vanrides.vanrides.whatsapp.team.TeamTestDriverIntegrationTest",
       "tests": 5,
       "seconds": 0

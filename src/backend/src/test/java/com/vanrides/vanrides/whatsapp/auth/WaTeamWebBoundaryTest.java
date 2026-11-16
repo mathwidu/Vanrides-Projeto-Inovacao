@@ -56,7 +56,7 @@ class WaTeamWebBoundaryTest {
     void testDriverRoutesAreExactPostOnlyAndRequireTheTeamOrigin() throws Exception {
         when(team.enabled()).thenReturn(true);
         when(team.origin()).thenReturn(ORIGIN);
-        for (String path : List.of("/equipe/api/test-driver", "/equipe/api/test-driver/status")) {
+        for (String path : List.of("/equipe/api/test-driver", "/equipe/api/test-driver/status", "/equipe/api/participants/resume")) {
             check(request("GET", path), 404, false);
             check(request("PUT", path), 404, false);
             check(request("POST", path + "/"), 404, false);
