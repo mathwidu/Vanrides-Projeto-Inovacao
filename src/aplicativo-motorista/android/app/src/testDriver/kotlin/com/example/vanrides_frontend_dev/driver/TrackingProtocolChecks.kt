@@ -91,10 +91,34 @@ internal object TrackingProtocolChecks {
         check(TrackingProtocol.failureCode(302, "REDIRECT_REJECTED") == "REDIRECT_REJECTED")
         check(TrackingProtocol.failureCode(0, null) == "INVALID_CONTRACT")
     }
+    private fun preservesStop(state: String = "STOPPED", hasOwner: Boolean = false, serviceRequested: Boolean = false,
+                              stopping: Boolean = false, hasNativeRequest: Boolean = false, hasPendingStop: Boolean = false,
+                              acknowledgedAt: Long? = 1_000_000L): Boolean =
+        TrackingProtocol.preserveConfirmedStop(state, hasOwner, serviceRequested, stopping, hasNativeRequest, hasPendingStop, acknowledgedAt)
+    fun acknowledgedIdleStopSurvivesLaterCredentialFailure() {
+        // A detached service or an existing service with no own request has the same proven idle state.
+        check(preservesStop(hasNativeRequest = false))
+    }
+    fun unknownOrUnacknowledgedStopNeverBecomesConfirmed() {
+        check(!preservesStop(acknowledgedAt = null))
+        check(!preservesStop(state = "ERROR"))
+        check(!preservesStop(state = "UNKNOWN", acknowledgedAt = null))
+        check(!preservesStop(state = "READY"))
+    }
+    fun collectingOwnedProviderOrPendingStopCannotUseAnOldAcknowledgment() {
+        for (state in listOf("STARTING", "TRACKING")) check(!preservesStop(state = state))
+        check(!preservesStop(hasOwner = true))
+        check(!preservesStop(serviceRequested = true))
+        check(!preservesStop(stopping = true))
+        check(!preservesStop(hasNativeRequest = true))
+        check(!preservesStop(hasPendingStop = true))
+    }
     @JvmStatic fun main(args: Array<String>) {
         endpointIsolation(); leaseConservativeAndReplay(); leaseBoundsAndCredential()
         boundedQueueAndAge(); explicitAcknowledgmentsOnly(); ownerAndFiniteNumbers()
         stopFailureClassification()
-        println("PASS: 7 Android protocol scenarios (URL, replay/lease, bounds, queue age/cap, ACK gaps, owner/numbers, stop retry)")
+        acknowledgedIdleStopSurvivesLaterCredentialFailure(); unknownOrUnacknowledgedStopNeverBecomesConfirmed()
+        collectingOwnedProviderOrPendingStopCannotUseAnOldAcknowledgment()
+        println("PASS: 10 Android protocol scenarios (7 existing + 3 confirmed-stop guards)")
     }
 }

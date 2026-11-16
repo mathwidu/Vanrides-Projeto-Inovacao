@@ -415,7 +415,16 @@ internal class DriverTrackingRuntime private constructor(private val context: Co
     }
     private fun fail(code: String) {
         if (active() || owner != null) stop(code)
-        else { state = "ERROR"; reason = code; persist() }
+        else {
+            // A revoked idle device must not turn its already ACKed STOP into a new collection error.
+            val hasNativeRequest = when (val provider = service) {
+                null -> false // This process never restores a provider request without its service.
+                else -> provider.hasOwnRequest() // Includes a removal Task that has not completed.
+            }
+            if (!TrackingProtocol.preserveConfirmedStop(state, owner != null, serviceRequested, stopping,
+                    hasNativeRequest, pendingStop != null, remoteStopAcknowledgedAt)) state = "ERROR"
+            reason = code; persist()
+        }
     }
     private fun successful(result: NativeHttpResult): Boolean = result.failure == null && result.status in 200..299 && result.body != null
     private fun handleFailure(result: NativeHttpResult): String {
