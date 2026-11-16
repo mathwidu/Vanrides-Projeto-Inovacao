@@ -9,8 +9,10 @@ um registro separado por plataforma; uma rodada Android não aprova o iPhone.
 O integrador preenche a versão da API, o schema, o bundle do bot, a versão e
 o hash do aplicativo e os flags habilitados. Usar a mesma combinação durante
 a rodada. A API e o bot precisam estar saudáveis e a rotina do ensaio deve ter
-geografia conferida. Aproximação e fim automático continuam desligados até
-essa preparação; não confundir a falta de aviso com teste da regra habilitada.
+geografia conferida. Em 16/11, aproximação, fim automático e rotinas de ensaio
+foram habilitados para as rotinas elegíveis da coorte compartilhada. Conferir
+esses flags antes de sair; habilitação não comprova aviso nem fim automático
+em percurso. A limpeza real de dados continua desligada.
 
 Preparar um motorista, dois passageiros autorizados, rotina do dia, pontos
 aprovados, ordem de embarque e destino fixo. Um passageiro confirma presença;

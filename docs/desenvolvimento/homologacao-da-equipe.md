@@ -2,17 +2,18 @@
 
 **Endereço:** <https://vanrides-inovacao-api.matheusduarte.dev.br>
 
-Em 16/11/2026, a API está na revisão `880ea56`, com banco V43 e HTTPS
-saudável. Presença/avisos e retomada do suporte entraram pelo
-[PR #122](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/pull/122);
-finalização e preparo dos aplicativos pelo
-[PR #123](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/pull/123).
-O agente atualizado está publicado, e o APK 0.4.0+14 está disponível abaixo.
+Em 16/11/2026, a API usa banco V44 e HTTPS saudável. As correções de parada e
+preferências dos PRs [#126](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/pull/126)
+e [#127](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/pull/127) estão publicadas.
+O agente atualizado e o APK normal 0.4.0+15 estão disponíveis. O
+[registro da entrega](entrega-mvp.md) reúne as versões e as validações atuais.
 
 O cadastro por convite foi validado no WhatsApp em 15/11; o
 [guia de cadastro](cadastro-guiado-whatsapp.md) preserva essa evidência.
-A jornada com presença, GPS, avisos e finalização na mesma saída ainda precisa
-da conferência no WhatsApp/aparelho. Publicação saudável não encerra essa validação.
+Presença, GPS real, consulta do pin e encerramento manual tiveram provas no
+WhatsApp/aparelhos. Aproximação e fim automático estão habilitados para ensaio,
+mas ainda dependem de percurso e avaliação. Publicação saudável não encerra
+essa validação.
 
 Usamos um único ambiente de desenvolvimento compartilhado. Os nomes técnicos ainda dizem “hml”; não existe produção real liberada para usuários. Stage e produção separados ficam para a versão 1.0.
 
@@ -37,7 +38,7 @@ convites sem acesso à VPS. Veja o [passo a passo](area-da-equipe.md) e o
 | Acesso | Como usar | Condição atual |
 | --- | --- | --- |
 | [Saúde da API](https://vanrides-inovacao-api.matheusduarte.dev.br/actuator/health) | Abrir no navegador; esperado HTTP 200 e `{"status":"UP"}`. | Público, disponível para os quatro integrantes. Não testa uma jornada de negócio. |
-| [APK do motorista](https://vanrides-inovacao-api.matheusduarte.dev.br/motorista/VanRides.apk) | Baixar no Android e instalar o VanRides Motorista **0.4.0+14**. | Download público; já aponta para a API online. Instalar não habilita automaticamente um motorista. |
+| [APK do motorista](https://vanrides-inovacao-api.matheusduarte.dev.br/motorista/VanRides.apk) | Baixar no Android e instalar o VanRides Motorista **0.4.0+15**. | Download público; já aponta para a API online. Instalar não habilita automaticamente um motorista. |
 | [Área da equipe](https://vanrides-inovacao-api.matheusduarte.dev.br/equipe) | Entrar com GitHub, informar o contato que aceitou participar e escolher passageiro ou motorista. | Disponível para contas com escrita no repositório. |
 | Bot pelo WhatsApp | Abra o convite individual ou use **Abrir conversa com o bot** no painel e envie `AJUDA`. | O cadastro é feito na conversa. O convite por link é o caminho padrão do passageiro. |
 | API de produto | O app e o atendimento usam as credenciais próprias de cada fluxo. | Rotas `/driver-app/v1/` e `/integrations/whatsapp/v1/` exigem autenticação. Receber 401 ao abrir no navegador é esperado. |
@@ -60,9 +61,9 @@ A janela e as credenciais técnicas atuais vencem em **01/12/2026 às 00:00 UTC*
 | Bot VanRides / worker Node.js | Busca mensagens pendentes, propõe comandos à API e envia as respostas autorizadas pela Evolution. | Convite, vínculo, aprovação e correção de embarque exercitados no WhatsApp. O fluxo usa regras determinísticas. |
 | n8n | Dispara processamento, envios e tarefas agendadas do worker; recebe resultados de controle, sem texto da conversa nem GPS. | Oito fluxos importados. W01/W04/W06/W08 ativos e com execuções recentes bem-sucedidas; W07 publicado para erros. W02/W03/W05 são subfluxos sem agenda própria. |
 | Evolution, Redis e banco da sessão | Conexão dedicada do WhatsApp, envio, recebimento e callbacks de entrega. | Instância `vanrides-hml` em OPEN, separada dos outros projetos. |
-| APK e páginas de vínculo/início | Arquivos HTTPS e links que abrem o aplicativo do motorista. | APK baixado e hash conferido. Vincular e iniciar pelo canal da equipe ainda requer o motorista participante. |
-| Aproximação | Regra implementada na API, dependente de posição recente e passageiro elegível. | Testada em laboratório; **desabilitada no ambiente publicado** (`WA_APPROACH_ENABLED=false`) até calibração em percurso. |
-| Encerramento e suporte | FINALIZAR/CONFIRMAR encerra a viagem; o coletor deve confirmar STOP. A equipe retoma a conversa pelo painel. | Publicado com testes dirigidos; falta a jornada real. Fim automático permanece desligado por padrão até habilitar o ensaio. Pedir suporte mantém a conversa pausada. |
+| APK e páginas de vínculo/início | Arquivos HTTPS e links de acesso ao aplicativo do motorista. | APK +15 baixado e hash conferido; vínculo, início, GPS e parada reais aprovados no Redmi. O transporte do link no ensaio foi feito pelo Mac; o toque no WhatsApp móvel continua no roteiro final. |
+| Aproximação | Regra implementada na API, dependente de posição recente e passageiro elegível. | Habilitada para as rotinas elegíveis da coorte compartilhada. Calibração, destinatário e utilidade ainda dependem de percurso. Não há ETA prometido. |
+| Encerramento e suporte | FINALIZAR/CONFIRMAR encerra a viagem; o coletor deve confirmar STOP. A equipe retoma a conversa pelo painel. | Encerramento manual e ACK reais passaram nos dois aparelhos. Fim automático habilitado para ensaio, ainda sem prova física de chegada. Pedir suporte mantém a conversa pausada. |
 
 A conferência encontrou nove serviços da homologação com 1/1 réplica: API, banco da API, servidor do APK e seis serviços do canal. O n8n é um serviço existente compartilhado, com fluxos exclusivos do VanRides. Isso comprova disponibilidade técnica; não substitui testes de percurso, bateria ou utilidade.
 
@@ -133,9 +134,20 @@ O [roteiro do cadastro guiado](cadastro-guiado-whatsapp.md) mostra os convites
 por link e por telefone. A [área da equipe](area-da-equipe.md) tem a simulação
 no navegador e o teste com um motorista do painel.
 
-Em 16/11, o iPhone 13 recebeu o aplicativo 0.4.0+14 assinado; instalação e abertura pelo Mac passaram. O perfil gratuito vence em 23/11/2026 às 08:27 (Brasília). A automação de tela ainda aguarda a liberação do iOS, e GPS/parada desse build permanecem pendentes. O link do APK continua sendo apenas para Android.
+Em 16/11, o iPhone 13 recebeu o aplicativo normal 0.4.0+15 assinado. Vínculo,
+GPS, pin recebido pelo passageiro, parada e recuperação do recibo terminal
+passaram. O perfil gratuito vence em 23/11/2026 às 08:27 (Brasília); depois
+desse prazo é necessário renovar a assinatura pelo Mac. O link do APK continua
+sendo apenas para Android.
 
-Na nova rodada do WhatsApp real, passaram vínculo, ponto, presença de amanhã, alteração para ausência e consulta correspondente pelo motorista. Após aprovação ou mudança da rotina, aguarde a próxima execução da agenda, programada a cada minuto, antes de repetir a presença. Isso não dispensa conferir a data e o sentido indicados na resposta. Percurso, bateria e aceite final serão feitos depois que os artefatos estiverem prontos. Aproximação e fim automático ainda dependem de habilitar o ensaio controlado.
+Na rodada do WhatsApp real, passaram vínculo, ponto, presença de ida e volta,
+alteração para ausência, lista do motorista e mudança posterior das preferências
+de avisos. Após aprovação ou mudança da rotina, aguarde a próxima execução da
+agenda, programada a cada minuto, antes de repetir a presença. Isso não dispensa
+conferir a data e o sentido indicados na resposta. Percurso, bateria e aceite
+final serão feitos na rodada do mantenedor. Aproximação, fim automático e rotinas
+de ensaio estão ligados para a coorte; limpeza real de dados e IA continuam
+desligadas.
 
 ## Registrar um teste ou investigar uma falha
 
@@ -147,7 +159,7 @@ Na issue da funcionalidade, anote: versão do APK, revisão da API informada pel
 | Cadastro básico pronto, sem avançar para o ponto | Falta convite de passageiro e rotina de motorista. `CONTINUAR CADASTRO` não cria esse vínculo. |
 | Presença sem ocorrência | Verificar vínculo aprovado, rotina, dias, sentido, ponto e data. Não tratar a mensagem como confirmação de presença. |
 | APK instalado, mas não inicia GPS | Conferir versão online, vínculo do aparelho, papel de motorista e link de início vigente; depois rede e permissões. |
-| Nenhum aviso de aproximação | A função está desligada na homologação atual. Não há ETA prometido. |
+| Nenhum aviso de aproximação | Conferir preferência do passageiro, presença/lista da partida, ponto aprovado, ordem, sentido, GPS recente e flags da rodada. Estar parado perto do ponto não comprova a regra de aproximação. Não há ETA prometido. |
 | Conversa parou após pedir suporte | Pedido de suporte pausa o atendimento; requer recuperação pelo operador. Evite usar esse comando como teste genérico de resposta. |
 
 ## Código publicado, main e contribuições
@@ -175,5 +187,5 @@ registrada no [PR #108](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/pu
 - [Operação do canal](../runbooks/whatsapp-mvp/homologacao-canal.md) e [receita da API](../runbooks/whatsapp-mvp/homologacao-api.md).
 - [Arquitetura](../02-arquitetura-e-decisoes.md) e [especificações das tarefas](../08-especificacoes-mvp.md).
 - Issues: [API #89](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/89), [publicação #90](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/90), [canal #91](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/91), [Android #87](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/87), [passageiro #28](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/28).
-- APK 0.4.0+14: 56.680.985 bytes; SHA-256 `2b4667111bc39bf4c9dcc687168086c6a9ed5b334a3f7db1cf7e3faf83c996b5`. Download HTTPS conferido byte a byte em 16/11. Instalado no Redmi; a rodada completa do novo build ainda está pendente.
-- Os APKs históricos `0.1.0+8` (receptor GPS) e `0.2.0+12` (laboratório por USB/localhost) e `0.3.0-hml+13` não substituem o `0.4.0+14` atual.
+- APK 0.4.0+15: 56.680.985 bytes; SHA-256 `7f22ebd465f0c2f9947ee8c9639fb0ee63405bc360e618fa97a1955bf6cba946`. Download HTTPS conferido byte a byte em 16/11. Instalado no Redmi, com GPS/pin/finalização/parada reais; percurso continua pendente.
+- Os APKs históricos `0.1.0+8` (receptor GPS), `0.2.0+12` (laboratório por USB/localhost), `0.3.0-hml+13` e `0.4.0+14` não substituem o `0.4.0+15` atual.

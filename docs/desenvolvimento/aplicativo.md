@@ -42,8 +42,9 @@ computadores da equipe ainda precisa ser conferida. O gate completo também
 executa scripts e fixtures POSIX; não presuma que Git Bash com Python do Windows
 seja equivalente ao Ubuntu da CI.
 
-Para começar, rode análise, testes Flutter e build no PowerShell e confira o
-gate completo no pull request. Se quiser executar também esse gate localmente,
+Para começar, rode as verificações relacionadas à sua mudança e o build no
+PowerShell. O pull request não executa o gate completo do aplicativo. Para
+executá-lo localmente,
 use WSL2 com as versões Linux de Git, Flutter, Python e Node instaladas dentro
 da distribuição. Não reutilize o SDK Flutter do Windows nessa sessão:
 
@@ -53,7 +54,7 @@ bash scripts/check_app.sh
 ```
 
 A compilação/instalação Android por USB pode continuar no Windows; acesso USB
-no WSL2 é uma preparação separada. O CI Ubuntu é a execução canônica do gate
+no WSL2 é uma preparação separada. O workflow opcional usa Ubuntu para o gate
 completo. Não há build nem simulação de iOS no Windows.
 
 ## Preparação macOS
@@ -79,8 +80,9 @@ git diff --exit-code -- pubspec.lock ios/Podfile.lock
 
 O build iOS da CI seleciona Xcode 26.6 no runner padrão `macos-26`; nenhuma
 equipe Apple, provisioning profile ou chave de mapas é fornecida. Uma eventual
-instalação física exige autorização e assinatura próprias. O iPhone do
-proprietário permanece **pausado**.
+instalação física exige autorização e assinatura próprias. O preparo do iPhone
+do proprietário foi retomado em 16/11: o app normal 0.4.0+15 já teve instalação,
+GPS e parada confirmados. Percurso, bateria e aceite continuam na rodada final.
 
 ## Ambiente e segurança dos testes
 
@@ -103,14 +105,18 @@ e `build/`, ignorados pelo Git. Antes de publicar evidência, revise o conteúdo
 
 ## O que a CI verifica
 
-O [workflow do aplicativo](../../.github/workflows/aplicativo.yml) roda no push,
-PR e acionamento manual com `contents: read`, actions fixadas por SHA, sem
-segredos e sem deploy. `scripts/check_app.sh` chama o gate de QA original
-adaptado: contratos dos scripts, analyzer, testes unitários/widgets e ratchet.
-Warnings/infos permanecem dívida registrada; erros, testes e regressões do
-ratchet bloqueiam. Os locks precisam continuar sem diff.
+O [workflow do aplicativo](../../.github/workflows/aplicativo.yml) é opcional,
+acionado por `workflow_dispatch`, com `contents: read`, actions fixadas por SHA,
+sem segredos e sem deploy. Ele não roda a cada push ou PR. A esteira automática
+constrói a API e publica somente a API/interface quando a `main` muda; não
+gera nem distribui o APK. Veja o [deploy automático](../../deploy/homologacao/AUTOMATICO.md).
 
-Depois do gate, a CI compila Android `driver`/`main_driver_mvp.dart`, testa
+Na verificação opcional, `scripts/check_app.sh` chama o gate completo:
+contratos dos scripts, analyzer, testes unitários/widgets e ratchet.
+Warnings/infos permanecem dívida registrada; erros, testes e regressões do
+ratchet reprovam a execução. Os locks precisam continuar sem diff.
+
+Depois do gate, o workflow opcional compila Android `driver`/`main_driver_mvp.dart`, testa
 o código nativo de produção e a variante explícita de regressão do spike,
 verificando o isolamento de cada artefato. iOS recebe testes host e build
 genérico sem assinatura, também com inspeção do artefato. Os logs e resumos
