@@ -87,8 +87,30 @@ final class DriverTrackingRequest {
 // This session is deliberately ephemeral, never a background upload session.
 final class DriverTrackingTransport: NSObject, URLSessionTaskDelegate {
   private let production = DriverProductionTrackingWire()
+  private var receiptRunState: String?
   var stopReference: String? { production.stopReference }
-  var runState: String? { production.runState }
+  var runState: String? { receiptRunState ?? production.runState }
+  func recordStopReceipt(_ receipt: DriverTrackingStopReceipt) { receiptRunState = receipt.runState }
+
+  func stopReceipt(_ stop: DriverTrackingStopRequest,
+    completion: @escaping (Result<DriverTrackingStopReceipt, DriverTrackingFailure>, Int?) -> Void
+  ) throws -> DriverTrackingRequest {
+    var operation: Task<Void, Never>?
+    return DriverTrackingRequest(start: {
+      operation = Task { @MainActor in
+        do {
+          guard let controller = DriverSessionBridge.controller else { throw DriverSessionFailure.unavailable }
+          let data = try await controller.stopReceipt(sessionID: stop.sessionID, generation: stop.generation,
+            stopRequestRef: stop.body["stopRequestRef"] as? String)
+          completion(.success(try DriverTrackingStopReceipt(data, expected: stop)), 200)
+        } catch let failure as DriverTrackingFailure { completion(.failure(failure), 200) }
+        catch let failure as DriverSessionRemoteFailure { completion(.failure(.serverRejected), failure.status) }
+        catch DriverSessionFailure.busy { completion(.failure(.network), 429) }
+        catch DriverSessionFailure.network { completion(.failure(.network), nil) }
+        catch { completion(.failure(.serverRejected), 401) }
+      }
+    }, cancel: { operation?.cancel() })
+  }
   #if VANRIDES_GPS_SPIKE
   private lazy var session: URLSession = {
     let configuration = URLSessionConfiguration.ephemeral
@@ -144,7 +166,9 @@ final class DriverTrackingTransport: NSObject, URLSessionTaskDelegate {
         do {
           guard let controller = DriverSessionBridge.controller else { throw DriverSessionFailure.unavailable }
           let data = try await controller.trackingRequest(path: route, body: outgoing.0, idempotency: outgoing.1)
-          completion(.success(try self.production.incoming(path: route, data: data)), 200)
+          let value = try self.production.incoming(path: route, data: data)
+          self.receiptRunState = nil
+          completion(.success(value), 200)
         } catch let failure as DriverTrackingFailure {
           completion(.failure(failure), 200)
         } catch DriverSessionFailure.busy {

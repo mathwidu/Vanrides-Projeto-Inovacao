@@ -73,6 +73,36 @@ final class DriverTrackingCoreTests: XCTestCase {
     XCTAssertEqual(first.1, id); XCTAssertEqual(first.1, second.1)
   }
 
+  func testProofReceiptBindsExactAttestationAndJournalClearMustPersistFirst() throws {
+    let id = "12345678-1234-1234-1234-123456789012"
+    let laterNativeStop = Int64(try XCTUnwrap(ISO8601DateFormatter().date(from: "2026-11-16T12:18:00Z")).timeIntervalSince1970 * 1000)
+    let stop = DriverTrackingStopRequest(sessionID: id, generation: 2, reason: "USER_STOP", requestedAt: laterNativeStop, stoppedAt: laterNativeStop + 1, stopRequestRef: id)
+    let raw: [String: Any] = ["schemaVersion": 1, "sessionId": id, "generation": 2,
+      "stopRequestRef": id, "stopConfirmed": true, "stoppedAt": "2026-11-16T12:00:00Z",
+      "serverTime": "2026-11-16T12:00:01Z", "runState": "DEGRADED"]
+    let receipt = try DriverTrackingStopReceipt(JSONSerialization.data(withJSONObject: raw), expected: stop)
+    XCTAssertEqual(receipt.runState, "DEGRADED")
+    XCTAssertLessThan(receipt.stoppedAt, laterNativeStop, "A previous server ACK can predate a locally recreated journal.")
+    var journal = try DriverTrackingStopJournal.encode(stop)
+    let original = journal
+    XCTAssertThrowsError(try DriverTrackingStopJournal.clearConfirmed(receipt.attestation, current: stop) { _ in throw DriverTrackingFailure.credentialStorage })
+    XCTAssertEqual(journal, original)
+    let changed = DriverTrackingStopRequest(sessionID: id, generation: 2, reason: "USER_STOP", requestedAt: 200, stoppedAt: 201, stopRequestRef: id)
+    XCTAssertThrowsError(try DriverTrackingStopJournal.clearConfirmed(receipt.attestation, current: changed) { journal = $0 })
+    XCTAssertEqual(journal, original)
+    try DriverTrackingStopJournal.clearConfirmed(receipt.attestation, current: stop) { journal = $0 }
+    XCTAssertNil(try DriverTrackingStopJournal.decode(journal))
+    for (key, value) in [("generation", 3 as Any), ("stopRequestRef", NSNull()),
+                         ("stopConfirmed", 1), ("runState", "UNKNOWN"),
+                         ("stoppedAt", "2026-11-16T12:00:02Z"), ("latitude", 0)] {
+      var invalid = raw; invalid[key] = value
+      XCTAssertThrowsError(try DriverTrackingStopReceipt(JSONSerialization.data(withJSONObject: invalid), expected: stop))
+    }
+    let legacy = DriverTrackingStopRequest(sessionID: id, generation: 2, reason: "USER_STOP", requestedAt: 100, stoppedAt: 101)
+    var nullRef = raw; nullRef["stopRequestRef"] = NSNull()
+    XCTAssertNoThrow(try DriverTrackingStopReceipt(JSONSerialization.data(withJSONObject: nullRef), expected: legacy))
+  }
+
   func testRawStartLinksRejectEncodingHostsAndAmbiguousVersions() {
     let id = "12345678-1234-1234-1234-123456789012"
     let raw = "vanridesdriver://run/start#v1." + id + ".7." + String(repeating: "A", count: 43)
@@ -215,7 +245,7 @@ struct DriverTrackingCoreTestMain {
   static func main() {
     let suite = DriverTrackingCoreTests.defaultTestSuite
     suite.run()
-    guard let run = suite.testRun, run.executionCount == 15, run.totalFailureCount == 0 else { exit(1) }
+    guard let run = suite.testRun, run.executionCount == 16, run.totalFailureCount == 0 else { exit(1) }
   }
 }
 #endif

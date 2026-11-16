@@ -353,8 +353,51 @@ struct DriverRunLink {
   }
 }
 
+// A proof-only receipt confirms an existing stop; it never grants collection.
+struct DriverTrackingStopReceipt {
+  let attestation: DriverTrackingStopRequest
+  let stoppedAt: Int64
+  let runState: String
+
+  init(_ data: Data, expected: DriverTrackingStopRequest) throws {
+    guard data.count <= 32_768, let value = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
+      Set(value.keys) == ["schemaVersion", "sessionId", "generation", "stopRequestRef", "stopConfirmed", "stoppedAt", "serverTime", "runState"],
+      try DriverTrackingContract.integer(value["schemaVersion"]) == 1,
+      value["sessionId"] as? String == expected.sessionID,
+      try DriverTrackingContract.integer(value["generation"]) == expected.generation,
+      let confirmed = value["stopConfirmed"] as? NSNumber,
+      CFGetTypeID(confirmed) == CFBooleanGetTypeID(), confirmed.boolValue,
+      let runState = value["runState"] as? String,
+      ["PLANNED", "STARTING", "START_FAILED", "TRACKING", "DEGRADED", "COMPLETED", "CANCELED"].contains(runState)
+    else { throw DriverTrackingFailure.invalidContract }
+    if let ref = expected.body["stopRequestRef"] as? String {
+      guard value["stopRequestRef"] as? String == ref else { throw DriverTrackingFailure.invalidContract }
+    } else if !(value["stopRequestRef"] is NSNull) { throw DriverTrackingFailure.invalidContract }
+    func milliseconds(_ raw: Any?) throws -> Int64 {
+      guard let text = raw as? String, text.count <= 40, text.hasSuffix("Z") else { throw DriverTrackingFailure.invalidContract }
+      let formatter = ISO8601DateFormatter()
+      formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+      guard let date = formatter.date(from: text) ?? ISO8601DateFormatter().date(from: text) else { throw DriverTrackingFailure.invalidContract }
+      let time = date.timeIntervalSince1970 * 1000
+      guard time.isFinite, time >= 0, time < Double(Int64.max) else { throw DriverTrackingFailure.invalidContract }
+      return Int64(time.rounded())
+    }
+    let stoppedAt = try milliseconds(value["stoppedAt"])
+    guard stoppedAt <= (try milliseconds(value["serverTime"])) else { throw DriverTrackingFailure.invalidContract }
+    self.attestation = expected
+    self.stoppedAt = stoppedAt
+    self.runState = runState
+  }
+}
+
 // This journal contains only a native stop attestation; samples and credentials are excluded.
 enum DriverTrackingStopJournal {
+  static func clearConfirmed(_ expected: DriverTrackingStopRequest, current: DriverTrackingStopRequest?,
+                             persist: (Data) throws -> Void) throws {
+    guard current != nil, try encode(current) == encode(expected) else { throw DriverTrackingFailure.invalidContract }
+    try persist(encode(nil))
+  }
+
   static func encode(_ request: DriverTrackingStopRequest?) throws -> Data {
     guard let request = request else { return Data("null".utf8) }
     var value = request.body; value["sessionId"] = request.sessionID

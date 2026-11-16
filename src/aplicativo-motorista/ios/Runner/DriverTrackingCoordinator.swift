@@ -350,7 +350,8 @@ final class DriverTrackingCoordinator: NSObject, CLLocationManagerDelegate {
   }
 
   private func stopLocally(reason newReason: String, cancelOperation: Bool = true, forceNewRecord: Bool = false) {
-    let wasStopped = state == "STOPPED" && stoppedAt != nil && !forceNewRecord
+    let wasStopped = (state == "STOPPED" || state == "ERROR") && stoppedAt != nil
+      && provider == nil && !forceNewRecord
     lifecycle &+= 1
     requestID = nil
     task?.cancel(); task = nil
@@ -574,7 +575,9 @@ final class DriverTrackingCoordinator: NSObject, CLLocationManagerDelegate {
     sendStopPacket(completion: completion)
     #else
     guard let pending = pendingStop else { completion?(); return }
-    send(path: "/driver-app/v1/status", body: nil) { [weak self] json, _ in
+    send(path: "/driver-app/v1/status", body: nil, onUnauthorized: { [weak self] in
+      self?.recoverStopReceipt(completion: completion)
+    }) { [weak self] json, _ in
       guard let self = self else { return }
       guard let session = json["session"] as? [String: Any],
         session["sessionId"] as? String == pending.sessionID,
@@ -582,7 +585,9 @@ final class DriverTrackingCoordinator: NSObject, CLLocationManagerDelegate {
         self.failClosed(.invalidContract); return
       }
       if session["state"] as? String == "STOPPED" {
-        self.pendingStop = nil; self.cancelStopRetry(); self.saveStopJournal(); self.saveDiagnostic(); completion?()
+        do { try self.confirmStop(pending); completion?() }
+        catch let failure as DriverTrackingFailure { self.failClosed(failure) }
+        catch { self.failClosed(.invalidContract) }
       } else { self.sendStopPacket(completion: completion) }
     }
     #endif
@@ -593,31 +598,76 @@ final class DriverTrackingCoordinator: NSObject, CLLocationManagerDelegate {
       completion?(); return
     }
     cancelStopRetry(resetBackoff: false)
-    send(path: "/driver-app/v1/tracking-sessions/\(stopped.sessionID)/state", body: stopped.body) { [weak self] json, _ in
+    send(path: "/driver-app/v1/tracking-sessions/\(stopped.sessionID)/state", body: stopped.body,
+      onUnauthorized: { [weak self] in self?.recoverStopReceipt(completion: completion) }) { [weak self] json, _ in
       guard let self = self else { return }
       do {
         let control = try DriverTrackingControl(json)
         guard control.sessionID == stopped.sessionID, control.generation == stopped.generation,
           control.action == "STOP" else { throw DriverTrackingFailure.invalidContract }
-        self.pendingStop = nil
-        self.saveStopJournal()
-        self.cancelStopRetry()
-        self.saveDiagnostic()
+        try self.confirmStop(stopped)
         completion?()
-      } catch { self.failClosed(.invalidContract) }
+      } catch let failure as DriverTrackingFailure { self.failClosed(failure) }
+      catch { self.failClosed(.invalidContract) }
     }
   }
 
-  private func send(path: String, body: [String: Any]?,
+  private func confirmStop(_ expected: DriverTrackingStopRequest) throws {
+    guard provider == nil, state != "TRACKING", state != "STARTING" else { throw DriverTrackingFailure.invalidContract }
+    let requested = try DriverTrackingContract.integer(expected.body["stopRequestedAt"])
+    let stopped = try DriverTrackingContract.integer(expected.body["stoppedAt"])
+    guard stopped >= requested else { throw DriverTrackingFailure.invalidContract }
+    do {
+      try DriverTrackingStopJournal.clearConfirmed(expected, current: pendingStop) { data in
+        #if !VANRIDES_GPS_SPIKE
+        try self.stopJournal.save(data)
+        #endif
+      }
+    } catch let failure as DriverTrackingFailure { throw failure }
+    catch { reason = "STOP_STORAGE_ERROR"; throw DriverTrackingFailure.credentialStorage }
+    // Identity/timestamps come from the validated journal, never old diagnostics.
+    sessionID = expected.sessionID; sessionGeneration = expected.generation
+    stopRequestedAt = requested; stoppedAt = stopped
+    pendingStop = nil; state = "STOPPED"
+    reason = expected.body["reason"] as? String
+    cancelStopRetry(); saveDiagnostic()
+  }
+
+  private func recoverStopReceipt(completion: (() -> Void)? = nil) {
+    guard let pending = pendingStop, task == nil else { return }
+    guard provider == nil, state != "TRACKING", state != "STARTING" else { failClosed(.invalidContract); return }
+    let id = UUID(), epoch = lifecycle
+    requestID = id
+    do {
+      let outgoing = try transport.stopReceipt(pending) { [weak self] result, _ in
+        guard let self = self else { return }
+        guard self.requestID == id, self.lifecycle == epoch else { self.discardedCallback(); return }
+        self.task = nil; self.requestID = nil
+        switch result {
+        case .success(let receipt):
+          do {
+            try self.confirmStop(receipt.attestation)
+            self.transport.recordStopReceipt(receipt)
+            completion?()
+          } catch let failure as DriverTrackingFailure { self.failClosed(failure) }
+          catch { self.failClosed(.invalidContract) }
+        case .failure(let failure): self.failClosed(failure)
+        }
+      }
+      task = outgoing; outgoing.resume()
+    } catch { failClosed(.invalidContract) }
+  }
+
+  private func send(path: String, body: [String: Any]?, onUnauthorized: (() -> Void)? = nil,
     completion: @escaping ([String: Any], Double) -> Void
   ) {
     do {
       let encoded = try body.map { try JSONSerialization.data(withJSONObject: $0, options: [.sortedKeys]) }
-      send(path: path, encodedBody: encoded, completion: completion)
+      send(path: path, encodedBody: encoded, onUnauthorized: onUnauthorized, completion: completion)
     } catch { failClosed(.invalidContract) }
   }
 
-  private func send(path: String, encodedBody: Data?,
+  private func send(path: String, encodedBody: Data?, onUnauthorized: (() -> Void)? = nil,
     completion: @escaping ([String: Any], Double) -> Void
   ) {
     guard checkLease(), task == nil, let credential = credential else {
@@ -637,6 +687,9 @@ final class DriverTrackingCoordinator: NSObject, CLLocationManagerDelegate {
         switch result {
         case .success(let json): completion(json, started)
         case .failure(let failure):
+          if self.stopPending, status == 401 || status == 403, let recover = onUnauthorized {
+            recover(); return
+          }
           let retry = status == nil || status == 429 || (status.map { $0 >= 500 } ?? false)
           if self.stopPending && status == 409 {
             self.reason = "STOP_RECONCILIATION_REQUIRED"
@@ -661,6 +714,8 @@ final class DriverTrackingCoordinator: NSObject, CLLocationManagerDelegate {
   }
 
   private func failClosed(_ failure: DriverTrackingFailure) {
+    let confirmedStop = state == "STOPPED" && stoppedAt != nil && provider == nil
+      && pendingStop == nil && sessionID != nil && sessionGeneration >= 1
     let previousStop = pendingStop
     let reply = operation
     operation = nil
@@ -669,7 +724,8 @@ final class DriverTrackingCoordinator: NSObject, CLLocationManagerDelegate {
     if let previousStop = previousStop { pendingStop = previousStop; saveStopJournal() }
     cancelStopRetry()
     if credential == nil { state = "UNCONFIGURED" }
-    else { state = "ERROR" }
+    else { state = confirmedStop ? "STOPPED" : "ERROR" }
+    if reason != "STOP_STORAGE_ERROR" { reason = failure.rawValue }
     saveDiagnostic()
     reply?(.failure(failure))
   }

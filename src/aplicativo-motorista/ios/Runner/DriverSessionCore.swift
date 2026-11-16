@@ -484,6 +484,22 @@ actor DriverSessionController {
     return snapshot()
   }
 
+  // Proof-only receipt for an existing native stop, even after token expiry/revocation.
+  // Never creates a key, refreshes access or exposes a generic proof API to Flutter.
+  func stopReceipt(sessionID: String, generation: Int64, stopRequestRef: String?) async throws -> Data {
+    guard !busy else { throw DriverSessionFailure.busy }
+    guard configuration != nil, record != nil else { throw DriverSessionFailure.unavailable }
+    guard sessionID.count == 36, UUID(uuidString: sessionID) != nil, sessionID == sessionID.lowercased(), generation >= 1
+    else { throw DriverSessionFailure.invalidArguments }
+    if let ref = stopRequestRef {
+      guard ref.count == 36, UUID(uuidString: ref) != nil, ref == ref.lowercased() else { throw DriverSessionFailure.invalidArguments }
+    }
+    busy = true
+    defer { busy = false }
+    let body = try DriverSessionCodec.json(["generation": generation, "stopRequestRef": stopRequestRef as Any? ?? NSNull()])
+    return try await request("/driver-app/v1/tracking-sessions/" + sessionID + "/stop-receipt", body: body, access: nil)
+  }
+
   // Called by the native collector, never exposes credentials to Flutter.
   func trackingRequest(path: String, body: Data?, idempotency: String?) async throws -> Data {
     guard !busy else { throw DriverSessionFailure.busy }
