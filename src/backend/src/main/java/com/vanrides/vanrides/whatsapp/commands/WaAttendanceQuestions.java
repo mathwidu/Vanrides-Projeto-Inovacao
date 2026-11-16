@@ -6,13 +6,18 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.vanrides.vanrides.whatsapp.api.WaJson;
 import com.vanrides.vanrides.whatsapp.api.WaProblem;
 import com.vanrides.vanrides.whatsapp.attendance.WaAttendanceCalendar;
+import com.vanrides.vanrides.whatsapp.attendance.WaAttendanceLabels;
 import com.vanrides.vanrides.whatsapp.config.WaClock;
 import com.vanrides.vanrides.whatsapp.config.WaSettings;
 import com.vanrides.vanrides.whatsapp.transport.WaAttendanceQuotes;
 import java.sql.Timestamp;
+import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.MonthDay;
+import java.time.OffsetDateTime;
 import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -24,8 +29,8 @@ final class WaAttendanceQuestions {
           'time',q.local_time::text,'timezone',q.timezone,'attendanceState',a.state,
           'attendanceVersion',a.version,'routineVersion',r.version,'memberVersion',m.version,
           'linkVersion',l.version,'pointVersion',p.version,'occurrenceVersion',o.version,
-          'runStarted',EXISTS(SELECT 1 FROM wa.operation_run run WHERE run.occurrence_id=q.occurrence_id
-             AND run.state IN ('STARTING','START_FAILED','TRACKING','DEGRADED')),
+          'runStarted',active.id IS NOT NULL,'stopLocked',COALESCE(active.stop_locked,false),
+          'scheduledAt',o.scheduled_at,
           'sent',EXISTS(SELECT 1 FROM wa.message_attempt attempt WHERE attempt.outbox_id=q.outbox_id
              AND attempt.external_message_id IS NOT NULL AND attempt.state IN ('SUBMITTED','DELIVERED','READ'))))::text
         FROM wa.attendance_question q
@@ -46,10 +51,13 @@ final class WaAttendanceQuestions {
           AND driver.status='ACTIVE' AND driver.driver_enabled AND driver.notice_version='wa-mvp-v1'
         JOIN wa.identity pi ON pi.id=q.passenger_id JOIN wa.identity di ON di.id=q.driver_id
         LEFT JOIN wa.test_cohort cohort ON cohort.id=pi.test_cohort_id
+        LEFT JOIN LATERAL (SELECT run.id,EXISTS(SELECT 1 FROM wa.run_stop stop WHERE stop.run_id=run.id
+            AND stop.passenger_id=q.passenger_id AND stop.state IN ('PASSED','SKIPPED')) AS stop_locked
+          FROM wa.operation_run run WHERE run.occurrence_id=q.occurrence_id
+            AND run.state IN ('STARTING','START_FAILED','TRACKING','DEGRADED') LIMIT 1) active ON true
         WHERE q.environment=? AND q.instance_id=? AND q.passenger_id=?
           AND q.state IN ('OPEN','ANSWERED') AND q.opens_at<=? AND q.answer_until>?
-          AND (EXISTS(SELECT 1 FROM wa.operation_run run WHERE run.occurrence_id=q.occurrence_id
-                AND run.state IN ('STARTING','START_FAILED','TRACKING','DEGRADED'))
+          AND (active.id IS NOT NULL
             OR (o.calendar_eligible AND r.state='ACTIVE' AND m.state='ACTIVE' AND l.state='APPROVED' AND p.state='APPROVED'
               AND m.pickup_point_id=q.pickup_point_id AND m.version=q.member_version
               AND l.version=q.link_version AND p.version=q.pickup_version
@@ -63,6 +71,7 @@ final class WaAttendanceQuestions {
             AND run.state IN ('COMPLETED','CANCELED'))
         ORDER BY q.local_date,o.scheduled_at,q.id LIMIT 101
         """;
+    private static final Duration STALE_AFTER = Duration.ofHours(1);
     final JdbcTemplate jdbc;
     final WaClock clock;
     final WaSettings settings;
@@ -79,10 +88,14 @@ final class WaAttendanceQuestions {
     ArrayNode catalogue(UUID passenger, String instance) {
         Timestamp now = Timestamp.from(clock.now());
         ArrayNode result = WaJson.MAPPER.createArrayNode();
+        Instant staleBefore = clock.now().minus(STALE_AFTER);
         jdbc.query(CATALOGUE, (rs, row) -> WaJson.object(rs.getString(1)), settings.environment(), instance,
             passenger, now, now, now, now, now, now, settings.environment(), settings.cohortOnly()).forEach(row -> {
-                if (row.path("runStarted").asBoolean()
-                        || row.path("schedule_hash").asText().equals(WaAttendanceCalendar.scheduleHash(jdbc, id(row, "routine_id")))) result.add(row);
+                boolean started = row.path("runStarted").asBoolean();
+                if (started || row.path("schedule_hash").asText().equals(WaAttendanceCalendar.scheduleHash(jdbc, id(row, "routine_id")))) {
+                    row.put("stale", !started && OffsetDateTime.parse(row.path("scheduledAt").asText()).toInstant().isBefore(staleBefore));
+                    result.add(row);
+                }
             });
         return result;
     }
@@ -109,7 +122,7 @@ final class WaAttendanceQuestions {
                 LocalDate target = switch (requested) {
                     case "TODAY" -> today;
                     case "TOMORROW" -> today.plusDays(1);
-                    default -> LocalDate.parse(requested);
+                    default -> requested.startsWith("--") ? nextOccurrence(MonthDay.parse(requested), today) : LocalDate.parse(requested);
                 };
                 if (!target.equals(date)) continue;
             }
@@ -119,18 +132,23 @@ final class WaAttendanceQuestions {
         return result;
     }
 
+    private static LocalDate nextOccurrence(MonthDay monthDay, LocalDate today) {
+        LocalDate thisYear = monthDay.atYear(today.getYear());
+        return thisYear.isBefore(today) ? monthDay.atYear(today.getYear() + 1) : thisYear;
+    }
+
     ObjectNode draft(UUID actor) {
         List<String> rows = jdbc.query("SELECT context_json::text FROM wa.conversation_state WHERE identity_id=?",
             (rs, row) -> rs.getString(1), actor);
-        if (rows.isEmpty()) return WaJson.MAPPER.createObjectNode();
+        if (rows.isEmpty()) return empty();
         JsonNode value = WaJson.object(rows.get(0)).path("attendanceDraft");
-        return value instanceof ObjectNode object ? object.deepCopy() : WaJson.MAPPER.createObjectNode();
+        return value instanceof ObjectNode object ? object.deepCopy() : empty();
     }
 
     void save(WaProfileState actor, WaInboxAccess.Context event, ObjectNode draft) {
         var stored = jdbc.query("SELECT context_json::text FROM wa.conversation_state WHERE identity_id=? FOR UPDATE",
             (rs, row) -> WaJson.object(rs.getString(1)), actor.identityId());
-        ObjectNode context = stored.isEmpty() ? WaJson.MAPPER.createObjectNode() : stored.get(0);
+        ObjectNode context = stored.isEmpty() ? empty() : stored.get(0);
         if (draft.isEmpty()) context.remove("attendanceDraft"); else context.set("attendanceDraft", draft);
         context.put("conversationOwner", draft.isEmpty() ? "READY" : "ATTENDANCE");
         String owner = WaConversationOwnership.owner(context);
@@ -146,16 +164,30 @@ final class WaAttendanceQuestions {
             Timestamp.from(clock.now()), actor.identityId());
     }
 
+    static ObjectNode empty() { return WaJson.MAPPER.createObjectNode(); }
+
+    static ObjectNode find(ArrayNode values, String id) {
+        for (JsonNode value : values) if (value.path("id").asText().equals(id)) return (ObjectNode) value;
+        return null;
+    }
+
     static UUID id(JsonNode row, String field) { return UUID.fromString(row.path(field).asText()); }
     static String ref(UUID id) { return "question_" + id; }
     static UUID question(String reference) {
         if (!reference.matches("question_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")) throw WaProblem.denied();
         return UUID.fromString(reference.substring(9));
     }
-    static String label(JsonNode row) {
-        String direction = row.path("direction").asText().equals("OUTBOUND") ? "ida" : "volta";
-        return LocalDate.parse(row.path("local_date").asText()).format(DateTimeFormatter.ofPattern("dd/MM/uuuu"))
-            + ", " + direction + " às " + row.path("time").asText().substring(0, 5)
-            + " (" + row.path("routineName").asText() + ")";
+    static String label(JsonNode row, Instant now) {
+        return WaAttendanceLabels.day(LocalDate.parse(row.path("local_date").asText()), now, row.path("timezone").asText())
+            + ", " + trip(row);
+    }
+
+    static String storedLabel(JsonNode row) {
+        return WaAttendanceLabels.date(LocalDate.parse(row.path("local_date").asText())) + ", " + trip(row);
+    }
+
+    private static String trip(JsonNode row) {
+        return WaAttendanceLabels.trip(row.path("direction").asText(), LocalTime.parse(row.path("time").asText()),
+            row.path("routineName").asText());
     }
 }

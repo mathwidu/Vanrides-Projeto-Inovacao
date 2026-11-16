@@ -8,6 +8,8 @@ import com.vanrides.vanrides.whatsapp.config.WaClock;
 import com.vanrides.vanrides.whatsapp.config.WaSettings;
 import com.vanrides.vanrides.whatsapp.transport.WaTransportAccess;
 import com.vanrides.vanrides.whatsapp.transport.WaDeliveryMaintenance;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -24,6 +26,7 @@ public class WaAttendanceJobs {
     private final WaAttendanceCandidates candidates;
     private final WaAttendanceMaterializer materializer;
     private final WaAttendanceReminders reminders;
+    private final WaDepartureNotices departures;
     private final WaDeliveryMaintenance delivery;
 
     public WaAttendanceJobs(JdbcTemplate jdbc, WaTransportAccess access, WaSettings settings, WaClock clock) {
@@ -33,6 +36,7 @@ public class WaAttendanceJobs {
         candidates = new WaAttendanceCandidates(jdbc, settings);
         materializer = new WaAttendanceMaterializer(jdbc, settings, clock);
         reminders = new WaAttendanceReminders(jdbc, settings, clock);
+        departures = new WaDepartureNotices(jdbc, settings, clock);
         delivery = new WaDeliveryMaintenance(jdbc, settings, clock);
     }
 
@@ -68,7 +72,7 @@ public class WaAttendanceJobs {
         List<Map<String, Object>> work = type.equals("HEALTH_RECONCILE")
                 ? delivery.candidates(grant.instance(), page.after(), limit + 1) : type.equals("MATERIALIZE_OCCURRENCES")
                 ? candidates.materialize(grant.instance(), page.window(), page.after(), limit + 1)
-                : reminders.candidates(grant.instance(), page.after(), limit + 1);
+                : due(grant.instance(), page.after(), limit + 1);
         int processed = Math.min(limit, work.size());
         String last = page.after();
         for (int index = 0; index < processed; index++) {
@@ -78,6 +82,8 @@ public class WaAttendanceJobs {
                 delivery.apply(java.util.UUID.fromString((String) item.get("work_key")), grant.instance());
             } else if (type.equals("MATERIALIZE_OCCURRENCES")) {
                 materializer.apply(item, grant.instance(), grant.credentialId());
+            } else if ("DEPARTURE".equals(item.get("kind"))) {
+                departures.apply(item, grant.instance());
             } else {
                 reminders.apply(item, grant.instance());
             }
@@ -88,5 +94,12 @@ public class WaAttendanceJobs {
         ObjectNode response = pages.finish(page, type, grant.instance(), processed, last, work.size() > limit);
         access.revalidate(grant);
         return response;
+    }
+
+    private List<Map<String, Object>> due(String instance, String after, int limit) {
+        List<Map<String, Object>> work = new ArrayList<>(reminders.candidates(instance, after, limit));
+        work.addAll(departures.candidates(instance, after, limit));
+        work.sort(Comparator.comparing(item -> (String) item.get("work_key")));
+        return work.size() > limit ? work.subList(0, limit) : work;
     }
 }

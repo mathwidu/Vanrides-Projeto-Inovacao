@@ -32,6 +32,9 @@ class WaAttendanceJobsIntegrationTest {
         f.nextWindow();
         assertEquals(0, f.tick("DUE_REMINDERS", 100, null).path("processed").asInt());
         assertEquals(1, f.count("SELECT count(*) FROM wa.message_outbox WHERE purpose='REMINDER'"));
+        assertEquals("Viagem de amanhã, quarta (02/01)\n• Ida às 06:00 (Ida habitual)\n"
+                + "Você vai? Responda esta mensagem com VOU ou NÃO VOU.\nSe não responder, você continua previsto na lista.",
+                f.h.jdbc.queryForObject("SELECT payload_json->>'text' FROM wa.message_outbox WHERE purpose='REMINDER'", String.class));
         assertEquals(1, f.count("""
                 SELECT count(*) FROM wa.attendance_question q JOIN wa.message_outbox o ON o.id=q.outbox_id
                 WHERE q.local_date='2030-01-02' AND o.command_id IS NULL AND o.reminder_window='previous-day'

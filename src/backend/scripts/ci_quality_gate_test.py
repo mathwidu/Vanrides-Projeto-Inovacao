@@ -783,7 +783,7 @@ class BackendCiQualityGateWiringTest(unittest.TestCase):
                 module / "mvnw": '[[ "$*" == "-B -ntp -DskipTests package" ]] || exit 90\nevent=package',
                 fake_bin / "node": '''
                     case "$*" in
-                      "--test --test-reporter=dot "*/team_ui_test.mjs) event=team-ui ;;
+                      "--test --test-reporter=dot "*/team_ui_test.mjs" "*/team_simulator_test.mjs) [[ "$#" == 4 ]] || exit 90; event=team-ui ;;
                       */academic-integration-smoke.mjs) [[ "$#" == 1 ]] || exit 90; event=smoke ;;
                       *) exit 90 ;;
                     esac
@@ -1025,7 +1025,7 @@ class BackendCiQualityGateWiringTest(unittest.TestCase):
         discovered = _discover_docker_optional_test_classes(ROOT / "src/test/java")
 
         self.assertEqual(discovered, set(expected))
-        self.assertEqual(621, sum(expected.values()))
+        self.assertEqual(694, sum(expected.values()))
 
     def test_docker_optional_annotation_scanner_accepts_equivalent_formatting(self) -> None:
         variants = (

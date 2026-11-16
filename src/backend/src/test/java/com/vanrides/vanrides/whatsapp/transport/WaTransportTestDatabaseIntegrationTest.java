@@ -24,7 +24,9 @@ class WaTransportTestDatabaseIntegrationTest {
         var sequences = sequences(first.jdbc);
         Long identityTable = first.jdbc.queryForObject("SELECT 'wa.identity'::regclass::oid::bigint", Long.class);
         assertThat(first.jdbc.queryForObject("SELECT max(version::integer) FROM public.flyway_schema_history", Integer.class))
-                .isEqualTo(39);
+                .isEqualTo(java.util.Arrays.stream(org.flywaydb.core.Flyway.configure()
+                        .dataSource(first.jdbc.getDataSource()).load().info().all())
+                        .map(info -> Integer.parseInt(info.getVersion().getVersion())).max(Integer::compareTo).orElseThrow());
         Long company = first.jdbc.queryForObject("""
                 INSERT INTO public.company (nome,slug,created_at,updated_at)
                 VALUES ('Synthetic reset company','synthetic-reset',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP) RETURNING id

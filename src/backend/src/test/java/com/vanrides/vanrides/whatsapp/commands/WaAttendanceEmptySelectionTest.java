@@ -34,7 +34,7 @@ class WaAttendanceEmptySelectionTest {
         var result = advance(actor, "VOU HOJE");
 
         assertThat(result.decision().error()).isNull();
-        assertThat(result.text()).contains("Nenhuma ocorrência disponível", "motorista", "PRESENÇA");
+        assertThat(result.text()).isEqualTo("Não há nenhuma viagem próxima registrada. Aguarde a chegada do lembrete.");
         assertThat(jdbc.context.has("attendanceDraft")).isFalse();
         assertThat(WaConversationOwnership.owner(jdbc, ID)).isEqualTo("READY");
         assertThat(conversation.offer(actor, event("SOU MOTORISTA"))).isNull();
@@ -46,31 +46,60 @@ class WaAttendanceEmptySelectionTest {
         jdbc.context.set("passengerDraft", previous.deepCopy());
         jdbc.context.put("conversationOwner", "PASSENGER_SETUP");
 
-        advance(actor("PASSENGER"), "PRESENÇA");
+        advance(actor("PASSENGER"), "VOU HOJE NA IDA");
 
         assertThat(jdbc.context.has("attendanceDraft")).isFalse();
         assertThat(jdbc.context.path("passengerDraft")).isEqualTo(previous);
         assertThat(WaConversationOwnership.owner(jdbc, ID)).isEqualTo("PASSENGER_SETUP");
     }
 
-    @Test void aMenuWithOptionsAndItsExplicitAbandonmentKeepTheirExistingBehaviour() {
+    @Test void thePassengerMenuAndItsNavigationAreGone() {
         jdbc.catalogue = List.of(question(2, "OUTBOUND"), question(3, "RETURN"));
         var actor = actor("PASSENGER");
-        var result = advance(actor, "PRESENÇA");
 
-        assertThat(result.text()).contains("Escolha a data e o sentido", "1 —", "2 —");
-        assertThat(jdbc.context.path("attendanceDraft").path("choices").size()).isEqualTo(2);
-        assertThat(WaConversationOwnership.owner(jdbc, ID)).isEqualTo("ATTENDANCE");
-        assertThat(conversation.offer(actor, event("SOU MOTORISTA")).command()).isEqualTo("ADVANCE_ATTENDANCE");
-        var selected = advance(actor, "2");
-        assertThat(selected.text()).contains("volta", "Responda VOU ou NÃO VOU");
-        assertThat(jdbc.context.path("attendanceDraft").path("kind").asText()).isEqualTo("PASSENGER_SELECTED");
-
-        var abandoned = advance(actor, "ABANDONAR");
-        assertThat(abandoned.text()).contains("A seleção de presença foi encerrada");
+        for (String text : List.of("PRESENÇA", "PRESENÇA HOJE", "2", "PRÓXIMA", "ANTERIOR", "ABANDONAR"))
+            assertThat(conversation.offer(actor, event(text))).as(text).isNull();
         assertThat(jdbc.context.has("attendanceDraft")).isFalse();
-        assertThat(WaConversationOwnership.owner(jdbc, ID)).isEqualTo("READY");
-        assertThat(conversation.offer(actor, event("SOU MOTORISTA"))).isNull();
+
+        for (String text : List.of("VOU 2", "Talvez vou", "Acho que não vou", "Qual o horário da ida e da volta?", "ida e volta?"))
+            assertThat(conversation.offer(actor, event(text))).as(text).isNull();
+        assertThat(jdbc.context.has("attendanceDraft")).isFalse();
+    }
+
+    @Test void twoChoicesInOneMessageGetTheOneTripAtATimeText() {
+        jdbc.catalogue = List.of(question(2, "OUTBOUND"), question(3, "RETURN"));
+        var actor = actor("PASSENGER");
+
+        for (String text : List.of("VOU IDA E VOLTA", "NÃO VOU HOJE E AMANHÃ")) {
+            assertThat(advance(actor, text).text())
+                .isEqualTo("Responda uma viagem por vez: responda ao lembrete da viagem com VOU ou NÃO VOU.");
+            assertThat(jdbc.context.has("attendanceDraft")).isFalse();
+            assertThat(WaConversationOwnership.owner(jdbc, ID)).isEqualTo("READY");
+        }
+    }
+
+    @Test void aPassengerOfferThatWentStaleBeforeExecutionGetsTheEndedTripText() {
+        var result = conversation.execute(actor("PASSENGER"), event("VOU"), "SET_ATTENDANCE", WaJson.MAPPER.createObjectNode());
+
+        assertThat(result.decision().error()).isNotNull();
+        assertThat(result.text()).isEqualTo("Essa viagem já foi encerrada. Não é possível alterar a presença dela.");
+    }
+
+    @Test void aBareAnswerOffersTheEarliestTripAndKeepsNoDraft() {
+        jdbc.catalogue = List.of(question(2, "OUTBOUND"), question(3, "RETURN"));
+
+        var offer = conversation.offer(actor("PASSENGER"), event("NÃO VOU"));
+
+        assertThat(offer.command()).isEqualTo("SET_ATTENDANCE");
+        assertThat(offer.choice()).isEqualTo("NOT_GOING");
+        assertThat(offer.target()).isEqualTo(new UUID(0, 2));
+        assertThat(jdbc.context.has("attendanceDraft")).isFalse();
+    }
+
+    @Test void aTripWhoseStopWasPassedIsSkippedByABareAnswer() {
+        jdbc.catalogue = List.of(question(2, "OUTBOUND").put("stopLocked", true), question(3, "RETURN"));
+
+        assertThat(conversation.offer(actor("PASSENGER"), event("VOU")).target()).isEqualTo(new UUID(0, 3));
     }
 
     @Test void emptyDriverCatalogueAlsoLeavesNoAttendanceSelection() {

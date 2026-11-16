@@ -49,7 +49,7 @@ final class WaLocationConversation {
         if(entry(text) || draft.isEmpty()) {
             draft=WaJson.object("{}").put("page",0).put("expiresAt",clock.now().plusSeconds(300).toString());
             var ids=draft.putArray("runs"); live.stream().limit(100).forEach(row->ids.add(row.get("id").toString()));
-        } else if(Set.of("proxima","anterior").contains(text)) draft.put("page",WaAttendanceSelection.page(menuDraft(draft),text));
+        } else if(Set.of("proxima","anterior").contains(text)) draft.put("page",WaDriverAttendanceMenus.page(menuDraft(draft),text));
         save(actor,event,draft);
         StringBuilder message=new StringBuilder("Escolha o veículo da ocorrência. ");
         int page=draft.path("page").asInt();

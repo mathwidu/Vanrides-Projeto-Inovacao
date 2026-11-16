@@ -35,7 +35,7 @@ class WaRunPreparationIntegrationTest {
         assertEquals("Pessoa sintética 1", snapshot.path("passengerNames").path(f.passenger.toString()).asText());
         assertEquals(snapshot, WaJson.object(f.s.string("SELECT snapshot_json::text FROM wa.operation_run WHERE id=?", run)));
         var late = f.attendance.send(f.passenger, "Não vou hoje na ida");
-        assertTrue(late.text().contains("próximos avisos"));
+        assertTrue(late.text().contains("O motorista já saiu e sua parada foi retirada desta viagem."));
         assertEquals("CANCELED", f.s.string("SELECT state FROM wa.run_stop WHERE run_id=?", run));
         assertEquals("PENDING", f.s.string("SELECT attendance_snapshot FROM wa.run_stop WHERE run_id=?", run));
         assertEquals(snapshot, WaJson.object(f.s.string("SELECT snapshot_json::text FROM wa.operation_run WHERE id=?", run)));

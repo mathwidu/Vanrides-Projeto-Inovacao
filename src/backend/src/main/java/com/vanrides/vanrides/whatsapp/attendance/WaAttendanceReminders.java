@@ -6,7 +6,6 @@ import com.vanrides.vanrides.whatsapp.config.WaSettings;
 import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -100,10 +99,11 @@ final class WaAttendanceReminders {
             return;
         }
         Timestamp now = Timestamp.from(clock.now());
-        String text = "Para " + row.get("name") + " (" + (row.get("direction").equals("OUTBOUND") ? "ida" : "volta")
-                + "), dia " + ((Date) q.get("local_date")).toLocalDate().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
-                + " às " + ((Time) row.get("local_time")).toLocalTime().format(DateTimeFormatter.ofPattern("HH:mm"))
-                + ", você vai? Responda VOU ou NÃO VOU. Se não responder, permanece previsto como pendente.";
+        String text = "Viagem de " + WaAttendanceLabels.day(((Date) q.get("local_date")).toLocalDate(), clock.now(), (String) q.get("timezone"))
+                + "\n• " + WaAttendanceLabels.capitalize(WaAttendanceLabels.trip((String) q.get("direction"),
+                        ((Time) q.get("local_time")).toLocalTime(), (String) q.get("routine_name")))
+                + "\nVocê vai? Responda esta mensagem com VOU ou NÃO VOU."
+                + "\nSe não responder, você continua previsto na lista.";
         UUID outbox = UUID.randomUUID();
         int inserted = jdbc.update("""
                 INSERT INTO wa.message_outbox(id,recipient_identity_id,purpose,occurrence_id,reminder_window,
