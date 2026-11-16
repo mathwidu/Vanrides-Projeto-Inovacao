@@ -209,3 +209,63 @@ foi aprovada nessa rodada. Os containers próprios foram removidos com
 identidade conferida, os volumes sintéticos foram retidos e os serviços
 compartilhados não foram alterados. A correção pertence à fixture, sem
 enfraquecer o guard da aplicação. Recibo e logs permanecem privados.
+
+### Recuperação em fila — núcleo aprovado
+
+A tentativa isolada 004 terminou como `CORE_VERIFIED_PRIVACY_PENDING`, com
+`releaseEligible: false`. Foram usados o JAR `4317e5c7` de `b8c8c6d`, Flyway
+V43, n8n em modo de fila, Redis com AOF, API, worker e canal simulado. O hash
+do manifesto é `ebf12a4d7add0549f9b2c17673aaf9e7bbd5d2e3cafed5adf3b596a0c49a1237`.
+O JRE veio da imagem publicada; a identidade do JAR candidato é registrada
+separadamente. Não foi um ensaio com Evolution ou WhatsApp real.
+
+Quatro verificações passaram na VPS, sem reiniciar serviços compartilhados:
+
+- A agenda publicada enfileirou trabalho no Redis com o worker parado.
+- O reinício retomou a pendência uma vez e as quatro agendas dispararam.
+- PostgreSQL, Redis, API e workers retomaram nos mesmos volumes sem reenviar
+  respostas já concluídas.
+- Dois dumps reais foram restaurados em outro PostgreSQL; a pendência foi
+  concluída e a repetição dos eventos não produziu efeitos novos.
+
+Foram dois eventos sintéticos, dois efeitos no provedor simulado e zero
+efeitos duplicados. O backup ocorreu com produtores quiescentes e a pendência
+estava no inbox durável da API: não é prova de restauração de qualquer job
+Redis arbitrariamente interrompido durante envio. Os containers exclusivos
+foram removidos com identidade conferida; os volumes de diagnóstico foram
+preservados. A reaplicação V44 ainda consta como pendente e não foi substituída
+por um recibo externo de sucesso.
+
+As tentativas 002/003 encontraram, respectivamente, ausência do diretório
+de cache e falta de espaço no tmpfs do n8n. A solução manteve raiz somente
+leitura e rede interna: cache de 128 MiB e limite de memória de 1 GiB por
+main/worker. No ensaio aprovado, o cache usou 47.704 KiB, acima da capacidade
+anterior de 32 MiB. `/tmp` usou 20 KiB e `.n8n`, 40 KiB. São medições de disco
+tmpfs nessa rodada, não de consumo RSS nem recomendação para carga real.
+
+### Retenção e restauração — ports integrados
+
+Além dos testes de base, a retenção técnica passou em 14 cenários únicos de
+três classes PostgreSQL, incluindo serviços reais de transporte e suporte
+com GPS sintético. O histórico passou em 14 cenários e o port de restauração,
+em nove. A prova deste último inclui pg_dump anterior ao fechamento,
+pg_restore controlado, journal atual, reaplicação e descarte, preservando a
+outra pessoa e os controles. Não equivale ainda ao ensaio conjunto com n8n.
+
+Dados sem origem atribuível ficam explicitamente adiados; hashes e controles
+mínimos de replay não são anunciados como anonimização completa. Fechar
+perfil não é consequência automática de parar GPS ou encerrar viagem.
+
+### Rotina do worker preparada, ainda desabilitada
+
+O W08 conserva seu contrato e os oito exports. O novo adapter, desligado por
+padrão, pede uma página de 20 unidades de cada família independente em até
+cinco segundos após a reconciliação. Cursores e detalhes permanecem privados
+no worker; o n8n recebe somente seu resumo de entrega. Logs são agregados e
+só saem quando há trabalho/falha e mudança do resumo.
+
+Passaram 58 testes Node direcionados nos cinco arquivos de teste afetados,
+incluindo configuração, HTTP, limites, tempo excedido, continuação por família,
+ausência de vazamento no resumo e regressão do servidor W08. Não foram
+adicionadas suítes à CI automática. Publicação da V44, journal na VPS e
+ativação de descarte real continuam separados dessa prova offline.

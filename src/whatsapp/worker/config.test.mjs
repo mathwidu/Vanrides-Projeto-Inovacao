@@ -103,6 +103,10 @@ test('attendance uses a separate optional 0600 SYSTEM_JOB credential and rejects
   assert.equal(config.jobToken, marker); assert.ok(!JSON.stringify(config).includes(marker));
   invalid(() => loadConfig({ ...env, WA100_JOB_TOKEN: marker }));
   invalid(() => loadConfig({ ...env, WA100_JOB_TOKEN_FILE: env.WA070_CONVERSATION_TOKEN_FILE }));
+  assert.equal(config.privacyEnabled, false);
+  assert.equal(loadConfig({ ...env, WA100_JOB_TOKEN_FILE: file, WA_PRIVACY_WORKER_ENABLED: 'true' }).privacyEnabled, true);
+  invalid(() => loadConfig({ ...env, WA_PRIVACY_WORKER_ENABLED: 'true' }));
+  invalid(() => loadConfig({ ...env, WA100_JOB_TOKEN_FILE: file, WA_PRIVACY_WORKER_ENABLED: 'yes' }));
 });
 
 

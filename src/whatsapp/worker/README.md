@@ -203,6 +203,33 @@ Timeout não deixa uma resposta tardia avançar o cursor ou abrir outra página.
 Os exports permanecem inativos até validação do ambiente; testes Node/Python
 não comprovam execução n8n/Spring do novo job.
 
+### Retenção no mesmo agendamento
+
+`WA_PRIVACY_WORKER_ENABLED` é `false` por padrão. Com `true`, exige o arquivo
+privado SYSTEM_JOB e acrescenta a manutenção depois de HEALTH_RECONCILE no
+mesmo W08. Não cria outro cron nem altera os oito exports. O corpo enviado ao
+n8n continua `{status,processed}`; `processed` conta apenas a reconciliação de
+entrega. Uma falha na retenção sinaliza UNAVAILABLE, preservando essa contagem.
+
+A cada 60 segundos o worker pede uma página de até 20 unidades lógicas para
+cada família: mensagens terminais (7 dias), dados técnicos (7 dias), perfis
+explicitamente encerrados (30 dias), projeção histórica e folhas do histórico
+(90 dias). Um bloqueio de uma família não impede as outras. O orçamento é de
+5 segundos no total, até 1 segundo por família, após os até 18 segundos de
+reconciliação. Ao atingir o prazo, o worker ignora resultados tardios e tenta
+novamente numa execução posterior; o backend controla locks e idempotência.
+O cursor é privado, separado por família e descartado após quatro minutos.
+Uma página completa se refere apenas à sua família; não declara todo o banco
+limpo. A contagem de perfis é de sujeitos, com possível atualização de várias
+cópias relacionadas por sujeito.
+
+A API tem seus próprios flags OFF/dry-run/somente sintéticos e validações de
+journal. Habilitar este worker não habilita descarte na API. Não existe comando
+de fechamento de perfil ou de restauração exposto pelo worker. Os logs contêm
+somente status e contadores agregados, quando mudam e há trabalho/falha; não
+contêm cursor, motivos individuais, contato, texto nem localização. Essa
+configuração e os testes offline não comprovam a ativação na VPS.
+
 
 ## Preparar o worker da API online
 
