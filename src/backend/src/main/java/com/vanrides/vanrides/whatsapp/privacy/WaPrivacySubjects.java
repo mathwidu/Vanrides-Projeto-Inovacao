@@ -17,8 +17,9 @@ final class WaPrivacySubjects {
             JOIN wa.test_cohort c ON c.id=i.test_cohort_id
             WHERE p.identity_id=? AND c.environment=? AND (?=false OR c.synthetic)
               AND EXISTS(SELECT 1 FROM wa.identity_alias a WHERE a.identity_id=i.id AND a.instance_id=?)
+              AND NOT EXISTS(SELECT 1 FROM wa.identity_alias a WHERE a.identity_id=i.id AND a.instance_id IS DISTINCT FROM ?)
             FOR UPDATE OF p
-            """, subject, scope.environment(), policy.syntheticOnly(), scope.instanceId()).isEmpty();
+            """, subject, scope.environment(), policy.syntheticOnly(), scope.instanceId(), scope.instanceId()).isEmpty();
     }
 
     boolean active(UUID subject) {

@@ -41,6 +41,54 @@ class WaPrivacyBoundaryIntegrationTest {
         assertThat(f.string("SELECT status FROM wa.profile WHERE identity_id=?",f.first)).isEqualTo("ACTIVE");
     }
 
+    @Test void validCohortWithAliasesInTwoInstancesCannotCloseOrEraseFromEitherInstance() {
+        secondInstanceAlias();
+        String before=subjectState();
+        for(var scope:java.util.List.of(SCOPE,new WaPrivacyService.Scope(ENV,"another-instance"))){
+            assertThat(f.service().close(scope,f.first).status()).isEqualTo("OUT_OF_SCOPE");
+            assertThat(f.service().erase(scope,f.first).status()).isEqualTo("OUT_OF_SCOPE");
+            assertThat(subjectState()).isEqualTo(before);
+        }
+        assertThat(f.count("privacy_erasure_ledger")).isZero();
+        assertThat(f.journal.records).isEmpty();
+    }
+
+    @Test void legacyClosedSubjectWithTwoInstancesBlocksErasureWithoutChangingEitherCopy() {
+        secondInstanceAlias();
+        // Reproduce the already-closed state admitted by the earlier single-scope implementation.
+        var ledger=new WaPrivacyLedger(f.jdbc);
+        new TransactionTemplate(f.transactions).execute(tx->{
+            f.jdbc.queryForList("SELECT identity_id FROM wa.profile WHERE identity_id=? FOR UPDATE",f.first);
+            new WaPrivacySubjects(f.jdbc,WaPrivacyPolicy.syntheticTests()).close(SCOPE,f.first,f.time.now);
+            ledger.intent(f.first,f.time.now);return true;
+        });
+        var entry=ledger.entry(f.first);var ack=f.journal.append(entry);
+        Boolean acknowledged=new TransactionTemplate(f.transactions).execute(tx->ledger.acknowledge(entry,ack,f.time.now));
+        assertThat(acknowledged).isTrue();
+        f.time.days(31);
+        String before=subjectState();
+        for(var scope:java.util.List.of(SCOPE,new WaPrivacyService.Scope(ENV,"another-instance"))){
+            assertThat(f.service().erase(scope,f.first).status()).isEqualTo("OUT_OF_SCOPE");
+            assertThat(subjectState()).isEqualTo(before);
+        }
+        assertThat(f.string("SELECT state FROM wa.privacy_erasure_ledger")).isEqualTo("JOURNALED");
+        assertThat(f.string("SELECT display_name FROM wa.profile WHERE identity_id=?",f.first)).isEqualTo(NAME);
+        assertThat(f.journal.records).hasSize(1);
+    }
+
+    private void secondInstanceAlias(){
+        f.jdbc.update("INSERT INTO wa.identity_alias(id,identity_id,provider,instance_id,alias_type,alias_value) VALUES (?,?,'EVOLUTION','another-instance','PN','000000000000003@s.whatsapp.net')",
+            UUID.randomUUID(),f.first);
+    }
+    private String subjectState(){
+        return f.string("""
+            SELECT jsonb_build_object('profile',(SELECT to_jsonb(p) FROM wa.profile p WHERE identity_id=?),
+              'aliases',(SELECT jsonb_agg(to_jsonb(a) ORDER BY a.instance_id,a.id) FROM wa.identity_alias a WHERE identity_id=?),
+              'ledger',(SELECT to_jsonb(l) FROM wa.privacy_erasure_ledger l WHERE subject_id=?),
+              'points',(SELECT jsonb_agg(to_jsonb(p) ORDER BY p.id) FROM wa.pickup_point p WHERE passenger_id=?))::text
+            """,f.first,f.first,f.first,f.first);
+    }
+
     @Test void externalRollbackAfterAcknowledgementCannotUndoIntentOrLeakErasure() {
         assertThat(f.service().close(SCOPE,f.first).status()).isEqualTo("CLOSED");
         f.time.days(31); f.sweepTerminal();
