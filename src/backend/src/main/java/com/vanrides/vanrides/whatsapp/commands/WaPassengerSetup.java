@@ -23,7 +23,7 @@ final class WaPassengerSetup {
                     + " Peça ao seu motorista um convite de passageiro do VanRides. Abra o link e"
                     + " envie a mensagem que aparecer. O motorista vai conferir seu ponto de embarque"
                     + " antes de aprovar o pedido. Para atendimento, escreva"
-                    + " FALAR COM SUPORTE.";
+                    + " FALAR COM SUPORTE.\n\n" + WaConversationResponses.PREFERENCE_HELP;
 
     static final Set<String> COMMANDS =
             Set.of(
