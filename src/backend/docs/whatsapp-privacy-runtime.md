@@ -19,7 +19,7 @@ A rota permanece disponível com novos efeitos pausados.
 | `WA_PRIVACY_APPLY` | `false`; requer enabled. Sem apply, somente dry-run e nenhum erase/append. |
 | `WA_PRIVACY_ALLOW_REAL` | `false`; o padrão limita a coortes sintéticas. Para true, exige MVP online, ambiente `vanrides-mvp-hml`, cohort-only e Team Web habilitados. Não autoriza identidades sem coorte. |
 | `WA_PRIVACY_JOURNAL_DIR` | Caminho privado absoluto e canônico, obrigatório somente em apply. Diretório 700 e arquivos 600 são verificados pelo adapter. |
-| `WA_PRIVACY_RESTORE_MODE` | `false`; true é rejeitado, reservado para uma CLI futura. Não é bypass para restauração. |
+| `WA_PRIVACY_RESTORE_MODE` | `false`; true é rejeitado, reservado para operação futura fora do runtime público. A CLI sintética de ensaio usa seu próprio contrato fechado. |
 
 Booleanos aceitam apenas `true`/`false`. O runtime nunca chama
 `initializeEmpty`: provisionar um journal vazio é um ato explícito anterior,
@@ -90,16 +90,22 @@ ambiente, modo, credencial ou instância. O primeiro Position dos ports antigos
 também é criado pelo servidor com ambiente fixo, antes da transação do port;
 uma troca de ambiente da credencial não pode ampliar o escopo entre transações.
 
-No perfil, `asOf` não expira por idade: o corte permanece fixo enquanto cada
-página renova seu envelope de cinco minutos. A posição inclui
+Nas cinco famílias, `asOf` não expira por idade: o corte permanece fixo durante
+uma passada finita enquanto cada página renova seu envelope de cinco minutos.
+No perfil, a posição inclui
 `afterEraseAfter`/`afterSubjectId`, ambos ausentes ou ambos presentes; um corte
 futuro é inválido. A validade da credencial e o TTL criptográfico continuam
 obrigatórios em todas as chamadas. A sessão de scan não é persistida no banco.
 
-O contrato permite uma página 20 por família. O worker escala até duas
+O contrato aceita até 100 unidades, com limite próprio de 25 no perfil. O
+worker usa páginas de 20 e escala até duas
 famílias por W08 em round-robin, com orçamento de 2,5 segundos por família e
 cinco segundos no total; as cinco famílias recebem vez em até três ticks.
-O cursor privado do worker vence em quatro minutos, antes do limite do servidor.
+O cursor privado do worker vence após quatro minutos sem página válida aceita,
+antes do limite de cinco minutos da última emissão do servidor. Erro, timeout
+ou resposta tardia não renova esse prazo. O fim de uma passada devolve cursor
+nulo mesmo com pendências; a próxima visita cria outro corte, mantendo a
+consulta independente de completude.
 As medições locais de Profile20 apply foram 1.036 ms e 999 ms somente no
 coordenador, portanto um segundo não é margem suficiente para HTTP/VPS.
 

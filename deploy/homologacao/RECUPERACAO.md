@@ -245,6 +245,8 @@ somente o namespace do PG próprio. O token SYSTEM_JOB dedicado precisa existir
 no banco e pertencer à instância privada derivada do nonce, estar vigente e
 não revogado. O código fixa `wa070-local` e `syntheticTests()`; rejeita catálogo
 diferente, coorte real/ambiente estranho e fixture fora da proveniência esperada.
+O comando entrega o resultado em arquivo privado, conferido pelo Python; usa
+código de saída 0 ou 2 e não imprime mensagens de diagnóstico no console.
 O UID efetivo é obtido por um arquivo-probe vazio exclusivo no mount RW de
 saída privado `/privacy`, sem depender de cadastro em `/etc/passwd` ou HOME.
 Antes de remover esse probe, confere inode/fileKey, arquivo regular e tamanho

@@ -288,3 +288,56 @@ adapter Node passaram novamente, incluindo prazo por página, cursores vencidos
 e progresso independente. Uma resposta tardia é ignorada no worker; isso não
 promete cancelamento da transação da API. Latência e execução dessa rotina na
 VPS ainda precisam ser verificadas na composição final.
+
+### Composição revisada de paginação e recuperação
+
+O runtime privado foi integrado de `ed2e754`: cinco famílias, onze campos de
+resposta, autenticação SYSTEM_JOB, flags OFF, preview e gate de startup
+somente de leitura. Foram 37 casos únicos verdes, sem skips, com falhas de
+fixture anteriores preservadas. O gate não inicializa nem reconcilia um
+journal automaticamente e distingue pendência de descarte de uma restauração
+necessária. Timestamps legítimos de purge podem diferir entre atualizações;
+o gate exige os marcadores e suas condições temporais, não igualdade artificial.
+
+A revisão independente encontrou dois defeitos no Projection: fonte
+desconhecida podia sumir da seleção e um adiamento semântico podia impedir
+ocorrências válidas seguintes. `e1963c0` corrigiu ambos, com duas regressões,
+positivo e busy aprovados. A mesma revisão identificou a interação entre TTL
+e rodízio e a ausência de paginação de perfis. O parecer técnico escolheu
+passada finita, corte fixo, validade renovável por página e consulta independente
+de completude. Não foram alterados DDL, criptografia, permissões ou prazos de
+retenção por essa correção.
+
+`e45e649` ajustou os quatro ports e o horário operacional dos leases técnicos.
+Passaram 17 casos PostgreSQL dirigidos, incluindo seis novos de passada finita
+e onze controles afetados. As três adaptações locais de tmpfs foram restauradas
+exatamente antes do commit. `96d0a4b` acrescentou keyset/filtro de coorte aos
+perfis: seis casos dirigidos passaram, incluindo duas regressões, preview
+25+8 sem escrita, corte de 480 s com envelopes renovados, apply e revogação
+durante ACK. Os métodos de fechamento/descarte e os fences de autoridade
+permaneceram intactos.
+
+O Node passou no cenário de 16 execuções com as cinco famílias: alcançou e
+processou uma vez o candidato 41 após quarenta pendências, com as mesmas
+páginas e limites. O revisor reproduziu esse cenário em memória e encerrou os
+achados de progresso. A revisão consolidada até `a75ec4d` não encontrou novos
+achados acionáveis no escopo, incluindo o adapter de recuperação. Isso é
+revisão de fonte, não execução remota nem aprovação de purge real.
+
+O adapter V44 foi integrado de `b26c988`. Passaram quatro cenários PostgreSQL
+de comando, três de arquivos e 31+10 testes Python. A prova de banco inclui
+dump anterior ao close, journal atual, source purge, restauração e reaplicação,
+sem ressuscitar Alfa e preservando controles Beta/core. A correção posterior
+do UID foi repetida somente nos três testes de arquivo. O uso real de
+PropertiesLauncher, o probe HTTP e o conjunto na VPS ainda precisam rodar com
+o JAR final. O recibo distinguirá esses passos e a rotação física de backups,
+que não foi implementada por esse ensaio.
+
+A matriz final preparada inventaria 104 classes/818 casos PostgreSQL. A
+distribuição não é uma alegação de execução integral. Testes e revisão
+permanecem proporcionais ao delta; nenhuma suíte foi recolocada na CI.
+
+Uma consulta remota somente de metadados confirmou as cinco credenciais de
+serviço ativas. Canal, processamento, envio e job vencem em 01/12/2026; operador,
+em 02/12/2026. A manutenção precisa renovar esses acessos antes do prazo. Nenhum
+token, contato ou conteúdo de conversa foi consultado ou publicado nesse registro.

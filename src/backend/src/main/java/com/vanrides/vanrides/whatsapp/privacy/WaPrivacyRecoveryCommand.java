@@ -49,8 +49,7 @@ public final class WaPrivacyRecoveryCommand {
             require(args.length==1); var files=new WaPrivacyRecoveryFiles(Path.of(args[0]));
             Class.forName("org.postgresql.Driver");
             try(var connection=DriverManager.getConnection(JDBC,"postgres",files.request.password())) { execute(files,connection); }
-            System.out.println("PRIVACY_RECOVERY_COMPLETED");
-        } catch(Exception failure) { System.err.println("PRIVACY_RECOVERY_BLOCKED"); System.exit(2); }
+        } catch(Exception failure) { System.exit(2); }
     }
     /** Package seam for real PostgreSQL tests; production main always uses the fixed loopback catalog. */
     static ObjectNode execute(WaPrivacyRecoveryFiles files,Connection connection) throws Exception {

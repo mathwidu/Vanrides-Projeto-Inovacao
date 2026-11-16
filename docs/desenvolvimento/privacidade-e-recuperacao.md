@@ -88,3 +88,32 @@ cadeia/cabeça divergente bloqueiam a operação. O filesystem e seu proprietár
 são a autoridade operacional; a cadeia detecta divergência, não é uma promessa
 de resistência a um administrador que altere todos os arquivos e referências.
 O adapter, sua integração e o ensaio de restore têm resultados separados.
+
+## Paginação das rotinas
+
+A manutenção conserva o mesmo corte de datas enquanto percorre uma lista
+finita. Cada página aceita renova a validade do cursor autenticado; um corte
+antigo restringe os dados elegíveis e não substitui a conferência atual de
+credencial, instância, coorte ou referências ativas. Ao terminar a lista, a
+resposta não traz continuação, mesmo se houver pendências. A visita seguinte
+usa um corte novo. Assim os registros que venceram depois também recebem vez.
+
+Pendências de origem ou dependência ficam registradas e permitem alcançar os
+demais candidatos. Locks, envio em SUBMITTING e leases ainda válidos preservam
+o prefixo para outra tentativa. A regra de idade usa o corte; a verificação
+de lease usa o horário operacional atual. Um lease vencido não pode continuar
+ocupado apenas porque a varredura começou antes do vencimento.
+
+Os perfis usam a ordem `erase_after, subject_id`, com filtro de coorte antes
+do limite. O worker alterna duas famílias por minuto, com páginas de 20 e até
+cinco segundos para a manutenção. A escolha foi ajustada após medir cerca de
+um segundo para um lote de 20 perfis. O cursor fica em memória, com quatro
+minutos de inatividade local e cinco minutos por emissão na API. Isso atende
+ao ciclo contínuo do MVP; interrupções ou locks permanentes continuam sendo
+pendências operacionais, sem promessa de progresso durável entre reinícios.
+
+A completude é conferida sobre toda a família e seu corte, sem usar a posição
+do cursor para esconder registros. Essa decisão foi revisada separadamente e
+exercitada com pendências antes de candidatos válidos, cortes acima de cinco
+minutos, revogação e renovação do envelope. A ativação de descarte real continua
+dependendo da composição publicada, da prévia e da decisão do mantenedor.

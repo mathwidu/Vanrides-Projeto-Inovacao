@@ -6,7 +6,7 @@
     "runId": 41918379045,
     "sourceHead": "d4716243070f55f7f44f94ee006e69476a0b202b",
     "testedMerge": "b1b8baf0253818bc424facd7da57abf01d566f53",
-    "scope": "Surefire class elapsed seconds from one successful run; zero marks an unmeasured class; not an execution deadline"
+    "scope": "Original weights from the recorded CI run, supplemented by directed local class timings for added tests; zero marks an unmeasured whole-class duration; weights are not execution deadlines"
   },
   "classes": [
     {
@@ -165,9 +165,29 @@
       "seconds": 12.229
     },
     {
+      "className": "com.vanrides.vanrides.whatsapp.privacy.WaPrivacyFinitePassIntegrationTest",
+      "tests": 6,
+      "seconds": 6.332
+    },
+    {
+      "className": "com.vanrides.vanrides.whatsapp.privacy.WaPrivacyHistoryProjectionIntegrationTest",
+      "tests": 13,
+      "seconds": 0
+    },
+    {
       "className": "com.vanrides.vanrides.whatsapp.privacy.WaPrivacyHistoryRetentionIntegrationTest",
       "tests": 14,
       "seconds": 14.5
+    },
+    {
+      "className": "com.vanrides.vanrides.whatsapp.privacy.WaPrivacyJobsIntegrationTest",
+      "tests": 12,
+      "seconds": 0
+    },
+    {
+      "className": "com.vanrides.vanrides.whatsapp.privacy.WaPrivacyRecoveryCommandIntegrationTest",
+      "tests": 4,
+      "seconds": 6.246
     },
     {
       "className": "com.vanrides.vanrides.whatsapp.privacy.WaPrivacyRestoreIntegrationTest",
@@ -208,6 +228,11 @@
       "className": "com.vanrides.vanrides.whatsapp.team.WaPrivacyTechnicalSupportIntegrationTest",
       "tests": 1,
       "seconds": 2.157
+    },
+    {
+      "className": "com.vanrides.vanrides.whatsapp.tracking.WaPrivacyHistoricalControlIntegrationTest",
+      "tests": 1,
+      "seconds": 2.169
     },
     {
       "className": "com.vanrides.vanrides.whatsapp.transport.WaApproachIntegrationTest",
