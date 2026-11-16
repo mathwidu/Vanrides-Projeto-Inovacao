@@ -66,6 +66,34 @@ test('continuations are private, independent, drained and expire before the five
   for (const value of [await h.tick(), ...h.reports]) assert.ok(!JSON.stringify(value).includes('privacycursor_'));
 });
 
+test('the real round-robin cadence reaches a valid row after forty deferred rows across more than five minutes', async () => {
+  let erased = false;
+  const h = harness(body => {
+    if (body.family !== 'HISTORY_PROJECTION_90D') return page(body.family);
+    const after = body.cursor ? Number(body.cursor.slice(14)) : 0;
+    const total = erased ? 40 : 41;
+    const examined = Math.min(body.batchLimit, total - after);
+    const deferred = Math.max(0, Math.min(examined, 40 - after));
+    const changed = !erased && after + examined === 41 ? 1 : 0;
+    erased ||= changed === 1;
+    return page(body.family, { status: deferred ? 'DEFERRED' : 'APPLIED', examined, deferred, erased: changed,
+      complete: false, nextCursor: after + examined < total ? cursor(after + examined) : null,
+      reasonCodes: deferred ? ['ORIGIN_MISSING'] : [] });
+  });
+  let changed = 0;
+  for (let minute = 0; minute < 16; minute++) {
+    changed += (await h.tick()).erased;
+    h.advance(60_000);
+  }
+  const projection = h.calls.filter(call => call.body.family === 'HISTORY_PROJECTION_90D');
+  assert.deepEqual(projection.slice(0, 3).map(call => call.body.cursor ?? null), [null, cursor(20), cursor(40)]);
+  assert.equal(changed, 1);
+  assert.equal(erased, true);
+  assert.equal(h.calls.length, 32);
+  for (const family of PRIVACY_FAMILIES) assert.ok(h.calls.filter(call => call.body.family === family).length >= 6);
+  assert.ok(h.calls.every(call => call.body.batchLimit === 20));
+});
+
 test('refused and expired continuations cannot prevent other families from progressing', async () => {
   for (const status of [400, 403, 410, 503]) {
     let round = 0;
@@ -86,7 +114,7 @@ test('invalid output never enters logs or a cursor and dry-run cannot report rea
   const privateValue = 'SYNTHETIC_PRIVATE_MUST_NOT_ESCAPE';
   for (const patch of [{ private: privateValue }, { family: 'FOREIGN' }, { status: 'PURGED' },
     { erased: -1 }, { examined: 21 }, { deleted: 0.5 }, { deleted: Number.MAX_SAFE_INTEGER + 1 },
-    { nextCursor: privateValue }, { complete: true, nextCursor: cursor(1) }, { reasonCodes: [privateValue + '123'] },
+    { nextCursor: privateValue }, { complete: true, nextCursor: cursor(1) }, { reasonCodes: [privateValue.toLowerCase()] },
     { serverTime: 'invalid' }, { status: 'DRY_RUN', erased: 1 }]) {
     const h = harness(body => page(body.family, patch));
     assert.equal((await h.tick()).status, 'UNAVAILABLE');

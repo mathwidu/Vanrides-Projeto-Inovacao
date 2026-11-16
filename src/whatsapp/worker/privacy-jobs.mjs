@@ -21,8 +21,8 @@ function validPage(response, family, previousCursor) {
       && cursorPattern.test(body.nextCursor) && body.nextCursor !== previousCursor)
     && (!body.complete || body.nextCursor === null)
     && typeof body.serverTime === 'string' && Number.isFinite(Date.parse(body.serverTime))
-    && Array.isArray(body.reasonCodes) && body.reasonCodes.length <= 30
-    && body.reasonCodes.every(code => typeof code === 'string' && /^[A-Z][A-Z_]{0,59}$/u.test(code))
+    && Array.isArray(body.reasonCodes) && body.reasonCodes.length <= 100
+    && body.reasonCodes.every(code => typeof code === 'string' && /^[A-Z][A-Z0-9_]{0,63}$/u.test(code))
     && (body.status !== 'DRY_RUN' || body.erased === 0 && body.deleted === 0)
     && (body.status !== 'DISABLED' || counts.every(key => body[key] === 0) && body.nextCursor === null);
 }
@@ -75,7 +75,7 @@ export function createPrivacyTicker({ api, enabled = false, now = Date.now, repo
           for (const key of counts) summary[key] += response.body[key];
           deferred ||= response.body.status === 'DEFERRED' || response.body.deferred > 0;
           if (response.body.nextCursor === null) continuations.delete(family);
-          else continuations.set(family, { cursor: response.body.nextCursor, started: work?.started ?? started });
+          else continuations.set(family, { cursor: response.body.nextCursor, started: now() });
         } catch { failed = true; }
         finally { clearTimeout(timer); }
       }

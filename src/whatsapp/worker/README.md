@@ -222,9 +222,16 @@ journal real, por isso o orçamento inicial de um segundo por família foi
 substituído pelo rodízio. Isso não é uma garantia de latência na VPS.
 Ao atingir o prazo, o worker ignora resultados tardios; a transação autorizada
 na API ainda pode terminar. O backend controla locks e idempotência.
-O cursor é privado, separado por família e descartado após quatro minutos.
-Uma continuação que vencer recomeça a seleção atual; não significa varredura
-completa nem muda o instante inicial para fingir conclusão de um preview.
+O cursor é privado, separado por família e descartado após quatro minutos sem
+uma página válida aceita. Cada página aceita renova esse prazo; erro, timeout
+e resposta tardia não renovam. O envelope da API mantém cinco minutos por
+emissão e a credencial continua sendo conferida a cada página.
+O corte temporal fica fixo durante uma passada finita. No fim da ordenação,
+`nextCursor=null` permite um corte novo na próxima visita, inclusive quando
+`complete=false` por pendências. Uma continuação que vencer recomeça a seleção
+atual e não significa varredura completa. Essa combinação permite alcançar
+registros depois de um prefixo grande de pendências sem congelar o corte para
+sempre ou confundir fim de página com conclusão de toda a limpeza.
 Uma página completa se refere apenas à sua família; não declara todo o banco
 limpo. A contagem de perfis é de sujeitos, com possível atualização de várias
 cópias relacionadas por sujeito.

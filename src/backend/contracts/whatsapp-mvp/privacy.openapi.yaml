@@ -46,7 +46,11 @@ components:
       minLength: 54
       maxLength: 2214
       pattern: '^privacycursor_[A-Za-z0-9_-]{40,2200}$'
-      description: AES-GCM emitido pelo servidor, válido por cinco minutos e vinculado à credencial, ambiente e instância.
+      description: >-
+        AES-GCM emitido pelo servidor, válido por cinco minutos a cada emissão,
+        vinculado à credencial, ambiente, instância e família. O corte de retenção
+        fica fixo durante a passada; sua idade não substitui a validade do token
+        nem a revalidação atual da autoridade.
     PrivacyTickRequest:
       type: object
       additionalProperties: false
@@ -70,6 +74,9 @@ components:
         wouldChange: {$ref: '#/components/schemas/Count'}
         complete: {type: boolean, description: Ausência de trabalho no corte e escopo desta família somente.}
         nextCursor:
+          description: >-
+            Nulo no fim da passada, inclusive se complete=false por pendências.
+            A próxima visita sem cursor escolhe um novo corte no servidor.
           oneOf:
             - {$ref: '#/components/schemas/Cursor'}
             - {type: 'null'}
