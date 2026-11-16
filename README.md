@@ -32,20 +32,19 @@ convite por link, a solicitação de vínculo e a aprovação e correção do po
 de embarque. O [guia de cadastro](docs/desenvolvimento/cadastro-guiado-whatsapp.md)
 documenta os comandos, o teste com um só WhatsApp e os resultados da rodada.
 
-Em 16/11, a API publicada usa schema V44. Presença,
-alterações de presença e encerramento manual/automático passaram em testes
-dirigidos.
-Em nova rodada no WhatsApp real, passaram vínculo, aprovação do ponto,
-confirmação de presença para amanhã, alteração para ausência e consulta da
-mesma lista pelo motorista. Faltam a volta e a jornada com GPS e encerramento.
-Aproximação e fim automático permanecem desligados até habilitar o ensaio.
+Em 16/11, a API publicada usa schema V44. No WhatsApp real passaram convite,
+vínculo, aprovação do ponto, presença de ida e volta e consulta da lista pelo
+motorista. O passageiro recebeu o pin do GPS real do iPhone e do Redmi e,
+após a parada, recebeu a indicação de localização indisponível. O encerramento
+manual pelo bot recebeu a confirmação de parada do iPhone.
 
-O APK Android 0.4.0+14 está publicado e instalado no Redmi. A jornada com GPS
-do novo build ainda precisa ser conferida. O iPhone recebeu o aplicativo
-0.4.0+14: assinatura gratuita conferida, instalação concluída e abertura pelo Mac aprovada. O perfil vence em 23/11/2026
-às 08:27 (Brasília). GPS e parada desse build ainda não foram validados no
-aparelho. O mantenedor fará percurso, bateria e avaliação do aviso após a
-preparação dos artefatos, conforme o roteiro da rodada final.
+O APK Android 0.4.0+14 publicado já enviou GPS real no Redmi. O iPhone recebeu
+o app corrigido 0.4.0+15 e confirmou na tela o trajeto concluído e a coleta
+desligada após recuperar um recibo de parada. O perfil gratuito vence em
+23/11/2026 às 08:27 (Brasília). A nova coleta do +15 ainda está em validação.
+Aproximação e fim automático permanecem desligados até preparar o ensaio.
+Percurso, tela bloqueada, recuperação de rede, bateria e utilidade do aviso
+continuam no [roteiro da rodada final](docs/desenvolvimento/rodada-final.md).
 
 A recuperação isolada com API, PostgreSQL, Redis e n8n em fila passou no
 reinício, nos agendamentos e na restauração, sem duplicar os dois efeitos do

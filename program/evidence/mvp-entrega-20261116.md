@@ -1,5 +1,42 @@
 # Entrega técnica do MVP — 16/11/2026
 
+## Publicação e recuperação conferidas no aparelho
+
+O PR #126 foi integrado em `72b9c89`. A [CI 43891354871](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/actions/runs/43891354871)
+concluiu em 1 min 25 s, com construção de 37 s e deploy de 39 s. A VPS confirmou
+imagem `sha256:b41a90ee1de7aaa4ef86fb89da5276d879de5f8a2ffe3ffdea3a7e506266058a`,
+JAR `aac068f93e4452405638e2abb36cf0382e2a19b848ec8577e827e9e3b14d37c9`,
+schema V44 sem falhas e HTTPS UP. O worker foi atualizado por bundle de
+56 fontes de `efd7d8b`, SHA-256
+`f748af5f1b2ac352223941efc765e454d1300a02d7fc674b1a0ea8e965453dc8`,
+preservando imagem, configuração e segredos. Sua saúde passou; limpeza real OFF.
+
+O iPhone recebeu app 0.4.0+15 e runner atual, preservando dados. A inspeção
+real de 15:13:38 UTC passou em 9,34 s: trajeto concluído, coleta desligada,
+parada confirmada e nenhuma pendência/erro de atualização. O vínculo antigo
+aparece expirado após a substituição pelo Redmi; não houve nova coleta automática.
+Duas tentativas anteriores não chegaram ao caso XCTest e foram registradas
+como falha de habilitação da automação, sem reutilizar resultado antigo como prova.
+A liberação no aparelho permitiu a repetição. GPS do +15 ainda está em validação.
+
+O Redmi voltou ao APK publicado 0.4.0+14, hash
+`2b4667111bc39bf4c9dcc687168086c6a9ed5b334a3f7db1cf7e3faf83c996b5`,
+conferido também no APK instalado. Sem instrumentação temporária de produto,
+a retomada recebeu primeiro GPS em 2,803 s e 42 amostras aceitas, zero rejeitadas,
+no corte 15:15:18 UTC. A parada desta geração continua em validação.
+
+O teste real de DESLIGAR AVISOS CHEGADA revelou preferência aplicada sem resposta:
+a regra de elegibilidade da confirmação não incluía SET_PREFERENCE. A correção
+`570251c` acrescenta somente esse comando às respostas da própria conversa.
+O novo teste reproduziu claim com zero respostas e passou após a correção,
+autorizando o destinatário próprio e recusando destinatário alheio. Esta correção
+aguarda publicação e repetição no WhatsApp neste corte.
+
+Recibos privados: `integracao-final/api-publication-receipt.json`,
+`integracao-final/worker/publication-receipt.json`, inspeção iOS de 15:13:38,
+`android-ui/published-artifact-check.json` e `preference-reply/receipt.json`.
+Os cortes anteriores abaixo preservam a sequência e seus limites.
+
 ## GPS físico, parada e candidato do PR #126
 
 Corte: `efd7d8b` enviado no PR #126, CI em curso. A `main` e a API publicada
