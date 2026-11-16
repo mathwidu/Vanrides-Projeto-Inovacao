@@ -190,7 +190,7 @@ final class DriverMVPUITests: XCTestCase {
 
   @MainActor
   private func has(_ app: XCUIApplication, _ label: String) -> Bool {
-    app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", label)).firstMatch.exists
+    app.descendants(matching: .any).matching(NSPredicate(format: "label MATCHES %@", MVPUIFixedLine.pattern(label))).firstMatch.exists
   }
 
   @MainActor

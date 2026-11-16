@@ -176,6 +176,9 @@ guard finishResult(["success": true, "pairingCodeExported": true], commandFile: 
         for forbidden in ('.label', '.tap(', 'screenshot', 'debugDescription'):
             self.assertNotIn(forbidden, probe)
         self.assertIn('"stopConfirmed": stopped && !pending && !button(app, "Parar localização").exists', source)
+        has = source.split('private func has(', 1)[1].split('private func collectionProbe(', 1)[0]
+        self.assertIn('NSPredicate(format: "label MATCHES %@", MVPUIFixedLine.pattern(label))', has)
+        self.assertIn('app.buttons.matching(NSPredicate(format: "label == %@", label))', source)
 
     def test_private_input_refuses_public_files_symlinks_and_git_paths(self):
         with tempfile.TemporaryDirectory() as temporary:

@@ -123,7 +123,11 @@ quebra de linha em um label agregado. Se o título não estiver atingível,
 executa no máximo uma rolagem para cima e repete a observação. Não lê nem
 exporta labels, texto livre, GPS ou screenshots e não toca controles. Esses
 booleans ajudam a distinguir semântica agregada, painel fora da tela e outro
-estado local; o critério exato de `stopConfirmed` continua inalterado.
+estado local. Os estados conhecidos também aceitam essa mesma linha completa
+em labels agregados: a agregação foi observada no iPhone. A parada continua
+exigindo estado de parada reconhecido, ausência de pending e do controle de
+parar; uma frase apenas contendo o texto não confirma nada. Botões permanecem
+por label exato, e o código exportado exige seu label inteiro de oito letras.
 
 ### Ponte privada de laboratório para o código
 
