@@ -392,7 +392,7 @@ class DeadlineTest(TempTest):
         with self.assertRaisesRegex(Blocked, 'HTTP_DEADLINE'):
             session.wait(lambda: session.http('source-channel', 'api', '/actuator/health')['status'] == 200, 'HTTP_DEADLINE', 20)
         self.assertEqual(clock(), 20); self.assertEqual([c[2] for c in calls], [20, 14])
-        self.assertEqual(json.loads(calls[1][1])['timeoutMs'], 20000)
+        self.assertEqual(json.loads(calls[1][1])['timeoutMs'], 14000)
         owned.cleanup(); self.assertFalse(docker.containers); self.assertIsNone(owned.deadline)
         self.assertLessEqual(clock(), 140)
 
@@ -410,9 +410,10 @@ class DeadlineTest(TempTest):
         self.assertEqual(calls, [5, 2])
 
     def test_sql_timeout_and_sleep_use_remaining_and_late_success_is_rejected(self):
-        session, clock = self.session(Mock()); session.owned.exec = Mock(return_value=b'1')
+        session, clock = self.session(Mock()); inputs = []
+        session.owned.exec = Mock(side_effect=lambda role, command, data: inputs.append(data()) or b'1')
         with session.owned.budget(2.75): session.sql('source-pg', fixture.DATABASES[0], 'SELECT 1;')
-        self.assertIn(b"statement_timeout='2750ms'", session.owned.exec.call_args.args[2])
+        self.assertIn(b"statement_timeout='2750ms'", inputs[0])
         def late(): clock.advance(5); return True
         with self.assertRaisesRegex(Blocked, 'LATE_SUCCESS'): session.wait(late, 'LATE_SUCCESS', 5)
         before = clock()

@@ -142,7 +142,9 @@ class Owned:
         self.run([operation, *(['--time', '30'] if operation != 'start' else []), cid], timeout=90)
 
     def exec(self, role, command, data=None, **limits):
-        return self.run(['exec', *(['-i'] if data is not None else []), self.check(role), *command], data, **limits)
+        cid = self.check(role)
+        if callable(data): data = data()  # Timeout payloads consume the ownership inspection's elapsed time too.
+        return self.run(['exec', *(['-i'] if data is not None else []), cid, *command], data, **limits)
 
     def cleanup(self):
         with self.budget(120): self.cleanup_owned()
@@ -201,9 +203,8 @@ class Session:
 
     def sql(self, pg, database, statement):
         require(database in fixture.DATABASES or database == 'postgres', 'REC_DATABASE_INVALID')
-        milliseconds = max(1, int(self.owned.remaining(10) * 1000))
         return self.owned.exec(pg, ['psql', '-X', '-w', '-U', 'postgres', '-d', database, '-Atq', '-v', 'ON_ERROR_STOP=1'],
-                               (f"SET statement_timeout='{milliseconds}ms';\n" + statement).encode()).decode().strip()
+                               lambda: (f"SET statement_timeout='{max(1, int(self.owned.remaining(10) * 1000))}ms';\n" + statement).encode()).decode().strip()
 
     def wait(self, check, code, seconds=120):
         with self.owned.budget(seconds) as deadline:
@@ -219,10 +220,12 @@ class Session:
     def http(self, channel, host, route, body=None, token=None):
         require(host in ('api', 'main', 'worker') and route.startswith('/'), 'REC_HTTP_SCOPE_INVALID')
         port = {'api': 8080, 'main': 5678, 'worker': 7081}[host]
-        request = {'url': f'http://{host}:{port}' + route, 'timeoutMs': max(1, int(self.owned.remaining(30) * 1000))}
+        request = {'url': f'http://{host}:{port}' + route}
         if body is not None: request.update(method='POST', body=body, headers={'content-type': 'application/json'})
         if token: request.setdefault('headers', {})['authorization'] = 'Bearer ' + token
-        return json.loads(self.owned.exec(channel, ['node', '-e', fixture.HTTP], encode(request), timeout=40))
+        def payload():
+            request['timeoutMs'] = max(1, int(self.owned.remaining(30) * 1000)); return encode(request)
+        return json.loads(self.owned.exec(channel, ['node', '-e', fixture.HTTP], payload, timeout=40))
 
     def channel_state(self, prefix):
         value = json.loads(self.owned.exec(prefix + '-channel', ['node', '-e', "process.stdout.write(require('node:fs').readFileSync('/fixture/state.json'))"]))
