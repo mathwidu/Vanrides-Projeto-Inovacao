@@ -23,12 +23,16 @@ final class WaRunFinishConversation {
     private final WaCrypto crypto;
     private final WaRunDraftStore drafts;
     private final WaRunFinishes finishes;
+    private final WaConversationPolicy conversation;
+    private final boolean teamApiOnly;
     WaRunFinishConversation(JdbcTemplate jdbc, WaClock clock, WaSettings settings, WaCrypto crypto) {
         this.jdbc = jdbc; this.clock = clock; this.crypto = crypto;
         drafts = new WaRunDraftStore(jdbc, clock, crypto); finishes = new WaRunFinishes(jdbc, settings);
+        conversation = new WaConversationPolicy(jdbc, clock, settings.environment()); teamApiOnly = settings.teamApiOnly();
     }
     Offer offer(WaProfileState actor, WaInboxAccess.Context event) {
-        if (!eligible(actor) || !event.normalizedKind().equals("TEXT")) return null;
+        if (teamApiOnly || !eligible(actor) || !conversation.freshness(event).equals("CURRENT")
+                || !event.normalizedKind().equals("TEXT")) return null;
         String text = text(event);
         if (entry(text)) return offered(actor, event, "review");
         ObjectNode draft = drafts.load(actor.identityId());

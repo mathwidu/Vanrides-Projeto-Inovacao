@@ -104,7 +104,7 @@ public class WaCommandService {
         }
         var runOffer = runOffer(actor, event);
         if (runOffer != null) result.set("options", runOffer.options());
-        var finishOffer = finishOffer(actor, event);
+        var finishOffer = finishes.offer(actor, event);
         if (finishOffer != null) result.set("options", finishOffer.options());
         result.put("registrationStep", conversation.registration(actor, settings.enabled())).put("eventFreshness", conversation.freshness(event));
         inbox.revalidate(event);
@@ -277,7 +277,7 @@ public class WaCommandService {
 
     private List<String> allowed(WaProfileState actor, WaInboxAccess.Context event) {
         if (actor.blocked()) return List.of();
-        if (finishOffer(actor,event) != null) return List.of("RESPOND_TO_MESSAGE", "FINISH_RUN");
+        if (finishes.offer(actor,event) != null) return List.of("RESPOND_TO_MESSAGE", "FINISH_RUN");
         if (!settings.enabled() || conversation.paused(actor.identityId())) return List.of();
         if(settings.teamApiOnly()) {
             if(!conversation.freshness(event).equals("CURRENT")) return List.of();
@@ -310,10 +310,6 @@ public class WaCommandService {
                 && WaOnboardingCommands.NOTICE_VERSION.equals(actor.noticeVersion()) && settings.newStartsEnabled()
                 && event.normalizedPayload().hasNonNull("pairingCodeHash")) commands.add("CONFIRM_PAIRING");
         return List.copyOf(commands);
-    }
-
-    private WaRunFinishConversation.Offer finishOffer(WaProfileState actor, WaInboxAccess.Context event) {
-        return !actor.blocked() && !settings.teamApiOnly() && conversation.freshness(event).equals("CURRENT") ? finishes.offer(actor,event) : null;
     }
 
     private WaPassengerSetup.Offer passengerOffer(WaProfileState actor, WaInboxAccess.Context event) {
