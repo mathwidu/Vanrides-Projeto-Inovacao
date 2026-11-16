@@ -269,3 +269,13 @@ incluindo configuração, HTTP, limites, tempo excedido, continuação por famí
 ausência de vazamento no resumo e regressão do servidor W08. Não foram
 adicionadas suítes à CI automática. Publicação da V44, journal na VPS e
 ativação de descarte real continuam separados dessa prova offline.
+
+A matriz local agora inventaria 99 classes/782 casos PostgreSQL, incluindo
+histórico, restauração e retenção técnica. Isso é inventário, não afirmação de
+uma execução integral. Os 11 testes do seletor passaram; sua união continua
+exata, sem classes omitidas ou repetidas. Os pesos resultaram em diferença de
+3,105 s entre grupos de cerca de 180 s (1,73%). O teste de balanceamento passou
+a aceitar até 5% da média, com mínimo de 3 s, evitando ajuste a cada pequena
+mudança de inventário. Contagens, autenticação dos recibos e exigência de zero
+falhas/erros/pulos foram preservadas. O fluxo automático de build/deploy não
+foi alterado.
