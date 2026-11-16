@@ -69,10 +69,8 @@ export function createPrivacyTicker({ api, enabled = false, now = Date.now, repo
             failed = true;
             continue;
           }
-          for (const key of counts) {
-            if (!Number.isSafeInteger(summary[key] + response.body[key])) throw new WorkerError('INVALID_RESPONSE');
-            summary[key] += response.body[key];
-          }
+          if (!counts.every(key => Number.isSafeInteger(summary[key] + response.body[key]))) throw new WorkerError('INVALID_RESPONSE');
+          for (const key of counts) summary[key] += response.body[key];
           deferred ||= response.body.status === 'DEFERRED' || response.body.deferred > 0;
           if (response.body.nextCursor === null) continuations.delete(family);
           else continuations.set(family, { cursor: response.body.nextCursor, started: work?.started ?? started });
@@ -101,7 +99,10 @@ export function withPrivacyMaintenance(reconcileDelivery, tickPrivacy) {
     catch { delivery = { status: 'UNAVAILABLE', processed: 0 }; }
     try {
       const privacy = await tickPrivacy();
-      if (privacy?.status === 'UNAVAILABLE') return { status: 'UNAVAILABLE', processed: delivery.processed };
+      if (!privacy || Object.keys(privacy).length !== counts.length + 1
+          || !['DISABLED', 'IDLE', 'BUSY', 'DEFERRED', 'MORE', 'PROCESSED'].includes(privacy.status)
+          || !counts.every(key => Number.isSafeInteger(privacy[key]) && privacy[key] >= 0))
+        return { status: 'UNAVAILABLE', processed: delivery.processed };
     } catch { return { status: 'UNAVAILABLE', processed: delivery.processed }; }
     return delivery;
   };

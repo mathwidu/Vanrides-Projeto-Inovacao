@@ -123,14 +123,15 @@ test('logs only changed aggregate counts, including dry-run previews, and ignore
 
 test('W08 retains its exact two-field summary and executes privacy even when delivery is unavailable', async () => {
   let called = 0;
-  const privacy = async () => { called++; return { status: 'DEFERRED', examined: 20 }; };
+  const privacy = async () => { called++; return { status: 'DEFERRED', examined: 20, erased: 0, deleted: 0, deferred: 1, wouldChange: 0 }; };
   assert.deepEqual(await withPrivacyMaintenance(async () => ({ status: 'PROCESSED', processed: 3 }), privacy)(),
     { status: 'PROCESSED', processed: 3 });
   assert.deepEqual(await withPrivacyMaintenance(async () => { throw Error('PRIVATE'); }, privacy)(),
     { status: 'UNAVAILABLE', processed: 0 });
   assert.equal(called, 2);
-  assert.deepEqual(await withPrivacyMaintenance(async () => ({ status: 'MORE', processed: 200 }),
-    async () => ({ status: 'UNAVAILABLE', nextCursor: cursor(1) }))(), { status: 'UNAVAILABLE', processed: 200 });
+  for (const output of [undefined, {}, { status: 'UNAVAILABLE' }, { status: 'PROCESSED', nextCursor: cursor(1) }])
+    assert.deepEqual(await withPrivacyMaintenance(async () => ({ status: 'MORE', processed: 200 }),
+      async () => output)(), { status: 'UNAVAILABLE', processed: 200 });
 });
 
 test('rejects enabling without a job client or expanding the existing control deadline', () => {
