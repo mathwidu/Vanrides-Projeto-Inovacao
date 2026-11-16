@@ -16,9 +16,12 @@ separado por plataforma e pelas issues correspondentes.
 
 ## Preparação conferida
 
-Corte atual: API do PR #127 publicada em `2a211d1`, schema V44, CI aprovada em
-81 s e HTTPS UP. A publicação anterior do PR #126, `72b9c89`, passou em 85 s.
-O worker saudável usa 56 fontes de `efd7d8b`. As correções não adicionaram migração.
+A integração do PR #128 foi publicada em `7531991`, com schema V44, CI/deploy
+aprovados em 74 s e HTTPS UP. O runtime backend permaneceu igual ao PR #127
+(`2a211d1`); o worker saudável usa 56 fontes de `efd7d8b`. Não houve nova migração.
+O [pacote identificado da rodada](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/releases/tag/mvp-0.4.0-15)
+reúne manifesto, fontes, hashes, configuração e instruções. O manifesto registra
+o corte conferido; novos merges atualizam a API e exigem nova conferência.
 
 - `WA_MVP_REHEARSAL_ROUTINES`, `WA_APPROACH_ENABLED` e
   `WA_AUTO_FINISH_ENABLED` estão ON para rotinas elegíveis da coorte compartilhada,
@@ -41,7 +44,9 @@ O worker saudável usa 56 fontes de `efd7d8b`. As correções não adicionaram m
   artefato instalado; +14 preservado para retorno.
 - Recuperação/migração V44 aprovadas em isolamento, inclusive no ensaio 006
   com o JAR publicado. Os três critérios de cópia/restauração/reaplicação de
-  exclusões possuem prova; rotação física dos backups continua não implementada.
+  exclusões possuem prova. O executor de retenção foi preparado e passou em
+  nove testes sintéticos no Linux da VPS. O catálogo/prévia reteve os 14 dumps
+  dos 11 escopos, sem exclusão real, aprovação ou cron.
 
 O recibo usa prova da própria chave retida apenas para conferir um ACK terminal
 já gravado. A validade/revogação dos tokens permanece; a rota não autoriza GPS,
@@ -50,9 +55,11 @@ chegada e os lembretes de presença por comando explícito posterior, preservand
 o aceite e os padrões do cadastro.
 
 A consulta atual das issues encontrou 65 MVP, todas abertas e nenhuma fechada.
-A estimativa comunicada de 90% do código e 80% da entrega é uma avaliação de
-progresso; não é uma contagem auditada de critérios aprovados. Campo, bateria,
-utilidade do aviso e aceite do proprietário permanecem deferidos.
+A estimativa anterior de 90% do código e 80% da entrega descreveu um corte
+intermediário. O inventário atual distingue 59 itens implementados, quatro
+parciais e dois planejados; os seis últimos correspondem à rodada física.
+Isso não mede critérios aprovados nem encerra issues. Campo, bateria, utilidade
+do aviso e aceite do proprietário permanecem para a rodada conjunta.
 
 ## Sequência de entrega
 
@@ -82,9 +89,10 @@ o retorno testado e compatível com o banco. O
 [registro de evidências](../../program/evidence/mvp-entrega-20261116.md)
 identifica versões e resultados; os ensaios isolados não comprovam mensagens
 no WhatsApp real nem autorizam piloto/produção. A rotação física dos backups
-ainda não foi implementada: o inventário oferece somente prévia de sete dias.
-Isso é pendência operacional e não impede a rodada técnica; nenhum backup deve
-ser apagado por esta consolidação documental.
+tem executor e prévia preparados, mas não está ativada globalmente. A aprovação
+de qualquer exclusão real permanece uma ação operacional explícita sobre lista
+e hash, fora do teste de percurso; nenhum backup foi apagado. A criação histórica
+dos dumps legados continua desconhecida. Esse controle não impede a rodada técnica.
 
 ## Matriz das issues
 
@@ -139,10 +147,10 @@ na própria issue.
 | [#80](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/80) | [T54] Oferecer ajuda e recuperação | AJUDA real conferida; oito testes de AJUDA aprovados com orientação de preferências. Pausa/retomada real ainda requer conferência. |
 | [#81](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/81) | [T55] Autorizar as automações de presença | Autorização própria implementada; conferir os efeitos no ensaio operacional sem ampliar flags. |
 | [#82](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/82) | [T56] Preservar automações ao reiniciar n8n | Fila e reinícios aprovados nos ensaios 005 e 006; o 006 usou o JAR efetivamente publicado. Revisar a evidência na issue. |
-| [#83](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/83) | [T57] Limitar dados e aplicar exclusão | Retenção 7/30/90 publicada na V44; manter limpeza real OFF e revisar apenas a prévia. |
+| [#83](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/83) | [T57] Limitar dados e aplicar exclusão | Retenção V44 e executor de catálogo/plano implementados, com testes sintéticos Linux e prévia sem exclusão. Qualquer ativação real exige decisão operacional explícita. |
 | [#84](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/84) | [T58] Provar cópia, restauração e exclusão | Três critérios de cópia/restore/exclusões possuem prova nos ensaios 005/006; revisar critérios. Rotação física de sete dias é pendência operacional. |
 | [#85](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/85) | [T59] Orientar operação e parada segura | Guia/helper, 11 testes Python e cenário PostgreSQL aprovados; diagnóstico e plano de leitura conferidos na VPS. Revisão humana e jornada WhatsApp real permanecem separadas. |
-| [#86](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/86) | [T60] Identificar os arquivos da versão de teste | API PR127/main 2a211d1/V44, worker efd7d8b/56 fontes e APK Android +15 público identificados; hashes e retorno preservados. |
+| [#86](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/86) | [T60] Identificar os arquivos da versão de teste | Manifesto conjunto da release identifica servidor, apps, canal, automações e hashes. Conferir o corte antes do percurso; novo merge exige reconferência. |
 | [#87](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/87) | [T61] Preparar instalação de teste Android | APK normal +15 publicado e hash HTTPS igual ao instalado; GPS/fim/ACK/UI aprovados estacionado, com +14 preservado para retorno. |
 | [#88](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/88) | [T62] Preparar instalação e renovação no iPhone | iOS +15 instalado/aberto e perfil até 23/11 às 08:27 BRT; conferir renovação e reprodução final. |
 | [#89](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/89) | [T63] Planejar instalação e retorno no servidor | Migração/retorno V44 ensaiados; PRs126/127 publicados sem nova migração. Preservar os recibos e o retorno. |
@@ -152,8 +160,8 @@ na própria issue.
 | [#93](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/93) | [T67] Testar a jornada completa no Android | Android normal +15 publicado passou em GPS/pin e FINALIZAR/COMPLETED/STOPACK/UI; campo/rede/tela bloqueada/bateria deferidos. |
 | [#94](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/94) | [T68] Testar a jornada completa no iPhone | iOS +15 recuperou recibo e teve GPS/STOP/ACK reais; faltam tela bloqueada, rede, bateria e percurso. |
 | [#95](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/95) | [T69] Medir se o aviso ajuda no embarque | Utilidade/destinatário dependem de percurso e avaliação do usuário, ainda deferidos. |
-| [#96](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/96) | [T70] Consolidar guia e resultados | Guias consolidados por versão/ambiente e publicação; faltam campo, utilidade, bateria e revisão humana por critério. |
-| [#97](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/97) | [T71] Reproduzir a instalação final | iOS +15 instalado/aberto e Android +15 publicado/instalado com hash conferido; reproduzir a combinação final e renovação. |
+| [#96](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/96) | [T70] Consolidar guia e resultados | Guias, recibos e pacote preparados. Aplicar a rodada conjunta e registrar os resultados reais por plataforma antes de fechar critérios. |
+| [#97](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/97) | [T71] Reproduzir a instalação final | Apps normais +15 instalados e abertos; instruções de reprodução/reassinatura disponíveis. Conferir abertura pelo ícone sem USB na rodada e renovar o perfil iOS se necessário. |
 | [#98](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/98) | [T72] Proposta: cancelar ou corrigir presença | Presença de ida/volta e alteração para ausência na ida conferidas no WhatsApp real; faltam limites após início. |
 | [#99](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/99) | [T73] Proposta: definir limite da alteração | Regra de limite integrada/publicada na V42; falta conferir alterações após início na jornada real. |
 | [#100](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/100) | [T74] Proposta: avisar cancelamento ao motorista | Aviso ao motorista integrado/publicado na V42; falta comprovar entrega no WhatsApp real. |

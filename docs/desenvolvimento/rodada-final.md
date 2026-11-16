@@ -54,10 +54,19 @@ que cada um considera útil para se preparar para o embarque.
 **Operador:** conferir esses dados, elegibilidade e versões antes de iniciar.
 O [guia da equipe](homologacao-da-equipe.md#jornada-completa-motorista-e-passageiro)
 reúne os passos de cadastro, convite, presença, vínculo e início.
+Após aprovar os pontos, o motorista usa `ROTINAS`, `ORDEM N` e a revisão
+apresentada pelo bot para confirmar a sequência; N é a opção da lista atual.
+
+Combinar um trajeto que permita observar os pontos separadamente: começar fora
+do raio inicial de aproximação de 800 m, passar pelos pontos na ordem revisada
+e chegar ao destino após ter estado pelo menos 200 m afastado dele. Esses
+valores exercitam a política atual e não garantem antecedência útil. O modo
+de deslocamento pode ser caminhada, carona ou veículo, conforme o cenário
+combinado; registrá-lo para não comparar condições diferentes como equivalentes.
 
 | Papel | Preparação e ação na rodada |
 | --- | --- |
-| Motorista | Conta própria autorizada; dirige e faz ações no app/bot somente com o veículo parado. |
+| Motorista/coletor | Conta própria autorizada; leva o aparelho no deslocamento combinado. Se estiver dirigindo, faz ações no app/bot somente com o veículo parado. |
 | P1 | Número distinto dos demais, vínculo/ponto aprovados, avisos de chegada aceitos e presença confirmada na ocorrência do percurso. Aguarda no ponto e avalia o aviso. |
 | P2 | Outro número distinto, vínculo/ponto aprovados e avisos aceitos; mantém presença pendente para conferir a regra de inclusão. Aguarda no seu ponto e avalia o aviso. |
 | Operador | Confere a lista antes da partida, prepara o vínculo de cada plataforma, acompanha metadados e registra tempos/resultados. Automação não substitui a confirmação do passageiro. |

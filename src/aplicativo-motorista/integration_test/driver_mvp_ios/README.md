@@ -16,6 +16,7 @@ O número do bot e o host do Dart precisam corresponder à configuração nativa
 flutter pub get --enforce-lockfile
 flutter build apk --release --flavor driver --target lib/main_driver_mvp.dart \
   --target-platform android-arm64 \
+  --build-name 0.4.0 --build-number 15 \
   --dart-define="VANRIDES_PAIRING_LINK_HOST=$VANRIDES_PAIRING_LINK_HOST" \
   --dart-define="VANRIDES_WHATSAPP_BOT_NUMBER=$VANRIDES_WHATSAPP_BOT_NUMBER"
 ```
@@ -32,6 +33,7 @@ Não substituir o certificado nem desinstalar para contornar incompatibilidade.
 ```sh
 flutter build ios --config-only --release --no-codesign --no-pub \
   --flavor driver --target lib/main_driver_mvp.dart \
+  --build-name 0.4.0 --build-number 15 \
   --dart-define="VANRIDES_PAIRING_LINK_HOST=$VANRIDES_PAIRING_LINK_HOST" \
   --dart-define="VANRIDES_WHATSAPP_BOT_NUMBER=$VANRIDES_WHATSAPP_BOT_NUMBER"
 (cd ios && pod install --deployment)
