@@ -3499,9 +3499,7 @@
           "reason": {
             "type": "string",
             "enum": [
-              "MANUAL_COMPLETION",
-              "SAFETY_STOP",
-              "NOT_STARTED"
+              "MANUAL_COMPLETION"
             ]
           }
         },
@@ -3537,9 +3535,9 @@
           "expectedVersion",
           "payload"
         ],
-        "description": "Ator derivado da inbox autenticada e do lease; nunca do texto ou do payload. A versão zero representa identidade sem perfil.",
+        "description": "Ator derivado da inbox autenticada e do lease; nunca do texto ou do payload. A versão zero representa identidade sem perfil. FINALIZAR / FINALIZAR VIAGEM abre revisão; CONFIRMAR com código aplica a versão revisada. Parar GPS não encerra a viagem.",
         "x-vanrides-implementation-card": "VR-WA-140-FINISH-SUPPORT",
-        "x-vanrides-availability": "FUTURE"
+        "x-vanrides-availability": "CARD_140_RUN_FINISH"
       },
       "GetSummaryPayload": {
         "type": "object",

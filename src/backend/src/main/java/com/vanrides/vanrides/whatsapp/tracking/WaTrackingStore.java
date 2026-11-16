@@ -60,8 +60,10 @@ final class WaTrackingStore {
     void stop(Session session,String state,Instant now) {
         jdbc.update("""
             UPDATE wa.tracking_session SET state=?,stop_requested_at=COALESCE(stop_requested_at,?),
-              stop_request_ref=COALESCE(stop_request_ref,?),lease_expires_at=LEAST(lease_expires_at,?),gps_state='STALE',version=version+1 WHERE id=?
+              stop_request_ref=COALESCE(stop_request_ref,?),lease_expires_at=LEAST(lease_expires_at,?),gps_state='STALE',
+              last_latitude=NULL,last_longitude=NULL,last_accuracy_m=NULL,last_captured_at=NULL,version=version+1 WHERE id=?
             """,state,ts(now),UUID.randomUUID(),ts(now),session.id());
+        jdbc.update("DELETE FROM wa.approach_fix WHERE session_id=?",session.id());
     }
     ObjectNode replay(String kind,UUID device,String key,ObjectNode request,Instant now) {
         var rows=jdbc.queryForList("SELECT * FROM wa.operation_replay WHERE operation_kind=? AND scope_id=? AND request_key=?",kind,device,key);

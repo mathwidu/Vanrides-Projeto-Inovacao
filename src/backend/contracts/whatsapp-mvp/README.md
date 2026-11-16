@@ -380,3 +380,60 @@ A presença atual fica em `wa.attendance`; a lista original permanece em
 retenção vigentes. Não há novo log de conversas nem coleta adicional de GPS.
 
 No envio de GPS, o recibo persistido contém somente os resultados por sequência (`accepted`, `duplicate` e `rejected`). Um reenvio preserva esses resultados, mas devolve a ação, o estado do GPS e a validade da autorização atuais. Reenviar um recibo antigo não renova a posição nem a autorização e não reativa uma sessão encerrada.
+
+
+### Finalização da viagem (140)
+
+`FINALIZAR` ou `FINALIZAR VIAGEM` abre uma revisão de contingência para o
+motorista da viagem ativa. `CONFIRMAR <código>` aplica somente a versão
+revisada; `ABANDONAR` preserva a viagem. O consumidor copia a referência `RUN`
+autorizada pela API e o motivo `MANUAL_COMPLETION`, sem escolher ator ou viagem
+pelo texto. As flags de novos inícios e de aproximação não bloqueiam esse fim.
+
+`Parar GPS` continua sendo uma parada técnica: a viagem fica recuperável,
+sem ser apresentada como concluída. O fim da viagem revoga intents e leases,
+cancela avisos ainda pendentes e mantém o snapshot e os recibos. O estado
+`STOP_PENDING` permanece até o ACK autenticado do aplicativo; a API não afirma
+que o sensor parou antes dessa confirmação. Avisos de fim e de ACK usam a
+origem autenticada da partida e passam pela autorização/revalidação da entrega.
+Uma tentativa que já saiu ao provedor não é tratada como retirada garantida.
+
+A chegada automática fica **desligada por padrão** (`WA_AUTO_FINISH_ENABLED=false`)
+e usa somente rotinas da allowlist geográfica já revisada, ou a elegibilidade
+restrita de ensaio abaixo. Os valores iniciais para ensaio são: precisão até 25 m; evidência anterior fora de 200 m do destino;
+todos os pontos de embarque terminais (inclusive o caso sem embarques elegíveis);
+velocidade informada até 2 m/s; posições com intervalo máximo de 20 s; permanência
+de 60 s dentro de 50 m. A margem de precisão deve caber dentro do raio de chegada
+e provar a saída do raio externo. O destino vem do snapshot da partida.
+
+Silêncio, perda de GPS, velocidade ausente, passagem isolada, ponto pendente,
+GPS ruim e troca de sessão não completam a viagem nem somam uma permanência
+não observada. Somente a última aquisição válida do lote pode disparar o fim.
+`wa.run_finish_progress` (V43) guarda tempos e progresso sem trilha de coordenadas;
+terminar a viagem remove esse progresso, e excluir sessão/viagem o remove por
+cascade. Os parâmetros precisam de calibração física antes de ativar o ensaio
+com participantes. Teste sintético não comprova percurso, bateria ou utilidade.
+
+
+#### Rotinas do ensaio restrito da equipe
+
+`WA_MVP_REHEARSAL_ROUTINES=false` preserva a seleção por UUIDs revisados. O opt-in
+`true` permite conferir a elegibilidade diretamente nos dados da equipe, sem
+copiar IDs de rotina: exige `WA_MVP_ONLINE=true`, perfil `homolog` exclusivo,
+ambiente `vanrides-mvp-hml`, `WA_TEST_COHORT_ONLY=true`, Team Web habilitado e
+`VANRIDES_WA_TEAM_WEB_COHORT_ID` válido. Aproximação e finalização automática
+continuam com suas flags próprias; o opt-in não liga nenhuma delas sozinho.
+
+O mesmo filtro é usado na produção de aproximação, no fim automático e antes
+da entrega do aviso. A rotina precisa estar ativa; motorista, autorização e
+aparelho devem estar ativos e coerentes no ambiente, com aviso aceito. A coorte
+do motorista deve ser exatamente a configurada pela equipe, no ambiente correto
+e com `synthetic=false`. Outra coorte, aparelho revogado, geração antiga, rotina
+inativa ou conversa pausada para suporte impedem o ensaio. As revisões da rotina
+e dos pontos feitas na partida continuam obrigatórias. Essa seleção operacional
+não afirma calibração geográfica nem utilidade já medidas em percurso.
+
+O guard aceita `WA_NEW_STARTS_ENABLED=false` para a API subir em pausa
+operacional. Parada e finalização autenticadas permanecem disponíveis. Uma
+revisão de finalização não retoma uma conversa pausada nem fecha seu caso de
+suporte; a retomada continua na operação própria da equipe.

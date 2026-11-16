@@ -1,0 +1,29 @@
+// Opt-in only. This file belongs to an isolated Gradle home for this build.
+// Never install it in the user's default Gradle home or the Flutter SDK.
+if (System.getenv('VANRIDES_FLUTTER_ASSEMBLE_COMPAT') == '1') {
+    def adapterPath = System.getenv('VANRIDES_FLUTTER_ASSEMBLE_ADAPTER')
+    def realPath = System.getenv('VANRIDES_FLUTTER_REAL_EXECUTABLE')
+    if (!adapterPath || !realPath || !new File(adapterPath).canExecute() || !new File(realPath).canExecute()) {
+        throw new GradleException('EXPLICIT_FLUTTER_COMPAT_EXECUTABLES_REQUIRED')
+    }
+    gradle.beforeProject { project ->
+        if (project.path == ':app') {
+            project.tasks.configureEach { task ->
+                if (task.name == 'compileFlutterBuildDriverRelease') {
+                    task.doFirst {
+                        def moduleRoot = project.rootProject.projectDir.parentFile
+                        if (!(task.targetPath instanceof String)) {
+                            throw new GradleException('DRIVER_MVP_ENTRYPOINT_REQUIRED')
+                        }
+                        def target = new File(task.targetPath)
+                        if (!target.isAbsolute()) target = new File(moduleRoot, task.targetPath)
+                        if (target.canonicalFile != new File(moduleRoot, 'lib/main_driver_mvp.dart').canonicalFile) {
+                            throw new GradleException('DRIVER_MVP_ENTRYPOINT_REQUIRED')
+                        }
+                        task.flutterExecutable = new File(adapterPath)
+                    }
+                }
+            }
+        }
+    }
+}

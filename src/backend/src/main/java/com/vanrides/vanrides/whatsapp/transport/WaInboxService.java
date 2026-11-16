@@ -81,9 +81,8 @@ public class WaInboxService {
             if (rows.isEmpty()) return null;
             Event event = rows.get(0);
             access.revalidate(grant);
-            if (Boolean.TRUE.equals(jdbc.queryForObject("""
-                    SELECT EXISTS(SELECT 1 FROM wa.conversation_state WHERE identity_id=? AND stage='PAUSED')
-                    """, Boolean.class, identity))) return null;
+            // A support pause is enforced by the command capabilities. Keep consuming the inbox:
+            // otherwise an ordinary message would prevent a later FINISH_RUN cleanup command.
             // An ACK can commit between the head read and its nonblocking row lock.
             if (!NONTERMINAL_STATES.contains(event.state())) continue;
             if (!grant.instance().equals(event.instance())) return null;

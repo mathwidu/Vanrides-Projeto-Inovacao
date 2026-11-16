@@ -18,6 +18,9 @@ public final class WaSettings {
     private final boolean newStartsEnabled;
     private final boolean cohortOnly;
     private final boolean approachEnabled;
+    private final boolean autoFinishEnabled;
+    private final boolean mvpRehearsalRoutines;
+    private final UUID mvpRehearsalCohort;
     private final Set<UUID> approachReviewedRoutines;
     private final String environment;
     private final String baseUrl;
@@ -34,6 +37,10 @@ public final class WaSettings {
         newStartsEnabled = flag(env, "new-starts-enabled", true);
         cohortOnly = flag(env, "test-cohort-only", true);
         approachEnabled = flag(env, "approach-enabled", false);
+        autoFinishEnabled = flag(env, "auto-finish-enabled", false);
+        mvpRehearsalRoutines = com.vanrides.vanrides.config.MvpOnlineMode.rehearsalRoutines(env);
+        if (mvpRehearsalRoutines) com.vanrides.vanrides.config.MvpOnlineMode.validate(env);
+        mvpRehearsalCohort = mvpRehearsalRoutines ? com.vanrides.vanrides.config.MvpOnlineMode.rehearsalCohort(env) : null;
         try {
             String reviewed = env.getProperty("vanrides.wa.approach-reviewed-routine-ids", "");
             approachReviewedRoutines = reviewed.isBlank() ? Set.of() : java.util.Arrays.stream(reviewed.split(",", -1))
@@ -91,6 +98,9 @@ public final class WaSettings {
     public boolean newStartsEnabled() { return enabled && newStartsEnabled; }
     public boolean cohortOnly() { return cohortOnly; }
     public boolean approachEnabled() { return enabled && approachEnabled; }
+    public boolean autoFinishEnabled() { return enabled && autoFinishEnabled; }
+    public boolean mvpRehearsalRoutines() { return enabled && mvpRehearsalRoutines; }
+    public UUID mvpRehearsalCohort() { return mvpRehearsalCohort; }
     public boolean approachReviewed(UUID routine) { return approachReviewedRoutines.contains(routine); }
     public boolean configured() { return hashKey.length == 32 && responseKey.length == 32; }
     public String environment() { return environment; }

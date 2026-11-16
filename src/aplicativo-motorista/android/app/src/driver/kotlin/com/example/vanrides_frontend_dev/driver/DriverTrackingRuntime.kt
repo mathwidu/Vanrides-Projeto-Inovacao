@@ -156,6 +156,7 @@ internal class DriverTrackingRuntime private constructor(private val context: Co
         "diagnosticBootCount" to diagnosticBootCount, "previousDiagnosticBootCount" to previousDiagnosticBootCount,
         "remoteStopAcknowledgedAt" to remoteStopAcknowledgedAt, "processReconciledAt" to processReconciledAt,
         "notificationPermissionGranted" to notificationsGranted(), "stopPending" to (pendingStop != null || stopping),
+        "runState" to if (spike) null else productionWire.runState,
         "reconciliationPending" to reconcileAfterCancelledStart,
         "energySession" to energy.snapshot(),
     ) + locationDiagnostics()
@@ -420,7 +421,7 @@ internal class DriverTrackingRuntime private constructor(private val context: Co
     private fun handleFailure(result: NativeHttpResult): String {
         val code = TrackingProtocol.failureCode(result.status, result.failure)
         if (code == "NETWORK_RETRY") {
-            reason = code; nextNetworkAt = now() + 2_000L
+            reason = code; gpsState = "UNKNOWN"; nextNetworkAt = now() + 2_000L
             main.postDelayed({ pump() }, 2_000L)
         } else fail(code)
         return code

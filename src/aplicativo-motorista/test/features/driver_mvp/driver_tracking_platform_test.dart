@@ -29,9 +29,32 @@ void main() {
     expect(status.queued, 2);
     expect(status.stoppedAt, isNull);
   });
+  test(
+    'run terminal evidence is optional and distinct from a stopped sensor',
+    () {
+      final stopped = DriverTrackingStatus.fromMap({
+        ...nativeStatus(),
+        'state': 'STOPPED',
+        'runState': 'DEGRADED',
+      });
+      expect(stopped.isRunTerminal, isFalse);
+      for (final state in ['COMPLETED', 'CANCELED']) {
+        final terminal = DriverTrackingStatus.fromMap({
+          ...nativeStatus(),
+          'state': 'STOPPED',
+          'runState': state,
+        });
+        expect(terminal.isRunTerminal, isTrue);
+        expect(terminal.toSanitizedMap()['runState'], state);
+      }
+      expect(DriverTrackingStatus.fromMap(nativeStatus()).runState, isNull);
+    },
+  );
   test('invalid native types or enums never become a success state', () {
     for (final patch in <Map<String, Object?>>[
       {'state': 'ALL_GOOD'},
+      {'runState': 'GPS_STOPPED'},
+      {'runState': 1},
       {'credentialConfigured': 1},
       {'stopPending': 'true'},
       {'permission': 'ALWAYS'},
@@ -180,6 +203,7 @@ void main() {
           ...nativeStatus().keys,
           'notificationPermissionGranted',
           'stopPending',
+          'runState',
           'nativeStopCalledElapsedMs',
         ]),
       );

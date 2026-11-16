@@ -75,9 +75,12 @@ class WaConversationFencingIntegrationTest {
         UUID queued = c.pending(actor, json().put("conversation", "mensagem posterior"), c.h.clock.now());
         UUID independent = c.pending(c.actor(), json().put("conversation", "conversa independente"), c.h.clock.now());
         ObjectNode items = c.inbox.claim(c.worker, json().put("batchLimit", 10).put("leaseSeconds", 60));
-        assertThat(items.path("items")).hasSize(1);
-        assertThat(items.path("items").get(0).path("inboxEventId").asText()).isEqualTo(independent.toString());
-        assertThat(c.string("SELECT state FROM wa.integration_inbox WHERE id=?", queued)).isEqualTo("PENDING");
+        assertThat(items.path("items")).hasSize(2);
+        ObjectNode paused = (ObjectNode) items.path("items").get(0);
+        assertThat(paused.path("inboxEventId").asText()).isEqualTo(queued.toString());
+        assertThat(items.path("items").get(1).path("inboxEventId").asText()).isEqualTo(independent.toString());
+        assertThat(c.commands.context(c.worker, queued, paused.path("inboxLease").asText()).path("allowedCommands")).isEmpty();
+        assertThat(c.string("SELECT stage FROM wa.conversation_state WHERE identity_id=?", actor)).isEqualTo("PAUSED");
 
         ObjectNode outbox = c.outboxClaim(); assertThat(outbox.path("items")).hasSize(1);
         ObjectNode item = (ObjectNode) outbox.path("items").get(0), reserved = c.authorize(item);

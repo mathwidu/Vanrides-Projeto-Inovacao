@@ -36,7 +36,7 @@ final class WaApproachDecisions {
         List<WaApproachPolicy.Fix> fixes=jdbc.query("SELECT * FROM wa.approach_fix WHERE session_id=? ORDER BY sequence",(rs,n)->
             new WaApproachPolicy.Fix(rs.getLong("sequence"),rs.getTimestamp("captured_at").toInstant(),rs.getDouble("latitude"),rs.getDouble("longitude"),
                 rs.getDouble("accuracy_m"),(Double)rs.getObject("heading_deg")),session);
-        var decision=WaApproachPolicy.assess(fixes,number(next,"latitude_snapshot"),number(next,"longitude_snapshot"),now,settings.approachReviewed(routine));
+        var decision=WaApproachPolicy.assess(fixes,number(next,"latitude_snapshot"),number(next,"longitude_snapshot"),now,new WaRoutineEligibility(jdbc,settings).reviewed(routine));
         var old=jdbc.queryForList("""
             SELECT progress.*,receipt.captured_at last_evaluated_at FROM wa.approach_progress progress
             LEFT JOIN wa.tracking_sample_receipt receipt ON receipt.session_id=progress.last_session_id AND receipt.sequence=progress.last_sequence

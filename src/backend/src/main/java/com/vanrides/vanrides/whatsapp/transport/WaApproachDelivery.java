@@ -3,6 +3,7 @@ package com.vanrides.vanrides.whatsapp.transport;
 import com.vanrides.vanrides.whatsapp.config.WaClock;
 import com.vanrides.vanrides.whatsapp.config.WaSettings;
 import com.vanrides.vanrides.whatsapp.tracking.WaApproachPolicy;
+import com.vanrides.vanrides.whatsapp.tracking.WaRoutineEligibility;
 import com.vanrides.vanrides.whatsapp.tracking.WaVehicleLocation;
 import java.sql.Timestamp;
 import java.time.Instant;
@@ -35,7 +36,7 @@ final class WaApproachDelivery {
             """,outbox,instance,settings.environment());
         if(rows.size()!=1) return false; var row=rows.get(0);
         UUID passenger=(UUID)row.get("recipient_identity_id"),run=(UUID)row.get("run_id");
-        if(!settings.approachReviewed((UUID)row.get("routine_id")) || !location.authorized(passenger,run,lock)) return false;
+        if(!new WaRoutineEligibility(jdbc,settings).reviewed((UUID)row.get("routine_id")) || !location.authorized(passenger,run,lock)) return false;
         if(lock) jdbc.queryForList("SELECT identity_id FROM wa.profile WHERE identity_id=? FOR SHARE",passenger);
         if(location.pin(passenger,run,lock)==null) return false;
         if(lock) return current(outbox,instance,false);

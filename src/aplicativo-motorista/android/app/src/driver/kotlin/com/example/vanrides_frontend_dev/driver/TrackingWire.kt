@@ -118,6 +118,8 @@ internal object TrackingWire {
 internal class ProductionTrackingWire {
     var stopReference: String? = null
         private set
+    var runState: String? = null
+        private set
     private val retries = mutableMapOf<String, String>()
     fun request(path: String, original: String?): Pair<String?, String?> {
         if (original == null) return null to null
@@ -150,6 +152,12 @@ internal class ProductionTrackingWire {
     }
     fun response(path: String, original: String): String {
         val body = JSONObject(original)
+        val stateKey = if (path.endsWith("/tracking-status")) "runState" else if (body.has("runId")) "state" else null
+        val nextRunState = if (stateKey != null && body.has(stateKey)) {
+            if (body.isNull(stateKey)) null else body.getString(stateKey).also {
+                require(it in setOf("PLANNED", "STARTING", "START_FAILED", "TRACKING", "DEGRADED", "COMPLETED", "CANCELED")) { "INVALID_CONTRACT" }
+            }
+        } else runState
         fun time(name: String): Long = DriverSessionProtocol.instant(body.getString(name))
         val server = time("serverTime")
         stopReference = null
@@ -175,6 +183,7 @@ internal class ProductionTrackingWire {
             if (path.endsWith("/samples")) for (name in listOf("accepted", "duplicate", "rejected")) normalized.put(name, body.get(name))
         }
         retries.keys.removeAll { it.startsWith(path) }
+        runState = nextRunState
         return normalized.toString()
     }
 }

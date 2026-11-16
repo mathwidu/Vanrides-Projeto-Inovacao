@@ -88,6 +88,7 @@ final class DriverTrackingRequest {
 final class DriverTrackingTransport: NSObject, URLSessionTaskDelegate {
   private let production = DriverProductionTrackingWire()
   var stopReference: String? { production.stopReference }
+  var runState: String? { production.runState }
   #if VANRIDES_GPS_SPIKE
   private lazy var session: URLSession = {
     let configuration = URLSessionConfiguration.ephemeral
