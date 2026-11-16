@@ -37,15 +37,17 @@ dirigidos; a conferência dessas etapas no WhatsApp real ainda está pendente.
 Aproximação e fim automático permanecem desligados até habilitar o ensaio.
 
 O APK Android 0.4.0+14 está publicado e instalado no Redmi. A jornada com GPS
-do novo build ainda precisa ser conferida. O preparo do iPhone foi retomado;
-a assinatura aguarda a conta Apple/Personal Team disponível no Xcode. O
+do novo build ainda precisa ser conferida. O build completo do iPhone compilou
+sem assinatura; para instalar, falta disponibilizar a conta Apple/Personal Team
+no Xcode e concluir a assinatura gratuita. O
 mantenedor fará percurso, bateria e avaliação do aviso após a preparação dos
 artefatos, conforme o roteiro da rodada final.
 
 A recuperação isolada com API, PostgreSQL, Redis e n8n em fila passou no
 reinício, nos agendamentos e na restauração, sem duplicar os dois efeitos do
-canal simulado. Retenção e reaplicação de exclusões estão em integração na
-V44, ainda não publicada; limpeza real continua desabilitada. O registro de
+canal simulado. A V44 passou também na reaplicação de exclusões sintéticas
+após restaurar o banco e no ensaio da migração sobre uma cópia recuperável;
+a publicação está em preparação e a limpeza real continua desabilitada. O registro de
 evidências distingue os testes locais, o publicado e a rodada física restante.
 
 ## Código e desenvolvimento

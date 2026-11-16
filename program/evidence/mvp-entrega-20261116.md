@@ -341,3 +341,50 @@ Uma consulta remota somente de metadados confirmou as cinco credenciais de
 serviço ativas. Canal, processamento, envio e job vencem em 01/12/2026; operador,
 em 02/12/2026. A manutenção precisa renovar esses acessos antes do prazo. Nenhum
 token, contato ou conteúdo de conversa foi consultado ou publicado nesse registro.
+
+### Recuperação e migração V44 — composição aprovada em isolamento
+
+A tentativa 005 terminou como `CORE_AND_PRIVACY_VERIFIED`, usando o JAR
+`f76bcb0335f2c40955df86804d67754f0a68e28c29426c778364466468f5224b`
+empacotado de `7886c9b`. Repetiu o núcleo em fila e acrescentou o probe HTTP
+das cinco famílias desabilitadas, sem alterar o fingerprint do banco. O
+comando isolado rodou no JRE Linux real com journal externo ao dump: um
+backup anterior ao fechamento foi restaurado, as exclusões foram reaplicadas
+antes de liberar consumidores e os dados de Alfa não ressurgiram. Beta e os
+controles permaneceram preservados, inclusive data original, sequência e ACK
+do fechamento. Não houve Evolution, mensagem real ou consumo de OpenAI.
+
+O descarte sintético mudou três mensagens terminais, uma unidade técnica,
+três projeções históricas e uma unidade de histórico em cada banco. O
+journal atual permaneceu intacto após a reaplicação. Os containers exclusivos
+foram removidos com identidade conferida e os volumes foram preservados.
+`releaseEligible: false` continua explícito: esse recibo comprova a composição
+isolada, não autoriza apagar dados reais ou substituir o aceite do MVP. A
+rotação física dos backups continua sem implementação, com inventário e
+preview de expiração; nenhum backup foi removido.
+
+Separadamente, a V44 passou sobre uma cópia restaurada do banco compartilhado.
+O dump de 2.772.852 bytes cobriu 107 relações, e o conteúdo restaurado foi
+conferido antes da migração. Passaram os três cenários: API anterior/V43,
+candidato/V44 e API anterior/V44, todos com saúde UP. O SQL revisado tem SHA-256
+`214c688fb30acb73ed6b2646e2d224618ad4f561671573d3b92f43911968b7ba`.
+A limpeza dos recursos exclusivos foi verificada. A primeira chamada usou um
+nome de argumento incorreto e foi recusada pelo parser antes de acessar
+Docker; a execução corrigida terminou como
+`RESTORE_AND_MIGRATION_RETURN_VERIFIED`. O serviço publicado não foi alterado
+por esses ensaios.
+
+A rodada final de cinco arquivos Node passou em 59 casos dirigidos. Não
+reexecutamos a suíte PostgreSQL inteira: as 104 classes/818 casos continuam
+sendo inventário. Compilação do JAR, testes dirigidos e ensaios remotos têm
+identidades próprias; um novo JAR do Actions será identificado separadamente.
+
+### iPhone — compilação completa sem assinatura
+
+O build completo 0.4.0+14 compilou com Xcode em 45,36 s. Pub com lockfile,
+configuração Flutter e Pods também terminaram com sucesso. Os 480 fontes
+rastreados do aplicativo e os dois lockfiles permaneceram idênticos. O
+resultado está sem provisionamento, portanto não é instalável nem comprova
+execução no iPhone. Assinatura gratuita, instalação e smoke continuam pendentes.
+O Mac bloqueado impede conferir o Xcode e usar os WhatsApps reais no momento;
+foi solicitada somente a liberação da sessão, preservando os aplicativos abertos.
