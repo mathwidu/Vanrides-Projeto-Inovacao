@@ -244,6 +244,7 @@ struct DriverTrackingBatch {
 // Spring110 boundary: dates stay ISO8601 on the wire and monotonic inside the engine.
 final class DriverProductionTrackingWire {
   private(set) var stopReference: String?
+  private(set) var runState: String?
   private var retries: [String: String] = [:]
   private func iso(_ value: Any?) throws -> String {
     let milliseconds = try DriverTrackingContract.integer(value)
@@ -290,6 +291,18 @@ final class DriverProductionTrackingWire {
   }
   func incoming(path: String, data: Data) throws -> [String: Any] {
     guard let value = try JSONSerialization.jsonObject(with: data) as? [String: Any] else { throw DriverTrackingFailure.invalidContract }
+    let stateKey = path.hasSuffix("/tracking-status") ? "runState" : value["runId"] != nil ? "state" : nil
+    var nextRunState = runState
+    if let key = stateKey, let raw = value[key] {
+      if raw is NSNull { nextRunState = nil }
+      else {
+        guard let state = raw as? String,
+          ["PLANNED", "STARTING", "START_FAILED", "TRACKING", "DEGRADED", "COMPLETED", "CANCELED"].contains(state) else {
+          throw DriverTrackingFailure.invalidContract
+        }
+        nextRunState = state
+      }
+    }
     let server = try millis(value["serverTime"])
     stopReference = value["stopRequestRef"] as? String
     var result: [String: Any] = ["schemaVersion": 1, "environment": "driver-mvp", "serverTime": server]
@@ -312,6 +325,7 @@ final class DriverProductionTrackingWire {
       }
     }
     retries = retries.filter { !$0.key.hasPrefix(path) }
+    runState = nextRunState
     return result
   }
 }

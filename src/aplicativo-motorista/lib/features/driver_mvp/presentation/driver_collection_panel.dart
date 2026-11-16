@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../data/driver_tracking_platform.dart';
 import '../data/driver_run_intent.dart';
@@ -39,10 +40,17 @@ class _DriverCollectionPanelState extends State<DriverCollectionPanel>
     unawaited(_update(_refresh));
   }
 
-  Future<DriverTrackingStatus> _refresh() =>
-      widget.paired
-          ? widget.platform.syncStatus()
-          : widget.platform.getStatus();
+  Future<DriverTrackingStatus> _refresh() async {
+    if (!widget.paired) return widget.platform.getStatus();
+    try {
+      return await widget.platform.syncStatus();
+    } on PlatformException catch (error) {
+      // The native collector may already be sending a sample or its stop ACK.
+      // Observe that operation; never start another collector to recover the UI.
+      if (error.code == 'BUSY') return widget.platform.getStatus();
+      rethrow;
+    }
+  }
 
   @override
   void didUpdateWidget(covariant DriverCollectionPanel oldWidget) {
@@ -67,16 +75,23 @@ class _DriverCollectionPanelState extends State<DriverCollectionPanel>
     try {
       status = await call();
     } catch (_) {
-      error = 'Não foi possível verificar a localização. Tente novamente.';
+      error = 'Sem atualização do VanRides. Tentaremos novamente.';
+      try {
+        status = await widget.platform.getStatus();
+      } catch (_) {
+        // A previous snapshot remains historical; an error never confirms GPS.
+      }
     }
     if (!mounted) return;
     _view.value = (status: status, busy: false, error: error);
     if (_foreground &&
-        error == null &&
-        (status?.isActive == true || status?.stopPending == true)) {
+        (error != null ||
+            widget.paired ||
+            status?.isActive == true ||
+            status?.stopPending == true)) {
       _timer = Timer(
         const Duration(seconds: 6),
-        () => unawaited(_update(widget.platform.getStatus)),
+        () => unawaited(_update(_refresh)),
       );
     }
   }
@@ -100,6 +115,8 @@ class _DriverCollectionPanelState extends State<DriverCollectionPanel>
       'TRACKING' when s.gpsState == 'STALE' =>
         'Sem posição recente no receptor',
       'TRACKING' => 'Coleta em andamento, aguardando confirmação de posição',
+      'STOPPED' when s.runState == 'COMPLETED' => 'Trajeto concluído',
+      'STOPPED' when s.runState == 'CANCELED' => 'Saída cancelada',
       'STOPPED' => 'Localização interrompida',
       'UNCONFIGURED' || 'READY' => 'Coleta parada',
       _ => 'Estado da coleta indisponível',
@@ -113,6 +130,9 @@ class _DriverCollectionPanelState extends State<DriverCollectionPanel>
       final s = view.status;
       final canStop =
           s != null && (s.isActive || s.stopPending || s.state == 'ERROR');
+      final permissionsReady =
+          s?.permission == 'GRANTED' &&
+          s?.notificationPermissionGranted == true;
       return Card(
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -124,11 +144,33 @@ class _DriverCollectionPanelState extends State<DriverCollectionPanel>
                 style: Theme.of(context).textTheme.titleMedium,
               ),
               const SizedBox(height: 6),
-              Semantics(liveRegion: true, child: Text(view.error ?? _label(s))),
+              Semantics(
+                liveRegion: true,
+                child: Text(
+                  view.error != null && s?.isActive == true
+                      ? 'Sem confirmação recente da localização'
+                      : _label(s),
+                ),
+              ),
+              if (view.error != null) Text(view.error!),
+              if (s?.state == 'STOPPED' && !s!.stopPending)
+                Text(
+                  s.isRunTerminal
+                      ? 'A localização deste celular está desligada.'
+                      : 'Parar a localização não conclui o trajeto. Confira a saída no WhatsApp.',
+                ),
+              if (s?.reason == 'BACKGROUND_PERMISSION_REQUIRED')
+                const Text(
+                  'Permita localização Sempre nos Ajustes para compartilhar durante o percurso.',
+                ),
+              if (s?.permission == 'APPROXIMATE')
+                const Text(
+                  'Ative a localização precisa para iniciar o compartilhamento.',
+                ),
               if (widget.paired && widget.intent != null && !canStop)
                 FilledButton(
                   onPressed:
-                      view.busy
+                      view.busy || !permissionsReady
                           ? null
                           : () => _update(() async {
                             final platform = widget.platform;
@@ -166,10 +208,7 @@ class _DriverCollectionPanelState extends State<DriverCollectionPanel>
                 ),
               if (view.error != null)
                 TextButton(
-                  onPressed:
-                      view.busy
-                          ? null
-                          : () => _update(widget.platform.getStatus),
+                  onPressed: view.busy ? null : () => _update(_refresh),
                   child: const Text('Verificar localização'),
                 ),
             ],

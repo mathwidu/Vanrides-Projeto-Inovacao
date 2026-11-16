@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vanrides_frontend_dev/features/driver_mvp/data/driver_session_links.dart';
 import 'package:vanrides_frontend_dev/features/driver_mvp/data/driver_run_intent.dart';
@@ -77,6 +78,8 @@ class _Tracking implements DriverTrackingPlatform, DriverRunPlatform {
   }
 
   DriverTrackingStatus value = const DriverTrackingStatus();
+  int syncFailures = 0;
+  int syncs = 0;
   int stopped = 0;
   @override
   Future<DriverTrackingStatus> getStatus() async => value;
@@ -89,7 +92,15 @@ class _Tracking implements DriverTrackingPlatform, DriverRunPlatform {
   @override
   Future<DriverTrackingStatus> requestPermission() async => value;
   @override
-  Future<DriverTrackingStatus> syncStatus() async => value;
+  Future<DriverTrackingStatus> syncStatus() async {
+    syncs++;
+    if (syncFailures > 0) {
+      syncFailures--;
+      throw PlatformException(code: 'NETWORK_ERROR');
+    }
+    return value;
+  }
+
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
@@ -110,6 +121,93 @@ Future<void> _close(WidgetTester t, _Links links) async {
 }
 
 void main() {
+  testWidgets('terminal run and native stop ACK remain separate in the UI', (
+    t,
+  ) async {
+    final links = _Links();
+    final session = _Session()..current = DriverSessionState.ready;
+    final gps =
+        _Tracking()
+          ..value = const DriverTrackingStatus(
+            state: 'STOPPED',
+            runState: 'COMPLETED',
+            stopPending: true,
+          );
+    await _show(t, session, links, gps);
+    expect(find.text('Trajeto concluído'), findsNothing);
+    expect(
+      find.text('Parada solicitada. Aguardando confirmação.'),
+      findsOneWidget,
+    );
+    gps.value = const DriverTrackingStatus(
+      state: 'STOPPED',
+      runState: 'COMPLETED',
+    );
+    await t.pump(const Duration(seconds: 6));
+    await t.pumpAndSettle();
+    expect(find.text('Trajeto concluído'), findsOneWidget);
+    expect(
+      find.text('A localização deste celular está desligada.'),
+      findsOneWidget,
+    );
+    expect(gps.starts, isEmpty);
+    await _close(t, links);
+  });
+
+  testWidgets(
+    'network recovery refreshes the existing collector without restarting',
+    (t) async {
+      final links = _Links();
+      final session = _Session()..current = DriverSessionState.ready;
+      final gps =
+          _Tracking()
+            ..syncFailures = 1
+            ..value = const DriverTrackingStatus(
+              state: 'TRACKING',
+              gpsState: 'FRESH',
+            );
+      await _show(t, session, links, gps);
+      expect(
+        find.text('Sem confirmação recente da localização'),
+        findsOneWidget,
+      );
+      expect(find.text('Posição recente recebida'), findsNothing);
+      await t.pump(const Duration(seconds: 6));
+      await t.pumpAndSettle();
+      expect(find.text('Posição recente recebida'), findsOneWidget);
+      expect(gps.syncs, 2);
+      expect(gps.starts, isEmpty);
+      await _close(t, links);
+    },
+  );
+
+  testWidgets(
+    'a valid link still waits for location permission before activation',
+    (t) async {
+      final links = _Links(
+        Uri.parse(
+          'vanridesdriver://run/start#v1.12345678-1234-1234-1234-123456789012.7.${List.filled(43, 'A').join()}',
+        ),
+      );
+      final session = _Session()..current = DriverSessionState.ready;
+      final gps =
+          _Tracking()
+            ..value = const DriverTrackingStatus(
+              state: 'READY',
+              permission: 'DENIED',
+            );
+      await _show(t, session, links, gps);
+      final start = find.widgetWithText(
+        FilledButton,
+        'Iniciar localização desta saída',
+      );
+      expect(t.widget<FilledButton>(start).onPressed, isNull);
+      expect(find.text('Permitir localização no percurso'), findsOneWidget);
+      expect(gps.starts, isEmpty);
+      await _close(t, links);
+    },
+  );
+
   testWidgets(
     'a start link waits for explicit confirmation and does not expose its token',
     (t) async {

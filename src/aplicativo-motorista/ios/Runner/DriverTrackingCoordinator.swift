@@ -126,6 +126,7 @@ final class DriverTrackingCoordinator: NSObject, CLLocationManagerDelegate {
       "queued": queue.samples.count, "accepted": accepted, "duplicates": duplicates,
       "rejected": rejected, "dropped": queue.dropped, "discardedCallbacks": discardedCallbacks,
       "gpsState": gpsState, "diagnosticWriteFailed": diagnosticWriteFailed, "stopPending": stopPending,
+      "runState": transport.runState as Any? ?? NSNull(),
       "leaseExpiresAt": lease.expiresAt == 0 ? NSNull() : NSNumber(value: lease.expiresAt),
       "reason": reason as Any? ?? NSNull(),
       "stopRequestedAt": stopRequestedAt.map { NSNumber(value: $0) } as Any? ?? NSNull(),
