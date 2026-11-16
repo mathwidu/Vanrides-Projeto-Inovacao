@@ -261,6 +261,7 @@ class OwnershipTest(unittest.TestCase):
 class BackupTest(TempTest):
     def session(self, scope='1|0', unstable=False, changed=False):
         session = object.__new__(recovery.Session); session.output = self.root
+        session.value = {'schemaVersion': 1}
         session.owned = Mock()
         def execute(role, command, data=None, **options):
             if command[0] == 'pg_dump':
@@ -331,6 +332,7 @@ class OrchestrationTest(TempTest):
         owned.containers = {'source-pg': {'id': '1' * 64}, 'restored-pg': {'id': '2' * 64}}
         owned.network.side_effect = lambda role: role
         session = Mock(); session.instance = 'wa070_synthetic_' + owned.nonce; session.keys = {'CHANNEL': 'synthetic'}
+        session.value = value; session.output = output; session.owned = owned
         session.flows = fixture.workflows(fixture.bundle()[2], owned.nonce)[0]
         session.postgres.side_effect = lambda prefix, network: prefix + '-pg'
         session.verify_exports.return_value = 'f' * 64; session.sql.return_value = '1'

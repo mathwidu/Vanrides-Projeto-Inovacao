@@ -87,7 +87,8 @@ def assets(root=ROOT):
         require(base.resolve() == base, 'REC_SOURCE_SYMLINK')
         paths += list(base.rglob('*.mjs'))
     paths += [root / 'src/whatsapp/scripts/070-n8n-smoke.py']
-    paths += [root / 'deploy/homologacao' / name for name in ('rehearse_recovery.py', 'recovery_fixture.py', 'rehearse_migration.py')]
+    paths += [root / 'deploy/homologacao' / name for name in ('rehearse_recovery.py', 'recovery_fixture.py', 'recovery_privacy.py', 'rehearse_migration.py')]
+    paths += list((root / 'src/backend/src/main/java/com/vanrides/vanrides/whatsapp/privacy').glob('WaPrivacyRecovery*.java'))
     require(10 <= len(paths) <= 300, 'REC_SOURCE_INVENTORY_INVALID')
     return {str(path.relative_to(root)): sha(read(path, 2 * 1024 * 1024)) for path in sorted(paths)}
 

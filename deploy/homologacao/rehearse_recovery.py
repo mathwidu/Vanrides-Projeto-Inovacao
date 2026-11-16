@@ -18,6 +18,7 @@ sys.dont_write_bytecode = True
 from rehearse_migration import (Blocked, Docker, MAX_DUMP, MAX_JAR, deploy_lock, encode,
                                host_identity, new_directory, object_json, read, require, sha, write_new)
 import recovery_fixture as fixture
+import recovery_privacy as privacy
 
 OWNER = 'dev.vanrides.recovery-rehearsal'
 LABELS = (OWNER, 'dev.vanrides.operation', 'dev.vanrides.environment')
@@ -33,8 +34,8 @@ def manifest(path, expected):
     require(re.fullmatch('[a-f0-9]{64}', expected or '') and sha(raw) == expected, 'REC_MANIFEST_CHANGED')
     value = object_json(raw)
     require(set(value) == {'schemaVersion', 'environment', 'candidate', 'images', 'sourceFiles', 'workflows', 'privacy'}
-            and type(value['schemaVersion']) is int and value['schemaVersion'] == 1
-            and value['environment'] == fixture.ENVIRONMENT and value['privacy'] == {'state': 'PENDING_V44'}, 'REC_MANIFEST_INVALID')
+            and type(value['schemaVersion']) is int and value['schemaVersion'] in (1, 2)
+            and value['environment'] == fixture.ENVIRONMENT, 'REC_MANIFEST_INVALID')
     candidate, images = value['candidate'], value['images']
     require(isinstance(candidate, dict) and set(candidate) == {'jar', 'jarSha256', 'revision', 'tree', 'flywayVersion'}
             and all(isinstance(candidate[k], str) and re.fullmatch('[a-f0-9]{40}', candidate[k]) for k in ('revision', 'tree'))
@@ -56,6 +57,7 @@ def manifest(path, expected):
         versions = [int(m.group(1)) for name in names
                     if (m := re.fullmatch(r'BOOT-INF/classes/db/migration/V([1-9][0-9]*)__[A-Za-z0-9_]+\.sql', name))]
     require(versions and max(versions) == candidate['flywayVersion'], 'REC_SCHEMA_ANCHOR_INVALID')
+    privacy.validate_manifest(value, jar)
     return value, jar, raw, bundle, workflows
 
 
@@ -250,9 +252,9 @@ class Session:
         return value
 
     def counts(self, pg):
-        return self.sql(pg, fixture.DATABASES[0], "SELECT (SELECT count(*) FROM wa.command_receipt)||'|'||"
-                        "(SELECT count(*) FROM wa.message_outbox WHERE state='SUBMITTED')||'|'||"
-                        "(SELECT count(*) FROM wa.message_attempt WHERE state='SUBMITTED');")
+        return self.sql(pg, fixture.DATABASES[0], f"SELECT (SELECT count(*) FROM wa.command_receipt WHERE identity_id='{self.identity}')||'|'||"
+                        f"(SELECT count(*) FROM wa.message_outbox WHERE recipient_identity_id='{self.identity}' AND state='SUBMITTED')||'|'||"
+                        f"(SELECT count(*) FROM wa.message_attempt WHERE instance_id='{self.instance}' AND state='SUBMITTED');")
 
     def services(self, prefix, pg, network, restored=False):
         images, keys = self.value['images'], self.keys
@@ -334,11 +336,12 @@ class Session:
     def quiesce(self, prefix):
         for role in ('main', 'n8n-worker', 'wa', 'api'): self.owned.action(prefix + '-' + role, 'stop')
 
-    def backup_restore(self, source, destination, receipt):
+    def backup_restore(self, source, destination, receipt, after_backup=None):
         require(source == 'source-pg' and destination == 'restored-pg', 'REC_RESTORE_TARGET_INVALID')
         scope = self.sql(source, fixture.DATABASES[0], "SELECT count(*)||'|'||count(*) FILTER(WHERE NOT synthetic OR environment<>'wa070-local') FROM wa.test_cohort;")
-        require(scope == '1|0', 'REC_SYNTHETIC_SCOPE_INVALID')
+        require(scope == ('2|0' if self.value['schemaVersion'] == 2 else '1|0'), 'REC_SYNTHETIC_SCOPE_INVALID')
         receipt['backups'] = []
+        backups = []
         for database in fixture.DATABASES:
             before = self.sql(source, database, fixture.FINGERPRINT)
             require(before and re.fullmatch(r'[A-Za-z0-9_.|\n]+', before), 'REC_FINGERPRINT_INVALID')
@@ -346,9 +349,13 @@ class Session:
             dump = self.owned.exec(source, ['pg_dump', '-w', '-U', 'postgres', '-d', database, '-Fc', '--no-owner', '--no-privileges'], maximum=MAX_DUMP, sink=path)
             require(dump.startswith(b'PGDMP') and 5 < len(dump) <= MAX_DUMP
                     and self.sql(source, database, fixture.FINGERPRINT) == before, 'REC_BACKUP_UNSTABLE')
+            backups.append((database, dump, before))
+            receipt['backups'].append({'database': database, 'sha256': sha(dump), 'bytes': len(dump), 'contentSha256': sha(before.encode())})
+        if after_backup is not None: after_backup()
+        receipt['stage'] = 'RESTORE_TO_DIFFERENT_DATABASE'
+        for database, dump, before in backups:
             self.owned.exec(destination, ['pg_restore', '-w', '-U', 'postgres', '-d', database, '--exit-on-error', '--single-transaction', '--no-owner', '--no-privileges'], dump)
             require(self.sql(destination, database, fixture.FINGERPRINT) == before, 'REC_RESTORE_CONTENT_CHANGED')
-            receipt['backups'].append({'database': database, 'sha256': sha(dump), 'bytes': len(dump), 'contentSha256': sha(before.encode())})
 
 
 class RestoredDatabase:
@@ -376,6 +383,7 @@ def rehearse(value, jar, output, run, original, pause=time.sleep, manifest_sha=N
         session = Session(owned, value, output, original, pause)
         network = owned.network('source-network'); pg = session.postgres('source', network)
         session.services('source', pg, network)
+        if value['schemaVersion'] == 2: receipt['privacyOffProbe'] = privacy.probe_disabled(session)
         owned.action('source-n8n-worker', 'stop')
         session.n8n_cli('source', 'import:workflow', '--input=/fixture/workflows.json')
         session.n8n_cli('source', 'import:credentials', '--input=/fixture/credential.json')
@@ -409,11 +417,13 @@ def rehearse(value, jar, output, run, original, pause=time.sleep, manifest_sha=N
         require(receipt['queueAtBackup'] == {'waiting': 0, 'active': 0}, 'REC_QUEUE_NOT_QUIESCENT_FOR_BACKUP')
         second = fixture.event(session.instance, 'Pessoa Sintética Recuperação ' + owned.nonce)
         session.send('source', second); owned.action('source-api', 'stop')
+        privacy_run = privacy.PrivacyRecovery(session, lambda stage: receipt.update(stage='PRIVACY_' + stage)); privacy_run.prepare()
         receipt['stage'] = 'RESTORE_TO_DIFFERENT_DATABASE'
         restored_network = owned.network('restored-network'); restored = session.postgres('restored', restored_network)
         require(owned.containers[pg]['id'] != owned.containers[restored]['id'], 'REC_RESTORE_TARGET_IS_SOURCE')
-        session.backup_restore(pg, restored, receipt)
-        receipt['privacy'] = privacy_after_restore(RestoredDatabase(session, restored), value['privacy'])
+        session.backup_restore(pg, restored, receipt, after_backup=privacy_run.close_purge) if privacy_run.enabled else session.backup_restore(pg, restored, receipt)
+        receipt['privacy'] = privacy_run.reapply() if privacy_run.enabled else privacy_after_restore(RestoredDatabase(session, restored), value['privacy'])
+        if privacy_run.enabled: receipt['stage'] = 'RESTORED_CORE_RESUME'
         owned.action('source-channel', 'stop')
         session.services('restored', restored, restored_network, restored=True)
         require(session.verify_exports('restored') == receipt['copiedWorkflowSha256'], 'REC_RESTORED_WORKFLOW_CHANGED')
@@ -424,7 +434,7 @@ def rehearse(value, jar, output, run, original, pause=time.sleep, manifest_sha=N
         require(session.counts(restored) == '2|2|2' and session.channel_state('restored')['accepted'] == 2, 'REC_RESTORE_DUPLICATED_EFFECT')
         receipt['checks'].append('two_real_pg_dumps_restored_elsewhere_pending_event_completed_replays_had_no_effect')
         require(fixture.assets() == value['sourceFiles'] and fixture.bundle()[1] == value['workflows'], 'REC_SOURCE_CHANGED')
-        receipt.update(status='CORE_VERIFIED_PRIVACY_PENDING', stage='FINISHED', totals={'syntheticEvents': 2, 'providerEffects': 2, 'duplicateEffects': 0})
+        receipt.update(status='CORE_AND_PRIVACY_VERIFIED' if privacy_run.enabled else 'CORE_VERIFIED_PRIVACY_PENDING', stage='FINISHED', totals={'syntheticEvents': 2, 'providerEffects': 2, 'duplicateEffects': 0})
     except BaseException as error:
         receipt['reason'] = str(error) if isinstance(error, Blocked) else type(error).__name__
         raise
@@ -437,6 +447,9 @@ def rehearse(value, jar, output, run, original, pause=time.sleep, manifest_sha=N
             finally:
                 receipt['retainedVolumes'] = owned.volumes
                 receipt['ownedResources'] = {'containers': owned.containers, 'networks': owned.networks}
+                if value['schemaVersion'] == 2:
+                    try: receipt['artifactInventory'] = privacy.artifact_inventory(output)
+                    except (Blocked, OSError): receipt['artifactInventory'] = {'status': 'UNAVAILABLE', 'deletionImplemented': False}
                 write_new(output / 'receipt.json', encode(receipt))
         finally: signal.pthread_sigmask(signal.SIG_SETMASK, previous)
     return receipt
@@ -445,11 +458,15 @@ def rehearse(value, jar, output, run, original, pause=time.sleep, manifest_sha=N
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--inventory', action='store_true'); parser.add_argument('--manifest'); parser.add_argument('--sha256'); parser.add_argument('--output')
+    parser.add_argument('--privacy-jar')
     args = parser.parse_args(argv)
     try:
         if args.inventory:
             require(not any((args.manifest, args.sha256, args.output)), 'REC_ARGUMENTS_INVALID')
-            print(encode({'sourceFiles': fixture.assets(), 'workflows': fixture.bundle()[1]}).decode(), end=''); return 0
+            inventory = {'sourceFiles': fixture.assets(), 'workflows': fixture.bundle()[1]}
+            if args.privacy_jar: inventory['privacy'] = privacy.class_inventory(read(Path(args.privacy_jar), MAX_JAR))
+            print(encode(inventory).decode(), end=''); return 0
+        require(not args.privacy_jar, 'REC_ARGUMENTS_INVALID')
         require(all((args.manifest, args.sha256, args.output)), 'REC_ARGUMENTS_REQUIRED')
         value, jar, raw, bundle, workflows = manifest(Path(args.manifest), args.sha256)
         host_identity()
