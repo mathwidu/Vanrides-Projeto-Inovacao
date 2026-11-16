@@ -19,8 +19,9 @@ Este módulo integra o repositório Git único. Leia `../../AGENTS.md`,
 - Nunca versionar tokens, localização coletada, arquivos de pareamento,
   certificados, keystores, equipes Apple, IDs de aparelhos ou configurações
   locais. Use apenas fixtures sintéticas e diretórios ignorados.
-- Teste físico do iPhone está pausado. Builds sem assinatura não são prova
-  de instalação, comportamento de GPS ou aceite de aparelho.
+- O proprietário retomou a preparação do iPhone em 16/11/2026. Percurso,
+  bateria e aceite final ficam para sua rodada após a entrega técnica.
+  Builds sem assinatura não são prova de instalação ou comportamento do GPS.
 - Alterações de API exigem gates dos produtores/consumidores e smoke do
   mesmo SHA. Não usar CI histórica da origem como prova do destino.
 

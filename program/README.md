@@ -15,8 +15,10 @@ as regras de promoção. No monorepo acadêmico, a entrada para contribuir é
 
 A migração não conclui o roadmap legado, não aceita cards parcialmente
 implementados e não reclassifica evidências históricas como teste do monorepo.
-Piloto e produção permanecem **HOLD**. Testes físicos de iOS estão pausados pelo
-proprietário. A centralização foi verificada e concluída no seu escopo; o recibo específico
+Piloto e produção permanecem **HOLD**. O proprietário retomou o preparo do
+iPhone em 16/11/2026 e deixou percurso, bateria e aceite para sua rodada final.
+O [plano de entrega](../docs/desenvolvimento/entrega-mvp.md) registra o objetivo
+e a matriz das issues. A centralização foi verificada e concluída no seu escopo; o recibo específico
 identifica a publicação e os testes da nova árvore.
 
 ## Operação diária

@@ -8,6 +8,15 @@ Todos os integrantes podem usar a API implementada do MVP no mesmo endereço HTT
 
 `in_progress`. O controlador mantém um único card ativo. A decisão RD47 registra a finalidade desse ambiente.
 
+Em 16/11/2026, o proprietário autorizou a conclusão de todas as issues do MVP
+para a rodada final, incluindo a preparação dos dois aparelhos. O
+[plano de entrega](../../docs/desenvolvimento/entrega-mvp.md) acompanha as 65
+issues, a integração dos PRs dos colegas e as frentes paralelas. Este card
+mantém a integração vertical e o programa passou a incluir o app. Percurso,
+bateria e avaliação de utilidade serão realizados pelo proprietário depois
+da entrega técnica. Os registros anteriores abaixo preservam seus próprios
+escopos e datas.
+
 ## Ajuste de prioridade (RD48)
 
 Publicar a API completa do MVP primeiro. O cenário de cadastro restrito abaixo é uma prova opcional da etapa anterior. A publicação usará o modo online da API com autenticação normal dos atores e acesso para toda a equipe. Worker, n8n/Evolution e APK do domínio entram após a API. A pedido do proprietário, limitar as verificações operacionais a artefato, destino, startup/HTTPS e fronteira de acesso.
