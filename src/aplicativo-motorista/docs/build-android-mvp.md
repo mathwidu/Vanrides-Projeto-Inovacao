@@ -12,11 +12,17 @@ versão espera `-dDartDefines=<lista codificada>`. O [fonte da tag
 3.38.5](https://github.com/flutter/flutter/blob/3.38.5/packages/flutter_tools/gradle/src/main/kotlin/tasks/BaseFlutterTaskHelper.kt)
 permite conferir o argumento emitido.
 
-`scripts/flutter_assemble_compat.py` muda somente esse prefixo. Preserva a
-lista inteira, incluindo as vírgulas entre os valores base64 e seu padding.
+`scripts/flutter_assemble_compat.py` muda esse prefixo e, somente para assemble,
+usa `flutter_assemble_entrypoint.dart`. Uma subclasse fina reutiliza o
+`AssembleCommand` instalado, mudando somente sua opção `define` para
+`splitCommas=false`: o parser original faz `value.split(',')`, sem escape ou
+quoting equivalente. A implementação do comando e seus targets não são
+copiados ou modificados. Preserva a lista inteira, incluindo as vírgulas
+entre os valores base64 e seu padding.
 Não decodifica, lê configuração do bot, valida quantidade de defines, imprime
-argumentos nem usa shell. Executa somente o Flutter real especificado por
-`VANRIDES_FLUTTER_REAL_EXECUTABLE`, sem fallback para PATH. Não alterar o
+argumentos nem usa shell. Usa somente Dart, package config e fontes do Flutter
+real especificado por `VANRIDES_FLUTTER_REAL_EXECUTABLE`, sem fallback para
+PATH; outros comandos seguem diretamente para esse executável. Não alterar o
 adapter privado antigo, o SDK ou a configuração pessoal para usar este fluxo.
 
 ## Gradle home novo e privado
@@ -95,6 +101,23 @@ python3 -B -m unittest discover -s scripts -p flutter_assemble_compat_test.py
 Os testes usam defines, SDK e caches sintéticos, sem chamar Flutter, Gradle,
 assinatura ou aparelhos. Cobrem preservação de múltiplos defines, execução
 explícita sem shell/eco e recusa de reutilização de init/configuração antigos.
+
+Para comprovar o comportamento do parser e decoder reais da versão instalada:
+
+```sh
+FLUTTER_ROOT="$MVP_FLUTTER_SDK_ROOT" "$MVP_FLUTTER_SDK_ROOT/bin/cache/dart-sdk/bin/dart" \
+  --packages="$MVP_FLUTTER_SDK_ROOT/packages/flutter_tools/.dart_tool/package_config.json" \
+  scripts/flutter_assemble_parser_test.dart
+```
+
+Esse teste usa o comando original e um `BuildSystem` falso: nenhum target é
+executado. Reproduz a falha de vírgulas e comprova que a opção oficial
+`--dart-define-from-file` dessa versão não substitui esse contrato interno:
+ela alimenta uma lista crua onde assemble espera base64. Captura o
+`Environment.defines` real e usa `decodeDartDefines` original para conferir
+host, bot e metadados sintéticos, inclusive uma rodada inteira sem padding.
+Valores reais não entram no teste ou na saída. O workaround é específico da
+3.38.5; outra versão requer revalidar o teste, sem atualização automática.
 
 Ao terminar, encerrar somente processos desse Gradle home quando necessário
 e remover o opt-in do ambiente do próximo comando. O retorno consiste em

@@ -70,6 +70,7 @@ def prepare(directory, flutter, cache_source=None, heap_mb=768):
         'flutterExecutable': str(executable),
         'adapter': str(HERE / 'flutter_assemble_compat.py'),
         'adapterSha256': hashlib.sha256((HERE / 'flutter_assemble_compat.py').read_bytes()).hexdigest(),
+        'entrypointSha256': hashlib.sha256((HERE / 'flutter_assemble_entrypoint.dart').read_bytes()).hexdigest(),
         'initSha256': hashlib.sha256(init.read_bytes()).hexdigest(),
         'sharedDirectories': {name: str(path) for name, path in shared.items()},
         'sourceInitCopied': False,

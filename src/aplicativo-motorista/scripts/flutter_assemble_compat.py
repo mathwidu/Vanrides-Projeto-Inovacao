@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Translate Flutter 3.38.5's Gradle assemble flag without inspecting its value."""
+import json
 import os
 from pathlib import Path
 import sys
@@ -30,11 +31,24 @@ def main():
     except Exception:
         print('BLOCKED: EXPLICIT_FLUTTER_EXECUTABLE_REQUIRED', file=sys.stderr)
         return 2
-    # execv preserves argument boundaries and exit/signal behavior. No shell and
-    # no fallback to another Flutter selected through PATH or a global config.
+    # The legacy assemble -d option splits commas in this SDK. Reuse the SDK's
+    # command with only that parser option changed; no SDK file is modified.
     try:
-        os.execv(executable, [executable, *translate_arguments(sys.argv[1:])])
-    except OSError:
+        arguments = translate_arguments(sys.argv[1:])
+        if 'assemble' in arguments:
+            sdk = Path(executable).parent.parent
+            dart = sdk / 'bin/cache/dart-sdk/bin/dart'
+            packages = sdk / 'packages/flutter_tools/.dart_tool/package_config.json'
+            metadata = json.loads((sdk / 'bin/cache/flutter.version.json').read_bytes())
+            if metadata.get('frameworkVersion') != '3.38.5' or not dart.is_file() or not packages.is_file():
+                raise OSError()
+            environment = os.environ.copy()
+            environment['FLUTTER_ROOT'] = str(sdk)
+            entrypoint = Path(__file__).with_name('flutter_assemble_entrypoint.dart')
+            os.execve(str(dart), [str(dart), '--packages=' + str(packages), str(entrypoint), *arguments], environment)
+        else:
+            os.execv(executable, [executable, *arguments])
+    except (OSError, ValueError):
         print('BLOCKED: FLUTTER_EXEC_FAILED', file=sys.stderr)
         return 2
 

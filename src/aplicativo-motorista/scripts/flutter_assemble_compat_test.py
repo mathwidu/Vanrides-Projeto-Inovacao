@@ -36,15 +36,35 @@ class AssembleCompatibilityTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             executable = Path(temporary).resolve() / 'flutter'
             executable.write_text('#!/bin/sh\nexit 0\n'); executable.chmod(0o700)
-            encoded = 'SYNTHETIC_ONE==,SYNTHETIC_TWO=='
             captured = io.StringIO()
             with patch.dict(os.environ, {'VANRIDES_FLUTTER_REAL_EXECUTABLE': str(executable)}), \
-                 patch.object(compat.sys, 'argv', ['adapter', 'assemble', '--DartDefines=' + encoded]), \
+                 patch.object(compat.sys, 'argv', ['adapter', '--version']), \
                  patch.object(compat.os, 'execv') as execution, \
                  contextlib.redirect_stdout(captured), contextlib.redirect_stderr(captured):
                 compat.main()
-            execution.assert_called_once_with(str(executable), [str(executable), 'assemble', '-dDartDefines=' + encoded])
+            execution.assert_called_once_with(str(executable), [str(executable), '--version'])
             self.assertEqual(captured.getvalue(), '')
+
+    def test_assemble_uses_the_explicit_sdks_command_with_the_same_opaque_arguments(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            sdk = Path(temporary).resolve()
+            executable = sdk / 'bin/flutter'
+            executable.parent.mkdir(); executable.write_text('#!/bin/sh\nexit 0\n'); executable.chmod(0o700)
+            dart = sdk / 'bin/cache/dart-sdk/bin/dart'
+            dart.parent.mkdir(parents=True); dart.write_text('synthetic')
+            (sdk / 'bin/cache/flutter.version.json').write_text('{"frameworkVersion":"3.38.5"}')
+            packages = sdk / 'packages/flutter_tools/.dart_tool/package_config.json'
+            packages.parent.mkdir(parents=True); packages.write_text('{}')
+            encoded = 'SYNTHETIC_ONE==,SYNTHETIC_TWO=='
+            with patch.dict(os.environ, {'VANRIDES_FLUTTER_REAL_EXECUTABLE': str(executable)}), \
+                 patch.object(compat.sys, 'argv', ['adapter', 'assemble', '--DartDefines=' + encoded]), \
+                 patch.object(compat.os, 'execve') as execution:
+                compat.main()
+            arguments = execution.call_args.args
+            self.assertEqual(arguments[0], str(dart))
+            self.assertEqual(arguments[1][-2:], ['assemble', '-dDartDefines=' + encoded])
+            self.assertEqual(arguments[1][1], '--packages=' + str(packages))
+            self.assertEqual(arguments[2]['FLUTTER_ROOT'], str(sdk))
 
     def test_missing_implicit_or_recursive_flutter_is_refused_without_argument_dump(self):
         for value in ('', 'flutter', str(Path(compat.__file__).resolve())):
