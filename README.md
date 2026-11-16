@@ -21,6 +21,7 @@ Universidade Feevale, 2026/2.
 | Testar o cadastro no WhatsApp | [Cadastro de motorista e passageiro](docs/desenvolvimento/cadastro-guiado-whatsapp.md) |
 | Acompanhar a entrega técnica | [Plano e issues](docs/desenvolvimento/entrega-mvp.md) e [evidências](program/evidence/mvp-entrega-20261116.md) |
 | Fazer os testes finais nos aparelhos | [Roteiro por plataforma](docs/desenvolvimento/rodada-final.md) |
+| Conferir falhas ou pausar envios | [Operação e recuperação](docs/desenvolvimento/operacao.md) |
 | Consultar a entrega da disciplina | [STACK](STACK.docx), [BACKLOG](BACKLOG.xlsx) e [Canvas](docs/06-canvas-mvp.md) |
 
 ## Situação do MVP
@@ -31,7 +32,7 @@ convite por link, a solicitação de vínculo e a aprovação e correção do po
 de embarque. O [guia de cadastro](docs/desenvolvimento/cadastro-guiado-whatsapp.md)
 documenta os comandos, o teste com um só WhatsApp e os resultados da rodada.
 
-Em 16/11, a API publicada está em `880ea56`, com schema V43. Presença,
+Em 16/11, a API publicada usa schema V44. Presença,
 alterações de presença e encerramento manual/automático passaram em testes
 dirigidos; a conferência dessas etapas no WhatsApp real ainda está pendente.
 Aproximação e fim automático permanecem desligados até habilitar o ensaio.
@@ -47,7 +48,7 @@ A recuperação isolada com API, PostgreSQL, Redis e n8n em fila passou no
 reinício, nos agendamentos e na restauração, sem duplicar os dois efeitos do
 canal simulado. A V44 passou também na reaplicação de exclusões sintéticas
 após restaurar o banco e no ensaio da migração sobre uma cópia recuperável;
-a publicação está em preparação e a limpeza real continua desabilitada. O registro de
+a API e o worker estão publicados e a limpeza real continua desabilitada. O registro de
 evidências distingue os testes locais, o publicado e a rodada física restante.
 
 ## Código e desenvolvimento

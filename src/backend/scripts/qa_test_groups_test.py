@@ -53,8 +53,8 @@ class TestGroupsTest(unittest.TestCase):
         return path
 
     def test_plan_has_exact_postgres_union_and_deterministic_balanced_groups(self):
-        self.assertEqual(104, len(self.postgres))
-        self.assertEqual(818, sum(self.postgres.values()))
+        self.assertEqual(105, len(self.postgres))
+        self.assertEqual(819, sum(self.postgres.values()))
         self.assertEqual(groups.plan()[1], self.plan)
         union = {}
         for cases in self.plan.values():
@@ -84,7 +84,7 @@ class TestGroupsTest(unittest.TestCase):
     def test_java_exclusions_are_only_postgres_and_default_inner_class_rule(self):
         result = subprocess.run([sys.executable, str(Path(groups.__file__)), "excludes"], capture_output=True, text=True, check=True)
         patterns = result.stdout.splitlines()
-        self.assertEqual(105, len(patterns))
+        self.assertEqual(len(self.postgres) + 1, len(patterns))
         self.assertEqual("**/*$*", patterns[0])
         for name in self.postgres:
             self.assertIn(name.replace(".", "/") + ".java", patterns)

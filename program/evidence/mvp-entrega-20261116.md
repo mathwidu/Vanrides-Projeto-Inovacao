@@ -388,3 +388,78 @@ resultado está sem provisionamento, portanto não é instalável nem comprova
 execução no iPhone. Assinatura gratuita, instalação e smoke continuam pendentes.
 O Mac bloqueado impede conferir o Xcode e usar os WhatsApps reais no momento;
 foi solicitada somente a liberação da sessão, preservando os aplicativos abertos.
+
+### V44 publicada e configuração conferida
+
+O PR #124 foi integrado por merge normal em `40ab6c22a5de5e489123fc3e6ac3f1332b6c060b`,
+preservando a linhagem e o trabalho dos colegas. O build do PR passou em 25 s.
+O [CD 43846540102](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/actions/runs/43846540102)
+passou na primeira tentativa em 1 min 50 s, incluindo build de 41 s e deploy
+de 60 s. Essa medição não é garantia de duração para toda execução.
+
+A imagem efetiva é
+`ghcr.io/mathwidu/vanrides-projeto-inovacao-team-api@sha256:4785a9a2f42106f03465701a60fdec5e78c6d601021823a7208d55e75610c6f2`,
+com JAR `375f8e5602d31a160b55eba4b63270719d1636eff77c58ba2abe8fecc0f86056`,
+schema 44 e saúde HTTPS UP. A aprovação restrita do SQL foi consumida após
+a confirmação. O banco e as integrações existentes foram preservados.
+
+As 971 entradas descompactadas do JAR publicado são idênticas às do candidato
+local `f76bcb03`, incluindo classes, recursos e bibliotecas; os bytes dos ZIPs
+diferem. São artefatos identificados separadamente. Uma nova execução isolada
+006 usa o JAR efetivamente publicado, sem recompilação. Não é necessário
+repetir suítes de comportamento por mudanças apenas documentais quando a
+equivalência integral do conteúdo de runtime estiver comprovada.
+
+O worker foi atualizado separadamente, preservando a imagem Node e o bind
+anterior de retorno. O bundle possui 54 arquivos de `6100e32`, com SHA-256
+`1a2e8c31a2eaa5cc1bfa9d6899c79c766b511f4d39693495ac46d25316e85151`.
+Saúde e convergência passaram. O probe autenticado com SYSTEM_JOB confirmou
+DISABLED e contagens zero nas cinco famílias; sem autenticação, HTTP 401.
+O worker de privacidade também está desligado. Aproximação, fim automático e
+rotinas de ensaio permanecem OFF; essa publicação não habilitou descarte real.
+
+No Redmi, a atualização 0.4.0+14 abriu a atividade novamente e o USB continua
+autorizado, com o aparelho carregando. A coleta da hierarquia por UIAutomator
+foi recusada por ausência de estado ocioso; isso não comprova falha do coletor
+nem GPS aprovado. Nenhuma coleta nova foi iniciada por essa inspeção.
+
+A tentativa 006 terminou com `CORE_AND_PRIVACY_VERIFIED` no JAR efetivo
+`375f8e56`, preservando a identidade da imagem publicada. Passaram novamente
+as quatro verificações de agenda/fila/reinício/restore e a reaplicação V44
+com ausência de Alfa, preservação de Beta/core, datas e ACK originais e journal
+intacto. Os containers exclusivos foram removidos com prova de propriedade;
+volumes foram retidos. O alcance permanece sintético e isolado, com canal
+simulado, sem WhatsApp real e `releaseEligible: false`.
+
+### Operação segura — issue 85
+
+O diagnóstico de leitura e o guia foram integrados de `43a3b48`, sem novo
+controle de runtime: a pausa existente revoga apenas DELIVERY_WORKER, e o
+retorno usa credencial nova. Os 11 testes Python passaram. O cenário único
+PostgreSQL passou em `0c9f55e` sem skips: revogação pelo operador real,
+claim/authorize/result antigos recusados, reconciliação para UNKNOWN, STOP/ACK
+e retomada de outra pendência com grant novo, sem repetir UNKNOWN. Não é
+prova HTTP, Evolution ou sensor físico.
+
+A revisão independente encontrou dois P2: paradas REVOKED/EXPIRED sem ACK
+não entravam no alerta; e o Host com underscore do DNS Swarm provocava HTTP400
+no probe de saúde. O controle com Host público retornou UP na mesma API.
+`52d3fd9` corrige os dois, sem alterar a API. O mesmo teste PG foi expandido
+para executar o SELECT canônico do helper nos três estados sem ACK e após
+o ACK; só escopo e relógio foram adaptados à fixture. Passou novamente:
+um teste, zero falhas/erros/skips, 2,740 s no caso e 8,953 s no processo.
+Armazenamento PG em tmpfs128MiB temporário, fonte restaurado exatamente.
+Os 11 testes Python e os 12 do seletor/inventário passaram; a matriz agora
+inventaria 105 classes/819 casos, sem alegação de execução integral. Um
+assert de tamanho das exclusões passou a derivar do inventário mais a regra
+de inner class; a união exata e os controles de ausência de skips continuam.
+O revisor encerrou os dois P2 sem novos achados nesse escopo.
+
+Na VPS, o diagnóstico corrigido terminou como TECHNICAL_CHECKS_OK: API/worker
+UP, banco/tarefa conferidos, quatro papéis ativos, schema44 e zero pendências
+monitoradas. O plano terminou PAUSE_PLAN_READY_NOT_EXECUTED, restrito a
+DELIVERY e preservando APP_STOP_ACK, W01 e W08. Requests com UUIDs ficaram
+privados. Nenhuma credencial ou serviço compartilhado foi alterado por essa
+conferência. O primeiro recibo do Host inválido foi preservado como falha do
+probe, sem tratá-la como indisponibilidade da API. A leitura não prova
+WhatsApp, agenda ou STOP físico, e os recibos mantêm esses campos falsos.

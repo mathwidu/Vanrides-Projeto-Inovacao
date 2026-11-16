@@ -1,10 +1,12 @@
 # Testes e resultados
 
 Situação atualizada em 16/11/2026. Cada resultado vale para a revisão e o
-ambiente indicados na evidência. A API publicada está em `880ea56`, schema V43,
-com presença, cancelamento e encerramento manual/automático. Aproximação e fim
-automático permanecem desligados. A V44 foi avaliada nos ensaios abaixo e ainda
-não está publicada nesta atualização. O
+ambiente indicados na evidência. A API publicada está em `40ab6c2`, schema V44,
+com presença, cancelamento, encerramento manual/automático e retenção. A
+[publicação da V44](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/actions/runs/43846540102)
+passou em 1 min 50 s; API, schema e HTTPS foram conferidos saudáveis. O worker
+publicado usa as 54 fontes de `6100e32`. Privacidade, aproximação, fim automático
+e habilitação de rotinas de ensaio permanecem OFF. O
 [registro da entrega](../program/evidence/mvp-entrega-20261116.md) identifica
 as versões e os limites de cada rodada.
 
@@ -20,22 +22,34 @@ as versões e os limites de cada rodada.
 | Aproximação | Política, elegibilidade, pontos compartilhados e deduplicação passaram nos testes de PostgreSQL | Medir utilidade em percurso antes de ativar avisos |
 | Encerramento | Finalização manual com revisão, chegada automática com progresso/destino/permanência e reconciliação STOP/ACK passaram em testes dirigidos e estão publicadas. | Habilitar o ensaio controlado do automático e comprovar encerramento e parada no aparelho; parâmetros ainda não calibrados em percurso. |
 | Recuperação do conjunto | Ensaio real isolado na VPS com API, PostgreSQL, worker, n8n em fila, Redis AOF e canal simulado: quatro agendas, reinícios, dois dumps restaurados em outro PG e zero efeitos duplicados. | Conferir a nova jornada com o WhatsApp real; o ensaio não comprova qualquer envio interrompido com resultado incerto. |
-| Retenção e exclusões | V44: retenções de 7/30/90 dias, journal atual fora do dump antigo, reaplicação e descarte sem ressuscitar Alfa, preservando Beta e controles do fluxo. Probe HTTP real: cinco famílias OFF, contadores zero, banco inalterado e 401 sem autenticação. | Publicar a versão avaliada e revisar a prévia antes de qualquer ativação com pessoas reais. Limpeza real OFF; rotação física de backups ainda não implementada. |
-| Migração e retorno | Cópia real do banco ativo, 107 relações e cerca de 2,77 MB, restaurada em destino isolado. API anterior/V43, candidata/V44 e anterior/V44 ficaram saudáveis, com conteúdo restaurado comparado. | Publicação V44 e conferência posterior da versão. Nenhum serviço ativo foi alterado pelo ensaio. |
+| Retenção e exclusões | V44 publicada: retenções de 7/30/90 dias, journal atual fora do dump antigo, reaplicação e descarte sem ressuscitar Alfa, preservando Beta e controles do fluxo. Probe HTTP publicado: cinco famílias DISABLED, contadores zero e 401 sem autenticação; no ensaio, banco também permaneceu inalterado. | Revisar a prévia antes de qualquer ativação com pessoas reais. Limpeza real OFF; rotação física de backups ainda não implementada. |
+| Migração e retorno | Cópia real do banco ativo, 107 relações e cerca de 2,77 MB, restaurada em destino isolado. API anterior/V43, candidata/V44 e anterior/V44 ficaram saudáveis, com conteúdo restaurado comparado. Publicação V44 concluída e saúde conferida. | Preservar o retorno e revisar a evidência. Nenhum serviço ativo foi alterado pelo ensaio de migração. |
+| Operação e pausa | CLI de diagnóstico/plano e guia implementados; 11 testes Python e um cenário PostgreSQL aprovados. O serviço real recusou a credencial DELIVERY revogada, manteve reconciliação e STOP/ACK e retomou a pendência com uma nova credencial, preservando UNKNOWN. | Executar o diagnóstico e o ensaio operacional isolado de alerta/plano. O teste de serviços não comprova HTTP, Evolution, WhatsApp real nem parada física. |
 
 Historicamente, a revisão `dd12cf0` passou em 1.683 testes do backend e seis
 jornadas com provedor simulado. O
 [registro de localização e aproximação](../program/evidence/VR-WA-130-APPROACH.md)
 identifica aquela versão; seus números não representam uma execução da V44.
 
-A matriz atual inventaria 104 classes e 818 casos PostgreSQL. Isso é inventário,
+A matriz atual inventaria 105 classes e 819 casos PostgreSQL. Isso é inventário,
 não execução integral da suíte. As mudanças desta entrega receberam testes
 PostgreSQL proporcionais e 59 testes Node dirigidos na composição final da
-privacidade. O ensaio isolado terminou como `CORE_AND_PRIVACY_VERIFIED`, com
-dois eventos, dois efeitos no canal simulado e zero duplicados. O
+privacidade. A rodada isolada 006 terminou como `CORE_AND_PRIVACY_VERIFIED`,
+repetindo os quatro checks de fila, agendas, reinícios e restauração com o JAR
+efetivamente publicado. Foram dois eventos, dois efeitos no canal simulado e
+zero duplicados. Journal e ACK originais permaneceram intactos, e os contêineres
+próprios foram removidos com volumes diagnósticos preservados. O
 `releaseEligible: false` do recibo limita o ensaio e não constitui aceite de
 piloto, produção ou WhatsApp real. O inventário dos backups fornece prévia de
 expiração em sete dias, sem deleção automática de arquivos ou volumes.
+
+O [guia de operação](desenvolvimento/operacao.md) distingue diagnóstico,
+plano e revogação confirmada. O teste PostgreSQL de pausa passou sem falhas,
+erros ou skips; seus serviços transacionais e banco são reais, mas o cenário
+continua sintético. A regressão executa também a consulta canônica de paradas
+pendentes para três estados e sua baixa após ACK. Na VPS, o diagnóstico de
+leitura terminou sem alertas, e o plano identificou somente a credencial de
+envio, preservando STOP e reconciliação. Nenhuma pausa real foi executada.
 
 A CI de PR e `main` executa construção, sem testes automáticos. Na `main`, a
 imagem e o deploy da API/interface são publicados pelo fluxo próprio. Os
