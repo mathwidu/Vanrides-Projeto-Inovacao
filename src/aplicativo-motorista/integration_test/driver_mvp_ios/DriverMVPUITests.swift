@@ -13,6 +13,37 @@ enum MVPPairingCodeLabel {
   }
 }
 
+// Persist and clean up before XCTest can abort through an Objective-C exception.
+func finishResult(_ value: [String: Any], commandFile: URL, resultFile: URL, codeFile: URL) -> String? {
+  var result = value
+  do {
+    if result["success"] as? Bool != true {
+      result["pairingCodeExported"] = false
+      if FileManager.default.fileExists(atPath: codeFile.path) {
+        try FileManager.default.removeItem(at: codeFile)
+      }
+    }
+    if FileManager.default.fileExists(atPath: commandFile.path) {
+      try FileManager.default.removeItem(at: commandFile)
+    }
+  } catch {
+    result["success"] = false
+    result["pairingCodeExported"] = false
+    result["code"] = "RESULT_CLEANUP_FAILED"
+    try? FileManager.default.removeItem(at: codeFile)
+  }
+  do {
+    let data = try JSONSerialization.data(withJSONObject: result, options: [.sortedKeys])
+    try data.write(to: resultFile, options: [.atomic, .completeFileProtection])
+    try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: resultFile.path)
+  } catch {
+    try? FileManager.default.removeItem(at: codeFile)
+    try? FileManager.default.removeItem(at: resultFile)
+    return "RESULT_WRITE_FAILED"
+  }
+  return result["success"] as? Bool == true ? nil : (result["code"] as? String ?? "COMMAND_FAILED")
+}
+
 // Separate runner, operating only the normal installed MVP. No credentials,
 // simulated positions, permission resets or test commands enter the driver.
 final class DriverMVPUITests: XCTestCase {
@@ -34,16 +65,7 @@ final class DriverMVPUITests: XCTestCase {
     let resultFile = documents.appendingPathComponent("result.json")
     let codeFile = documents.appendingPathComponent("pairing-code.json")
     try? FileManager.default.removeItem(at: resultFile)
-    defer { try? FileManager.default.removeItem(at: commandFile) }
     var result: [String: Any] = ["schemaVersion": 1, "success": false, "pairingCodeExported": false]
-    defer {
-      if result["success"] as? Bool != true {
-        try? FileManager.default.removeItem(at: codeFile)
-      }
-      if let data = try? JSONSerialization.data(withJSONObject: result, options: [.sortedKeys]) {
-        try? data.write(to: resultFile, options: [.atomic, .completeFileProtection])
-      }
-    }
     do {
       // Every command invalidates the previous lab export, even invalid commands.
       try clearPairingCodeExport(codeFile)
@@ -59,6 +81,8 @@ final class DriverMVPUITests: XCTestCase {
       guard app.wait(for: .runningForeground, timeout: 15) else {
         throw Failure(code: "APP_NOT_FOREGROUND")
       }
+      // Keep a sanitized pre-command observation even when a control is absent.
+      result["snapshot"] = snapshot(app)
       switch fixture.command {
       case "pair":
         try tap(app, "Vincular este celular")
@@ -94,10 +118,11 @@ final class DriverMVPUITests: XCTestCase {
       result["success"] = true
     } catch let failure as Failure {
       result["code"] = failure.code
-      XCTFail("MVP_UI_" + failure.code)
     } catch {
       result["code"] = "COMMAND_FAILED"
-      XCTFail("MVP_UI_COMMAND_FAILED")
+    }
+    if let code = finishResult(result, commandFile: commandFile, resultFile: resultFile, codeFile: codeFile) {
+      XCTFail("MVP_UI_" + code)
     }
   }
 
@@ -181,9 +206,28 @@ final class DriverMVPUITests: XCTestCase {
   private func snapshot(_ app: XCUIApplication) -> [String: Bool] {
     let pending = has(app, "Parada solicitada. Aguardando confirmação.")
     let stopped = ["Localização interrompida", "Trajeto concluído", "Saída cancelada"].contains { has(app, $0) }
+    let pair = button(app, "Vincular este celular")
+    let show = button(app, "Mostrar código")
+    let copy = button(app, "Copiar código")
+    let refresh = button(app, "Atualizar vínculo")
     return [
+      "checkingDevice": has(app, "Verificando o aparelho"),
+      "unconfigured": has(app, "Ambiente não configurado"),
+      "unpaired": has(app, "Vincule seu celular"),
+      "requesting": has(app, "Concluindo seu pedido"),
       "paired": has(app, "Aparelho vinculado"),
       "pairingPending": has(app, "Confirme pelo WhatsApp"),
+      "savedSession": has(app, "Vínculo salvo neste celular"),
+      "setupRequired": has(app, "Verifique o vínculo"),
+      "expired": has(app, "Renove o vínculo"),
+      "revoking": has(app, "Desvinculação em andamento"),
+      "revoked": has(app, "Aparelho desvinculado"),
+      "launcherRequired": has(app, "Feche o VanRides e abra novamente pelo ícone para criar um vínculo."),
+      "pairControlPresent": pair.exists,
+      "canPair": pair.exists && pair.isEnabled,
+      "canShowCode": show.exists && show.isEnabled,
+      "canCopyCode": copy.exists && copy.isEnabled,
+      "canRefresh": refresh.exists && refresh.isEnabled,
       "startAvailable": button(app, "Iniciar localização desta saída").exists,
       "canStop": button(app, "Parar localização").exists,
       "stopPending": pending,

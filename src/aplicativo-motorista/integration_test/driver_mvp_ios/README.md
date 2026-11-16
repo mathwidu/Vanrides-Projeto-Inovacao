@@ -105,6 +105,14 @@ de erro constantes; não contém código de pareamento, clipboard, token, URL ou
 coordenadas. Logs/xcresult completos continuam privados e não devem ir ao Git.
 Anexos de sistema/usuário e cobertura ficam desabilitados. `inspect` observa a
 UI; não substitui confirmação de posição no backend ou recibo do WhatsApp.
+O snapshot observa somente labels conhecidos: os onze headings de vínculo,
+o aviso para abrir pelo ícone e a presença/habilitação dos controles. Não
+exporta texto livre, código, clipboard ou coordenadas; `gpsFresh` continua
+sendo apenas o booleano de um label fixo. Um snapshot sem heading reconhecido
+não identifica o estado inicial. Em falha de comando, o snapshot é a observação
+anterior à tentativa; não representa uma confirmação posterior da ação.
+O runner grava `result.json` e conclui a limpeza antes de chamar `XCTFail`,
+sem depender de `defer` para sobreviver à interrupção do XCTest.
 
 ### Ponte privada de laboratório para o código
 

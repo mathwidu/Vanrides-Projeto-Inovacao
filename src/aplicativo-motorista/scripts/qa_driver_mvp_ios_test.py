@@ -76,7 +76,7 @@ class MVPUIHelperTest(unittest.TestCase):
             mvp.prepare(argparse.Namespace(command='export-any-label'))
 
     @unittest.skipUnless(shutil.which('swift'), 'Swift is required for the actual offline label matcher')
-    def test_actual_swift_matcher_requires_the_entire_eight_consonant_label(self):
+    def test_actual_swift_matcher_and_result_persistence_before_test_failure(self):
         source = mvp.SOURCE.read_text()
         matcher = source.split('import XCTest\n', 1)[1].split('final class DriverMVPUITests:', 1)[0]
         harness = '''
@@ -85,6 +85,31 @@ let refused = ["BCDFGHJ", "BCDFGHJKL", "bcdfghjk", "BCDFGHJA", "BCDFGHJ1",
                " BCDFGHJK", "BCDFGHJK\\n", "prefix BCDFGHJK", "BCDFGHJK suffix"]
 guard accepted.allSatisfy(MVPPairingCodeLabel.matches),
       refused.allSatisfy({ !MVPPairingCodeLabel.matches($0) }) else { exit(1) }
+let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+try FileManager.default.createDirectory(at: root, withIntermediateDirectories: false)
+defer { try? FileManager.default.removeItem(at: root) }
+let commandFile = root.appendingPathComponent("command.json")
+let resultFile = root.appendingPathComponent("result.json")
+let codeFile = root.appendingPathComponent("pairing-code.json")
+try Data("{}".utf8).write(to: commandFile)
+try Data("synthetic export".utf8).write(to: codeFile)
+let failure: [String: Any] = ["success": false, "pairingCodeExported": true,
+                            "code": "CONTROL_UNAVAILABLE", "snapshot": ["expired": true]]
+guard finishResult(failure, commandFile: commandFile, resultFile: resultFile, codeFile: codeFile) == "CONTROL_UNAVAILABLE",
+      !FileManager.default.fileExists(atPath: commandFile.path),
+      !FileManager.default.fileExists(atPath: codeFile.path),
+      let stored = try JSONSerialization.jsonObject(with: Data(contentsOf: resultFile)) as? [String: Any],
+      stored["code"] as? String == "CONTROL_UNAVAILABLE",
+      stored["pairingCodeExported"] as? Bool == false,
+      (stored["snapshot"] as? [String: Bool])?["expired"] == true,
+      (try FileManager.default.attributesOfItem(atPath: resultFile.path)[.posixPermissions] as? NSNumber)?.intValue == 0o600
+      else { exit(2) }
+try Data("{}".utf8).write(to: commandFile)
+try Data("synthetic export".utf8).write(to: codeFile)
+guard finishResult(["success": true, "pairingCodeExported": true], commandFile: commandFile,
+                   resultFile: resultFile, codeFile: codeFile) == nil,
+      FileManager.default.fileExists(atPath: codeFile.path),
+      !FileManager.default.fileExists(atPath: commandFile.path) else { exit(3) }
 '''
         checked = subprocess.run(['swift', '-'], input='import Foundation\n' + matcher + harness,
                                  text=True, capture_output=True, timeout=60, check=False)
@@ -107,6 +132,8 @@ guard accepted.allSatisfy(MVPPairingCodeLabel.matches),
         self.assertNotIn('result[', export)
         for forbidden in ('UIPasteboard', 'debugDescription', 'print(', 'NSLog('):
             self.assertNotIn(forbidden, source)
+        self.assertEqual(source.count('XCTFail('), 1)
+        self.assertLess(source.index('if let code = finishResult(result,'), source.index('XCTFail('))
 
     def test_private_input_refuses_public_files_symlinks_and_git_paths(self):
         with tempfile.TemporaryDirectory() as temporary:
