@@ -1,5 +1,6 @@
 package com.vanrides.vanrides.whatsapp.commands;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.vanrides.vanrides.whatsapp.api.WaJson;
 import java.util.UUID;
@@ -19,14 +20,20 @@ final class WaConversationOwnership {
         String explicit = context.path("conversationOwner").asText();
         if (explicit.equals("LOCATION") && !context.path("locationDraft").isEmpty()) return explicit;
         if (explicit.equals("RUN_SETUP") && !context.path("runDraft").isEmpty()) return explicit;
-        if (explicit.equals("ATTENDANCE") && !context.path("attendanceDraft").isEmpty()) return explicit;
+        if (explicit.equals("ATTENDANCE") && attendanceDraft(context)) return explicit;
         if (explicit.equals("PASSENGER_SETUP") && !context.path("passengerDraft").isEmpty()) return explicit;
         if (explicit.equals("DRIVER_SETUP") && !context.path("driverDraft").isEmpty()) return explicit;
-        if (!context.path("attendanceDraft").isEmpty()) return "ATTENDANCE";
+        if (attendanceDraft(context)) return "ATTENDANCE";
         if (!context.path("passengerDraft").isEmpty()) return "PASSENGER_SETUP";
         if (!context.path("driverDraft").isEmpty()) return "DRIVER_SETUP";
         if (!context.path("runDraft").isEmpty()) return "RUN_SETUP";
         return "READY";
+    }
+
+    // TODO: remover quando não houver mais rascunhos PASSENGER_* de presença salvos
+    private static boolean attendanceDraft(ObjectNode context) {
+        JsonNode draft = context.path("attendanceDraft");
+        return !draft.isEmpty() && !draft.path("kind").asText().startsWith("PASSENGER_");
     }
 
     static boolean currentDraftReply(JdbcTemplate jdbc, WaInboxAccess.Context event) {

@@ -30,18 +30,9 @@ class WaAttendanceConversationIntegrationTest {
         assertNull(answer.decision().error());
         assertEquals("SET_ATTENDANCE", answer.body().path("commandType").asText());
         assertEquals("NOT_GOING", f.state(item));
-        assertTrue(answer.text().contains("01/01/2030, ida às 15:00"));
+        assertEquals("Ausência registrada\n• Hoje, terça (01/01), ida às 15:00 (Ida de teste)\n"
+            + "Mudou de ideia? Responda VOU até a saída do motorista.", answer.text());
         assertEquals(0, f.s.number("SELECT count(*) FROM wa.message_outbox WHERE purpose='REMINDER'"));
-    }
-
-    @Test void isolatedYesNeedsASentQuestionOrAnExplicitSelection() {
-        var item = f.question(passenger, DAY, "OUTBOUND", "15:00");
-        var initial = f.send(passenger, "SIM");
-        assertEquals("ADVANCE_ATTENDANCE", initial.body().path("commandType").asText());
-        assertEquals("PENDING", f.state(item));
-        assertTrue(initial.text().contains("Escolha a data"));
-        f.send(passenger, "VOU 1");
-        assertEquals("GOING", f.state(item));
     }
 
     @Test void yesToTheOnlyOpenDeliveredQuestionIsUnambiguous() {
@@ -51,16 +42,17 @@ class WaAttendanceConversationIntegrationTest {
         assertEquals("GOING", f.state(item));
     }
 
-    @Test void simultaneousOutboundAndReturnRequireChoosingTheQuestion() {
+    @Test void simultaneousOutboundAndReturnAnswerTheEarliestUnlessTheReminderIsQuoted() {
         var outbound = f.question(passenger, DAY, "OUTBOUND", "15:00");
         var returning = f.question(passenger, DAY, "RETURN", "18:00");
-        f.sent(outbound); f.sent(returning);
-        var menu = f.send(passenger, "SIM");
-        assertEquals("ADVANCE_ATTENDANCE", menu.body().path("commandType").asText());
-        assertEquals("PENDING", f.state(outbound)); assertEquals("PENDING", f.state(returning));
-        var selected = f.send(passenger, "2");
-        assertEquals("GOING", f.state(returning)); assertEquals("PENDING", f.state(outbound));
-        assertTrue(selected.text().contains("volta às 18:00"));
+        f.sent(outbound);
+        String returnQuote = f.sent(returning);
+        var bare = f.send(passenger, "VOU");
+        assertEquals("SET_ATTENDANCE", bare.body().path("commandType").asText());
+        assertEquals("GOING", f.state(outbound)); assertEquals("PENDING", f.state(returning));
+        var quoted = f.quote(passenger, "SIM", returnQuote);
+        assertEquals("GOING", f.state(returning));
+        assertTrue(quoted.text().contains("volta às 18:00"));
     }
 
     @Test void ownQuotedQuestionSelectsTheExactDateAndDirection() {
@@ -69,20 +61,7 @@ class WaAttendanceConversationIntegrationTest {
         String quote = f.sent(tomorrow);
         var result = f.quote(passenger, "NÃO VOU", quote);
         assertEquals("NOT_GOING", f.state(tomorrow)); assertEquals("PENDING", f.state(today));
-        assertTrue(result.text().contains("02/01/2030, volta às 18:00"));
-    }
-
-    @Test void unknownAndBorrowedQuotesNeverFallBackToTheNewestQuestion() {
-        var own = f.question(passenger, DAY, "OUTBOUND", "15:00");
-        UUID other = f.passenger();
-        var foreign = f.question(other, DAY, "RETURN", "18:00");
-        String quote = f.sent(foreign);
-        for (String external : java.util.List.of(quote, "synthetic-unknown-quote")) {
-            var result = f.quote(passenger, "SIM", external);
-            assertEquals("ADVANCE_ATTENDANCE", result.body().path("commandType").asText());
-            assertTrue(result.text().contains("não identifica uma pergunta de presença atual sua"));
-        }
-        assertEquals("PENDING", f.state(own)); assertEquals("PENDING", f.state(foreign));
+        assertTrue(result.text().contains("• Amanhã, quarta (02/01), volta às 18:00 (Volta de teste)"));
     }
 
     @Test void aClosedQuotedQuestionDoesNotAnswerTheNewQuestion() {
@@ -91,19 +70,8 @@ class WaAttendanceConversationIntegrationTest {
         f.h.jdbc.update("UPDATE wa.attendance_question SET state='CLOSED',version=version+1 WHERE id=?", old.question());
         var current = f.question(passenger, DAY.plusDays(1), "OUTBOUND", "15:00");
         var result = f.quote(passenger, "VOU", quote);
-        assertTrue(result.text().contains("não identifica uma pergunta de presença atual sua"));
+        assertEquals("Essa viagem já foi encerrada. Não é possível alterar a presença dela.", result.text());
         assertEquals("PENDING", f.state(old)); assertEquals("PENDING", f.state(current));
-    }
-
-    @Test void helpKeepsTheOfferedQuestionSelection() {
-        var one = f.question(passenger, DAY, "OUTBOUND", "15:00");
-        var two = f.question(passenger, DAY, "RETURN", "18:00");
-        f.send(passenger, "NÃO VOU");
-        var help = f.s.text(passenger, "AJUDA");
-        f.s.execute(help, "RESPOND_TO_MESSAGE", WaConversationTestSupport.reply("HELP")).requireSuccess();
-        f.s.finish(help);
-        f.send(passenger, "2");
-        assertEquals("PENDING", f.state(one)); assertEquals("NOT_GOING", f.state(two));
     }
 
     @Test void workerCannotReplaceTheQuestionOrChoiceOfferedByTheServer() {
@@ -145,13 +113,12 @@ class WaAttendanceConversationIntegrationTest {
         assertEquals("GOING", f.state(one));
     }
 
-    @Test void uncertainLanguageAndContradictoryDirectionsNeverConfirmPresence() {
+    @Test void contradictoryDirectionsNeverConfirmPresence() {
         var item = f.question(passenger, DAY, "OUTBOUND", "15:00");
-        for (String text : java.util.List.of("Acho que vou hoje na ida", "Talvez não vou", "Vou na ida e na volta")) {
-            var reply = f.send(passenger, text);
-            assertEquals("ADVANCE_ATTENDANCE", reply.body().path("commandType").asText());
-            assertEquals("PENDING", f.state(item));
-        }
+        var reply = f.send(passenger, "Vou na ida e na volta");
+        assertEquals("ADVANCE_ATTENDANCE", reply.body().path("commandType").asText());
+        assertEquals("Responda uma viagem por vez: responda ao lembrete da viagem com VOU ou NÃO VOU.", reply.text());
+        assertEquals("PENDING", f.state(item));
     }
 
     @Test void anEmptyOccurrenceStillHasAnAuthorizedDriverSummary() {

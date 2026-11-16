@@ -52,12 +52,12 @@ final class WaAttendanceSummary {
 
     String render(UUID driver, JsonNode occurrence, int page) {
         if (occurrence.path("state").asText().equals("CANCELED")) {
-            return "A ocorrência de " + WaAttendanceQuestions.label(occurrence) + " foi cancelada. Não há passageiros previstos para essa saída.";
+            return "A ocorrência de " + WaAttendanceQuestions.label(occurrence, questions.clock.now()) + " foi cancelada. Não há passageiros previstos para essa saída.";
         }
         var runs = questions.jdbc.queryForList("SELECT id,state FROM wa.operation_run WHERE occurrence_id=? AND driver_id=? AND state<>'PLANNED'",
             WaAttendanceQuestions.id(occurrence, "id"), driver);
         if (!runs.isEmpty() && runs.get(0).get("state").equals("CANCELED")) {
-            return "A saída de " + WaAttendanceQuestions.label(occurrence) + " foi cancelada. Não há passageiros previstos para essa saída.";
+            return "A saída de " + WaAttendanceQuestions.label(occurrence, questions.clock.now()) + " foi cancelada. Não há passageiros previstos para essa saída.";
         }
         boolean started = !runs.isEmpty();
         ArrayNode members = WaJson.MAPPER.createArrayNode();
@@ -93,7 +93,7 @@ final class WaAttendanceSummary {
         for (JsonNode member : members) if (member.path("operationalIncluded").isBoolean()) { pageSize = 4; break; }
         int last = Math.max(0, (members.size() - 1) / pageSize);
         int selected = Math.max(0, Math.min(page, last));
-        StringBuilder text = new StringBuilder("Presenças de ").append(WaAttendanceQuestions.label(occurrence))
+        StringBuilder text = new StringBuilder("Presenças de ").append(WaAttendanceQuestions.label(occurrence, questions.clock.now()))
             .append(". Confirmados ").append(going).append(". Não vão ").append(absent)
             .append(". Pendentes ").append(pending)
             .append(started ? ". Lista capturada na partida. Os pendentes entraram na lista da partida. Página " : ". Os pendentes continuam previstos. Página ")

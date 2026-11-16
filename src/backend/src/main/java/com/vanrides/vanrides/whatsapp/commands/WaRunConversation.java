@@ -102,7 +102,7 @@ final class WaRunConversation {
                 ObjectNode row = draft.path("action").asText().equals("RESUME") ? resumedOccurrence(actor.identityId(), id)
                     : summaries.own(actor.identityId(), questions.instance(event), id);
                 if (row == null) throw WaProblem.missing();
-                draft.put("occurrence", id.toString()).put("label", WaAttendanceQuestions.label(row));
+                draft.put("occurrence", id.toString()).put("label", WaAttendanceQuestions.storedLabel(row));
                 if (draft.path("action").asText().equals("RESUME")) {
                     ObjectNode run = resume(actor.identityId(), id);
                     draft.put("rosterDigest", run.path("digest").asText()).put("rosterText", summaries.render(actor.identityId(), row, 0)).put("stage", "REVIEW");
@@ -177,7 +177,7 @@ final class WaRunConversation {
             if (action.equals("RESUME") ? !resumable : active || !occurrence.path("state").asText().equals("PLANNED")) continue;
             if (action.equals("START") && !LocalDate.parse(occurrence.path("local_date").asText()).equals(
                     clock.now().atZone(ZoneId.of(occurrence.path("schedule_snapshot").path("timezone").asText(occurrence.path("timezone").asText()))).toLocalDate())) continue;
-            choices.add(WaDriverDraftStore.json().put("id", id.toString()).put("label", WaAttendanceQuestions.label(occurrence)));
+            choices.add(WaDriverDraftStore.json().put("id", id.toString()).put("label", WaAttendanceQuestions.storedLabel(occurrence)));
         }
         if (choices.size() > 30) { choices.removeAll(); draft.put("tooMany", true); }
         return draft;

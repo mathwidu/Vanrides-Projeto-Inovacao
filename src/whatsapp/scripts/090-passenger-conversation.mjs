@@ -96,7 +96,7 @@ export function passengerConversation({ input, tools, actor, address, peers, ins
   }
   async function deliverReminder(person, box) {
     demand(byActor.get(person.actor)?.address === person.address && uuid(box.id) && typeof box.text === 'string'
-      && box.text.includes('VOU') && box.text.includes('pendente'), 'ATTENDANCE_REMINDER_INVALID');
+      && box.text.includes('VOU') && box.text.includes('continua previsto'), 'ATTENDANCE_REMINDER_INVALID');
     provider.enqueue({ outboxId: box.id, address: person.address, text: box.text });
     await control('/v1/dispatch-one', 'dispatch', 'SUBMITTED'); deliveries++;
     demand(provider.counts().accepted === deliveries && provider.counts().failures === 0

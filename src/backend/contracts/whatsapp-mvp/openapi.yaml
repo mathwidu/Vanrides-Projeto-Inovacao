@@ -5605,7 +5605,7 @@
         "type": "object",
         "additionalProperties": false,
         "properties": {},
-        "description": "Abre ou continua a seleção de presença desta conversa autenticada."
+        "description": "Passageiro: pede a resposta de orientação de presença (sem viagem, viagem encerrada ou resposta ambígua), sem alterar dados. Motorista: abre ou continua a lista de presenças desta conversa autenticada."
       },
       "AdvanceAttendanceCommand": {
         "type": "object",
