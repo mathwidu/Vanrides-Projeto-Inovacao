@@ -155,6 +155,21 @@
       "seconds": 12.92
     },
     {
+      "className": "com.vanrides.vanrides.whatsapp.privacy.WaPrivacyBoundaryIntegrationTest",
+      "tests": 7,
+      "seconds": 5.218
+    },
+    {
+      "className": "com.vanrides.vanrides.whatsapp.privacy.WaPrivacyErasureIntegrationTest",
+      "tests": 11,
+      "seconds": 12.229
+    },
+    {
+      "className": "com.vanrides.vanrides.whatsapp.privacy.WaPrivacyTerminalContentIntegrationTest",
+      "tests": 6,
+      "seconds": 6.742
+    },
+    {
       "className": "com.vanrides.vanrides.whatsapp.team.TeamAdmissionIntegrationTest",
       "tests": 8,
       "seconds": 0
@@ -388,6 +403,11 @@
       "className": "com.vanrides.vanrides.whatsapp.transport.WaPassengerWizardIntegrationTest",
       "tests": 12,
       "seconds": 39.37
+    },
+    {
+      "className": "com.vanrides.vanrides.whatsapp.transport.WaPrivacyRunConversationIntegrationTest",
+      "tests": 2,
+      "seconds": 5.112
     },
     {
       "className": "com.vanrides.vanrides.whatsapp.transport.WaRoutineEligibilityIntegrationTest",

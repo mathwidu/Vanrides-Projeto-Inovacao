@@ -171,3 +171,28 @@ do novo app conste como retomada no Android. Isso não foi contabilizado como
 smoke visual ou GPS. A sessão do Mac também estava bloqueada ao abrir WhatsApp.
 Jornada real, habilitação controlada dos avisos e rodada física continuam
 separadas dos resultados de build, instalação e publicação acima.
+
+## Privacidade em integração — sem limpeza real
+
+V44 e o lifecycle foram integrados. A correção passou em 53 casos únicos/7
+classes PostgreSQL: mensagens recentes de terceiros preservadas, cópias
+reais de motivo/revisão removidas depois do prazo, filas fora dos locks de
+perfil, gate de completude e autoridade entre transações. Falhas iniciais de
+fixture foram preservadas, e somente os casos afetados foram repetidos.
+Uma revisão posterior identificou lifecycle multi-instância; o addendo
+`ae3a953` nega fechamento/descarte nesse caso, com sete casos Boundary
+aprovados, sem pulos. A matriz passou a 94 classes/745 casos PostgreSQL.
+
+O journal de filesystem passou em 15 testes no Mac, sem pulos. Incluem
+inicialização explícita, escrita parcial, retry após falha de fsync do
+diretório, JSON estrito, datas da política, snapshot atômico e duas JVMs
+separadas disputando o FileLock. A primeira rodada falhou no caminho
+canônico da fixture temporária do macOS; o fixture passou a usar toRealPath,
+sem enfraquecer a validação do adapter. O teste é específico de POSIX; não
+certifica Windows nem o filesystem da VPS.
+
+A revisão independente do adapter encerrou estaticamente dois achados de
+durabilidade e parsing, corrigidos antes da rodada verde. O journal ainda
+não está vinculado ao runtime/restore; retenção geral e recuperação do
+conjunto seguem em implementação. A V44 não foi publicada, a limpeza real
+está desabilitada e #83/#84 permanecem abertas.
