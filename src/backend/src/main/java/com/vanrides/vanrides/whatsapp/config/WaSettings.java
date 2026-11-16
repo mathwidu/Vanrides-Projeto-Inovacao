@@ -18,6 +18,7 @@ public final class WaSettings {
     private final boolean newStartsEnabled;
     private final boolean cohortOnly;
     private final boolean approachEnabled;
+    private final boolean autoFinishEnabled;
     private final Set<UUID> approachReviewedRoutines;
     private final String environment;
     private final String baseUrl;
@@ -34,6 +35,7 @@ public final class WaSettings {
         newStartsEnabled = flag(env, "new-starts-enabled", true);
         cohortOnly = flag(env, "test-cohort-only", true);
         approachEnabled = flag(env, "approach-enabled", false);
+        autoFinishEnabled = flag(env, "auto-finish-enabled", false);
         try {
             String reviewed = env.getProperty("vanrides.wa.approach-reviewed-routine-ids", "");
             approachReviewedRoutines = reviewed.isBlank() ? Set.of() : java.util.Arrays.stream(reviewed.split(",", -1))
@@ -91,6 +93,7 @@ public final class WaSettings {
     public boolean newStartsEnabled() { return enabled && newStartsEnabled; }
     public boolean cohortOnly() { return cohortOnly; }
     public boolean approachEnabled() { return enabled && approachEnabled; }
+    public boolean autoFinishEnabled() { return enabled && autoFinishEnabled; }
     public boolean approachReviewed(UUID routine) { return approachReviewedRoutines.contains(routine); }
     public boolean configured() { return hashKey.length == 32 && responseKey.length == 32; }
     public String environment() { return environment; }

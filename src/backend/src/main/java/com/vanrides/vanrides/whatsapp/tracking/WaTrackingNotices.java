@@ -22,6 +22,8 @@ final class WaTrackingNotices {
             """,UUID.randomUUID(),part,WaJson.write(Map.of("type","TEXT","text",text,"referenceTime",now.toString())),
             ts(now),ts(now.plusSeconds(300)),ts(now),session.intent());
     }
+    void finished(Session session,Instant now) { save(session,"run-finished","Viagem encerrada automaticamente no destino. Novos avisos foram cancelados. A parada da coleta ainda aguarda confirmação do aplicativo.",now); }
+    void stopped(Session session,Instant now) { save(session,"run-stop-confirmed","O aplicativo confirmou a parada da coleta da viagem encerrada. Nenhuma nova coleta foi iniciada por essa confirmação.",now); }
     void confirmed(Session session,Instant now) { save(session,"run-gps-confirmed","Saída iniciada. O VanRides recebeu uma localização GPS válida do aparelho.",now); }
     void unavailable(Session session,Instant now) { save(session,"run-gps-unavailable","A localização da saída está indisponível. O acompanhamento precisa ser recuperado no aplicativo.",now); }
 }

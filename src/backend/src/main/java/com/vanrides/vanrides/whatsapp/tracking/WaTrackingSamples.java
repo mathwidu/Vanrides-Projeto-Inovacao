@@ -15,8 +15,8 @@ import static com.vanrides.vanrides.whatsapp.tracking.WaTrackingStore.*;
 
 /** Individual durable receipts do not infer a contiguous ACK from the highest sequence. */
 final class WaTrackingSamples {
-    private final WaTrackingStore store; private final WaTrackingNotices notices; private final WaApproachDecisions approach;
-    WaTrackingSamples(WaTrackingStore store,WaSettings settings) { this.store=store; notices=new WaTrackingNotices(store.jdbc); approach=new WaApproachDecisions(store.jdbc,settings); }
+    private final WaTrackingStore store; private final WaTrackingNotices notices; private final WaApproachDecisions approach; private final WaRunFinishes finishes;
+    WaTrackingSamples(WaTrackingStore store,WaSettings settings) { this.store=store; notices=new WaTrackingNotices(store.jdbc); approach=new WaApproachDecisions(store.jdbc,settings); finishes=new WaRunFinishes(store.jdbc,settings); }
     ObjectNode ingest(Session session,Run run,ObjectNode request,Instant now,boolean enabled) {
         WaJson.fields(request,"sessionId","generation","batchId","deviceTime","samples");
         if(!WaJson.uuid(request,"sessionId").equals(session.id()) || WaTrackingPolicy.positive(request,"generation")!=session.generation()) throw WaProblem.missing();
@@ -71,7 +71,10 @@ final class WaTrackingSamples {
                 """,lastSequence,ts(lastCaptured),ts(now),newest.path("latitude").doubleValue(),newest.path("longitude").doubleValue(),newest.path("accuracyM").doubleValue(),session.id());
             store.jdbc.update("UPDATE wa.operation_run SET state='TRACKING',started_at=COALESCE(started_at,?),start_failure_expires_at=NULL,version=version+1 WHERE id=? AND state IN ('STARTING','DEGRADED')",ts(now),run.id());
             notices.confirmed(session,now);
-            for(var fix:newFixes) approach.accept(session.id(),run.id(),fix,now);
+            for(var fix:newFixes) {
+                approach.accept(session.id(),run.id(),fix,now);
+                finishes.accept(session,run.id(),fix,now,fix==newest);
+            }
         } else if(clockSkew && continuing) store.jdbc.update("UPDATE wa.tracking_session SET gps_state='CLOCK_SKEW',version=version+1 WHERE id=?",session.id());
         Session updated=store.session(session.id(),session.driver()); Run updatedRun=store.run(run.id(),run.driver());
         // Only sequence outcomes are immutable. Authorization and GPS are projected live,

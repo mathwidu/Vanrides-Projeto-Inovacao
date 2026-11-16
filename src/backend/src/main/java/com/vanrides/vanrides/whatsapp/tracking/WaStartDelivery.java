@@ -54,6 +54,8 @@ public final class WaStartDelivery {
         if(row==null) return false;
         if(!"run-gps-v1".equals(row.get("policy_version"))) return true;
         if(row.get("notice_intent")==null || !row.get("notice_intent").equals(row.get("session_intent"))) return false;
+        if ("run-finished".equals(row.get("response_part"))) return "COMPLETED".equals(row.get("state")) && row.get("stopped_at")==null;
+        if ("run-stop-confirmed".equals(row.get("response_part"))) return java.util.Set.of("COMPLETED","CANCELED").contains(row.get("state")) && row.get("stopped_at")!=null;
         boolean valid=confirmed(row);
         return "run-gps-confirmed".equals(row.get("response_part"))?valid:
             ("DEGRADED".equals(row.get("state")) || "START_FAILED".equals(row.get("state"))) && !valid;

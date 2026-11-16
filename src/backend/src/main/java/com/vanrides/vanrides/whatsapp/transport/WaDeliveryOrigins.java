@@ -23,7 +23,7 @@ final class WaDeliveryOrigins {
         OR (r.identity_id=o.recipient_identity_id AND o.policy_version='driver-location-v1'
           AND o.response_part='driver-location' AND r.command_type='GET_DRIVER_LOCATION')
         OR (r.identity_id=o.recipient_identity_id AND o.policy_version='run-gps-v1'
-          AND o.response_part IN ('run-gps-confirmed','run-gps-unavailable')
+          AND o.response_part IN ('run-gps-confirmed','run-gps-unavailable','run-finished','run-stop-confirmed')
           AND r.command_type IN ('REQUEST_START','REQUEST_RESUME','ADVANCE_RUN_SETUP')
           AND EXISTS(SELECT 1 FROM wa.start_intent si WHERE si.request_command_id=r.command_id
             AND si.run_id=o.run_id AND si.driver_id=o.recipient_identity_id
