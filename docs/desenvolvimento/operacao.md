@@ -179,21 +179,27 @@ não faz HTTP, POST à Evolution nem coleta no aparelho. Seu comando dirigido é
 ./mvnw -q -Dapi.version=1.40 -Dtest=WaSafeDeliveryPauseIntegrationTest test
 ```
 
-Na entrega do código, esse teste ainda aguarda execução pelo integrador.
+Em 16/11, o integrador executou esse cenário: um teste aprovado, sem falhas,
+erros ou skips. A regressão também executa o SELECT canônico do helper para
+STOP_REQUESTED, REVOKED e EXPIRED sem ACK, e exige contagens zero após o ACK.
+Somente o escopo e o relógio são adaptados à fixture sintética. A preparação
+local usou armazenamento PostgreSQL em tmpfs de 128 MiB, restaurando o fonte
+exatamente após a rodada.
 Existem provas complementares em `WaOutboxTransportIntegrationTest` (worker
 revogado não reautoriza nem registra resultado), `WaDeliveryRecoveryIntegrationTest`
 (reserva vencida vira UNKNOWN por SYSTEM_JOB) e `WaTrackingLifecycleIntegrationTest`
 (STOP/ACK preservado). Nenhum desses resultados é uma nova execução desta frente.
 
-O mantenedor registra separadamente o ensaio de operação no conjunto isolado
-com a versão/JAR efetivos: falha injetada aparece ao operador, revogação
-confirmada, chamada autenticada antiga recusada, W08 e STOP/ACK disponíveis,
-credencial nova retoma só a pendência e zero reenvios da tentativa UNKNOWN.
-Conferir também o alerta e o plano contra os alvos dessa composição, sem
-afrouxar os nomes/ownership do helper de homologação nem tocar serviço live
-para reproduzir a falha. O helper fixa serviços Swarm live; não aceita um
-manifesto com nomes arbitrários de laboratório. A composição isolada precisa
-usar suas próprias verificações de ownership e o mesmo cenário de serviço.
+A pausa e a recuperação foram exercitadas nos serviços transacionais com
+PostgreSQL separado; a falha/ação do diagnóstico passou nos testes do helper.
+Na VPS compartilhada, o diagnóstico de leitura terminou como
+TECHNICAL_CHECKS_OK e o plano como PAUSE_PLAN_READY_NOT_EXECUTED. Os quatro
+papéis estavam ativos, sem tentativas incertas ou STOP pendente. O plano não
+revogou credenciais. Não é prova de HTTP autenticado de pausa, rotação de
+secret, agenda ou STOP no aparelho; esses limites permanecem nos recibos.
+O helper fixa os serviços da homologação e não aceita nomes arbitrários de
+laboratório. Uma repetição isolada deve preservar seus próprios controles de
+ownership, sem derrubar os serviços compartilhados para produzir a falha.
 
 Recibos agregados podem ir à issue #85 após revisão. Dump, logs, requests,
 tokens, contatos e GPS ficam privados. Resultado simulado não é WhatsApp real;

@@ -46,8 +46,10 @@ expiração em sete dias, sem deleção automática de arquivos ou volumes.
 O [guia de operação](desenvolvimento/operacao.md) distingue diagnóstico,
 plano e revogação confirmada. O teste PostgreSQL de pausa passou sem falhas,
 erros ou skips; seus serviços transacionais e banco são reais, mas o cenário
-continua sintético. O helper de diagnóstico ainda não foi executado na VPS
-nesta atualização.
+continua sintético. A regressão executa também a consulta canônica de paradas
+pendentes para três estados e sua baixa após ACK. Na VPS, o diagnóstico de
+leitura terminou sem alertas, e o plano identificou somente a credencial de
+envio, preservando STOP e reconciliação. Nenhuma pausa real foi executada.
 
 A CI de PR e `main` executa construção, sem testes automáticos. Na `main`, a
 imagem e o deploy da API/interface são publicados pelo fluxo próprio. Os

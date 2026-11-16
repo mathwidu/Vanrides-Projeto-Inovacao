@@ -30,8 +30,8 @@ separado por plataforma e pelas issues correspondentes.
   o conjunto com o JAR efetivamente publicado: journal reaplicado, Alfa ausente,
   Beta e controles preservados, zero duplicados. Limpeza real continua OFF.
 - Diagnóstico e guia de pausa preparados; 11 testes Python e um cenário
-  PostgreSQL passaram. A CLI ainda precisa de execução operacional isolada;
-  isso não foi contabilizado como diagnóstico aprovado da VPS.
+  PostgreSQL passaram. A leitura da VPS terminou sem alertas e o plano de
+  pausa foi conferido sem revogar credenciais do ambiente compartilhado.
 
 ## Sequência de entrega
 
@@ -117,7 +117,7 @@ na própria issue.
 | [#82](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/82) | [T56] Preservar automações ao reiniciar n8n | Fila e reinícios aprovados nos ensaios 005 e 006; o 006 usou o JAR efetivamente publicado. Revisar a evidência na issue. |
 | [#83](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/83) | [T57] Limitar dados e aplicar exclusão | Retenção 7/30/90 publicada na V44; manter limpeza real OFF e revisar apenas a prévia. |
 | [#84](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/84) | [T58] Provar cópia, restauração e exclusão | Dump/restore e journal atual reaplicados nos ensaios 005 e 006 aprovados; revisar a prova. Rotação física dos backups ainda pendente. |
-| [#85](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/85) | [T59] Orientar operação e parada segura | Guia/helper implementados; 11 testes Python e um cenário PostgreSQL aprovados. Executar diagnóstico e ensaio isolado de alerta/plano; WhatsApp real não comprovado. |
+| [#85](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/85) | [T59] Orientar operação e parada segura | Guia/helper, 11 testes Python e cenário PostgreSQL aprovados; diagnóstico e plano de leitura conferidos na VPS. Revisão humana e jornada WhatsApp real permanecem separadas. |
 | [#86](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/86) | [T60] Identificar os arquivos da versão de teste | API V44 e worker de 54 fontes identificados; ensaio 006 com JAR publicado aprovado. Revisar manifestos e rastreabilidade. |
 | [#87](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/87) | [T61] Preparar instalação de teste Android | APK14 assinado, instalado e aberto; falta smoke GPS do novo build. |
 | [#88](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/88) | [T62] Preparar instalação e renovação no iPhone | Build iOS sem assinatura; aguardar conta/Personal Team para assinar e instalar. |

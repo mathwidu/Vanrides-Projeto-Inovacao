@@ -430,3 +430,36 @@ com ausência de Alfa, preservação de Beta/core, datas e ACK originais e journ
 intacto. Os containers exclusivos foram removidos com prova de propriedade;
 volumes foram retidos. O alcance permanece sintético e isolado, com canal
 simulado, sem WhatsApp real e `releaseEligible: false`.
+
+### Operação segura — issue 85
+
+O diagnóstico de leitura e o guia foram integrados de `43a3b48`, sem novo
+controle de runtime: a pausa existente revoga apenas DELIVERY_WORKER, e o
+retorno usa credencial nova. Os 11 testes Python passaram. O cenário único
+PostgreSQL passou em `0c9f55e` sem skips: revogação pelo operador real,
+claim/authorize/result antigos recusados, reconciliação para UNKNOWN, STOP/ACK
+e retomada de outra pendência com grant novo, sem repetir UNKNOWN. Não é
+prova HTTP, Evolution ou sensor físico.
+
+A revisão independente encontrou dois P2: paradas REVOKED/EXPIRED sem ACK
+não entravam no alerta; e o Host com underscore do DNS Swarm provocava HTTP400
+no probe de saúde. O controle com Host público retornou UP na mesma API.
+`52d3fd9` corrige os dois, sem alterar a API. O mesmo teste PG foi expandido
+para executar o SELECT canônico do helper nos três estados sem ACK e após
+o ACK; só escopo e relógio foram adaptados à fixture. Passou novamente:
+um teste, zero falhas/erros/skips, 2,740 s no caso e 8,953 s no processo.
+Armazenamento PG em tmpfs128MiB temporário, fonte restaurado exatamente.
+Os 11 testes Python e os 12 do seletor/inventário passaram; a matriz agora
+inventaria 105 classes/819 casos, sem alegação de execução integral. Um
+assert de tamanho das exclusões passou a derivar do inventário mais a regra
+de inner class; a união exata e os controles de ausência de skips continuam.
+O revisor encerrou os dois P2 sem novos achados nesse escopo.
+
+Na VPS, o diagnóstico corrigido terminou como TECHNICAL_CHECKS_OK: API/worker
+UP, banco/tarefa conferidos, quatro papéis ativos, schema44 e zero pendências
+monitoradas. O plano terminou PAUSE_PLAN_READY_NOT_EXECUTED, restrito a
+DELIVERY e preservando APP_STOP_ACK, W01 e W08. Requests com UUIDs ficaram
+privados. Nenhuma credencial ou serviço compartilhado foi alterado por essa
+conferência. O primeiro recibo do Host inválido foi preservado como falha do
+probe, sem tratá-la como indisponibilidade da API. A leitura não prova
+WhatsApp, agenda ou STOP físico, e os recibos mantêm esses campos falsos.
