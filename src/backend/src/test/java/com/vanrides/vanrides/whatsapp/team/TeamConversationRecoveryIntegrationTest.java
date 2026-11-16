@@ -104,6 +104,40 @@ class TeamConversationRecoveryIntegrationTest {
         assertThat(s.count("wa.audit_event")).isZero();
     }
 
+    @Test
+    void resumeWaitsForTheProfileWithoutBlockingBusinessIdentityReferences() throws Exception {
+        UUID support = pause();
+        var executor = java.util.concurrent.Executors.newSingleThreadExecutor();
+        try {
+            var pending = tx.execute(status -> {
+                s.jdbc.queryForList("SELECT identity_id FROM wa.profile WHERE identity_id=? FOR UPDATE", identity);
+                var future = executor.submit(() -> resume(support, LIVE));
+                long deadline = System.nanoTime() + java.util.concurrent.TimeUnit.SECONDS.toNanos(5);
+                boolean fenced = false;
+                while (System.nanoTime() < deadline) {
+                    s.jdbc.execute("SELECT pg_stat_clear_snapshot()");
+                    fenced = Boolean.TRUE.equals(s.jdbc.queryForObject("""
+                        SELECT EXISTS(SELECT 1 FROM pg_stat_activity WHERE datname=current_database()
+                          AND pid<>pg_backend_pid() AND wait_event_type='Lock'
+                          AND query LIKE 'SELECT role,status FROM wa.profile%')
+                        """, Boolean.class));
+                    if (fenced) break;
+                    try { Thread.sleep(10); } catch (InterruptedException interrupted) {
+                        Thread.currentThread().interrupt(); throw new IllegalStateException(interrupted);
+                    }
+                }
+                assertThat(fenced).as("resume must wait for profile before identity").isTrue();
+                s.jdbc.execute("SET LOCAL lock_timeout='1s'");
+                s.jdbc.update("""
+                    INSERT INTO wa.audit_event(id,actor_identity_id,actor_kind,action,correlation_id)
+                    VALUES (?,?,'DRIVER','SYNTHETIC_BUSINESS_COMMAND',?)
+                    """, UUID.randomUUID(), identity, UUID.randomUUID().toString());
+                return future;
+            });
+            assertThat(pending.get(5, java.util.concurrent.TimeUnit.SECONDS).path("conversationPaused").asBoolean()).isFalse();
+        } finally { executor.shutdownNow(); }
+    }
+
     private ObjectNode resume(UUID support, Runnable live) {
         return tx.execute(status -> s.admissions.resumeConversation(GITHUB, contact, support, UUID.randomUUID(), live));
     }

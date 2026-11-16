@@ -108,6 +108,50 @@ class WaStopCanceledNoticeIntegrationTest {
         assertThat(attempts(noticeBox())).isZero();
     }
 
+    @Test
+    void aSuspendedDriverCannotReceiveANoticeQueuedBeforeTheSuspension() {
+        var lease = queuedNotice();
+        f.h.jdbc.update("UPDATE wa.profile SET status='SUSPENDED',driver_enabled=false WHERE identity_id=?", f.driver);
+        assertThat(authorize(lease).error()).isEqualTo(WaProblem.Code.ACTION_NOT_ALLOWED);
+        assertThat(attempts(noticeBox())).isZero();
+    }
+
+    @Test
+    void noticeAuthorizationWaitsForTheDriverFenceWithoutHoldingTheRun() throws Exception {
+        var lease = queuedNotice();
+        f.h.jdbc.update("INSERT INTO wa.conversation_state(identity_id) VALUES (?) ON CONFLICT DO NOTHING", f.driver);
+        var executor = java.util.concurrent.Executors.newSingleThreadExecutor();
+        try {
+            var pending = f.h.transaction.execute(status -> {
+                f.h.jdbc.queryForList("SELECT identity_id FROM wa.profile WHERE identity_id=? FOR UPDATE", f.driver);
+                f.h.jdbc.queryForList("SELECT identity_id FROM wa.conversation_state WHERE identity_id=? FOR UPDATE", f.driver);
+                var future = executor.submit(() -> authorize(lease));
+                long deadline = System.nanoTime() + java.util.concurrent.TimeUnit.SECONDS.toNanos(5);
+                boolean fenced = false;
+                while (System.nanoTime() < deadline) {
+                    f.h.jdbc.execute("SELECT pg_stat_clear_snapshot()");
+                    fenced = Boolean.TRUE.equals(f.h.jdbc.queryForObject("""
+                        SELECT EXISTS(SELECT 1 FROM pg_stat_activity WHERE datname=current_database()
+                          AND pid<>pg_backend_pid() AND wait_event_type='Lock'
+                          AND query LIKE 'SELECT identity_id FROM wa.profile%')
+                        """, Boolean.class));
+                    if (fenced) break;
+                    try { Thread.sleep(10); } catch (InterruptedException interrupted) {
+                        Thread.currentThread().interrupt(); throw new IllegalStateException(interrupted);
+                    }
+                }
+                assertThat(fenced).as("delivery must wait on profile before it locks the run").isTrue();
+                f.h.jdbc.execute("SET LOCAL lock_timeout='1s'");
+                f.h.jdbc.queryForList("SELECT id FROM wa.operation_run WHERE driver_id=? FOR UPDATE", f.driver);
+                f.h.jdbc.update("UPDATE wa.operation_run SET state='COMPLETED',completed_at=? WHERE driver_id=?",
+                    Timestamp.from(f.h.clock.now()), f.driver);
+                return future;
+            });
+            assertThat(pending.get(5, java.util.concurrent.TimeUnit.SECONDS).error()).isEqualTo(WaProblem.Code.ACTION_NOT_ALLOWED);
+            assertThat(attempts(noticeBox())).isZero();
+        } finally { executor.shutdownNow(); }
+    }
+
     private ObjectNode queuedNotice() {
         driverWrote();
         f.starting(f.question(passenger, DAY, "OUTBOUND", "15:00"), "PENDING");
