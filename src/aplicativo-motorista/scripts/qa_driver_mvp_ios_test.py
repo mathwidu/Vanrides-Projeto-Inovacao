@@ -7,6 +7,7 @@ import io
 import json
 from pathlib import Path
 import plistlib
+import shutil
 import subprocess
 import tempfile
 import unittest
@@ -60,14 +61,52 @@ class MVPUIHelperTest(unittest.TestCase):
             source.write_bytes(plistlib.dumps(self.document()))
             output = root / 'run'
             with patch.object(mvp.subprocess, 'run') as execution:
-                mvp.prepare(argparse.Namespace(output_dir=output, runner_app=app, source_xctestrun=source, command='copy-code'))
+                mvp.prepare(argparse.Namespace(output_dir=output, runner_app=app, source_xctestrun=source, command='export-pairing-code'))
                 execution.assert_not_called()
             fixture = json.loads((output / 'command.json').read_bytes())
             self.assertEqual(set(fixture), {'schemaVersion', 'command', 'sourceDigest'})
-            self.assertEqual(fixture['command'], 'copy-code')
+            self.assertEqual(fixture['command'], 'export-pairing-code')
             self.assertEqual((output / 'command.json').stat().st_mode & 0o777, 0o600)
             with self.assertRaises(mvp.PreparationError):
                 mvp.prepare(argparse.Namespace(output_dir=output, runner_app=app, source_xctestrun=source, command='inspect'))
+
+    def test_prepare_refuses_commands_outside_closed_whitelist(self):
+        self.assertIn('export-pairing-code', mvp.COMMANDS)
+        with self.assertRaisesRegex(mvp.PreparationError, '^MVP_COMMAND_REQUIRED$'):
+            mvp.prepare(argparse.Namespace(command='export-any-label'))
+
+    @unittest.skipUnless(shutil.which('swift'), 'Swift is required for the actual offline label matcher')
+    def test_actual_swift_matcher_requires_the_entire_eight_consonant_label(self):
+        source = mvp.SOURCE.read_text()
+        matcher = source.split('import XCTest\n', 1)[1].split('final class DriverMVPUITests:', 1)[0]
+        harness = '''
+let accepted = ["BCDFGHJK", "MNPQRSTV"]
+let refused = ["BCDFGHJ", "BCDFGHJKL", "bcdfghjk", "BCDFGHJA", "BCDFGHJ1",
+               " BCDFGHJK", "BCDFGHJK\\n", "prefix BCDFGHJK", "BCDFGHJK suffix"]
+guard accepted.allSatisfy(MVPPairingCodeLabel.matches),
+      refused.allSatisfy({ !MVPPairingCodeLabel.matches($0) }) else { exit(1) }
+'''
+        checked = subprocess.run(['swift', '-'], input='import Foundation\n' + matcher + harness,
+                                 text=True, capture_output=True, timeout=60, check=False)
+        self.assertEqual(checked.returncode, 0, checked.stderr)
+        self.assertEqual(checked.stdout, '')
+
+    def test_runner_export_guards_cleanup_uniqueness_and_private_output(self):
+        source = mvp.SOURCE.read_text()
+        self.assertLess(source.index('try clearPairingCodeExport(codeFile)'), source.index('JSONDecoder().decode'))
+        export = source.split('private func exportPairingCode(', 1)[1].split('private func button(', 1)[0]
+        self.assertIn('app.staticTexts["Confirme pelo WhatsApp"].exists', export)
+        self.assertIn('copy.waitForExistence(timeout: 12), copy.isEnabled', export)
+        self.assertLess(export.index('guard candidates.count == 1'), export.index('let code = candidate.label'))
+        self.assertIn('guard candidate.isHittable', export)
+        self.assertIn('MVPPairingCodeLabel.matches(code)', export)
+        self.assertIn('["code": code]', export)
+        self.assertIn('[.atomic, .completeFileProtection]', export)
+        self.assertIn('[.posixPermissions: 0o600]', export)
+        self.assertIn('removeItem(at: file)', export)
+        self.assertNotIn('result[', export)
+        for forbidden in ('UIPasteboard', 'debugDescription', 'print(', 'NSLog('):
+            self.assertNotIn(forbidden, source)
 
     def test_private_input_refuses_public_files_symlinks_and_git_paths(self):
         with tempfile.TemporaryDirectory() as temporary:

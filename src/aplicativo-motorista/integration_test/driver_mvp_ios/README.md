@@ -86,7 +86,8 @@ python3 scripts/qa_driver_mvp_ios.py prepare \
 Cada ação usa diretório novo. `command.json` contém somente comando e hash do
 fonte; `run.xctestrun` referencia o driver e o runner já instalados, sem paths
 para reinstalar o driver, argumentos ou ambiente injetados. Comandos:
-`inspect`, `pair`, `copy-code`, `open-whatsapp`, `refresh`, `confirm-start`, `stop`.
+`inspect`, `pair`, `copy-code`, `export-pairing-code`, `open-whatsapp`, `refresh`,
+`confirm-start`, `stop`.
 
 ## Execução pelo principal
 
@@ -98,12 +99,44 @@ container desse runner, usando `xcrun devicectl device copy to` com domínio
 -resultBundlePath <diretório privado novo>`. Não incluir o app driver como
 produto dependente nem usar uma chamada que reinstale o app sob teste.
 
-O XCTest consome e remove o comando. Copiar de volta somente
+O XCTest consome e remove o comando. Copiar de volta
 `Documents/result.json` do runner. O resultado contém booleans de UI e códigos
 de erro constantes; não contém código de pareamento, clipboard, token, URL ou
 coordenadas. Logs/xcresult completos continuam privados e não devem ir ao Git.
 Anexos de sistema/usuário e cobertura ficam desabilitados. `inspect` observa a
 UI; não substitui confirmação de posição no backend ou recibo do WhatsApp.
+
+### Ponte privada de laboratório para o código
+
+`export-pairing-code` é uma ação fechada para o laboratório autorizado nas
+contas do proprietário, quando a automação pelo Mac não dispõe do clipboard
+do iPhone. Não é uma API do produto. O runner ativa o app normal e exige o
+heading `Confirme pelo WhatsApp` e os controles conhecidos `Mostrar código` ou
+`Copiar código`. Se necessário, toca `Mostrar código`. Com o controle de cópia
+habilitado, aceita exatamente um `staticText` visível cujo label inteiro seja
+`^[BCDFGHJKMNPQRSTVWXYZ]{8}$`, a mesma regra do normalizador do backend.
+Lê somente esse label; não consulta clipboard, não exporta a árvore de
+acessibilidade e não usa endpoints privados, GPS ou mecanismos de debug.
+
+Preparar uma ação nova com `--command export-pairing-code`. A janela normal de
+cinco minutos do app continua valendo; a ação não renova nem prolonga o código.
+O resultado contém apenas `pairingCodeExported` e o estado de UI. O valor
+transitório vai exclusivamente para `Documents/pairing-code.json` no container
+do runner, com apenas a chave `code`, escrita atômica, proteção completa do
+arquivo e permissão `0600`. Nunca anexar esse arquivo ou copiar seu conteúdo
+para chat, console, logs, assertions, screenshots ou evidências versionadas.
+
+O principal só copia esse arquivo pelo domínio `appDataContainer` após receber
+`success: true` e `pairingCodeExported: true` da ação corrente. O destino no Mac
+deve ficar fora do Git, em diretório privado novo, com permissão `0600`; o valor
+é consumido somente na conversa real autorizada do motorista. Apagar a cópia
+local imediatamente após o uso. Toda ação do runner, inclusive `inspect` ou
+comando inválido, remove a exportação anterior antes de interpretar o comando;
+uma exportação que falha não conserva o arquivo. Executar a ação seguinte
+para limpar o container após consumir o código. Se a limpeza falhar, a ação
+falha com código constante e o principal não deve consumir nenhum arquivo
+anterior. Expiração ou estado inesperado exigem retomar os controles normais
+do aplicativo, sem contornar a segurança do vínculo.
 
 Para abrir um retorno ou link real de saída sem colocá-lo no chat/comando:
 criar fora do Git um JSON 0600 com chaves `device` e `url`, usando valores
@@ -125,6 +158,8 @@ a autorização da saída e deve permanecer no arquivo privado.
 python3 -B -m unittest discover -s scripts -p qa_driver_mvp_ios_test.py
 ```
 
-Esses testes usam fixtures sintéticas e subprocess mockado. Comprovam
+Esses testes usam fixtures sintéticas e subprocess mockado; quando Swift está
+instalado, executam também o matcher real isolado, sem XCTest ou aparelho. Comprovam
 isolamento do alvo, permissões dos arquivos e recusa de links/targets
-indevidos. Não comprovam assinatura, instalação, toques, GPS ou segundo plano.
+indevidos, incluindo guards de exportação e labels completos. Não comprovam
+assinatura, instalação, toques, GPS ou segundo plano.

@@ -19,7 +19,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / 'integration_test/driver_mvp_ios/DriverMVPUITests.swift'
 TARGET = 'DriverMVPUITests'
 DRIVER = 'dev.matheusduarte.vanrides.driver'
-COMMANDS = ('inspect', 'pair', 'copy-code', 'open-whatsapp', 'refresh', 'confirm-start', 'stop')
+COMMANDS = ('inspect', 'pair', 'copy-code', 'export-pairing-code', 'open-whatsapp', 'refresh', 'confirm-start', 'stop')
 
 
 class PreparationError(Exception):
@@ -88,6 +88,8 @@ def patch_run(document, runner_id):
 
 
 def prepare(args):
+    if args.command not in COMMANDS:
+        raise PreparationError('MVP_COMMAND_REQUIRED')
     output = private_path(args.output_dir)
     if output.exists():
         raise PreparationError('NEW_OUTPUT_DIRECTORY_REQUIRED')

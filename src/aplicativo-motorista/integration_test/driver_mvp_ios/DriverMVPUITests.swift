@@ -1,6 +1,18 @@
 import Foundation
 import XCTest
 
+// Pure label guard, also exercised offline with synthetic labels.
+enum MVPPairingCodeLabel {
+  static let pattern = "^[BCDFGHJKMNPQRSTVWXYZ]{8}$"
+
+  static func matches(_ label: String) -> Bool {
+    let whole = NSRange(label.startIndex..<label.endIndex, in: label)
+    guard let expression = try? NSRegularExpression(pattern: pattern),
+      let match = expression.firstMatch(in: label, range: whole) else { return false }
+    return match.range == whole
+  }
+}
+
 // Separate runner, operating only the normal installed MVP. No credentials,
 // simulated positions, permission resets or test commands enter the driver.
 final class DriverMVPUITests: XCTestCase {
@@ -20,19 +32,25 @@ final class DriverMVPUITests: XCTestCase {
     continueAfterFailure = false
     let commandFile = documents.appendingPathComponent("command.json")
     let resultFile = documents.appendingPathComponent("result.json")
+    let codeFile = documents.appendingPathComponent("pairing-code.json")
     try? FileManager.default.removeItem(at: resultFile)
     defer { try? FileManager.default.removeItem(at: commandFile) }
-    var result: [String: Any] = ["schemaVersion": 1, "success": false]
+    var result: [String: Any] = ["schemaVersion": 1, "success": false, "pairingCodeExported": false]
     defer {
+      if result["success"] as? Bool != true {
+        try? FileManager.default.removeItem(at: codeFile)
+      }
       if let data = try? JSONSerialization.data(withJSONObject: result, options: [.sortedKeys]) {
         try? data.write(to: resultFile, options: [.atomic, .completeFileProtection])
       }
     }
     do {
+      // Every command invalidates the previous lab export, even invalid commands.
+      try clearPairingCodeExport(codeFile)
       guard let data = try? Data(contentsOf: commandFile), data.count <= 1024,
         let fixture = try? JSONDecoder().decode(Fixture.self, from: data),
         fixture.schemaVersion == 1, fixture.sourceDigest == mvpUISourceDigest,
-        ["inspect", "pair", "copy-code", "open-whatsapp", "refresh", "confirm-start", "stop"].contains(fixture.command) else {
+        ["inspect", "pair", "copy-code", "export-pairing-code", "open-whatsapp", "refresh", "confirm-start", "stop"].contains(fixture.command) else {
         throw Failure(code: "INVALID_PRIVATE_COMMAND")
       }
       result["command"] = fixture.command
@@ -50,6 +68,11 @@ final class DriverMVPUITests: XCTestCase {
         // The app copies its transient code. The runner never reads it or the
         // clipboard, and never returns a code in the result or XCTest logs.
         try tap(app, "Copiar código")
+      case "export-pairing-code":
+        // Authorized lab bridge only. The app's normal five-minute window applies.
+        result["snapshot"] = snapshot(app)
+        try exportPairingCode(app, to: codeFile)
+        result["pairingCodeExported"] = true
       case "open-whatsapp":
         try tap(app, "Abrir conversa no WhatsApp")
         guard app.wait(for: .runningBackground, timeout: 15) || app.state == .runningBackgroundSuspended else {
@@ -67,7 +90,7 @@ final class DriverMVPUITests: XCTestCase {
         try waitForStop(app)
       default: break
       }
-      result["snapshot"] = snapshot(app)
+      if fixture.command != "export-pairing-code" { result["snapshot"] = snapshot(app) }
       result["success"] = true
     } catch let failure as Failure {
       result["code"] = failure.code
@@ -75,6 +98,46 @@ final class DriverMVPUITests: XCTestCase {
     } catch {
       result["code"] = "COMMAND_FAILED"
       XCTFail("MVP_UI_COMMAND_FAILED")
+    }
+  }
+
+  private func clearPairingCodeExport(_ file: URL) throws {
+    do {
+      if FileManager.default.fileExists(atPath: file.path) {
+        try FileManager.default.removeItem(at: file)
+      }
+    } catch {
+      throw Failure(code: "PAIRING_EXPORT_CLEANUP_FAILED")
+    }
+  }
+
+  @MainActor
+  private func exportPairingCode(_ app: XCUIApplication, to file: URL) throws {
+    guard app.staticTexts["Confirme pelo WhatsApp"].exists else {
+      throw Failure(code: "PAIRING_PENDING_REQUIRED")
+    }
+    let show = button(app, "Mostrar código")
+    let copy = button(app, "Copiar código")
+    guard show.exists || copy.exists else { throw Failure(code: "PAIRING_CONTROL_REQUIRED") }
+    if show.exists { try tap(app, "Mostrar código") }
+    guard copy.waitForExistence(timeout: 12), copy.isEnabled,
+      app.staticTexts["Confirme pelo WhatsApp"].exists else {
+      throw Failure(code: "PAIRING_PENDING_REQUIRED")
+    }
+    let candidates = app.staticTexts.matching(NSPredicate(format: "label MATCHES %@", MVPPairingCodeLabel.pattern))
+    guard candidates.count == 1 else { throw Failure(code: "PAIRING_CODE_NOT_UNIQUE") }
+    let candidate = candidates.element(boundBy: 0)
+    guard candidate.isHittable else { throw Failure(code: "PAIRING_CODE_NOT_VISIBLE") }
+    // Read only this single matched label. Never log it or inspect the clipboard.
+    let code = candidate.label
+    guard MVPPairingCodeLabel.matches(code) else { throw Failure(code: "PAIRING_CODE_INVALID") }
+    do {
+      let data = try JSONSerialization.data(withJSONObject: ["code": code], options: [.sortedKeys])
+      try data.write(to: file, options: [.atomic, .completeFileProtection])
+      try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: file.path)
+    } catch {
+      try? FileManager.default.removeItem(at: file)
+      throw Failure(code: "PAIRING_EXPORT_WRITE_FAILED")
     }
   }
 
