@@ -149,6 +149,20 @@ class Owned:
     def cleanup(self):
         with self.budget(120): self.cleanup_owned()
 
+    def diagnostics(self, role, cid=None, capacity=False, logs=False):
+        try:
+            with self.budget(2):
+                cid = self.check(role, cid)
+                commands = [['inspect', '--format', '{"running":{{json .State.Running}},"oomKilled":{{json .State.OOMKilled}},"exitCode":{{json .State.ExitCode}}}', cid]]
+                if capacity: commands.append(['exec', cid, 'df', '-k', '/tmp', '/home/node/.n8n', '/home/node/.cache'])
+                if logs: commands.append(['logs', '--tail', '2000', cid])
+                for command in commands:
+                    try: self.run(command, maximum=2 * 1024 * 1024, timeout=2)
+                    except (Blocked, OSError) as error:
+                        if str(error) == 'REC_CANCELLED': raise
+        except (Blocked, OSError) as error:
+            if str(error) == 'REC_CANCELLED': raise
+
     def cleanup_owned(self):
         ids = self.run(['ps', '-a', '--no-trunc', '--filter', 'label=' + OWNER + '=' + self.nonce, '--format', '{{.ID}}']).decode().splitlines()
         require(len(ids) <= len(self.containers) and all(re.fullmatch('[a-f0-9]{64}', x) for x in ids), 'REC_CLEANUP_QUERY_INVALID')
@@ -160,11 +174,11 @@ class Owned:
             for role in matches:
                 try: self.check(role, cid); valid.append(role)
                 except Blocked: pass
-            require(len(valid) == 1, 'REC_CLEANUP_NOT_OWNED'); found.append(cid)
+            require(len(valid) == 1, 'REC_CLEANUP_NOT_OWNED'); found.append((cid, valid[0]))
         for role in self.volumes: self.check_volume(role)
         for role in self.networks: self.check_network(role)
-        for cid in found:
-            self.run(['logs', '--tail', '2000', cid], maximum=2 * 1024 * 1024)
+        for cid, role in found:
+            self.diagnostics(role, cid, capacity=self.containers[role]['image'] == fixture.N8N, logs=True)
             self.run(['rm', '-f', cid])  # No -v; exclusive volumes remain recoverable.
         require(not self.run(['ps', '-a', '--filter', 'label=' + OWNER + '=' + self.nonce, '--format', '{{.ID}}']).strip(), 'REC_CONTAINER_REMAINS')
         for name in self.networks.values(): self.run(['network', 'rm', name])
@@ -274,10 +288,10 @@ class Session:
                           '--read-only', '--env-file', str(self.output / (prefix + '-worker.env')), *mount(self.source, '/app'), *mount(secrets_dir, '/secrets')], ['node', '/app/worker/main.mjs'])
         fixture.env_file(self.output / (prefix + '-n8n.env'), fixture.n8n_env('postgres', 'redis', keys))
         for role, command in (('main', ['start']), ('n8n-worker', ['worker', '--concurrency=1'])):
-            self.owned.create(prefix + '-' + role, images['n8n'], ['--network', network, '--network-alias', role, '--memory', '512m', '--memory-swap', '512m',
+            self.owned.create(prefix + '-' + role, images['n8n'], ['--network', network, '--network-alias', role, '--memory', '1024m', '--memory-swap', '1024m',
                               '--user', self.uid, '--read-only', '--tmpfs', '/tmp:rw,nosuid,nodev,size=64m,mode=1777',
                               '--tmpfs', f'/home/node/.n8n:rw,nosuid,nodev,size=32m,mode=700,uid={os.getuid()},gid={os.getgid()}',
-                              '--tmpfs', f'/home/node/.cache:rw,nosuid,nodev,size=32m,mode=700,uid={os.getuid()},gid={os.getgid()}',
+                              '--tmpfs', f'/home/node/.cache:rw,nosuid,nodev,size=128m,mode=700,uid={os.getuid()},gid={os.getgid()}',
                               '--env-file', str(self.output / (prefix + '-n8n.env')), *mount(self.output / 'workflows.json', '/fixture/workflows.json'),
                               *mount(self.output / 'credential.json', '/fixture/credential.json')], command)
         self.wait(lambda: self.http(prefix + '-channel', 'main', '/healthz/readiness')['status'] == 200, 'REC_N8N_NOT_READY')
@@ -292,6 +306,7 @@ class Session:
         self.sql(role, 'postgres', 'CREATE DATABASE ' + fixture.DATABASES[1] + ';'); return role
 
     def n8n_cli(self, prefix, *command):
+        self.owned.diagnostics(prefix + '-main', capacity=True)
         return self.owned.exec(prefix + '-main', ['n8n', *command], timeout=120, maximum=2 * 1024 * 1024)
 
     def verify_exports(self, prefix):

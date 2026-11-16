@@ -135,24 +135,44 @@ portas e usam somente a rede própria. Os limites somados cabem no ensaio
 homologado; ainda é necessário conferir capacidade disponível antes de rodar.
 
 Main e worker n8n mantêm a raiz somente leitura. Cada um tem tmpfs privado
-em `/home/node/.cache` (32 MiB, `mode=700,nosuid,nodev`, UID/GID do operador
+em `/home/node/.cache` (128 MiB, `mode=700,nosuid,nodev`, UID/GID do operador
 que executa o helper na VPS), além de `/home/node/.n8n` (32 MiB) e `/tmp`
-(64 MiB). O teto dos tmpfs passa de 96 para 128 MiB por contêiner, dentro
-do limite de memória que continua 512 MiB; o par main/worker acrescenta
-64 MiB de teto de cache, consumido sob demanda e disputando esse mesmo limite
-com o processo. Não há cache no host, volume compartilhado nem troca de HOME.
+(64 MiB): teto total de 224 MiB de tmpfs por contêiner. O limite n8n sobe de
+512 para 1024 MiB por contêiner, inclusive memória de main e CLI simultâneos
+no mesmo main. Os tmpfs são consumidos sob demanda dentro desse limite,
+disputando memória com os processos; não são uma reserva somada por fora.
+O teto da pilha ativa é 3616 MiB (~3,53 GiB). Na retomada do destino, mantendo
+PG e Redis de origem, o teto simultâneo é 4256 MiB (~4,16 GiB). São limites
+configurados, não RSS medido; conferir memória disponível com os serviços live.
+Não há cache no host, volume compartilhado nem troca de HOME.
 O teste usa o UID/GID do processo local; na execução VPS esses valores são
 obtidos novamente do operador remoto, não transportados do Mac.
 
 No [InstanceSettings do n8n 2.45.4](https://github.com/n8n-io/n8n/blob/n8n%402.45.4/packages/core/src/instance-settings/instance-settings.ts),
 o cache está em `userHome/.cache/n8n/public`, e o
 [FrontendService](https://github.com/n8n-io/n8n/blob/n8n%402.45.4/packages/cli/src/services/frontend.service.ts)
-cria o diretório `types` ao iniciar o main. A alternativa
+cria o diretório `types` ao iniciar o main, coletando todos os tipos de nós e
+credenciais e serializando-os em arquivos JSON. Esse fluxo não garante teto
+de 32 MiB: a quantidade/tamanho dos tipos determina o cache gerado. O tamanho
+de 128 MiB é um valor inicial de ensaio, a ser medido, não uma prova de que
+todo cache ou tmpfs cabe nesse espaço. Um ENOSPC sem pathname não identifica
+qual dos três tmpfs se esgotou. A alternativa
 [`N8N_USER_FOLDER`](https://github.com/n8n-io/n8n/blob/n8n%402.45.4/packages/%40n8n/config/src/utils/utils.ts)
 também deslocaria `.n8n` e seu diretório-pai, conforme
 [InstanceSettingsConfig](https://github.com/n8n-io/n8n/blob/n8n%402.45.4/packages/%40n8n/config/src/configs/instance-settings-config.ts).
 O tmpfs restrito preserva esses caminhos; não depende de uma flag XDG não
 comprovada. Tamanho e startup precisam ser confirmados no próximo ensaio real.
+
+Antes de cada CLI n8n, o helper tenta coletar `df -k /tmp /home/node/.n8n
+/home/node/.cache`. No cleanup coleta somente `Running`, `OOMKilled` e
+`ExitCode` via projeção do Docker, logs limitados e, para n8n, o mesmo `df`
+quando o contêiner ainda permite exec. Saídas e erros ficam nos arquivos
+numerados privados do executor; não há leitura de Env. A coleta tem orçamento
+curto de 2 segundos por recurso, valida ownership e é best-effort: falhar a
+coleta não substitui a causa original nem impede a remoção de um recurso
+próprio já verificado. Ausência da amostra não comprova capacidade. O próximo
+ensaio deve comparar os três tmpfs e estado/OOM antes de ajustar outro limite;
+nenhuma falha de DNS para internet é resolvida abrindo a rede privada.
 
 Cada espera usa um prazo monotônico absoluto, incluindo o tempo gasto em
 sondagens, inspeções de ownership, HTTP, SQL e subprocessos. Não multiplica

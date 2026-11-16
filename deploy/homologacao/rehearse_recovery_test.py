@@ -165,9 +165,10 @@ class FixtureTest(TempTest):
         for role in ('restored-main', 'restored-n8n-worker'):
             options = calls[role][1]
             self.assertEqual(options[options.index('--user') + 1], f'{os.getuid()}:{os.getgid()}')
-            self.assertIn(f'/home/node/.cache:rw,nosuid,nodev,size=32m,mode=700,uid={os.getuid()},gid={os.getgid()}',
+            self.assertIn(f'/home/node/.cache:rw,nosuid,nodev,size=128m,mode=700,uid={os.getuid()},gid={os.getgid()}',
                           [options[i + 1] for i, value in enumerate(options) if value == '--tmpfs'])
-            self.assertIn('--read-only', options); self.assertEqual(options[options.index('--memory') + 1], '512m')
+            self.assertIn('--read-only', options); self.assertEqual(options[options.index('--memory') + 1], '1024m')
+            self.assertEqual(options[options.index('--memory-swap') + 1], '1024m')
         self.assertIn('--appendfsync', calls['restored-redis'][-1]); self.assertIn('always', calls['restored-redis'][-1])
         self.assertIn('container:' + 'c' * 64, calls['restored-wa'][1])
         env = (self.root / 'restored-worker.env').read_text()
@@ -217,6 +218,25 @@ class OwnershipTest(unittest.TestCase):
         self.assertIn(['rm', '-f', cid], docker.calls); self.assertEqual(len(docker.volumes), 1)
         self.assertFalse(any(x in ('prune', '-v', '--volumes', 'service') for args in docker.calls for x in args))
         self.assertTrue(any(args[:2] == ['network', 'create'] and '--internal' in args for args in docker.calls))
+
+    def test_n8n_diagnostics_precede_cli_without_environment_or_shell(self):
+        docker = FakeDocker(); owned = recovery.Owned(docker, 'a' * 32)
+        owned.create('source-main', fixture.N8N, ['--network', owned.network('source-network')])
+        session = object.__new__(recovery.Session); session.owned = owned; session.n8n_cli('source', 'import:workflow')
+        commands = docker.calls
+        df = next(i for i, args in enumerate(commands) if args[0] == 'exec' and args[2:4] == ['df', '-k'])
+        cli = next(i for i, args in enumerate(commands) if args[0] == 'exec' and args[2:4] == ['n8n', 'import:workflow'])
+        self.assertLess(df, cli); self.assertEqual(commands[df][4:], ['/tmp', '/home/node/.n8n', '/home/node/.cache'])
+        state = next(args[2] for args in commands if args[0] == 'inspect' and '.State.Running' in args[2])
+        self.assertIn('.State.OOMKilled', state); self.assertIn('.State.ExitCode', state); self.assertNotIn('.Env', state)
+
+    def test_diagnostic_errors_do_not_fail_owned_cleanup(self):
+        docker, owned, cid = self.create()
+        def execute(args, data=None, **limits):
+            if args[0] == 'logs' or (args[0] == 'inspect' and '.State.Running' in args[2]): raise Blocked('DIAGNOSTIC_UNAVAILABLE')
+            return docker(args, data, **limits)
+        owned.execute = execute; owned.cleanup()
+        self.assertNotIn(cid, docker.containers); self.assertIn(['rm', '-f', cid], docker.calls)
 
     def test_foreign_name_label_image_id_or_exposed_network_blocks_every_mutation(self):
         for field, value in (('name', '/live-api'), ('image', 'foreign'), ('id', 'f' * 64), ('labels', {}),
