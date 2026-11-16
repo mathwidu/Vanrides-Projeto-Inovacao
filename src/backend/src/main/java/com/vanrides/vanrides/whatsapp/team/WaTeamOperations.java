@@ -73,9 +73,10 @@ class WaTeamOperations {
         requireCohort(true);
         UUID identity = findIdentity(contact, true);
         if (identity == null) throw WaProblem.missing();
+        // Business commands fence the profile before writes that take identity FK locks.
+        Profile profile = store.profile(identity, true);
         requireIdentity(identity, true);
         if (!store.teamAdmitted(identity)) throw WaProblem.denied();
-        Profile profile = store.profile(identity, true);
         if (!"ACTIVE".equals(profile.status()) && !"ONBOARDING".equals(profile.status())) throw WaProblem.denied();
         var conversations = jdbc.queryForList(
             "SELECT stage,context_json::text FROM wa.conversation_state WHERE identity_id=? FOR UPDATE", identity);

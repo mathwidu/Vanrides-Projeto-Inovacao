@@ -78,8 +78,11 @@ public final class WaDriverAttendanceNotices {
         if (notices.size() != 1) return false;
         var notice = notices.get(0);
         UUID driver = (UUID) notice.get("driver_id");
+        // Commands fence profile and conversation before taking the run. Keep the same order.
+        if (jdbc.queryForList("SELECT identity_id FROM wa.profile WHERE identity_id=? AND status='ACTIVE' AND driver_enabled"
+                + (lock ? " FOR SHARE" : ""), driver).isEmpty() || WaPassengerDelivery.paused(jdbc, driver, lock)) return false;
         boolean valid = notice.get("kind").equals("DEPARTURE") ? departureCurrent(notice, lock) : stopCanceledCurrent(notice, lock);
-        return valid && !WaPassengerDelivery.paused(jdbc, driver, lock) && aliases(outbox, instance).size() == 1;
+        return valid && aliases(outbox, instance).size() == 1;
     }
 
     private boolean departureCurrent(Map<String, Object> notice, boolean lock) {
