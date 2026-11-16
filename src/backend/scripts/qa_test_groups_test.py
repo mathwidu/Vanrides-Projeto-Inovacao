@@ -54,7 +54,7 @@ class TestGroupsTest(unittest.TestCase):
 
     def test_plan_has_exact_postgres_union_and_deterministic_balanced_groups(self):
         self.assertEqual(88, len(self.postgres))
-        self.assertEqual(698, sum(self.postgres.values()))
+        self.assertEqual(701, sum(self.postgres.values()))
         self.assertEqual(groups.plan()[1], self.plan)
         union = {}
         for cases in self.plan.values():
