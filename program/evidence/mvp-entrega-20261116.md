@@ -196,3 +196,16 @@ durabilidade e parsing, corrigidos antes da rodada verde. O journal ainda
 não está vinculado ao runtime/restore; retenção geral e recuperação do
 conjunto seguem em implementação. A V44 não foi publicada, a limpeza real
 está desabilitada e #83/#84 permanecem abertas.
+
+O envelope de continuação da manutenção passou em seis testes unitários:
+AEAD vincula credencial/instância/ambiente e validade de cinco minutos; cursor
+fora do escopo, adulterado ou vencido é recusado. Ainda não existe ativação
+do job pela rota ou n8n.
+
+O primeiro ensaio real de recuperação em fila foi interrompido em PREPARE:
+a fixture combinava perfil local com provedor de e-mail desativado, que o
+guard do produto corretamente recusa fora do modo publicado. Nenhuma agenda
+foi aprovada nessa rodada. Os containers próprios foram removidos com
+identidade conferida, os volumes sintéticos foram retidos e os serviços
+compartilhados não foram alterados. A correção pertence à fixture, sem
+enfraquecer o guard da aplicação. Recibo e logs permanecem privados.
