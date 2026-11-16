@@ -23,7 +23,10 @@ O Redmi voltou ao APK publicado 0.4.0+14, hash
 `2b4667111bc39bf4c9dcc687168086c6a9ed5b334a3f7db1cf7e3faf83c996b5`,
 conferido também no APK instalado. Sem instrumentação temporária de produto,
 a retomada recebeu primeiro GPS em 2,803 s e 42 amostras aceitas, zero rejeitadas,
-no corte 15:15:18 UTC. A parada desta geração continua em validação.
+no corte 15:15:18 UTC. No encerramento, foram 451 amostras aceitas, zero rejeitadas,
+STOPPED/ACK e posição atual removida (15:22:26 UTC). A inspeção no Redmi
+confirmou Localização interrompida, sem pendência e sem o controle de parar.
+Esse ensaio é estacionado, sem comprovar percurso, tela bloqueada ou bateria.
 
 O teste real de DESLIGAR AVISOS CHEGADA revelou preferência aplicada sem resposta:
 a regra de elegibilidade da confirmação não incluía SET_PREFERENCE. A correção

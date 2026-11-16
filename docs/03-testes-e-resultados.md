@@ -13,7 +13,7 @@ Aproximação, fim automático, ensaio e limpeza real ainda estão desligados.
 | Presença | Presença de amanhã/ida, alteração para ausência e lista do motorista; nova confirmação de hoje/volta no WhatsApp real. | Conferir os limites após o início na rodada final. |
 | Atendimento | Ajuda e correção do ponto validadas no WhatsApp real; retomada pela equipe e finalização durante suporte passaram em PostgreSQL. | Exercitar a conversa durante presença e saída com os dois papéis. |
 | Envio de mensagens | Regras de repetição em laboratório. Entrega real do pedido, da aprovação e da atualização do ponto. | Ampliar cenários reais de falha e recuperação. |
-| Localização Android | APK publicado 0.4.0+14 conferido byte a byte no Redmi: retomada com GPS recente, primeiro aceito em 2,803 s. | Parada desta rodada, percurso, tela bloqueada, rede e bateria sem USB. |
+| Localização Android | APK publicado 0.4.0+14 conferido byte a byte no Redmi: retomada com GPS recente em 2,803 s, 451 amostras aceitas/zero rejeitadas e STOP/ACK; tela confirmou localização interrompida. | Percurso, tela bloqueada, rede e bateria sem USB. |
 | Localização iPhone | +14 enviou GPS/pin e confirmou STOP/ACK e finalização pelo bot; +15 instalado e aberto recuperou o recibo e mostrou trajeto concluído/coleta desligada, sem pendência. | GPS do +15 e rodada final de campo. Perfil vence em 23/11 às 08:27 (Brasília). |
 | Consulta de localização | Passageiro recebeu o pin real do iPhone e do Redmi; após STOP recebeu localização indisponível. | Conferir continuidade e frescor em percurso e sem rede. |
 | Aproximação | Política, elegibilidade, pontos compartilhados e deduplicação passaram nos testes de PostgreSQL | Medir utilidade em percurso antes de ativar avisos |
