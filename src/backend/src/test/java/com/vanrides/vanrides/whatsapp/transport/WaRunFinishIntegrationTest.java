@@ -147,6 +147,7 @@ class WaRunFinishIntegrationTest {
         String supportId=t.f.s.string("SELECT context_json->>'supportCaseId' FROM wa.conversation_state WHERE identity_id=?",t.f.driver);
         send("FINALIZAR"); assertPausedSupport(supportId);
         send("ABANDONAR"); assertPausedSupport(supportId); assertEquals("TRACKING",t.runState());
+        t.h.time.advance(1); // Keep the second review newer than the abandoned review in this fixed-clock fixture.
         send("FINALIZAR VIAGEM"); assertPausedSupport(supportId);
         String marker=marker(); assertNull(send("CONFIRMAR "+marker).error());
         assertPausedSupport(supportId); assertEquals("COMPLETED",t.runState());
