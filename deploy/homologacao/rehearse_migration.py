@@ -321,7 +321,7 @@ def synthetic_env():
 
 def api_probe(owned, image, database, jar, env_file, expected_version, name, pause):
     jar_hash = sha(read(jar, MAX_JAR))
-    options = ['--network', 'container:' + database, '--log-driver', 'local', '--log-opt', 'max-size=1m', '--log-opt', 'max-file=1',
+    options = ['--network', 'container:' + database, '--log-driver', 'local', '--log-opt', 'max-size=1m', '--log-opt', 'max-file=1', '--log-opt', 'compress=false',
                '--memory', '640m', '--memory-swap', '640m', '--cpus', '1', '--pids-limit', '192', '--read-only',
                '--tmpfs', '/tmp:rw,nosuid,nodev,size=32m,mode=1777', '--user', f'{os.getuid()}:{os.getgid()}',
                '--env-file', str(env_file), '-e', 'VANRIDES_JAR_SHA256=' + jar_hash, '--mount', 'type=bind,source=' + str(jar) + ',target=/app/app.jar,readonly', '--entrypoint', 'java']

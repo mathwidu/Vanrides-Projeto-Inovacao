@@ -153,6 +153,8 @@ class RehearsalTests(unittest.TestCase):
                 network = command[command.index('--network')+1]
                 self.assertTrue(network == 'none' or re_full_container(network))
                 self.assertNotIn('--publish',command); self.assertNotIn('--volumes-from',command)
+                if '--log-driver' in command and command[command.index('--log-driver')+1] == 'local':
+                    self.assertIn('compress=false', command)
         self.assertNotIn('private-real-backup-fixture',(output/'receipt.json').read_text())
 
     def test_source_change_and_restore_difference_preserve_private_backup_and_block_success(self):
