@@ -277,6 +277,7 @@ class Session:
             self.owned.create(prefix + '-' + role, images['n8n'], ['--network', network, '--network-alias', role, '--memory', '512m', '--memory-swap', '512m',
                               '--user', self.uid, '--read-only', '--tmpfs', '/tmp:rw,nosuid,nodev,size=64m,mode=1777',
                               '--tmpfs', f'/home/node/.n8n:rw,nosuid,nodev,size=32m,mode=700,uid={os.getuid()},gid={os.getgid()}',
+                              '--tmpfs', f'/home/node/.cache:rw,nosuid,nodev,size=32m,mode=700,uid={os.getuid()},gid={os.getgid()}',
                               '--env-file', str(self.output / (prefix + '-n8n.env')), *mount(self.output / 'workflows.json', '/fixture/workflows.json'),
                               *mount(self.output / 'credential.json', '/fixture/credential.json')], command)
         self.wait(lambda: self.http(prefix + '-channel', 'main', '/healthz/readiness')['status'] == 200, 'REC_N8N_NOT_READY')

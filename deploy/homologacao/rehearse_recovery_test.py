@@ -162,6 +162,12 @@ class FixtureTest(TempTest):
             self.assertNotIn('-p', options); self.assertNotIn('--publish', options); self.assertIn('--memory', options)
             self.assertIn('--read-only', options) if role != 'restored-redis' else None
         self.assertEqual(calls['restored-n8n-worker'][-1], ['worker', '--concurrency=1'])
+        for role in ('restored-main', 'restored-n8n-worker'):
+            options = calls[role][1]
+            self.assertEqual(options[options.index('--user') + 1], f'{os.getuid()}:{os.getgid()}')
+            self.assertIn(f'/home/node/.cache:rw,nosuid,nodev,size=32m,mode=700,uid={os.getuid()},gid={os.getgid()}',
+                          [options[i + 1] for i, value in enumerate(options) if value == '--tmpfs'])
+            self.assertIn('--read-only', options); self.assertEqual(options[options.index('--memory') + 1], '512m')
         self.assertIn('--appendfsync', calls['restored-redis'][-1]); self.assertIn('always', calls['restored-redis'][-1])
         self.assertIn('container:' + 'c' * 64, calls['restored-wa'][1])
         env = (self.root / 'restored-worker.env').read_text()

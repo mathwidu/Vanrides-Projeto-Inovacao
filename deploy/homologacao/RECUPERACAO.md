@@ -134,6 +134,26 @@ de memória/CPU/PIDs, não montam socket Docker, não recebem privilégios nem
 portas e usam somente a rede própria. Os limites somados cabem no ensaio
 homologado; ainda é necessário conferir capacidade disponível antes de rodar.
 
+Main e worker n8n mantêm a raiz somente leitura. Cada um tem tmpfs privado
+em `/home/node/.cache` (32 MiB, `mode=700,nosuid,nodev`, UID/GID do operador
+que executa o helper na VPS), além de `/home/node/.n8n` (32 MiB) e `/tmp`
+(64 MiB). O teto dos tmpfs passa de 96 para 128 MiB por contêiner, dentro
+do limite de memória que continua 512 MiB; o par main/worker acrescenta
+64 MiB de teto de cache, consumido sob demanda e disputando esse mesmo limite
+com o processo. Não há cache no host, volume compartilhado nem troca de HOME.
+O teste usa o UID/GID do processo local; na execução VPS esses valores são
+obtidos novamente do operador remoto, não transportados do Mac.
+
+No [InstanceSettings do n8n 2.45.4](https://github.com/n8n-io/n8n/blob/n8n%402.45.4/packages/core/src/instance-settings/instance-settings.ts),
+o cache está em `userHome/.cache/n8n/public`, e o
+[FrontendService](https://github.com/n8n-io/n8n/blob/n8n%402.45.4/packages/cli/src/services/frontend.service.ts)
+cria o diretório `types` ao iniciar o main. A alternativa
+[`N8N_USER_FOLDER`](https://github.com/n8n-io/n8n/blob/n8n%402.45.4/packages/%40n8n/config/src/utils/utils.ts)
+também deslocaria `.n8n` e seu diretório-pai, conforme
+[InstanceSettingsConfig](https://github.com/n8n-io/n8n/blob/n8n%402.45.4/packages/%40n8n/config/src/configs/instance-settings-config.ts).
+O tmpfs restrito preserva esses caminhos; não depende de uma flag XDG não
+comprovada. Tamanho e startup precisam ser confirmados no próximo ensaio real.
+
 Cada espera usa um prazo monotônico absoluto, incluindo o tempo gasto em
 sondagens, inspeções de ownership, HTTP, SQL e subprocessos. Não multiplica
 tentativas pelo timeout de cada chamada. O tempo restante limita o executor,
