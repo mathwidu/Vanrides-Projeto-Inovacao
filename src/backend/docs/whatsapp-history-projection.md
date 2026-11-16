@@ -90,7 +90,11 @@ encerra somente aquela unidade: registra a pendência, avança a posição da
 varredura e permite tratar unidades válidas posteriores. A pendência permanece
 na consulta independente de completude e volta a ser examinada no ciclo seguinte.
 O cursor tipado vincula ator, escopo, instante e
-modos; precisa ficar no envelope autenticado do coordenador. Cursor avançado
+modos; precisa ficar no envelope autenticado do coordenador. `asOf` é congelado,
+não nulo e não futuro, sem prazo agregado; o envelope vence em cinco minutos e é
+renovado por página. Ao esgotar a ordem sem bloqueio físico, `next=null` encerra
+a passada mesmo com `complete=false`. A próxima chamada sem cursor captura novo
+corte, com possível página vazia adicional quando o total é o limite exato. Cursor avançado
 não esconde trabalho nem transforma adiamento em `complete=true`.
 
 `examined` conta unidades; `erased` conta as projeções de parada/viagem/ocorrência;

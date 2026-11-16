@@ -29,7 +29,7 @@ final class WaPrivacyTerminalContent {
         for (Unit unit : work) {
             examined++;
             if (dryRun) { deferred++; prefix = unit.key(); continue; }
-            if (unit.ambiguous()) { deferred++; blocked = true; break; }
+            if (unit.ambiguous()) { deferred++; prefix = unit.key(); continue; }
             String table = unit.kind().equals("I") ? "wa.integration_inbox" : "wa.message_outbox";
             var rows = jdbc.queryForList("SELECT * FROM " + table + " WHERE id=? FOR UPDATE SKIP LOCKED", unit.id());
             if (rows.isEmpty()) {

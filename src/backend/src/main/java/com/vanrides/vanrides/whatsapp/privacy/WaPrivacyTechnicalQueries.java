@@ -5,7 +5,7 @@ final class WaPrivacyTechnicalQueries {
     private WaPrivacyTechnicalQueries() { }
     static final String CONTEXT = "c.context_json-ARRAY['passengerDraft','driverDraft','runDraft','attendanceDraft','locationDraft','conversationOwner']";
     static final String CANDIDATES = """
-        WITH scope AS (SELECT ?::text environment,?::text instance,?::boolean synthetic_only,?::timestamptz as_of),
+        WITH scope AS (SELECT ?::text environment,?::text instance,?::boolean synthetic_only,?::timestamptz as_of,?::timestamptz operational_now),
         people AS (
           SELECT i.id,EXISTS(SELECT 1 FROM wa.identity_alias a WHERE a.identity_id=i.id AND a.instance_id IS DISTINCT FROM scope.instance) ambiguous
           FROM wa.identity i JOIN wa.test_cohort cohort ON cohort.id=i.test_cohort_id CROSS JOIN scope
@@ -39,8 +39,8 @@ final class WaPrivacyTechnicalQueries {
               AND b.received_at<=scope.as_of-INTERVAL '7 days'
           UNION ALL SELECT 'CONTEXT',c.identity_id,NULL::uuid,NULL::uuid,p.id,h.last_human,p.ambiguous,
             CASE WHEN wa.privacy_has_active_reference(p.id) THEN 'ACTIVE_REFERENCE'
-              WHEN c.lease_expires_at>scope.as_of OR EXISTS(SELECT 1 FROM wa.integration_inbox i WHERE i.identity_id=p.id
-                AND i.state='CLAIMED' AND i.lease_expires_at>scope.as_of) THEN 'HUMAN_WORK_BUSY' END
+              WHEN c.lease_expires_at>scope.operational_now OR EXISTS(SELECT 1 FROM wa.integration_inbox i WHERE i.identity_id=p.id
+                AND i.state='CLAIMED' AND i.lease_expires_at>scope.operational_now) THEN 'HUMAN_WORK_BUSY' END
             FROM wa.conversation_state c JOIN people p ON p.id=c.identity_id CROSS JOIN scope
             JOIN LATERAL(SELECT max(i.created_at) last_human FROM wa.integration_inbox i
               WHERE i.identity_id=p.id AND i.instance_id=scope.instance AND i.category='MESSAGE') h ON true

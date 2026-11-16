@@ -18,14 +18,23 @@ Não depende de novos inícios, conexão de envio ou inbox humana fabricada.
 `Position` contém `credentialId`, `environment`, `instanceId`, `asOf`, `after`,
 `dryRun` e `syntheticOnly`. O runtime deve transportá-la no envelope opaco
 autenticado `WaPrivacyCursor` com família `TECHNICAL_7D`. O port valida vínculo,
-modos, formato e prazo de cinco minutos; não criptografa o cursor novamente.
+modos, formato e corte não futuro; não impõe idade máxima agregada ao `asOf`.
+O envelope autenticado vence em cinco minutos e se renova por página; a validade
+da credencial continua obrigatória em cada chamada. O port não criptografa o
+cursor novamente.
 
 `Result` contém `status`, `examined`, `erased`, `deleted`, `deferred`,
 `wouldChange`, `complete`, `next` e `pending` (`family`, `id`, `reason`).
 Cada unidade candidata altera ou exclui no máximo uma linha física. Locks de
 donos e consultas de validação não são contados como linhas apagadas. O cursor
-ordena família, instante e chave; para no primeiro recurso ocupado ou pendente,
-sem saltar o prefixo. Um `NOT EXISTS` independente define `complete` no escopo
+ordena família, instante e chave. `MULTI_INSTANCE`, `AMBIGUOUS_OWNER`,
+`ACTIVE_REFERENCE`, `CHILDREN_PENDING` e `REPLAY_PENDING` registram pendência,
+avançam a posição e permitem continuar sem mutar aquela unidade. Recurso
+ocupado, `HUMAN_WORK_BUSY` e `SUBMITTING` interrompem sem saltar o prefixo.
+Ao esgotar a ordem sem bloqueio físico, `next=null` encerra a passada mesmo
+com `complete=false`; uma nova chamada sem cursor captura outro `asOf`.
+No limite exato pode haver uma página vazia adicional.
+Um `NOT EXISTS` independente define `complete` no escopo
 e corte desta manutenção, sem confiar no cursor. Isso não atesta conclusão
 global da privacidade nem cobertura dos namespaces sem proveniência abaixo.
 
@@ -60,6 +69,9 @@ O lock da identidade cerca a chegada de inbox; locks de perfil e contexto
 também usam `SKIP LOCKED`. Se suporte possuir perfil e aguardar identidade,
 a manutenção cede e libera sua transação, evitando o ciclo entre os dois.
 Após cercar, repete a elegibilidade e verifica leases/referências ativas.
+Os leases do contexto e da inbox são comparados ao agora operacional da chamada,
+independente do corte congelado. Expirar um lease permite retomar a mesma posição
+sem mover `asOf`; a idade de mensagens e demais registros continua usando o corte.
 Preserva `PAUSED`, `paused_until`, suporte, último evento, leases, versões de
 aviso, instantes de emissão e `ownerPromptEvents`. Nenhuma confirmação é renovada.
 
@@ -113,3 +125,14 @@ recibo privado da frente. Nenhum ensaio substitui teste em aparelho.
 Retorno do código: reverter este incremento sem modificar schema ou ledger.
 Conteúdo apagado não volta com rollback do binário. O coordenador deve manter
 purge desabilitado até os gates do journal/restore e a revisão da composição.
+
+## Passadas finitas: prova dirigida
+
+Em 16/11/2026, dezessete métodos PostgreSQL passaram sem falhas, erros ou skips
+em 25,399 segundos no Maven. Seis casos novos cobrem os quatro ports com `asOf`
+antigo e credencial atual, pendência semântica seguida de unidade elegível,
+fim de passada ainda pendente, limite exato, novo corte atingindo dados recém
+vencidos e retomada após lock/lease/SUBMITTING sem alterar o corte. Onze controles
+existentes diretamente afetados também passaram. Três adaptações temporárias de
+tmpfs em fixtures antigas foram restauradas exatamente antes do commit.
+Não foi repetida a suíte ampla anterior e não houve ativação ou purge real.

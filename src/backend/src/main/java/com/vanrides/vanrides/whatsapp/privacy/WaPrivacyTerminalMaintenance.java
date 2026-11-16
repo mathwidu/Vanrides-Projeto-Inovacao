@@ -45,12 +45,12 @@ public final class WaPrivacyTerminalMaintenance {
             if (cursor != null && (!actor.credentialId().equals(cursor.credentialId())
                 || !grant.scope().environment().equals(cursor.environment()) || !grant.scope().instanceId().equals(cursor.instanceId())
                 || cursor.dryRun()!=dryRun || cursor.syntheticOnly()!=policy.syntheticOnly()
-                || asOf==null || asOf.isAfter(clock.now()) || !asOf.plusSeconds(300).isAfter(clock.now())
+                || asOf==null || asOf.isAfter(clock.now())
                 || after==null || !after.matches("[IO]:[0-9]{20}:[0-9a-f-]{36}|"))) throw WaProblem.invalid();
             var page = new WaPrivacyTerminalContent(jdbc).sweep(grant.scope(),asOf,clock.now(),policy.syntheticOnly(),after,limit,dryRun);
             if (!grant.expires().isAfter(clock.now())) throw WaProblem.unauthorized();
-            Position next = page.complete() || dryRun && page.endOfPrefix() ? null : new Position(actor.credentialId(),grant.scope().environment(),
-                grant.scope().instanceId(),asOf,page.endOfPrefix() && !dryRun ? "" : page.after(),dryRun,policy.syntheticOnly());
+            Position next = page.complete() || page.endOfPrefix() ? null : new Position(actor.credentialId(),grant.scope().environment(),
+                grant.scope().instanceId(),asOf,page.after(),dryRun,policy.syntheticOnly());
             return new Result(dryRun ? "DRY_RUN" : page.deferred()>0 ? "DEFERRED" : "APPLIED",
                 page.examined(),page.erased(),0,page.deferred(),page.complete(),next);
         });

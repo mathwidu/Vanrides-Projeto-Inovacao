@@ -104,8 +104,8 @@ class WaPrivacyTechnicalRetentionIntegrationTest {
         t.gps();f.time.days(8);f.jdbc.update("UPDATE wa.identity SET test_cohort_id=NULL WHERE id=?",f.first);
         f.jdbc.update("INSERT INTO wa.identity_alias(id,identity_id,provider,instance_id,alias_type,alias_value) VALUES (?,?,'EVOLUTION','other-instance','PN','000000000000008@s.whatsapp.net')",UUID.randomUUID(),f.driver);
         var preview=t.port(true).tick(f.job(ENV,INSTANCE),100,null);
-        assertThat(preview.deferred()).isEqualTo(1);assertThat(preview.wouldChange()).isZero();assertThat(preview.next().after()).isEmpty();
-        var result=t.sweep();assertThat(result.deferred()).isEqualTo(1);assertThat(result.pending().get(0).reason()).isEqualTo("MULTI_INSTANCE");assertThat(result.next().after()).isEmpty();
+        assertThat(preview.deferred()).isEqualTo(4);assertThat(preview.wouldChange()).isZero();assertThat(preview.next()).isNull();
+        var result=t.sweep();assertThat(result.deferred()).isEqualTo(4);assertThat(result.pending()).allMatch(p->p.reason().equals("MULTI_INSTANCE"));assertThat(result.next()).isNull();
         assertThat(f.count("tracking_sample_receipt")).isEqualTo(2);assertThat(f.string("SELECT context_json::text FROM wa.conversation_state WHERE identity_id=?",f.first)).contains(NAME);
     }
 }

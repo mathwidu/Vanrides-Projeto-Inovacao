@@ -97,8 +97,7 @@ public final class WaPrivacyHistoryRetention {
         boolean complete=!Boolean.TRUE.equals(jdbc.queryForObject(WaPrivacyHistoryQueries.CANDIDATES
             + "SELECT EXISTS(SELECT 1 FROM eligible)",Boolean.class,parameters(grant.scope(),asOf)));
         if (!grant.expires().isAfter(clock.now())) throw WaProblem.unauthorized();
-        Position next=complete || dryRun && !blocked && work.size()<limit ? null : prefix;
-        if (!complete && !dryRun && !blocked && work.size()<limit) next=position(actor,grant.scope(),asOf,null,null,null);
+        Position next=complete || !blocked && work.size()<limit ? null : prefix;
         return new Result(dryRun ? "DRY_RUN" : pending.isEmpty() ? "APPLIED" : "DEFERRED",examined,0,deleted,
             pending.size(),wouldDelete,complete,next,List.copyOf(pending));
     }
@@ -119,7 +118,7 @@ public final class WaPrivacyHistoryRetention {
         if (!actor.credentialId().equals(cursor.credentialId()) || !grant.scope().environment().equals(cursor.environment())
             || !grant.scope().instanceId().equals(cursor.instanceId()) || cursor.dryRun()!=dryRun
             || cursor.syntheticOnly()!=policy.syntheticOnly() || cursor.asOf()==null || cursor.asOf().isAfter(now)
-            || !cursor.asOf().plusSeconds(300).isAfter(now) || !(empty || full)) throw WaProblem.invalid();
+            || !(empty || full)) throw WaProblem.invalid();
     }
     private Position position(WaPrincipal actor, WaPrivacyService.Scope scope, Instant asOf, Family family, Instant at, UUID id) {
         return new Position(actor.credentialId(),scope.environment(),scope.instanceId(),asOf,family,at,id,dryRun,policy.syntheticOnly());

@@ -53,7 +53,7 @@ class WaPrivacyHistoryProjectionIntegrationTest {
             .isInstanceOf(IllegalStateException.class);
         var forged=new WaPrivacyHistoryProjection.Position(f.actor.credentialId(),ENV,INSTANCE,f.observed,WaPrivacyHistoryProjection.Family.OCCURRENCE,
             new UUID(-1,-1),new UUID(-1,-1),new UUID(-1,-1),false,true);
-        var result=f.projection(false).tick(f.actor,100,forged);assertThat(result.examined()).isZero();assertThat(result.complete()).isFalse();assertThat(result.next().afterFamily()).isNull();
+        var result=f.projection(false).tick(f.actor,100,forged);assertThat(result.examined()).isZero();assertThat(result.complete()).isFalse();assertThat(result.next()).isNull();
         assertThat(rows("operation_run")+rows("run_stop")+rows("routine_occurrence")).isEqualTo(before);
         var other=new com.vanrides.vanrides.whatsapp.auth.WaPrincipal(f.actor.kind(),f.actor.credentialId(),null,null,"foreign",null,0,false);
         assertThatThrownBy(()->f.projection(false).tick(other,100,null)).isInstanceOf(RuntimeException.class);
@@ -76,7 +76,7 @@ class WaPrivacyHistoryProjectionIntegrationTest {
         f.jdbc.update("UPDATE wa.operation_run SET completed_at=NULL WHERE id=?",f.run);
         var result=f.projection(false).tick(f.actor,100,null);
         assertThat(result.pending()).extracting(WaPrivacyHistoryProjection.Deferral::reason).containsExactly("MISSING_TERMINAL_AT");
-        assertThat(result.next().afterFamily()).isNull();assertThat(result.complete()).isFalse();
+        assertThat(result.next()).isNull();assertThat(result.complete()).isFalse();
     }
     @Test void mutableRoutineSourceCannotReplaceMissingHistoricalOriginAndAllSourcesMustAgree() {
         f=new WaPrivacyHistoryProjectionFixture(POSTGRES,false);

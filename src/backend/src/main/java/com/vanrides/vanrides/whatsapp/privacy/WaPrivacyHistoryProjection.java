@@ -88,8 +88,7 @@ public final class WaPrivacyHistoryProjection {
         authority.accept(grant.scope());
         Instant end=jdbc.queryForObject("SELECT clock_timestamp()",Timestamp.class).toInstant();
         if(!grant.expires().isAfter(clock.now().isBefore(end)?clock.now():end))throw WaProblem.unauthorized();
-        Position next=complete || dryRun&&!blocked&&work.size()<limit?null:prefix;
-        if(!complete&&!dryRun&&!blocked&&work.size()<limit)next=position(actor,grant.scope(),asOf,null);
+        Position next=complete || !blocked&&work.size()<limit?null:prefix;
         return new Result(dryRun?"DRY_RUN":pending.isEmpty()?"APPLIED":"DEFERRED",examined,erased,deleted,pending.size(),would,complete,next,List.copyOf(pending));
     }
     private boolean fence(Unit unit) {
@@ -132,7 +131,7 @@ public final class WaPrivacyHistoryProjection {
         if(p==null)return;boolean empty=p.afterFamily()==null&&p.afterOccurrence()==null&&p.afterParent()==null&&p.afterId()==null;
         boolean full=p.afterFamily()!=null&&p.afterOccurrence()!=null&&p.afterParent()!=null&&p.afterId()!=null;
         if(!actor.credentialId().equals(p.credentialId())||!grant.scope().environment().equals(p.environment())||!grant.scope().instanceId().equals(p.instanceId())
-            ||p.dryRun()!=dryRun||p.syntheticOnly()!=policy.syntheticOnly()||p.asOf()==null||p.asOf().isAfter(now)||!p.asOf().plusSeconds(300).isAfter(now)||!(empty||full))throw WaProblem.invalid();
+            ||p.dryRun()!=dryRun||p.syntheticOnly()!=policy.syntheticOnly()||p.asOf()==null||p.asOf().isAfter(now)||!(empty||full))throw WaProblem.invalid();
     }
     private Position position(WaPrincipal actor,WaPrivacyService.Scope scope,Instant asOf,Unit u){return new Position(actor.credentialId(),scope.environment(),scope.instanceId(),asOf,u==null?null:u.family(),u==null?null:u.occurrence(),u==null?null:u.parent(),u==null?null:u.id(),dryRun,policy.syntheticOnly());}
     private Object[] parameters(WaPrivacyService.Scope scope,Instant asOf){return new Object[]{scope.environment(),scope.instanceId(),policy.syntheticOnly(),Timestamp.from(asOf)};}

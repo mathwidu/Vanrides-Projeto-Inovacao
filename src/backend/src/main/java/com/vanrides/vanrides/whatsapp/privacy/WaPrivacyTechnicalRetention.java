@@ -46,28 +46,38 @@ public final class WaPrivacyTechnicalRetention {
             Instant asOf=cursor==null?clock.now():cursor.asOf();String after=cursor==null?"":cursor.after();
             List<Unit> units=jdbc.query(WaPrivacyTechnicalQueries.CANDIDATES+"SELECT family,id,parent,run_id,owner,reason,work_key FROM eligible WHERE work_key>? ORDER BY work_key LIMIT ?",
                 (rs,n)->new Unit(Family.valueOf(rs.getString(1)),rs.getObject(2,UUID.class),rs.getObject(3,UUID.class),rs.getObject(4,UUID.class),rs.getObject(5,UUID.class),rs.getString(6),rs.getString(7)),append(params(grant,asOf),after,limit));
-            int examined=0,erased=0,deleted=0,would=0;var pending=new ArrayList<Deferral>();String prefix=after;
+            int examined=0,erased=0,deleted=0,would=0;var pending=new ArrayList<Deferral>();String prefix=after;boolean blocked=false;
             for(Unit unit:units){
                 examined++;
                 if(dryRun){
-                    if(unit.reason()!=null){pending.add(new Deferral(unit.family(),unit.id(),unit.reason()));break;}
+                    if(unit.reason()!=null){
+                        pending.add(new Deferral(unit.family(),unit.id(),unit.reason()));
+                        if(semantic(unit.reason())){prefix=unit.key();continue;}
+                        blocked=true;break;
+                    }
                     would++;prefix=unit.key();continue;
                 }
-                if(!lock(unit)){pending.add(new Deferral(unit.family(),unit.id(),"ROW_BUSY"));break;}
+                if(!lock(unit)){pending.add(new Deferral(unit.family(),unit.id(),"ROW_BUSY"));blocked=true;break;}
                 List<String> reasons=jdbc.query(WaPrivacyTechnicalQueries.CANDIDATES+"SELECT reason FROM eligible WHERE work_key=?",
                     (rs,n)->rs.getString(1),append(params(grant,asOf),unit.key()));
                 if(reasons.isEmpty()){prefix=unit.key();continue;}
-                if(reasons.get(0)!=null){pending.add(new Deferral(unit.family(),unit.id(),reasons.get(0)));break;}
+                if(reasons.get(0)!=null){
+                    String reason=reasons.get(0);pending.add(new Deferral(unit.family(),unit.id(),reason));
+                    if(semantic(reason)){prefix=unit.key();continue;}
+                    blocked=true;break;
+                }
                 int changed=change(unit);
                 if(unit.family()==Family.SAMPLE || unit.family()==Family.BATCH || unit.family()==Family.PAIRING)deleted+=changed;else erased+=changed;
                 prefix=unit.key();
             }
             boolean complete=!Boolean.TRUE.equals(jdbc.queryForObject(WaPrivacyTechnicalQueries.CANDIDATES+"SELECT EXISTS(SELECT 1 FROM eligible)",Boolean.class,params(grant,asOf)));
             if(!grant.expires().isAfter(clock.now()))throw WaProblem.unauthorized();
-            Position next=complete || dryRun && pending.isEmpty() && units.size()<limit?null:position(actor,grant,asOf,prefix);
-            if(!complete && !dryRun && pending.isEmpty() && units.size()<limit)next=position(actor,grant,asOf,"");
+            Position next=complete || !blocked && units.size()<limit?null:position(actor,grant,asOf,prefix);
             return new Result(dryRun?"DRY_RUN":pending.isEmpty()?"APPLIED":"DEFERRED",examined,erased,deleted,pending.size(),would,complete,next,List.copyOf(pending));
         });
+    }
+    private static boolean semantic(String reason){
+        return switch(reason){case "MULTI_INSTANCE","AMBIGUOUS_OWNER","ACTIVE_REFERENCE","CHILDREN_PENDING","REPLAY_PENDING"->true;default->false;};
     }
     private boolean lock(Unit unit){
         if(unit.run()!=null && !row("operation_run","id",unit.run()))return false;
@@ -105,9 +115,9 @@ public final class WaPrivacyTechnicalRetention {
         if(cursor==null)return;
         if(!actor.credentialId().equals(cursor.credentialId()) || !grant.environment().equals(cursor.environment()) || !grant.instance().equals(cursor.instanceId())
             || cursor.dryRun()!=dryRun || cursor.syntheticOnly()!=policy.syntheticOnly() || cursor.asOf()==null || cursor.asOf().isAfter(clock.now())
-            || !cursor.asOf().plusSeconds(300).isAfter(clock.now()) || cursor.after()==null || !cursor.after().matches("[0-9]{2}:[0-9]{20}:[0-9a-f-]{36}:[0-9a-f-]{36}|"))throw WaProblem.invalid();
+            || cursor.after()==null || !cursor.after().matches("[0-9]{2}:[0-9]{20}:[0-9a-f-]{36}:[0-9a-f-]{36}|"))throw WaProblem.invalid();
     }
     private Position position(WaPrincipal actor,Grant grant,Instant asOf,String after){return new Position(actor.credentialId(),grant.environment(),grant.instance(),asOf,after,dryRun,policy.syntheticOnly());}
-    private Object[] params(Grant grant,Instant asOf){return new Object[]{grant.environment(),grant.instance(),policy.syntheticOnly(),Timestamp.from(asOf)};}
+    private Object[] params(Grant grant,Instant asOf){return new Object[]{grant.environment(),grant.instance(),policy.syntheticOnly(),Timestamp.from(asOf),Timestamp.from(clock.now())};}
     private static Object[] append(Object[] first,Object...rest){Object[] all=java.util.Arrays.copyOf(first,first.length+rest.length);System.arraycopy(rest,0,all,first.length,rest.length);return all;}
 }

@@ -76,8 +76,10 @@ O job deriva ambiente e instância da credencial `SYSTEM_JOB`, válida e cercada
 com `FOR SHARE` na própria transação. Cada unidade examina no máximo uma linha
 física de inbox/outbox; o lote é de um a cem unidades. Retorna `examined`,
 `erased`, `deleted` (zero: mantém esqueletos) e `deferred`. O cursor liga
-credencial, ambiente, instância, modo e instante de corte; vence em cinco minutos.
-O chamador deve colocá-lo no cursor opaco autenticado do job, sem permitir
+credencial, ambiente, instância, modo e instante de corte. O corte `asOf` permanece
+congelado durante a passada e não possui prazo agregado de cinco minutos.
+O envelope opaco autenticado vence em cinco minutos e é renovado por página.
+O chamador deve colocar a posição nesse envelope do job, sem permitir
 que o cliente fabrique ou altere seus campos.
 
 A idade é a da mensagem, sem renovação por atividade recente do motorista.
@@ -95,7 +97,12 @@ apagada por suposição nem ignorada pelo gate. Uma rota explícita de outra
 instância fica fora do escopo.
 
 O cursor só avança o prefixo concluído na ordem `(família, created_at, id)`.
-`SKIP LOCKED`, lease vivo e tentativa em envio param nesse prefixo. A conclusão
+`SKIP LOCKED`, lease vivo e tentativa em envio param nesse prefixo. Uma outbox
+ambígua gera adiamento sem mutação e permite avançar para outras unidades.
+Esgotar a ordem sem bloqueio físico retorna `next=null`, inclusive com pendências;
+`complete` permanece falso enquanto elas existirem. A chamada seguinte
+sem cursor inicia outra passada com novo corte. No limite exato pode haver uma
+página vazia adicional. A conclusão
 não depende do cursor: uma consulta `NOT EXISTS` independente exige ausência
 de conteúdo vencido no escopo/coorte/instância. `erase` repete esse gate sob as
 cercas de autores e retorna `TERMINAL_CONTENT_PENDING` enquanto houver pendência.

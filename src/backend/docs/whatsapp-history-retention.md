@@ -16,8 +16,9 @@ qualquer efeito. O limite de um a cem corresponde a linhas físicas examinadas;
 cada exclusão é uma folha, sem DELETE de pai nem cascatas implícitas.
 
 `Position` tipa família, instante do fato e UUID, além de credencial, ambiente,
-instância, instante de corte e modos dry-run/synthetic-only. Vence em cinco
-minutos. A integração deve envolvê-lo no cursor opaco autenticado da família
+instância, instante de corte e modos dry-run/synthetic-only. O corte não tem
+idade máxima agregada, mas continua não nulo e não futuro. A integração deve
+envolvê-lo no envelope opaco autenticado de cinco minutos, renovado por página, da família
 `HISTORY_90D`; este port Java não autentica um cursor apresentado pelo cliente.
 
 Uma linha ocupada por outra transação produz `ROW_BUSY` e interrompe a página
@@ -25,8 +26,10 @@ antes de avançar o prefixo. Pendências de domínio são reportadas individualm
 e permitem examinar outras folhas, dentro do mesmo orçamento. O cursor apenas
 marca a posição da varredura; `complete` é calculado por outra consulta de todo
 o escopo, independentemente dessa posição. Ao terminar uma varredura aplicada
-com pendências, a próxima posição reinicia o exame. Assim, uma posição avançada
-não converte dado pendente em conclusão.
+com pendências e sem bloqueio físico, `next=null` encerra a passada. A próxima
+chamada sem cursor inicia novo exame com novo corte; no limite exato pode haver
+uma página vazia adicional. Assim, uma posição avançada não converte dado
+pendente em conclusão e uma passada não congela indefinidamente a elegibilidade.
 
 `examined` conta linhas selecionadas e verificadas, `deleted` conta DELETEs
 confirmados, `erased` é zero nesta fatia e `deferred` conta os adiamentos da

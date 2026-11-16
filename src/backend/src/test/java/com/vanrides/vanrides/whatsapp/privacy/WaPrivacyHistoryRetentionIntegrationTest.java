@@ -47,7 +47,7 @@ class WaPrivacyHistoryRetentionIntegrationTest {
             var result=h.retention(false).tick(actor,1,cursor);
             assertThat(result.examined()).isLessThanOrEqualTo(1); assertThat(result.deleted()).isLessThanOrEqualTo(1);
             deleted+=result.deleted(); sawPending|=result.deferred()>0; cursor=result.next();
-            if (sawPending && cursor!=null && cursor.afterFamily()==null) break;
+            if (cursor==null) break;
         }
         assertThat(deleted).isEqualTo(7); assertThat(sawPending).isTrue();
         String after=controls(); var again=h.retention(false).tick(actor,100,null);
@@ -86,15 +86,15 @@ class WaPrivacyHistoryRetentionIntegrationTest {
             cursor.afterFamily(),null,cursor.afterId(),false,true);
         assertThatThrownBy(()->h.retention(false).tick(actor,1,broken)).isInstanceOf(RuntimeException.class);
         f.time.now=f.time.now.plusSeconds(301);
-        assertThatThrownBy(()->h.retention(false).tick(actor,1,cursor)).isInstanceOf(RuntimeException.class);
+        assertThat(h.retention(false).tick(actor,1,cursor).examined()).isLessThanOrEqualTo(1);
     }
-    @Test void completionDoesNotTrustAnAdvancedCursorAndReturnsToPendingRows() {
+    @Test void completionDoesNotTrustAnAdvancedCursorAndEndsThePassWithPendingRows() {
         var actor=f.job(ENV,INSTANCE);
         var cursor=new WaPrivacyHistoryRetention.Position(actor.credentialId(),ENV,INSTANCE,f.time.now,
             WaPrivacyHistoryRetention.Family.OCCURRENCE_GRAPH,f.time.now,new UUID(-1,-1),false,true);
         var result=h.retention(false).tick(actor,100,cursor);
         assertThat(result.examined()).isZero(); assertThat(result.complete()).isFalse();
-        assertThat(result.next()).isNotNull(); assertThat(result.next().afterFamily()).isNull();
+        assertThat(result.next()).isNull();
     }
     @Test void aForeignCohortCannotBeDeletedThroughAnInScopeDriverOrAlias() {
         UUID foreign=UUID.randomUUID();
