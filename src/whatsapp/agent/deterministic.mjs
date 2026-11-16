@@ -4,10 +4,12 @@ import { PASSENGER_PAYLOADS, decidePassengerSetup, isPassengerCommand, validPass
 import { decideAttendance, isAttendanceChoice, isAttendanceCommand, validAttendanceDecision } from './attendance.mjs';
 import { decideDriverLocation, isDriverLocationCommand, validDriverLocationDecision } from './driver-location.mjs';
 
+import { decideRunFinish, isRunFinishCommand, validRunFinishDecision } from './run-finish.mjs';
+
 const commands = new Set([
   'START_ONBOARDING', 'SET_PROFILE_NAME', 'ACCEPT_NOTICE', 'CLAIM_DRIVER_INVITE',
   'CONFIRM_PAIRING', 'REQUEST_SUPPORT', 'RESPOND_TO_MESSAGE', 'ADVANCE_ATTENDANCE', 'SET_ATTENDANCE',
-  'GET_DRIVER_LOCATION',
+  'GET_DRIVER_LOCATION', 'FINISH_RUN',
   ...Object.keys(DRIVER_PAYLOADS), ...Object.keys(PASSENGER_PAYLOADS),
 ]);
 const runCommands = new Set(['ADVANCE_RUN_SETUP', 'REQUEST_START', 'REQUEST_RESUME', 'SET_OPERATIONAL_ATTENDANCE']);
@@ -96,7 +98,8 @@ export function validateDecision(decision, context) {
     default: valid = isDriverCommand(decision.commandType) && validDriverDecision(decision, context)
       || isPassengerCommand(decision.commandType) && validPassengerDecision(decision, context)
       || isAttendanceCommand(decision.commandType) && validAttendanceDecision(decision, context)
-      || isDriverLocationCommand(decision.commandType) && validDriverLocationDecision(decision, context);
+      || isDriverLocationCommand(decision.commandType) && validDriverLocationDecision(decision, context)
+      || isRunFinishCommand(decision.commandType) && validRunFinishDecision(decision, context);
   }
   if (!valid || decision.commandType !== 'RESPOND_TO_MESSAGE' && context.eventFreshness !== 'CURRENT')
     throw new Error('INVALID_DECISION');
@@ -111,6 +114,7 @@ export function decideDeterministically(message, context) {
     return { kind: 'COMMAND', commandType, payload };
   };
   const reply = responseCode => command('RESPOND_TO_MESSAGE', { responseCode });
+  if (context.allowedCommands.some(isRunFinishCommand)) return decideRunFinish(context);
   if (context.step === 'PAUSED' || context.registrationStep === 'PAUSED') return { kind: 'NO_ACTION' };
   if (context.eventFreshness !== 'CURRENT')
     return reply(message.type === 'UNSUPPORTED' && !context.allowedCommands.some(isPassengerCommand)

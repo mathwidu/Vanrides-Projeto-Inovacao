@@ -21,7 +21,7 @@ public final class WaFoundationResponses {
         OR (o.policy_version='attendance-v1' AND o.response_part='attendance'
           AND r.command_type IN ('ADVANCE_ATTENDANCE','SET_ATTENDANCE','GET_SUMMARY'))
         OR (o.policy_version='run-start-v1' AND o.response_part='run-start'
-          AND r.command_type IN ('ADVANCE_RUN_SETUP','REQUEST_START','REQUEST_RESUME','SET_OPERATIONAL_ATTENDANCE'))))
+          AND r.command_type IN ('ADVANCE_RUN_SETUP','REQUEST_START','REQUEST_RESUME','SET_OPERATIONAL_ATTENDANCE','FINISH_RUN'))))
         OR
         """ + WaPassengerResponses.ELIGIBLE + ")";
     private WaFoundationResponses() { }

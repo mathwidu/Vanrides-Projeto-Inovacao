@@ -29,6 +29,10 @@ final class WaCommandPayloads {
             case "REVOKE_INVITE" -> refs(payload, "inviteRef", "confirmationRef");
             case "CANCEL_OCCURRENCE" -> refs(payload, "occurrenceRef", "confirmationRef");
             case "GET_SUMMARY" -> refs(payload, "summaryRef");
+            case "FINISH_RUN" -> {
+                refs(payload, "runRef", "reason");
+                if (!payload.path("reason").asText().equals("MANUAL_COMPLETION")) throw WaProblem.invalid();
+            }
             case "START_ONBOARDING" -> WaJson.fields(payload);
             case "SET_PROFILE_NAME" -> { WaJson.fields(payload, "name"); WaJson.text(payload, "name", 1, 80); }
             case "ACCEPT_NOTICE" -> {

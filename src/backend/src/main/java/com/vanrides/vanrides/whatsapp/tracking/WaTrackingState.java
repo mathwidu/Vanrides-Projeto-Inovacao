@@ -35,6 +35,7 @@ final class WaTrackingState {
             if(knownStop!=null && (!body.hasNonNull("stopRequestRef") || !knownStop.equals(WaJson.uuid(body,"stopRequestRef")))) throw new WaProblem(WaProblem.Code.VERSION_CONFLICT);
             if(session.stopRef()==null && body.hasNonNull("stopRequestRef")) throw new WaProblem(WaProblem.Code.VERSION_CONFLICT);
             store.jdbc.update("UPDATE wa.tracking_session SET state='STOPPED',stopped_at=COALESCE(stopped_at,?),lease_expires_at=LEAST(lease_expires_at,?),gps_state='STALE',version=version+1 WHERE id=?",ts(clock.now()),ts(clock.now()),id);
+            if (terminal(run) && session.stoppedAt()==null) new WaTrackingNotices(store.jdbc).stopped(session,clock.now());
             if(collecting(session) && !terminal(run) && store.current(run.id()).id().equals(id)) lifecycle.failOrDegrade(session,run,clock.now());
         } else if("CONTINUE".equals(WaTrackingResponses.action(session,run,clock.now(),settings.enabled()))) {
             if("PERMISSION_DENIED".equals(state)) {
