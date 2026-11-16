@@ -21,10 +21,11 @@ flowchart LR
 ```
 
 O desenho representa os componentes da homologação, com estado atualizado em
-16/11/2026. Os
-arquivos gráficos da entrega acadêmica anterior permanecem em `docs/assets/`
-como registro daquele momento; para operação atual use este fluxo e o
-[guia da equipe](desenvolvimento/homologacao-da-equipe.md).
+16/11/2026. As figuras editáveis de
+[componentes](assets/arquitetura-fluxo.svg) e [jornada](assets/jornada-fluxo.svg)
+ficam em `docs/assets/`, junto dos PNGs incorporados à STACK. Os diagramas
+atuais e o [guia da equipe](desenvolvimento/homologacao-da-equipe.md)
+orientam a operação; as versões anteriores permanecem no histórico Git.
 
 1. O WhatsApp entrega a mensagem à Evolution API. A Evolution envia a entrada
    e as atualizações de entrega ao receptor dedicado. Ele verifica a instância,
