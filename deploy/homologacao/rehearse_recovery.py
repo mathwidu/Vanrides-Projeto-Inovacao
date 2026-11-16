@@ -217,7 +217,9 @@ class Session:
         self.owned.create(prefix + '-redis', images['redis'], ['--network', network, '--network-alias', 'redis', '--memory', '128m', '--memory-swap', '128m',
                           '--cap-add', 'CHOWN', '--cap-add', 'DAC_OVERRIDE', '--cap-add', 'SETGID', '--cap-add', 'SETUID',
                           '--mount', 'type=volume,source=' + redis_volume + ',target=/data'], ['redis-server', '--appendonly', 'yes', '--appendfsync', 'always', '--save', ''])
-        fixture.env_file(self.output / (prefix + '-api.env'), fixture.api_env('postgres', keys))
+        api_config = fixture.api_env('postgres', keys)
+        api_config['VANRIDES_JAR_SHA256'] = self.value['candidate']['jarSha256']
+        fixture.env_file(self.output / (prefix + '-api.env'), api_config)
         self.owned.create(prefix + '-api', images['apiRuntime'], ['--network', network, '--network-alias', 'api', '--memory', '640m', '--memory-swap', '640m',
                           '--user', self.uid, '--read-only', '--tmpfs', '/tmp:rw,nosuid,nodev,size=64m,mode=1777', '--env-file', str(self.output / (prefix + '-api.env')),
                           *mount(self.output / 'candidate.jar', '/app/app.jar'), '--entrypoint', 'java'],

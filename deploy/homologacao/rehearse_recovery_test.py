@@ -148,6 +148,7 @@ class FixtureTest(TempTest):
         self.assertIn('WA070_EVOLUTION_BASE_URL=http://127.0.0.1:7081\n', env)
         self.assertIn('WA070_MODEL_MODE=disabled\n', env); self.assertIn('_TOKEN_FILE=', env)
         self.assertNotIn('source', (self.root / 'restored-n8n.env').read_text())
+        self.assertIn('VANRIDES_JAR_SHA256=' + value['candidate']['jarSha256'] + '\n', (self.root / 'restored-api.env').read_text())
 
 
 class FakeDocker:
