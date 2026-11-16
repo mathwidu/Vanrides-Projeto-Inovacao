@@ -34,15 +34,18 @@ documenta os comandos, o teste com um só WhatsApp e os resultados da rodada.
 
 Em 16/11, a API publicada usa schema V44. Presença,
 alterações de presença e encerramento manual/automático passaram em testes
-dirigidos; a conferência dessas etapas no WhatsApp real ainda está pendente.
+dirigidos.
+Em nova rodada no WhatsApp real, passaram vínculo, aprovação do ponto,
+confirmação de presença para amanhã, alteração para ausência e consulta da
+mesma lista pelo motorista. Faltam a volta e a jornada com GPS e encerramento.
 Aproximação e fim automático permanecem desligados até habilitar o ensaio.
 
 O APK Android 0.4.0+14 está publicado e instalado no Redmi. A jornada com GPS
-do novo build ainda precisa ser conferida. O build completo do iPhone compilou
-sem assinatura; para instalar, falta disponibilizar a conta Apple/Personal Team
-no Xcode e concluir a assinatura gratuita. O
-mantenedor fará percurso, bateria e avaliação do aviso após a preparação dos
-artefatos, conforme o roteiro da rodada final.
+do novo build ainda precisa ser conferida. O iPhone recebeu o aplicativo
+0.4.0+14: assinatura gratuita conferida, instalação concluída e abertura pelo Mac aprovada. O perfil vence em 23/11/2026
+às 08:27 (Brasília). GPS e parada desse build ainda não foram validados no
+aparelho. O mantenedor fará percurso, bateria e avaliação do aviso após a
+preparação dos artefatos, conforme o roteiro da rodada final.
 
 A recuperação isolada com API, PostgreSQL, Redis e n8n em fila passou no
 reinício, nos agendamentos e na restauração, sem duplicar os dois efeitos do
