@@ -13,54 +13,72 @@ function harness(respond, options = {}) {
   const tick = createPrivacyTicker({ enabled: true, now: () => clock,
     report: value => reports.push(value), api: { request: (path, request) => {
       assert.equal(path, '/integrations/whatsapp/v1/privacy/tick');
-      assert.ok(request.deadline > clock && request.deadline <= clock + 1000);
+      assert.ok(request.deadline > clock && request.deadline <= clock + 2500);
       calls.push(structuredClone(request));
       return respond(request.body, calls.length);
     } }, ...options });
   return { tick, calls, reports, advance: ms => { clock += ms; } };
 }
 
+async function visit(h, family) {
+  const before = h.calls.filter(call => call.body.family === family).length;
+  for (let i = 0; i < 3; i++) {
+    h.advance(60_000);
+    const result = await h.tick();
+    if (h.calls.filter(call => call.body.family === family).length > before) return result;
+  }
+  assert.fail('the round-robin did not revisit the family within three W08 calls');
+}
+
 test('disabled maintenance performs no requests and a deferred family cannot suppress the other four', async () => {
-  const disabled = createPrivacyTicker({ enabled: false });
-  assert.equal((await disabled()).status, 'DISABLED');
+  assert.equal((await createPrivacyTicker({ enabled: false })()).status, 'DISABLED');
   const h = harness(body => page(body.family, body.family === 'TERMINAL_7D'
     ? { status: 'DEFERRED', examined: 1, deferred: 1, complete: false, reasonCodes: ['ROW_BUSY'] }
     : { examined: 1, deleted: 1 }));
   const result = await h.tick();
   assert.equal(result.status, 'DEFERRED');
-  assert.equal(result.deleted, 4);
-  assert.deepEqual(h.calls.map(call => call.body), PRIVACY_FAMILIES.map(family => ({ family, batchLimit: 20 })));
+  assert.equal(result.deleted, 1);
+  assert.equal(h.calls.length, 2);
   await h.tick();
-  assert.equal(h.calls.length, 5); // repeated W08 calls within the minute do no extra work
+  assert.equal(h.calls.length, 2);
+  for (let i = 0; i < 2; i++) { h.advance(60_000); await h.tick(); }
+  assert.deepEqual(h.calls.slice(0, 5).map(call => call.body), PRIVACY_FAMILIES.map(family => ({ family, batchLimit: 20 })));
 });
 
 test('continuations are private, independent, drained and expire before the five-minute server TTL', async () => {
-  let round = 0;
-  const h = harness(body => page(body.family, body.family === 'TECHNICAL_7D' && round !== 1
-    ? { examined: 20, complete: false, nextCursor: cursor(round + 1) } : {}));
+  let mode = 0;
+  const h = harness(body => page(body.family, body.family === 'TECHNICAL_7D' && mode !== 1
+    ? { examined: 20, complete: false, nextCursor: cursor(mode + 1) } : {}));
   assert.equal((await h.tick()).status, 'MORE');
-  round = 1; h.advance(60_000);
-  await h.tick();
-  assert.equal(h.calls[6].body.cursor, cursor(1));
+  mode = 1;
+  await visit(h, 'TECHNICAL_7D');
+  let technical = h.calls.filter(call => call.body.family === 'TECHNICAL_7D');
+  assert.equal(technical[1].body.cursor, cursor(1));
+  mode = 2;
+  await visit(h, 'TECHNICAL_7D');
+  technical = h.calls.filter(call => call.body.family === 'TECHNICAL_7D');
+  assert.ok(!Object.hasOwn(technical[2].body, 'cursor'));
+  h.advance(240_000);
+  await visit(h, 'TECHNICAL_7D');
+  technical = h.calls.filter(call => call.body.family === 'TECHNICAL_7D');
+  assert.ok(!Object.hasOwn(technical[3].body, 'cursor'));
   assert.ok(h.calls.filter(call => call.body.family !== 'TECHNICAL_7D').every(call => !Object.hasOwn(call.body, 'cursor')));
-  round = 2; h.advance(60_000); await h.tick();
-  assert.ok(!Object.hasOwn(h.calls[11].body, 'cursor')); // the previous continuation drained
-  round = 3; h.advance(240_000); await h.tick();
-  assert.ok(!Object.hasOwn(h.calls[16].body, 'cursor'));
   for (const value of [await h.tick(), ...h.reports]) assert.ok(!JSON.stringify(value).includes('privacycursor_'));
 });
 
-test('refused cursors are discarded, transient failures retain them and progress of other families survives', async () => {
-  for (const [status, retained] of [[400, false], [403, false], [410, false], [503, true]]) {
+test('refused and expired continuations cannot prevent other families from progressing', async () => {
+  for (const status of [400, 403, 410, 503]) {
     let round = 0;
-    const h = harness(body => body.family !== 'PROFILE_30D' ? page(body.family)
+    const h = harness(body => body.family !== 'TECHNICAL_7D' ? page(body.family, { examined: 1, deleted: 1 })
       : round === 0 ? page(body.family, { examined: 1, complete: false, nextCursor: cursor(1) })
       : round === 1 ? { status, body: { private: 'SYNTHETIC_PRIVATE' } } : page(body.family));
-    await h.tick(); round = 1; h.advance(60_000);
-    assert.equal((await h.tick()).status, 'UNAVAILABLE');
-    round = 2; h.advance(60_000); await h.tick();
-    assert.equal(h.calls[12].body.cursor, retained ? cursor(1) : undefined);
-    assert.equal(h.calls.length, 15);
+    await h.tick(); round = 1;
+    assert.equal((await visit(h, 'TECHNICAL_7D')).status, 'UNAVAILABLE');
+    round = 2; await visit(h, 'TECHNICAL_7D');
+    const technical = h.calls.filter(call => call.body.family === 'TECHNICAL_7D');
+    assert.equal(technical[1].body.cursor, cursor(1));
+    assert.ok(!Object.hasOwn(technical[2].body, 'cursor')); // expiry applies even after a transient failure
+    for (const family of PRIVACY_FAMILIES) assert.ok(h.calls.some(call => call.body.family === family));
   }
 });
 
@@ -72,7 +90,7 @@ test('invalid output never enters logs or a cursor and dry-run cannot report rea
     { serverTime: 'invalid' }, { status: 'DRY_RUN', erased: 1 }]) {
     const h = harness(body => page(body.family, patch));
     assert.equal((await h.tick()).status, 'UNAVAILABLE');
-    assert.equal(h.calls.length, 5);
+    assert.equal(h.calls.length, 2);
     assert.ok(!JSON.stringify(h.reports).includes(privateValue));
     h.advance(60_000); await h.tick();
     assert.equal(h.reports.length, 1); // unchanged failure is not logged every minute
@@ -97,7 +115,7 @@ test('timeout releases the bounded call, does not accept a late cursor and suppr
 test('a late response cannot advance its family even when the overall five-second window remains open', async () => {
   const h = harness((body, number) => {
     if (number === 1) {
-      h.advance(1001);
+      h.advance(2501);
       return page(body.family, { examined: 1, erased: 1, complete: false, nextCursor: cursor(1) });
     }
     return page(body.family);
@@ -105,7 +123,7 @@ test('a late response cannot advance its family even when the overall five-secon
   const result = await h.tick();
   assert.equal(result.status, 'UNAVAILABLE');
   assert.equal(result.erased, 0);
-  assert.equal(h.calls.length, 5);
+  assert.equal(h.calls.length, 2);
   h.advance(60_000); await h.tick();
   assert.ok(h.calls.every(call => !Object.hasOwn(call.body, 'cursor')));
 });
@@ -113,7 +131,7 @@ test('a late response cannot advance its family even when the overall five-secon
 test('logs only changed aggregate counts, including dry-run previews, and ignores a failed logger', async () => {
   const h = harness(body => page(body.family, { status: 'DRY_RUN', examined: 1, wouldChange: 1 }));
   const result = await h.tick();
-  assert.equal(result.wouldChange, 5);
+  assert.equal(result.wouldChange, 2);
   h.advance(60_000); await h.tick();
   assert.equal(h.reports.length, 1);
   assert.deepEqual(Object.keys(h.reports[0]), ['status', 'examined', 'erased', 'deleted', 'deferred', 'wouldChange']);

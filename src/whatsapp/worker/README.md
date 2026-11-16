@@ -211,14 +211,20 @@ mesmo W08. Não cria outro cron nem altera os oito exports. O corpo enviado ao
 n8n continua `{status,processed}`; `processed` conta apenas a reconciliação de
 entrega. Uma falha na retenção sinaliza UNAVAILABLE, preservando essa contagem.
 
-A cada 60 segundos o worker pede uma página de até 20 unidades lógicas para
-cada família: mensagens terminais (7 dias), dados técnicos (7 dias), perfis
+A cada minuto o worker pede uma página de até 20 unidades lógicas para duas
+famílias, em rodízio: mensagens terminais (7 dias), dados técnicos (7 dias), perfis
 explicitamente encerrados (30 dias), projeção histórica e folhas do histórico
-(90 dias). Um bloqueio de uma família não impede as outras. O orçamento é de
-5 segundos no total, até 1 segundo por família, após os até 18 segundos de
-reconciliação. Ao atingir o prazo, o worker ignora resultados tardios e tenta
-novamente numa execução posterior; o backend controla locks e idempotência.
+(90 dias). No ciclo normal, as cinco recebem vez em três execuções do W08.
+Um bloqueio de uma família não impede as outras. O orçamento é de 5 segundos
+no total, até 2,5 segundos por família, após os até 18 segundos de reconciliação.
+Um lote de 20 perfis levou aproximadamente um segundo no teste local com
+journal real, por isso o orçamento inicial de um segundo por família foi
+substituído pelo rodízio. Isso não é uma garantia de latência na VPS.
+Ao atingir o prazo, o worker ignora resultados tardios; a transação autorizada
+na API ainda pode terminar. O backend controla locks e idempotência.
 O cursor é privado, separado por família e descartado após quatro minutos.
+Uma continuação que vencer recomeça a seleção atual; não significa varredura
+completa nem muda o instante inicial para fingir conclusão de um preview.
 Uma página completa se refere apenas à sua família; não declara todo o banco
 limpo. A contagem de perfis é de sujeitos, com possível atualização de várias
 cópias relacionadas por sujeito.

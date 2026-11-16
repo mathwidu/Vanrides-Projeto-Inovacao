@@ -32,22 +32,24 @@ export function createPrivacyTicker({ api, enabled = false, now = Date.now, repo
   if (typeof enabled !== 'boolean' || enabled && typeof api?.request !== 'function' || typeof now !== 'function'
       || typeof report !== 'function' || !Number.isInteger(operationTimeoutMs) || operationTimeoutMs < 1 || operationTimeoutMs > 5000)
     throw new WorkerError('CONFIG_INVALID');
-  let active = false, lastStarted, lastReport;
+  let active = false, lastStarted, lastReport, nextFamily = 0;
   const continuations = new Map();
   return async () => {
     if (!enabled) return empty('DISABLED');
     const started = now();
     if (!Number.isSafeInteger(started)) return empty('UNAVAILABLE');
     if (active) return empty('BUSY');
-    if (lastStarted !== undefined && started >= lastStarted && started - lastStarted < 60_000) return empty('IDLE');
+    if (lastStarted !== undefined && Math.floor(started / 60_000) === Math.floor(lastStarted / 60_000)) return empty('IDLE');
     active = true;
     lastStarted = started;
     const deadline = started + operationTimeoutMs;
     const summary = empty('IDLE');
     let failed = false, deferred = false;
     try {
-      for (const family of PRIVACY_FAMILIES) {
+      for (let slot = 0; slot < 2; slot++) {
         if (now() >= deadline) { failed = true; break; }
+        const family = PRIVACY_FAMILIES[nextFamily];
+        nextFamily = (nextFamily + 1) % PRIVACY_FAMILIES.length;
         let work = continuations.get(family);
         if (work && (started < work.started || started - work.started >= 240_000)) {
           continuations.delete(family); work = undefined;
@@ -56,8 +58,8 @@ export function createPrivacyTicker({ api, enabled = false, now = Date.now, repo
         if (work) body.cursor = work.cursor;
         let timer;
         try {
-          // One slow family cannot consume the budgets of the four independent families.
-          const remaining = Math.min(1000, deadline - now());
+          // Round-robin keeps a deferred family from monopolizing subsequent W08 calls.
+          const remaining = Math.min(2500, deadline - now());
           if (remaining < 1) throw new WorkerError('TIMEOUT');
           const requestDeadline = now() + remaining;
           const response = await Promise.race([

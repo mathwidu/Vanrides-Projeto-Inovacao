@@ -259,8 +259,8 @@ perfil não é consequência automática de parar GPS ou encerrar viagem.
 ### Rotina do worker preparada, ainda desabilitada
 
 O W08 conserva seu contrato e os oito exports. O novo adapter, desligado por
-padrão, pede uma página de 20 unidades de cada família independente em até
-cinco segundos após a reconciliação. Cursores e detalhes permanecem privados
+padrão, pede uma página de 20 unidades para duas famílias por execução, em
+rodízio e com até cinco segundos após a reconciliação. Cursores e detalhes permanecem privados
 no worker; o n8n recebe somente seu resumo de entrega. Logs são agregados e
 só saem quando há trabalho/falha e mudança do resumo.
 
@@ -279,3 +279,12 @@ a aceitar até 5% da média, com mínimo de 3 s, evitando ajuste a cada pequena
 mudança de inventário. Contagens, autenticação dos recibos e exigência de zero
 falhas/erros/pulos foram preservadas. O fluxo automático de build/deploy não
 foi alterado.
+
+O teste do runtime mediu 1.036 ms e 999 ms no coordenador para 20 perfis,
+incluindo o journal real. Por isso o worker passou a reservar até 2,5 s por
+família em rodízio, mantendo 5 s totais e o orçamento anterior da reconciliação.
+Uma falha/adiamento continua cedendo vez às outras famílias. Os nove casos do
+adapter Node passaram novamente, incluindo prazo por página, cursores vencidos
+e progresso independente. Uma resposta tardia é ignorada no worker; isso não
+promete cancelamento da transação da API. Latência e execução dessa rotina na
+VPS ainda precisam ser verificadas na composição final.
