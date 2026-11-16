@@ -89,6 +89,107 @@ são a autoridade operacional; a cadeia detecta divergência, não é uma promes
 de resistência a um administrador que altere todos os arquivos e referências.
 O adapter, sua integração e o ensaio de restore têm resultados separados.
 
+## Preparo da retenção física dos backups
+
+O helper [`backup_retention.py`](../../deploy/homologacao/backup_retention.py)
+prepara catálogo e plano de sete dias. Não há cron, timer ou ativação automática.
+O mantenedor opera a ferramenta em Linux/macOS com Python 3, em diretório
+canônico explicitamente escolhido, pertencente ao operador e privado (0700).
+Cada `.dump` deve ser arquivo regular privado (0600), sem symlink/hardlink,
+com cabeçalho PostgreSQL custom e até 64 MiB. Somente nomes simples de filhos
+diretos são aceitos; a ferramenta não percorre subdiretórios. Não corrige
+permissões de arquivos existentes nem acessa banco, Docker ou serviços.
+
+O catálogo `.backup-retention.json`, os planos, as aprovações e os recibos são
+privados (0600). O registro conserva SHA-256, tamanho, identidade do arquivo,
+dataset lógico e `recordedAt` UTC estável. `createdAt` só deve ser informado
+com uma data original comprovada por evidência independente. Para o legado sem
+essa prova, ele permanece `null`: a idade histórica é **UNKNOWN**, e o prazo
+conservador só vence sete dias após o registro. Nome, mtime e ctime não datam
+o backup; estes dois últimos servem somente para detectar alterações.
+O inventário antigo do ensaio, baseado em ctime e com `deletionImplemented=false`,
+continua sendo uma prévia histórica, sem comprovar cumprimento dos sete dias.
+
+O dataset identifica o banco/conjunto lógico, por exemplo `api` e `n8n`.
+Um dump restaurável de um dataset não substitui o de outro. Para cada dataset
+que tenha arquivos a eliminar, deve restar no mesmo catálogo uma cópia íntegra,
+não selecionada, cujo hash tenha restauração atestada pelo operador.
+`--restored-sha256` precisa coincidir com o dump e
+`--restore-evidence-sha256` identifica o recibo independente guardado à parte.
+Isso registra uma **declaração do operador**: o helper não executa nem valida
+o conteúdo de um restore. Sem cópia restante assim atestada, o plano bloqueia:
+gerar novo backup, restaurá-lo isoladamente e registrá-lo com outro nome.
+Cada arquivo é registrado uma vez; registrar novamente não renova sua idade.
+Essa proteção não comprova a consistência temporal entre vários bancos ou
+a recuperação de todo o conjunto sem os respectivos ensaios.
+
+### Próxima prévia na VPS, sem exclusão
+
+O principal pode copiar os dois arquivos Python para uma pasta privada de
+versão, conferir seus hashes contra o commit revisado e executar ali:
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 python3 -m unittest -v backup_retention_test.py
+```
+
+Os testes criam e apagam exclusivamente fixtures descartáveis dentro de
+`TemporaryDirectory`. Não apontar os testes para um diretório de backups.
+Depois, escolher o diretório real exato e os basenames existentes, sem copiar
+journal/head para outro lugar e sem modificar dumps em uso. Exemplo de registro
+legado e prévia; os caminhos/nomes devem ser conferidos pelo operador:
+
+```sh
+umask 077
+retention_tool=/caminho/privado/versao-revisada/backup_retention.py
+backup_scope=/caminho/canonico/privado/do/ensaio
+python3 "$retention_tool" --directory "$backup_scope" register \
+  --dump api-antigo.dump --dataset api
+python3 "$retention_tool" --directory "$backup_scope" plan --output retention-plan-01.json
+```
+
+O registro acima mantém criação desconhecida e não declara restauração.
+Para uma cópia já restaurada, acrescentar os dois hashes exatos do atestado
+no momento do registro. Para uma cópia nova com data comprovada, informar
+`--created-at` no formato UTC, por exemplo `2026-11-16T12:00:00+00:00`;
+não reutilizar a data do exemplo como dado real. A saída pública contém somente
+status, hash do plano e contagens; detalhes dos arquivos ficam no plano privado.
+Revisar `delete`, `keep`, datasets, datas, hashes e recibos de restauração.
+Um plano vazio é esperado quando as cópias legadas acabaram de ser registradas.
+
+### Aprovação futura vinculada à lista concreta
+
+Não há aprovação de purga real nesta entrega. Após eventual confirmação do
+usuário sobre a lista revisada, o mantenedor pode registrar a aprovação:
+
+```sh
+reviewed_plan_sha=SHA256_EXATO_DO_PLANO_REVISADO
+python3 "$retention_tool" --directory "$backup_scope" approve \
+  --plan retention-plan-01.json --plan-sha256 "$reviewed_plan_sha" --output retention-approval-01.json
+python3 "$retention_tool" --directory "$backup_scope" apply \
+  --plan retention-plan-01.json --plan-sha256 "$reviewed_plan_sha" --approval retention-approval-01.json
+```
+
+`approve` só grava a guarda privada para aquele hash; não apaga arquivos.
+`apply` sem `--execute` é **SIMULATION_ONLY**. Somente uma nova chamada explícita
+com `--execute`, o mesmo plano/hash e sua aprovação pode remover os `.dump`
+enumerados. O plano vale 24 horas; alteração no catálogo, no escopo ou em qualquer
+arquivo registrado exige nova prévia e nova aprovação. Arquivos não cadastrados,
+journal, cabeça confiável, segredos, logs e volumes não são alvos de retenção.
+
+A ferramenta usa lock exclusivo cooperativo e revalida identidade, conteúdo,
+prazo e cópias restantes. Na execução, move os candidatos para uma pasta nova
+privada `.retention-purge-*` e os confere antes de qualquer unlink. Uma troca
+tardia bloqueia e conserva os arquivos nessa pasta para inspeção; não remover
+essa pasta automaticamente. O operador deve manter outros escritores parados.
+Uma falha de I/O pode interromper o lote: conservar catálogo, plano, aprovação,
+recibo e pasta de preparo e reconciliar o que ocorreu, sem repetir às cegas.
+O catálogo atualizado impede reutilizar uma aprovação concluída.
+
+Os testes sintéticos não comprovam expurgo real, recuperação de arquivo apagado,
+apagamento físico de blocos, retenção em fornecedores ou rotação em produção.
+O ensaio de restauração com exclusões reaplicadas é uma prova separada;
+journal/head atuais continuam obrigatórios antes de liberar consumidores.
+
 ## Paginação das rotinas
 
 A manutenção conserva o mesmo corte de datas enquanto percorre uma lista
