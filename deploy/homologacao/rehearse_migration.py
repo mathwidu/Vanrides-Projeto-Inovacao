@@ -32,6 +32,9 @@ DATABASE = 'vanrides_hml_api'
 DOCKER = ('docker', '--host', 'unix:///var/run/docker.sock')
 MAX_DUMP, MAX_JAR = 64 * 1024 * 1024, 128 * 1024 * 1024
 MIGRATIONS = 'BOOT-INF/classes/db/migration/'
+CONFIGURATION = 'BOOT-INF/classes/application.properties'
+CONFIG_ADDITIONS = (b'vanrides.wa.auto-finish-enabled=${WA_AUTO_FINISH_ENABLED:false}\n',
+                    b'vanrides.wa.mvp-rehearsal-routines=${WA_MVP_REHEARSAL_ROUTINES:false}\n')
 OWNER = 'dev.vanrides.migration-rehearsal'
 FINGERPRINT_SQL = r"""
 BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY;
@@ -116,8 +119,11 @@ def manifest(path, expected):
     raw = read(Path(path), 64000)
     require(re.fullmatch('[a-f0-9]{64}', expected or '') and sha(raw) == expected, 'MIG_MANIFEST_CHANGED')
     value = object_json(raw)
-    require(set(value) == {'schemaVersion', 'environment', 'previous', 'candidate', 'migration'}
-            and type(value['schemaVersion']) is int and value['schemaVersion'] == 1 and value['environment'] == ENVIRONMENT, 'MIG_MANIFEST_INVALID')
+    version = value.get('schemaVersion')
+    fields = {'schemaVersion', 'environment', 'previous', 'candidate', 'migration'}
+    require(type(version) is int and version in (1, 2) and value.get('environment') == ENVIRONMENT
+            and set(value) == fields | ({'reviewedConfigurations'} if version == 2 else set()), 'MIG_MANIFEST_INVALID')
+    configuration_reviews(value)
     old, candidate, migration = value['previous'], value['candidate'], value['migration']
     require(set(old) == {'apiImage', 'postgresImage', 'revision', 'tree', 'jarSha256'}
             and set(candidate) == {'jar', 'jarSha256', 'revision', 'tree'} and set(migration) == {'path', 'sha256'}, 'MIG_MANIFEST_INVALID')
@@ -129,6 +135,38 @@ def manifest(path, expected):
     jar = read(Path(candidate['jar']), MAX_JAR)
     require(sha(jar) == candidate['jarSha256'], 'MIG_CANDIDATE_CHANGED')
     return value, jar
+
+
+def configuration_reviews(value):
+    if value['schemaVersion'] == 1:
+        require('reviewedConfigurations' not in value, 'MIG_CONFIGURATION_REVIEW_INVALID'); return []
+    reviewed = value.get('reviewedConfigurations')
+    require(isinstance(reviewed, list) and len(reviewed) == 1 and isinstance(reviewed[0], dict), 'MIG_CONFIGURATION_REVIEW_INVALID')
+    item = reviewed[0]
+    require(set(item) == {'path', 'oldSha256', 'newSha256'} and item['path'] == CONFIGURATION
+            and all(isinstance(item[key], str) and re.fullmatch('[a-f0-9]{64}', item[key]) for key in ('oldSha256', 'newSha256'))
+            and item['oldSha256'] != item['newSha256'], 'MIG_CONFIGURATION_REVIEW_INVALID')
+    return reviewed
+
+
+def reviewed_inventory(previous, candidate, value):
+    old, new = inventory(previous), inventory(candidate)
+    comparison, proof = dict(new), []
+    for item in configuration_reviews(value):
+        path = item['path']
+        require(old.get(path) == item['oldSha256'] and new.get(path) == item['newSha256'], 'MIG_CONFIGURATION_HASH_CHANGED')
+        with ZipFile(io.BytesIO(previous)) as before, ZipFile(io.BytesIO(candidate)) as after:
+            original, changed = before.read(path), after.read(path)
+        # A flat UTF-8 file prevents insertions from becoming continuations or escaped property aliases.
+        original.decode('utf-8'); changed.decode('utf-8')
+        require(b'\\' not in original and all(line.split(b'=', 1)[0] not in original for line in CONFIG_ADDITIONS), 'MIG_CONFIGURATION_AMBIGUOUS')
+        lines = changed.splitlines(keepends=True)
+        require(all(lines.count(line) == 1 for line in CONFIG_ADDITIONS), 'MIG_CONFIGURATION_DELTA_INVALID')
+        unchanged = b''.join(line for line in lines if line not in CONFIG_ADDITIONS)
+        require(unchanged == original, 'MIG_CONFIGURATION_DELTA_INVALID')
+        comparison[path] = old[path]
+        proof.append({**item, 'unchangedBaseSha256': sha(unchanged), 'addedProperties': [line.decode().rstrip('\n') for line in CONFIG_ADDITIONS]})
+    return migration_versions(old, comparison, value['migration']), new, proof
 
 
 def inventory(jar):
@@ -345,6 +383,7 @@ def api_probe(owned, image, database, jar, env_file, expected_version, name, pau
 def rehearse(value, candidate, expected, output, run, pause=time.sleep):
     receipt = {'schemaVersion': 1, 'environment': ENVIRONMENT, 'manifestSha256': expected,
                'status': 'BLOCKED', 'releaseEligible': False, 'candidateRevision': value['candidate']['revision'], 'candidateTree': value['candidate']['tree'], 'stage': 'LIVE_SNAPSHOT', 'scope': 'POSTGRES_MIGRATION_AND_IMAGE_RETURN_ONLY'}
+    if value['schemaVersion'] == 2: receipt['manifestSchemaVersion'] = 2
     owned = Owned(run)
     try:
         before = live_state(run, value['previous']); source = before[DB]['container']
@@ -355,8 +394,9 @@ def rehearse(value, candidate, expected, output, run, pause=time.sleep):
         run(['cp', extract + ':/app/app.jar', str(previous_path)], maximum=MAX_JAR)
         previous = read(previous_path, MAX_JAR); os.chmod(previous_path, 0o600)
         require(sha(previous) == value['previous']['jarSha256'], 'MIG_PREVIOUS_JAR_CHANGED')
-        old_inventory, new_inventory = inventory(previous), inventory(candidate)
-        prior_version, next_version = migration_versions(old_inventory, new_inventory, value['migration'])
+        versions, new_inventory, configurations = reviewed_inventory(previous, candidate, value)
+        if configurations: receipt['reviewedConfigurations'] = configurations
+        prior_version, next_version = versions
         receipt['inventorySha256'] = sha(encode(new_inventory))
         require(sql(run, source, FLYWAY_SQL) == str(prior_version) + '|0', 'MIG_SOURCE_SCHEMA_CHANGED')
         fingerprint_before = fingerprint(run, source); receipt['stage'] = 'BACKUP'
@@ -421,6 +461,9 @@ def main():
         with deploy_lock():
             require(re.fullmatch(r'/[A-Za-z0-9._/-]+', args.output), 'MIG_OUTPUT_PATH_INVALID')
             output = new_directory(args.output)
+            exact_manifest = read(Path(args.manifest), 64000)
+            require(sha(exact_manifest) == args.expected_manifest_sha256, 'MIG_MANIFEST_CHANGED')
+            write_new(output / 'manifest.json', exact_manifest)
             previous_handler = signal.getsignal(signal.SIGTERM)
             def cancelled(signum, frame):
                 raise KeyboardInterrupt()
