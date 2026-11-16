@@ -2,6 +2,7 @@ package com.vanrides.vanrides.whatsapp.privacy;
 
 import com.vanrides.vanrides.whatsapp.config.WaClock;
 import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -23,6 +24,13 @@ public final class WaPrivacyService {
     public record Result(String status, Map<String, Integer> erased, List<String> deferred) {
         static Result status(String status) { return new Result(status, Map.of(), List.of()); }
     }
+    public record Candidate(UUID subjectId,Instant eraseAfter) { }
+    private static final String CANDIDATE_BASE="""
+        FROM wa.privacy_subject subject JOIN wa.identity person ON person.id=subject.subject_id
+        JOIN wa.test_cohort cohort ON cohort.id=person.test_cohort_id
+        WHERE subject.environment=? AND subject.instance_id=? AND subject.erased_at IS NULL
+          AND subject.erase_after<=? AND cohort.environment=? AND (?=false OR cohort.synthetic)
+        """;
     private final JdbcTemplate jdbc;
     private final TransactionTemplate transaction;
     private final WaClock clock;
@@ -70,6 +78,32 @@ public final class WaPrivacyService {
             SELECT subject_id FROM wa.privacy_subject WHERE environment=? AND instance_id=?
               AND erased_at IS NULL AND erase_after<=? ORDER BY erase_after,subject_id LIMIT ?
             """, (rs, row) -> rs.getObject(1, UUID.class), scope.environment(), scope.instanceId(), Timestamp.from(clock.now()), limit));
+    }
+
+    /** Server-cutoff keyset page. Permission predicates precede LIMIT; semantic deferrals stay in this base. */
+    public List<Candidate> candidates(Scope scope,int limit,Instant asOf,Instant afterEraseAfter,UUID afterSubjectId){
+        requireOwnTransactionBoundary();candidateArguments(scope,limit,asOf,afterEraseAfter,afterSubjectId);
+        if(!policy.enabled())return List.of();
+        Timestamp after=afterEraseAfter==null?null:Timestamp.from(afterEraseAfter);
+        return authorized(scope,()->jdbc.query("SELECT subject.subject_id,subject.erase_after "+CANDIDATE_BASE+"""
+            AND (?::timestamptz IS NULL OR (subject.erase_after,subject.subject_id)>(?::timestamptz,?::uuid))
+            ORDER BY subject.erase_after,subject.subject_id LIMIT ?
+            """,(rs,row)->new Candidate(rs.getObject(1,UUID.class),rs.getTimestamp(2).toInstant()),
+            scope.environment(),scope.instanceId(),Timestamp.from(asOf),scope.environment(),policy.syntheticOnly(),after,after,afterSubjectId,limit));
+    }
+
+    /** Independent completeness: never apply the continuation tuple or hide a deferred subject. */
+    public boolean candidatesComplete(Scope scope,Instant asOf){
+        requireOwnTransactionBoundary();candidateArguments(scope,1,asOf,null,null);
+        if(!policy.enabled())return false;
+        return authorized(scope,()->Boolean.TRUE.equals(jdbc.queryForObject("SELECT NOT EXISTS(SELECT 1 "+CANDIDATE_BASE+")",Boolean.class,
+            scope.environment(),scope.instanceId(),Timestamp.from(asOf),scope.environment(),policy.syntheticOnly())));
+    }
+
+    private void candidateArguments(Scope scope,int limit,Instant asOf,Instant afterEraseAfter,UUID afterSubjectId){
+        if(scope==null || limit<1 || limit>100 || asOf==null || asOf.isAfter(clock.now())
+            || (afterEraseAfter==null)!=(afterSubjectId==null) || afterEraseAfter!=null && afterEraseAfter.isAfter(asOf))
+            throw new IllegalArgumentException("PRIVACY_PAGE_ARGUMENTS");
     }
 
     public Result erase(Scope scope, UUID subject) {

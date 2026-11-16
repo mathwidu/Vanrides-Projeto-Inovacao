@@ -61,6 +61,13 @@ erase nem journal. Em apply, usa obrigatoriamente o callback de autoridade
 antes e depois de cada transação de candidates/erase/ACK, com journal entre
 commits. Não adicionar `@Transactional` externo ao controller ou coordenador.
 
+A seleção de perfis filtra ambiente, instância, coorte e `syntheticOnly` antes
+do limite. A página usa a tupla `(erase_after, subject_id)` e um `asOf` fixo,
+escolhido pelo servidor para aquela passada. Cada sujeito examinado avança a
+tupla, inclusive quando retorna `COPY_WRITER_BUSY`, `ACTIVE_REFERENCE` ou outro
+adiamento semântico; assim um prefixo adiado não impede os seguintes.
+`complete` usa a mesma base sem a tupla e sem excluir esses adiamentos.
+
 A resposta tem exatamente onze campos: `status`, `family`, `examined`,
 `erased`, `deleted`, `deferred`, `wouldChange`, `complete`, `nextCursor`,
 `serverTime` e `reasonCodes`. Só expõe contadores e códigos, sem nomes, aliases,
@@ -69,7 +76,9 @@ desconhecidos são reduzidos a `RETENTION_DEFERRED`.
 
 `complete` vale somente para a família, corte e escopo selecionados. Não é
 um sinal de conclusão de todo o pipeline. Preview pode retornar complete=false
-e nextCursor=null; perfis adiados também encerram a página sem um loop infinito.
+e nextCursor=null. Ao fim da passada, perfis retornam nextCursor=null mesmo
+que um sujeito anterior continue adiado; a próxima visita sem cursor inicia
+uma nova passada, com corte atualizado, sem declarar o prefixo concluído.
 Uma família adiada não impede que o chamador execute as outras quatro.
 
 ## Cursor e orçamento do chamador
@@ -80,6 +89,12 @@ usa campos fixos e `JavaTimeModule`; é rejeitado se vier de outra família,
 ambiente, modo, credencial ou instância. O primeiro Position dos ports antigos
 também é criado pelo servidor com ambiente fixo, antes da transação do port;
 uma troca de ambiente da credencial não pode ampliar o escopo entre transações.
+
+No perfil, `asOf` não expira por idade: o corte permanece fixo enquanto cada
+página renova seu envelope de cinco minutos. A posição inclui
+`afterEraseAfter`/`afterSubjectId`, ambos ausentes ou ambos presentes; um corte
+futuro é inválido. A validade da credencial e o TTL criptográfico continuam
+obrigatórios em todas as chamadas. A sessão de scan não é persistida no banco.
 
 O contrato permite uma página 20 por família. O worker escala até duas
 famílias por W08 em round-robin, com orçamento de 2,5 segundos por família e

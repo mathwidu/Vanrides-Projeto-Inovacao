@@ -33,6 +33,7 @@ class WaPrivacyJobsIntegrationTest {
     private WaPrivacyTechnicalFixture t;
     private WaPrivacyTestSupport f;
     private Path journalDirectory;
+    private int closureAlias;
     @BeforeEach void setup(){t=new WaPrivacyTechnicalFixture(POSTGRES);f=t.f;}
     private WaPrivacySettings config(boolean enabled,boolean apply,Path path){
         return new WaPrivacySettings(new MockEnvironment().withProperty("WA_PRIVACY_ENABLED",Boolean.toString(enabled))
@@ -99,9 +100,59 @@ class WaPrivacyJobsIntegrationTest {
         assertThatThrownBy(()->jobs.tick(actor,body("TERMINAL_7D",1).put("cursor",extra))).isInstanceOf(WaProblem.class);
     }
     @Test void profilePreviewCapsLogicalSubjectsAtTwentyFiveWithoutCallingErase(){
-        seedClosures(33,f.journal);f.time.days(31);var result=preview().tick(actor(),body("PROFILE_30D",100));
+        seedClosures(33,f.journal);f.time.days(31);var actor=actor();var jobs=preview();var result=jobs.tick(actor,body("PROFILE_30D",100));
         assertThat(result.path("examined").asInt()).isEqualTo(25);assertThat(result.path("wouldChange").asInt()).isEqualTo(25);assertThat(result.path("erased").asInt()).isZero();
+        assertThat(result.path("nextCursor").isTextual()).isTrue();
+        var tail=jobs.tick(actor,body("PROFILE_30D",100).put("cursor",result.path("nextCursor").asText()));
+        assertThat(tail.path("examined").asInt()).isEqualTo(8);assertThat(tail.path("wouldChange").asInt()).isEqualTo(8);
+        assertThat(tail.path("nextCursor").isNull()).isTrue();assertThat(tail.path("complete").asBoolean()).isFalse();
         assertThat(f.jdbc.queryForObject("SELECT count(*) FROM wa.privacy_subject WHERE erased_at IS NOT NULL",Long.class)).isZero();
+    }
+    @Test void nonSyntheticClosuresBeforeTheLimitCannotStarveTheLaterSyntheticSubject() throws Exception {
+        var journal=journal();UUID administrative=UUID.randomUUID();
+        // Administrative cohort flag is non-synthetic; every person and payload in this fixture is synthetic.
+        f.jdbc.update("INSERT INTO wa.test_cohort(id,environment,synthetic) VALUES (?,?,false)",administrative,ENV);
+        for(int index=0;index<20;index++)closedPassenger(administrative,"DADO_SINTETICO_ADMIN_"+index,journal);
+        f.time.now=f.time.now.plusSeconds(1);assertThat(f.service(WaPrivacyPolicy.syntheticTests(),journal).close(SCOPE,f.first).status()).isEqualTo("CLOSED");
+        f.time.days(31);f.sweepTerminal();var config=config(true,true,journalDirectory);var gate=new WaPrivacyStartupGate(f.jdbc,config,t.settings);gate.verify();
+        var result=jobs(config,gate).tick(actor(),body("PROFILE_30D",20));
+        assertThat(result.path("examined").asInt()).isEqualTo(1);assertThat(result.path("erased").asInt()).isEqualTo(1);
+        assertThat(result.path("deferred").asInt()).isZero();assertThat(result.path("complete").asBoolean()).isTrue();assertThat(result.path("nextCursor").isNull()).isTrue();
+        assertThat(f.jdbc.queryForObject("SELECT count(*) FROM wa.profile p JOIN wa.identity i ON i.id=p.identity_id WHERE i.test_cohort_id=? AND p.display_name IS NOT NULL AND p.privacy_erased_at IS NULL",Long.class,administrative)).isEqualTo(20);
+        assertThat(f.jdbc.queryForObject("SELECT count(*) FROM wa.privacy_erasure_ledger l JOIN wa.identity i ON i.id=l.subject_id WHERE i.test_cohort_id=? AND l.state='JOURNALED'",Long.class,administrative)).isEqualTo(20);
+    }
+    @Test void deferredPrefixDoesNotStarveLaterSubjectsOrFalselyCompleteAndAgingCutoffSurvivesRenewedEnvelopes() throws Exception {
+        var journal=journal();assertThat(f.service(WaPrivacyPolicy.syntheticTests(),journal).close(SCOPE,f.first).status()).isEqualTo("CLOSED");
+        f.time.now=f.time.now.plusSeconds(1);UUID second=closedPassenger(f.cohort,"DADO_SINTETICO_SEGUINTE",journal);
+        f.time.now=f.time.now.plusSeconds(1);UUID third=closedPassenger(f.cohort,"DADO_SINTETICO_ULTIMO",journal);
+        f.time.days(31);f.sweepTerminal();var config=config(true,true,journalDirectory);var gate=new WaPrivacyStartupGate(f.jdbc,config,t.settings);gate.verify();
+        var jobs=jobs(config,gate);var actor=actor();var locked=new java.util.concurrent.CountDownLatch(1);var release=new java.util.concurrent.CountDownLatch(1);
+        var pool=java.util.concurrent.Executors.newSingleThreadExecutor();
+        try{
+            var writer=pool.submit(()->new TransactionTemplate(f.transactions).execute(tx->{
+                f.jdbc.queryForList("SELECT identity_id FROM wa.profile WHERE identity_id=? FOR UPDATE",f.driver);locked.countDown();
+                try{if(!release.await(15,TimeUnit.SECONDS))throw new AssertionError("Synthetic copy writer timeout");}
+                catch(InterruptedException interrupted){Thread.currentThread().interrupt();throw new AssertionError(interrupted);}return true;
+            }));
+            assertThat(locked.await(10,TimeUnit.SECONDS)).isTrue();
+            var first=jobs.tick(actor,body("PROFILE_30D",1));assertThat(first.path("deferred").asInt()).isEqualTo(1);
+            assertThat(first.path("reasonCodes").toString()).contains("COPY_WRITER_BUSY");assertThat(first.path("nextCursor").isTextual()).isTrue();
+            var cursors=new WaPrivacyCursor(t.crypto,f.clock);var position=cursors.read(actor,first.path("nextCursor").asText()).position();
+            String partial=cursors.issue(actor,"PROFILE_30D",position.deepCopy().putNull("afterSubjectId"));
+            assertThatThrownBy(()->jobs.tick(actor,body("PROFILE_30D",1).put("cursor",partial))).isInstanceOf(WaProblem.class);
+            String future=cursors.issue(actor,"PROFILE_30D",position.deepCopy().put("asOf",f.time.now.plusSeconds(1).toString()));
+            assertThatThrownBy(()->jobs.tick(actor,body("PROFILE_30D",1).put("cursor",future))).isInstanceOf(WaProblem.class);
+            f.time.now=f.time.now.plusSeconds(240);
+            var middle=jobs.tick(actor,body("PROFILE_30D",1).put("cursor",first.path("nextCursor").asText()));
+            assertThat(middle.path("erased").asInt()).isEqualTo(1);assertThat(middle.path("nextCursor").isTextual()).isTrue();
+            f.time.now=f.time.now.plusSeconds(240); // asOf is now 480s old; each encrypted envelope is only 240s old.
+            var end=jobs.tick(actor,body("PROFILE_30D",1).put("cursor",middle.path("nextCursor").asText()));
+            assertThat(end.path("erased").asInt()).isEqualTo(1);assertThat(end.path("complete").asBoolean()).isFalse();assertThat(end.path("nextCursor").isNull()).isTrue();
+            assertThat(f.string("SELECT display_name FROM wa.profile WHERE identity_id=?",second)).isNull();assertThat(f.string("SELECT display_name FROM wa.profile WHERE identity_id=?",third)).isNull();
+            assertThat(f.string("SELECT display_name FROM wa.profile WHERE identity_id=?",f.first)).isEqualTo(NAME);
+            release.countDown();writer.get(10,TimeUnit.SECONDS);
+            var retry=jobs.tick(actor,body("PROFILE_30D",1));assertThat(retry.path("erased").asInt()).isEqualTo(1);assertThat(retry.path("complete").asBoolean()).isTrue();
+        }finally{release.countDown();pool.shutdownNow();assertThat(pool.awaitTermination(10,TimeUnit.SECONDS)).isTrue();}
     }
     @Test void applyUsesDurableJournalAndAuthorityForTwentySubjectsAndDoesNotClaimGlobalCompleteness() throws Exception {
         var journal=journal();var config=config(true,true,journalDirectory);
@@ -138,6 +189,12 @@ class WaPrivacyJobsIntegrationTest {
             f.jdbc.update("INSERT INTO wa.identity_alias(id,identity_id,provider,instance_id,alias_type,alias_value) VALUES (?,?,'EVOLUTION',?,'PN',?)",UUID.randomUUID(),id,INSTANCE,"9000"+index+"@s.whatsapp.net");
             assertThat(service.close(SCOPE,id).status()).isEqualTo("CLOSED");
         }
+    }
+    private UUID closedPassenger(UUID cohort,String name,WaPrivacyJournal journal){
+        UUID id=UUID.randomUUID();f.jdbc.update("INSERT INTO wa.identity(id,test_cohort_id) VALUES (?,?)",id,cohort);
+        f.jdbc.update("INSERT INTO wa.profile(identity_id,role,status,display_name) VALUES (?,'PASSENGER','ACTIVE',?)",id,name);
+        f.jdbc.update("INSERT INTO wa.identity_alias(id,identity_id,provider,instance_id,alias_type,alias_value) VALUES (?,?,'EVOLUTION',?,'PN',?)",UUID.randomUUID(),id,INSTANCE,"8000"+(++closureAlias)+"@s.whatsapp.net");
+        assertThat(f.service(new WaPrivacyPolicy(true,false),journal).close(SCOPE,id).status()).isEqualTo("CLOSED");return id;
     }
     private String fingerprint(){return f.string("""
         SELECT jsonb_build_object('profile',(SELECT jsonb_agg(to_jsonb(p) ORDER BY p.identity_id) FROM wa.profile p),
