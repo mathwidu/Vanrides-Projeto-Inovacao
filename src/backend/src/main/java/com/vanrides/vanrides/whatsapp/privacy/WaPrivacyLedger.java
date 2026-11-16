@@ -23,6 +23,26 @@ final class WaPrivacyLedger {
             """, UUID.randomUUID(), subject, Timestamp.from(now));
     }
 
+    /** Restore only: preserve the external identity/payload; a missing creation time is reconstructed deterministically. */
+    boolean importIntent(WaPrivacyJournal.Entry original, Instant reconstructedCreatedAt) {
+        if (original == null || !WaCrypto.digest(original.canonicalPayload()).equals(original.payloadHash()))
+            throw new IllegalStateException("PRIVACY_RESTORE_INTENT_INVALID");
+        jdbc.execute("LOCK TABLE wa.privacy_erasure_ledger IN SHARE ROW EXCLUSIVE MODE");
+        int inserted = jdbc.update("""
+            INSERT INTO wa.privacy_erasure_ledger(sequence,event_id,subject_id,environment,instance_id,
+              payload_json,payload_hash,created_at) OVERRIDING SYSTEM VALUE VALUES (?,?,?,?,?,?::jsonb,?,?)
+            ON CONFLICT DO NOTHING
+            """, original.databaseSequence(), original.eventId(), original.subjectId(), original.environment(),
+            original.instanceId(), original.canonicalPayload(), original.payloadHash(), Timestamp.from(reconstructedCreatedAt));
+        if (!entry(original.subjectId()).equals(original)) throw new IllegalStateException("PRIVACY_RESTORE_INTENT_CONFLICT");
+        jdbc.queryForObject("""
+            SELECT setval(pg_get_serial_sequence('wa.privacy_erasure_ledger','sequence'),
+              greatest(coalesce(pg_sequence_last_value(pg_get_serial_sequence('wa.privacy_erasure_ledger','sequence')::regclass),1),
+                coalesce((SELECT max(sequence) FROM wa.privacy_erasure_ledger),1)),true)
+            """, Long.class);
+        return inserted == 1;
+    }
+
     WaPrivacyJournal.Entry entry(UUID subject) {
         return jdbc.query("""
             SELECT sequence,event_id,subject_id,environment,instance_id,payload_json::text,payload_hash
