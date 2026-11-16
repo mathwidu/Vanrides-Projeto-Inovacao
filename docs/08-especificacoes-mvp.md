@@ -4,7 +4,7 @@ Cada tarefa define problema, resultado, limites e prova. Os critérios devem ser
 nenhuma caixa marcada é inferida do estado de implementação. Use a issue para registrar a revisão.
 
 A navegação externa foi retirada do MVP. T76/T77 permanecem somente no histórico.
-T72/T73/T74 são propostas de escopo e exigem decisão antes da execução.
+T72/T73/T74 têm implementação integrada. Revisão dos critérios, semântica do limite e provas reais restantes seguem explícitas; consulte o [registro atual](../program/evidence/mvp-entrega-20261116.md).
 
 [Voltar ao backlog](07-como-ler-o-backlog.md)
 
@@ -60,7 +60,7 @@ F09 · Onda 1 · [Issue #26](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Resultado esperado:** O motorista consegue se cadastrar pelo WhatsApp com seus dados validados.
 
-**Situação:** Implementado · Laboratório. Jornada de cadastro e rotina com mensagens simuladas aprovada.
+**Situação:** Implementado · Laboratório. Vínculo, rotina usada na partida e operações do motorista exercitados no WhatsApp real; revisão do fluxo completo de cadastro permanece específica.
 
 **Inclui:**
 
@@ -87,7 +87,7 @@ F09 · Onda 1 · [Issue #26](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Decisão pendente:** Nenhuma adicional identificada.
 
-**Próxima ação:** Repetir a conversa com o número dedicado.
+**Próxima ação:** Revisar os critérios de cadastro na issue e reproduzir os casos ainda não cobertos com participantes autorizados.
 
 **Onde conferir:**
 
@@ -146,7 +146,7 @@ F10 · Onda 1 · [Issue #28](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Resultado esperado:** O passageiro informa os dados necessários e tem seu ponto conferido pelo motorista.
 
-**Situação:** Implementado · Laboratório. Jornada de cadastro, correção e aprovação testada com canal simulado.
+**Situação:** Implementado · Laboratório. Vínculo e ponto aprovados no WhatsApp real com passageiro já cadastrado; o fluxo simplificado de perfil novo tem prova PostgreSQL, não repetição real atual.
 
 **Inclui:**
 
@@ -173,7 +173,7 @@ F10 · Onda 1 · [Issue #28](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Decisão pendente:** Nenhuma adicional identificada.
 
-**Próxima ação:** Conferir o cadastro no WhatsApp real.
+**Próxima ação:** Repetir o cadastro simplificado com perfil novo no canal real e revisar os critérios com a equipe.
 
 **Onde conferir:**
 
@@ -189,7 +189,7 @@ F10 · Onda 1 · [Issue #29](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Resultado esperado:** O convite permite uma solicitação válida e o motorista decide o vínculo.
 
-**Situação:** Implementado · Laboratório. Concorrência pelo último uso e repetição de mensagens testadas.
+**Situação:** Implementado · Laboratório. Emissão de link, consumo, vínculo e aprovação conferidos no WhatsApp real com participantes autorizados; isso não prova todos os cenários de dois passageiros.
 
 **Inclui:**
 
@@ -216,7 +216,7 @@ F10 · Onda 1 · [Issue #29](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Decisão pendente:** Nenhuma adicional identificada.
 
-**Próxima ação:** Verificar convite com participantes autorizados no número dedicado.
+**Próxima ação:** Revisar convite/vínculo e completar o cenário de perfil novo e dois passageiros autorizados.
 
 **Onde conferir:**
 
@@ -232,7 +232,7 @@ F02 · Onda 1 · [Issue #30](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Resultado esperado:** Cada passageiro confirma ou informa ausência para a viagem indicada.
 
-**Situação:** Implementado · Laboratório. Confirmar, corrigir e manter outra viagem pendente passaram no laboratório.
+**Situação:** Implementado · Laboratório. Presença de ida/volta, alteração para ausência na ida e lista correspondente do motorista conferidas no WhatsApp real. Limites após início possuem cenários PostgreSQL.
 
 **Inclui:**
 
@@ -259,7 +259,7 @@ F02 · Onda 1 · [Issue #30](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Decisão pendente:** Nenhuma adicional identificada.
 
-**Próxima ação:** Repetir respostas e lembrete no canal real.
+**Próxima ação:** Conferir os limites após início na jornada real e revisar a prova por data e sentido.
 
 **Onde conferir:**
 
@@ -275,7 +275,7 @@ F05 · Onda 2 · [Issue #31](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Resultado esperado:** A API recebe somente as posições válidas da sessão e do aparelho autorizados.
 
-**Situação:** Implementado · Físico parado. Testes de GPS e cenário Android parado aprovados; percurso e iPhone pendentes.
+**Situação:** Implementado · Físico parado. Android +15: 81 aceitas/uma RUN_TERMINAL; iOS +15: 57 aceitas/uma STALE. GPS, pin e STOP/ACK reais estacionados; sem prova atual de percurso/rede/tela bloqueada.
 
 **Inclui:**
 
@@ -302,7 +302,7 @@ F05 · Onda 2 · [Issue #31](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Decisão pendente:** Nenhuma adicional identificada.
 
-**Próxima ação:** Validar continuidade durante os percursos nos dois aparelhos.
+**Próxima ação:** Validar continuidade e atrasos em percurso nas duas plataformas, com a combinação final de versões.
 
 **Onde conferir:**
 
@@ -318,7 +318,7 @@ F05 · Onda 2 · [Issue #33](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Resultado esperado:** Somente o motorista e os passageiros autorizados consultam a posição daquela viagem.
 
-**Situação:** Implementado · Laboratório. Jornada 130 com API e worker reais, aquisições e receptor sintéticos. Consulta autorizada, fila atrasada e replay verificados.
+**Situação:** Implementado · Laboratório. Passageiro recebeu pin real do iPhone e do Redmi; após STOP a consulta ficou indisponível. Isso não substitui prova de frescor/continuidade em percurso.
 
 **Inclui:**
 
@@ -345,7 +345,7 @@ F05 · Onda 2 · [Issue #33](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Decisão pendente:** Nenhuma adicional identificada.
 
-**Próxima ação:** Validar consulta e recebimento do pin no WhatsApp de teste, após publicar a homologação.
+**Próxima ação:** Revisar autorização e critérios restantes; conferir frescor e continuidade em percurso e falha de rede.
 
 **Onde conferir:**
 
@@ -363,7 +363,7 @@ F05 · Onda 2 · [Issue #34](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Resultado esperado:** A resposta informa a última posição válida e quando ela foi obtida.
 
-**Situação:** Implementado · Laboratório. Jornada 130 com API e worker reais, aquisições e receptor sintéticos. Consulta autorizada, fila atrasada e replay verificados.
+**Situação:** Implementado · Laboratório. Passageiro recebeu pin real do iPhone e do Redmi; após STOP a consulta ficou indisponível. Isso não substitui prova de frescor/continuidade em percurso.
 
 **Inclui:**
 
@@ -390,7 +390,7 @@ F05 · Onda 2 · [Issue #34](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Decisão pendente:** Nenhuma adicional identificada.
 
-**Próxima ação:** Validar consulta e recebimento do pin no WhatsApp de teste, após publicar a homologação.
+**Próxima ação:** Revisar autorização e critérios restantes; conferir frescor e continuidade em percurso e falha de rede.
 
 **Onde conferir:**
 
@@ -406,7 +406,7 @@ F05 · Onda 2 · [Issue #35](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Resultado esperado:** O armazenamento fornece a última posição válida e o horário para a consulta autorizada.
 
-**Situação:** Implementado · Laboratório. Jornada 130 com API e worker reais, aquisições e receptor sintéticos. Consulta autorizada, fila atrasada e replay verificados.
+**Situação:** Implementado · Laboratório. Passageiro recebeu pin real do iPhone e do Redmi; após STOP a consulta ficou indisponível. Isso não substitui prova de frescor/continuidade em percurso.
 
 **Inclui:**
 
@@ -433,7 +433,7 @@ F05 · Onda 2 · [Issue #35](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Decisão pendente:** Nenhuma adicional identificada.
 
-**Próxima ação:** Validar consulta e recebimento do pin no WhatsApp de teste, após publicar a homologação.
+**Próxima ação:** Revisar autorização e critérios restantes; conferir frescor e continuidade em percurso e falha de rede.
 
 **Onde conferir:**
 
@@ -451,7 +451,7 @@ F11 · Onda 2 · [Issue #36](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Resultado esperado:** Uma aproximação válida gera um aviso para o passageiro correto.
 
-**Situação:** Implementado · Teste automatizado. Casos de política e integração PostgreSQL passaram na suíte completa. Utilidade em percurso e canal real aguardam ensaio.
+**Situação:** Implementado · Teste automatizado. Cenários PostgreSQL e controles de opt-out registrados; o aviso e sua utilidade em percurso ainda não foram comprovados.
 
 **Inclui:**
 
@@ -478,7 +478,7 @@ F11 · Onda 2 · [Issue #36](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Decisão pendente:** Nenhuma adicional identificada.
 
-**Próxima ação:** Validar o aviso com passageiros consentidos e rotina revisada em percurso.
+**Próxima ação:** Validar destinatário, calibração e utilidade em percurso com passageiros consentidos; manter o escopo da coorte compartilhada.
 
 **Onde conferir:**
 
@@ -711,7 +711,7 @@ F09 · Onda 1 · [Issue #54](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Resultado esperado:** Uma versão mínima identificada funciona no aparelho de teste.
 
-**Situação:** Implementado · Físico parado. Instalação e abertura no Redmi Note 8 sem USB confirmadas; não é prova de percurso.
+**Situação:** Implementado · Físico parado. No Redmi, +15 passou em GPS, pin, FINALIZAR/CONFIRMAR, COMPLETED, STOP/ACK e UI concluída sem pendência, em teste estacionado.
 
 **Inclui:**
 
@@ -738,7 +738,7 @@ F09 · Onda 1 · [Issue #54](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Decisão pendente:** Nenhuma adicional identificada.
 
-**Próxima ação:** Usar a versão integrada nos próximos testes físicos.
+**Próxima ação:** Usar o APK +15 identificado na rodada de campo e preservar o +14 para retorno.
 
 **Onde conferir:**
 
@@ -753,7 +753,7 @@ F09 · Onda 1 · [Issue #55](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Resultado esperado:** Uma versão mínima instalada tem assinatura e renovação documentadas.
 
-**Situação:** Implementado · Físico parado. Abertura do build inicial no iPhone confirmada; não valida o GPS do MVP atual.
+**Situação:** Implementado · Físico parado. GPS/STOP/ACK e recuperação de recibo com UI de parada passaram no +15; perfil válido até 23/11/2026 às 08:27 BRT. Campo e renovação efetiva futura não executados.
 
 **Inclui:**
 
@@ -780,7 +780,7 @@ F09 · Onda 1 · [Issue #55](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Decisão pendente:** Nenhuma adicional identificada.
 
-**Próxima ação:** Renovar a instalação e retomar os testes do coletor quando autorizado.
+**Próxima ação:** Executar a rodada de campo e renovar a instalação antes do vencimento, conforme o guia.
 
 **Onde conferir:**
 
@@ -796,7 +796,7 @@ F05 · Onda 2 · [Issue #56](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Resultado esperado:** O Android coleta posições em serviço nativo e mostra seu estado.
 
-**Situação:** Implementado · Laboratório. Cenários em emulador do coletor isolado aprovados; aparelho real tem prova separada.
+**Situação:** Implementado · Físico parado. Redmi +15: primeiro GPS aceito em 2,737605 s, 81 aceitas/uma RUN_TERMINAL tardia, pin e FINALIZAR/STOP/ACK/UI reais. Teste estacionado; rede/tela bloqueada/bateria atuais pendentes.
 
 **Inclui:**
 
@@ -823,7 +823,7 @@ F05 · Onda 2 · [Issue #56](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Decisão pendente:** Nenhuma adicional identificada.
 
-**Próxima ação:** Concluir os ensaios de percurso e energia no Android.
+**Próxima ação:** Concluir percurso, tela bloqueada, recuperação de rede e energia no Android +15 sem transferir a prova estacionada para esses cenários.
 
 **Onde conferir:**
 
@@ -839,7 +839,7 @@ F05 · Onda 2 · [Issue #57](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Resultado esperado:** O coletor nativo mantém o estado de localização independentemente da tela.
 
-**Situação:** Implementado · Laboratório. Cenários em simulador e testes nativos aprovados; falta prova física do coletor.
+**Situação:** Implementado · Físico parado. iPhone +15: geração 3, primeiro GPS em 5,651142 s, 57 aceitas/uma STALE de cache antigo corretamente recusada, STOP/ACK e UI parada sem apagar journal. Sem prova atual de percurso/rede/tela bloqueada/bateria.
 
 **Inclui:**
 
@@ -866,7 +866,7 @@ F05 · Onda 2 · [Issue #57](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Decisão pendente:** Nenhuma adicional identificada.
 
-**Próxima ação:** Executar o coletor no iPhone físico após a retomada.
+**Próxima ação:** Executar percurso, tela bloqueada, recuperação de rede e energia no iPhone +15; preservar os limites da prova estacionada.
 
 **Onde conferir:**
 
@@ -925,7 +925,7 @@ F05 · Onda 2 · [Issue #59](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Resultado esperado:** O percurso Android produz evidência de continuidade e recuperação da rede.
 
-**Situação:** Parcial · Pendente. A8 não cobre duração com tela bloqueada, rede em movimento ou bateria.
+**Situação:** Parcial · Pendente. GPS, pin, encerramento manual e ACK reais atuais não comprovam percurso, aviso em movimento ou energia sem USB.
 
 **Inclui:**
 
@@ -952,7 +952,7 @@ F05 · Onda 2 · [Issue #59](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Decisão pendente:** Nenhuma adicional identificada.
 
-**Próxima ação:** Realizar o percurso Android e registrar atrasos e recuperação da rede.
+**Próxima ação:** Realizar o percurso Android +15 e registrar atrasos, destinatário, rede e consumo sem USB.
 
 **Onde conferir:**
 
@@ -968,7 +968,7 @@ F05 · Onda 2 · [Issue #60](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Resultado esperado:** O percurso no iPhone demonstra continuidade ou expõe precisamente suas limitações.
 
-**Situação:** Planejado · Pendente. Testes físicos do coletor iPhone estão pausados; a abertura mínima não fecha esta tarefa.
+**Situação:** Planejado · Pendente. Nenhuma prova atual de percurso iPhone; não transferir testes de componente ou GPS parado para esse aceite.
 
 **Inclui:**
 
@@ -995,7 +995,7 @@ F05 · Onda 2 · [Issue #60](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Decisão pendente:** Nenhuma adicional identificada.
 
-**Próxima ação:** Retomar o aparelho e executar o percurso completo.
+**Próxima ação:** Executar o percurso completo no iPhone +15 quando o proprietário iniciar a rodada de campo.
 
 **Onde conferir:**
 
@@ -1011,7 +1011,7 @@ F05 · Onda 2 · [Issue #61](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Resultado esperado:** Cada aparelho tem resultado de consumo e recuperação no cenário combinado.
 
-**Situação:** Parcial · Pendente. Diagnósticos de energia Android são limitados e não demonstram autonomia do produto.
+**Situação:** Parcial · Pendente. Campo, bateria sem USB e recuperação de rede atuais continuam deferidos; medições anteriores não são prova do +15.
 
 **Inclui:**
 
@@ -1038,7 +1038,7 @@ F05 · Onda 2 · [Issue #61](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Decisão pendente:** Nenhuma adicional identificada.
 
-**Próxima ação:** Medir bateria e interrupções em Android e iPhone no cenário previsto.
+**Próxima ação:** Medir bateria e interrupções nos dois aparelhos +15, sem USB e com versões/flags registradas.
 
 **Onde conferir:**
 
@@ -1097,7 +1097,7 @@ F09 · Onda 1 · [Issue #63](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Resultado esperado:** Respostas elegíveis ficam registradas e são encaminhadas ao serviço de WhatsApp.
 
-**Situação:** Implementado · Laboratório. Envios ao receptor simulado e falhas controladas aprovados; entrega real ainda falta.
+**Situação:** Implementado · Laboratório. Pin, aprovação, FINALIZAR e preferências ON/OFF/ON tiveram resposta real. Na rodada Android +15, nove tentativas tiveram entrega conciliada e quatro leitura; não é prova de retry sob falha.
 
 **Inclui:**
 
@@ -1124,7 +1124,7 @@ F09 · Onda 1 · [Issue #63](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Decisão pendente:** Nenhuma adicional identificada.
 
-**Próxima ação:** Comprovar a entrega e seu retorno pelo WhatsApp real.
+**Próxima ação:** Ampliar falhas de comunicação e recuperação real, preservando resultado incerto e evitando duplicação.
 
 **Onde conferir:**
 
@@ -1140,7 +1140,7 @@ F09 · Onda 1 · [Issue #64](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Resultado esperado:** A IA sugere intenção, mas validação e permissão continuam controlando a ação.
 
-**Situação:** Implementado · Laboratório. Corpus com modelo real registrado; integração completa com WhatsApp não comprovada.
+**Situação:** Implementado · Laboratório. Corpus/testes do modelo limitado estão registrados; a rodada real atual usou o bot determinístico, sem atendimento livre por IA nem nova ativação de modelo.
 
 **Inclui:**
 
@@ -1167,7 +1167,7 @@ F09 · Onda 1 · [Issue #64](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Decisão pendente:** Nenhuma adicional identificada.
 
-**Próxima ação:** Revalidar as mensagens do uso real mantendo a autorização na API.
+**Próxima ação:** Preservar a IA OFF na rodada atual; qualquer validação futura do modelo deve manter intenções/contexto autorizados e recusa de saída inválida.
 
 **Onde conferir:**
 
@@ -1183,7 +1183,7 @@ F09 · Onda 1 · [Issue #65](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Resultado esperado:** As oito automações do n8n podem ser importadas e permanecem desativadas.
 
-**Situação:** Implementado · Laboratório. Importação, execução isolada e reinício/reexportação aprovados; rotinas ficam desativadas.
+**Situação:** Implementado · Laboratório. Ensaio 006 conferiu agendas, fila, reinício e restore com o JAR publicado e canal simulado; execução não equivale a percurso ou aceitação de todo efeito real.
 
 **Inclui:**
 
@@ -1210,7 +1210,7 @@ F09 · Onda 1 · [Issue #65](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Decisão pendente:** Nenhuma adicional identificada.
 
-**Próxima ação:** Ativar somente no ambiente autorizado após revisar a operação.
+**Próxima ação:** Revisar os exports e a configuração publicada, preservando o escopo das flags ON e os limites do ensaio.
 
 **Onde conferir:**
 
@@ -1269,7 +1269,7 @@ F09 · Onda 1 · [Issue #67](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Resultado esperado:** A tela apresenta código, vínculo, falha e recuperação sem mensagens contraditórias.
 
-**Situação:** Implementado · Físico parado. Vínculo no Redmi e testes de apresentação registrados; iPhone completo pendente.
+**Situação:** Implementado · Físico parado. iOS +15 recuperou recibo terminal sem apagar journal. Android +15 mostrou cold start expirado parado e trajeto concluído sem STOP pendente após a finalização real.
 
 **Inclui:**
 
@@ -1296,7 +1296,7 @@ F09 · Onda 1 · [Issue #67](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Decisão pendente:** Nenhuma adicional identificada.
 
-**Próxima ação:** Conferir a apresentação no iPhone e no percurso.
+**Próxima ação:** Conferir estados sob rede interrompida, tela bloqueada e percurso; preservar a correspondência entre UI e ACK.
 
 **Onde conferir:**
 
@@ -1312,7 +1312,7 @@ F09 · Onda 1 · [Issue #68](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Resultado esperado:** A confirmação associa a conta à chave do pedido iniciado no aplicativo.
 
-**Situação:** Implementado · Físico parado. Jornada de pareamento no Redmi com canal sintético aprovada.
+**Situação:** Implementado · Físico parado. Apps normais iOS/Android +15 foram vinculados e enviaram GPS no ambiente compartilhado; permissões e guarda de chave têm testes próprios.
 
 **Inclui:**
 
@@ -1339,7 +1339,7 @@ F09 · Onda 1 · [Issue #68](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Decisão pendente:** Nenhuma adicional identificada.
 
-**Próxima ação:** Repetir com a conta WhatsApp dedicada e depois no iPhone.
+**Próxima ação:** Revisar os critérios de pareamento e repetir apenas os cenários de troca/recusa ainda não cobertos na combinação final.
 
 **Onde conferir:**
 
@@ -1398,7 +1398,7 @@ F05 · Onda 2 · [Issue #70](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Resultado esperado:** O aplicativo só mostra coleta ativa após uma posição válida aceita pela API.
 
-**Situação:** Implementado · Físico parado. Cenário A8 no Redmi parado comprovou primeira aquisição e confirmação única.
+**Situação:** Implementado · Físico parado. Primeiro GPS aceito em 2,737605 s no Android +15 e 5,651142 s no iOS +15. Prova estacionada, com gerações e rejeições identificadas.
 
 **Inclui:**
 
@@ -1425,7 +1425,7 @@ F05 · Onda 2 · [Issue #70](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Decisão pendente:** Nenhuma adicional identificada.
 
-**Próxima ação:** Repetir no iPhone e durante o percurso.
+**Próxima ação:** Conferir início/frescor em percurso e falhas de rede, sem confundir heartbeat com nova posição.
 
 **Onde conferir:**
 
@@ -1443,7 +1443,7 @@ F05 · Onda 2 · [Issue #71](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Resultado esperado:** O aparelho para a coleta e confirma o mesmo pedido quando a comunicação volta.
 
-**Situação:** Implementado · Físico parado. A8 confirmou o cenário Android; código iOS tem testes, sem repetição física atual.
+**Situação:** Implementado · Teste automatizado. Testes host atuais e parada/recibo online reais registrados. A prova offline A8 é histórica e não aprova a combinação +15; offline/reconexão física atual seguem pendentes.
 
 **Inclui:**
 
@@ -1470,7 +1470,7 @@ F05 · Onda 2 · [Issue #71](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Decisão pendente:** Nenhuma adicional identificada.
 
-**Próxima ação:** Exercitar a mesma parada no iPhone físico e no percurso.
+**Próxima ação:** Nos dois apps +15, parar sem rede, reabrir e reconectar; comprovar sensor parado, pendência durável e baixa sem reiniciar coleta.
 
 **Onde conferir:**
 
@@ -1488,7 +1488,7 @@ F11 · Onda 2 · [Issue #72](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Resultado esperado:** Cada tentativa tem controle exclusivo e repete apenas quando houver prova de que o envio não ocorreu.
 
-**Situação:** Implementado · Laboratório. Testes de três tentativas e jornada integrada 120 passaram; canal externo não foi usado.
+**Situação:** Implementado · Laboratório. Callbacks reais da rodada Android +15 foram associados às tentativas corretas. Isso comprova reconciliação, não repetição sob falha ou perda de ACK.
 
 **Inclui:**
 
@@ -1515,7 +1515,7 @@ F11 · Onda 2 · [Issue #72](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Decisão pendente:** Nenhuma adicional identificada.
 
-**Próxima ação:** Comprovar as mesmas regras com o número dedicado.
+**Próxima ação:** Exercitar falha/reconexão real de envio sem duplicar e preservar UNKNOWN quando não houver confirmação.
 
 **Onde conferir:**
 
@@ -1532,7 +1532,7 @@ F11 · Onda 2 · [Issue #73](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Resultado esperado:** O estado de entrega reflete a confirmação disponível e mantém a incerteza quando necessário.
 
-**Situação:** Implementado · Laboratório. Cenários de retorno tardio e desconhecido testados; falta retorno real da Evolution.
+**Situação:** Implementado · Laboratório. Na janela 16:10–16:15 UTC da rodada Android +15: 22 callbacks reais (9 SERVER_ACK, 9 DELIVERY_ACK, 4 READ), inbox COMPLETED; nove tentativas finais, cinco DELIVERED e quatro READ. Não comprova retry em falha nem dois passageiros.
 
 **Inclui:**
 
@@ -1559,7 +1559,7 @@ F11 · Onda 2 · [Issue #73](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Decisão pendente:** Nenhuma adicional identificada.
 
-**Próxima ação:** Verificar envio e confirmação reais com destinatário autorizado.
+**Próxima ação:** Revisar a associação dos retornos reais e completar cenários sem callback, entrega incerta e destinatários distintos.
 
 **Onde conferir:**
 
@@ -1749,7 +1749,7 @@ F05 · Onda 2 · [Issue #78](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Resultado esperado:** O término real da viagem encerra a operação, com alternativa manual identificada.
 
-**Situação:** Planejado · Pendente. Há proteção de sessão vencida, sem prova do término automático de negócio.
+**Situação:** Implementado · Laboratório. Composição GPS -> aproximação -> passagem -> permanência -> fim automático aprovada em IDA/VOLTA com filtros reais e PostgreSQL (2 testes, runtime em 2a211d1). Recebimento do aviso e chegada físicos permanecem pendentes.
 
 **Inclui:**
 
@@ -1774,15 +1774,16 @@ F05 · Onda 2 · [Issue #78](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 - Antes de iniciar, documentar a versão da regra final, seus parâmetros e os cenários de fim verdadeiro e fim indevido. A regra deve considerar progresso, validade e precisão das posições, velocidade e permanência; a sessão integrada deve estar disponível.
 
-**Decisão pendente:** Confirmar os parâmetros de ensaio e seus resultados esperados antes da implementação. As hipóteses existentes precisam de calibração em percurso; terminar manualmente não aprova o encerramento automático.
+**Decisão pendente:** Calibrar e revisar os parâmetros de chegada em percurso; finalização manual isolada não aprova o encerramento automático.
 
-**Próxima ação:** Implementar e testar o reconhecimento de fim da viagem.
+**Próxima ação:** Validar o encerramento automático e o aviso no percurso físico de cada plataforma.
 
 **Onde conferir:**
 
+- `src/backend/src/main/java/com/vanrides/vanrides/whatsapp/tracking/WaRunFinishes.java`
+- `src/backend/src/main/java/com/vanrides/vanrides/whatsapp/tracking/WaRunFinishPolicy.java`
+- `src/backend/src/test/java/com/vanrides/vanrides/whatsapp/transport/WaRunFinishIntegrationTest.java`
 - `src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaCommandService.java`
-- `src/backend/src/main/java/com/vanrides/vanrides/whatsapp/tracking/WaTrackingSamples.java`
-- `src/backend/src/main/java/com/vanrides/vanrides/whatsapp/tracking/WaTrackingService.java`
 
 <a id="t53"></a>
 ## T53 — Confirmar que a coleta parou
@@ -1793,7 +1794,7 @@ F05 · Onda 2 · [Issue #79](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Resultado esperado:** O aplicativo informa parada confirmada ou pendência até a confirmação ou expiração prevista.
 
-**Situação:** Parcial · Físico parado. Parada manual/offline Android testada; fim automático da viagem ainda não.
+**Situação:** Implementado · Físico parado. Android normal 0.4.0+15 confirmou FINALIZAR/COMPLETED/STOP/ACK no WhatsApp real e na UI. Ensaio sintético confirmou STOP/recibo após AUTO_ARRIVAL em IDA/VOLTA; fim automático físico permanece pendente.
 
 **Inclui:**
 
@@ -1820,14 +1821,14 @@ F05 · Onda 2 · [Issue #79](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Decisão pendente:** Nenhuma adicional identificada.
 
-**Próxima ação:** Integrar ao encerramento automático e repetir nos dois aparelhos.
+**Próxima ação:** Validar o encerramento automático em campo e os cenários atuais de rede/tela bloqueada nas duas plataformas.
 
 **Onde conferir:**
 
+- `src/backend/src/main/java/com/vanrides/vanrides/whatsapp/tracking/WaRunFinishes.java`
+- `src/backend/src/main/java/com/vanrides/vanrides/whatsapp/tracking/WaTrackingStopReceipt.java`
 - `src/aplicativo-motorista/android/app/src/driver/kotlin/com/example/vanrides_frontend_dev/driver/DriverTrackingRuntime.kt`
 - `src/aplicativo-motorista/android/app/src/driver/kotlin/com/example/vanrides_frontend_dev/driver/DriverTrackingService.kt`
-- `src/aplicativo-motorista/ios/Runner/DriverTrackingCoordinator.swift`
-- `src/aplicativo-motorista/ios/Runner/DriverTrackingCore.swift`
 
 <a id="t54"></a>
 ## T54 — Oferecer ajuda e recuperação
@@ -1838,7 +1839,7 @@ F05 · Onda 2 · [Issue #80](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Resultado esperado:** A conversa oferece ajuda, pausa adequada e retomada controlada.
 
-**Situação:** Parcial · Laboratório. Pausa e retomada de conversa testadas; não equivalem ao suporte operacional completo.
+**Situação:** Implementado · Laboratório. Recuperação da conversa tem testes PostgreSQL/web; AJUDA dos dois papéis e orientação de preferências passaram no canal real. Pausa/retomada operacional real ainda exige conferência específica.
 
 **Inclui:**
 
@@ -1865,7 +1866,7 @@ F05 · Onda 2 · [Issue #80](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Decisão pendente:** Nenhuma adicional identificada.
 
-**Próxima ação:** Concluir retirada de acesso e recuperação do ciclo de viagem.
+**Próxima ação:** Conferir no canal real a pausa/retomada e retirada de acesso, sem restaurar permissões nem perder o contexto.
 
 **Onde conferir:**
 
@@ -1926,7 +1927,7 @@ F09 · Onda 1 · [Issue #82](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Resultado esperado:** O modo de execução escolhido recupera os componentes necessários sem repetir efeitos.
 
-**Situação:** Parcial · Laboratório. Ensaio standalone 120 não valida o modo de fila/agendamento compartilhado.
+**Situação:** Implementado · Laboratório. Ensaio 006 com o JAR publicado: agendas, reinícios e restauração em outro PG recuperaram dois efeitos do canal simulado sem duplicação. Não prova perda arbitrária da AOF ou efeito externo com ACK perdido.
 
 **Inclui:**
 
@@ -1953,12 +1954,14 @@ F09 · Onda 1 · [Issue #82](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Decisão pendente:** Nenhuma adicional identificada.
 
-**Próxima ação:** Validar o modo operacional, a fila e as agendas do ambiente escolhido.
+**Próxima ação:** Revisar a evidência 006 e os critérios do conjunto, mantendo separados os cenários reais de resultado incerto.
 
 **Onde conferir:**
 
+- `deploy/homologacao/rehearse_recovery.py`
 - `src/whatsapp/workflows/generate.mjs`
 - `src/whatsapp/workflows/W08.json`
+- `deploy/homologacao/RECUPERACAO.md`
 
 <a id="t57"></a>
 ## T57 — Limitar dados e aplicar exclusão
@@ -1969,7 +1972,7 @@ F10 · Onda 1 · [Issue #83](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Resultado esperado:** O cadastro usa dados essenciais e aplica os prazos definidos para seu ciclo de vida.
 
-**Situação:** Parcial · Laboratório. Aceite e descarte de alguns conteúdos testados; retenção integral ainda pendente.
+**Situação:** Parcial · Laboratório. Retenção/restauração isoladas aprovadas. Helper passou em nove testes sintéticos também na VPS; prévia de 14 dumps em 11 pastas preservou todos, sem exclusão real. Limpeza real OFF.
 
 **Inclui:**
 
@@ -1996,12 +1999,14 @@ F10 · Onda 1 · [Issue #83](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Decisão pendente:** Nenhuma adicional identificada.
 
-**Próxima ação:** Definir e testar retenção e exclusão de todas as famílias necessárias.
+**Próxima ação:** Revisar a prévia, os prazos e o plano operacional antes de aprovar exclusões reais; validar a ativação de privacidade separadamente.
 
 **Onde conferir:**
 
+- `src/backend/src/main/java/com/vanrides/vanrides/whatsapp/privacy/WaPrivacyJobs.java`
+- `src/backend/src/main/java/com/vanrides/vanrides/whatsapp/privacy/WaPrivacyService.java`
+- `deploy/homologacao/recovery_privacy.py`
 - `src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaOnboardingCommands.java`
-- `src/backend/src/main/java/com/vanrides/vanrides/whatsapp/transport/WaDeliveryMaintenance.java`
 
 <a id="t58"></a>
 ## T58 — Provar cópia, restauração e exclusão
@@ -2012,7 +2017,7 @@ F09 · Onda 1 · [Issue #84](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Resultado esperado:** O conjunto coberto é restaurado em ambiente separado e respeita as exclusões previstas.
 
-**Situação:** Parcial · Laboratório. O ensaio 020 não é prova de recuperação completa da API, n8n e dados do MVP.
+**Situação:** Implementado · Laboratório. Ensaio 006 CORE_AND_PRIVACY_VERIFIED com JAR publicado identifica cópia/versão, recupera controles em destino separado e impede retorno de Alfa, preservando Beta/core e ACK/journal. São os três critérios de T58, em isolamento sintético.
 
 **Inclui:**
 
@@ -2039,11 +2044,14 @@ F09 · Onda 1 · [Issue #84](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Decisão pendente:** Nenhuma adicional identificada.
 
-**Próxima ação:** Executar restauração isolada e reaplicação de exclusões do conjunto completo.
+**Próxima ação:** Revisar os três critérios contra a evidência 006. Manter separada a pendência operacional de rotação física; nenhum backup é apagado por este registro.
 
 **Onde conferir:**
 
+- `deploy/homologacao/rehearse_recovery.py`
+- `deploy/homologacao/recovery_privacy.py`
 - `src/whatsapp/gps-spike/deploy/state_backup.py`
+- `deploy/homologacao/RECUPERACAO.md`
 
 <a id="t59"></a>
 ## T59 — Orientar operação e parada segura
@@ -2054,7 +2062,7 @@ F09 · Onda 1 · [Issue #85](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Resultado esperado:** O operador identifica falhas e pausa novos envios com segurança.
 
-**Situação:** Parcial · Pendente. Inspeção dos guias e funções de saúde; sem teste operacional completo desta tarefa.
+**Situação:** Implementado · Laboratório. Onze testes Python, cenário PostgreSQL de pausa/retorno e SELECT de STOP pendente aprovados. Diagnóstico real sem alertas e plano conferido; nenhuma pausa real foi executada nessa leitura.
 
 **Inclui:**
 
@@ -2081,12 +2089,14 @@ F09 · Onda 1 · [Issue #85](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Decisão pendente:** Nenhuma adicional identificada.
 
-**Próxima ação:** Consolidar alertas, limites e parada segura no ensaio de operação.
+**Próxima ação:** Revisar guia/responsável e conferir cenários operacionais ainda necessários, distinguindo plano, revogação e retorno efetivo.
 
 **Onde conferir:**
 
+- `deploy/homologacao/operations.py`
 - `src/whatsapp/worker/README.md`
 - `docs/runbooks/whatsapp-mvp/120-entrega-e-canal-real.md`
+- `docs/desenvolvimento/operacao.md`
 
 <a id="t60"></a>
 ## T60 — Identificar os arquivos da versão de teste
@@ -2097,7 +2107,7 @@ F05 · Onda 2 · [Issue #86](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Resultado esperado:** A versão de teste tem seus componentes e origem identificados.
 
-**Situação:** Parcial · Pendente. Provas individuais não certificam o candidato final de todas as funções.
+**Situação:** Parcial · Laboratório. Integridade/publicação e instalações atuais registradas; inventário não equivale a aceite integral nem congela automaticamente o pacote final após novas revisões.
 
 **Inclui:**
 
@@ -2124,12 +2134,13 @@ F05 · Onda 2 · [Issue #86](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Decisão pendente:** Nenhuma adicional identificada.
 
-**Próxima ação:** Fechar dependências e identificar todos os arquivos da versão integrada.
+**Próxima ação:** Conferir o manifesto conjunto após a revisão final da fonte e guias, preservando versões, hashes, flags e retorno.
 
 **Onde conferir:**
 
 - `program/evidence/VR-WA-110-RUN-TRACKING.md`
 - `program/evidence/VR-WA-120-DELIVERY-RECOVERY.md`
+- `docs/desenvolvimento/entrega-mvp.md`
 
 <a id="t61"></a>
 ## T61 — Preparar instalação de teste Android
@@ -2140,7 +2151,7 @@ F05 · Onda 2 · [Issue #87](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Resultado esperado:** O pacote Android de teste tem assinatura e integridade conferíveis.
 
-**Situação:** Implementado · Físico parado. Instalação e abertura conferidas; não implica que todas as funções do MVP estejam prontas.
+**Situação:** Implementado · Físico parado. Android +15 passou em GPS, pin, FINALIZAR/CONFIRMAR, STOP/ACK e UI estacionados; build 146,47 s e fonte dae7ab8 identificados.
 
 **Inclui:**
 
@@ -2167,12 +2178,13 @@ F05 · Onda 2 · [Issue #87](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Decisão pendente:** Nenhuma adicional identificada.
 
-**Próxima ação:** Gerar nova versão quando os módulos pendentes forem integrados.
+**Próxima ação:** Preservar hash/versão/retorno e usar o APK +15 publicado na rodada de campo.
 
 **Onde conferir:**
 
 - `src/aplicativo-motorista/android/app/build.gradle.kts`
 - `docs/runbooks/whatsapp-mvp/010-builds-e-instalacao.md`
+- `deploy/homologacao/android/README.md`
 
 <a id="t62"></a>
 ## T62 — Preparar instalação e renovação no iPhone
@@ -2183,7 +2195,7 @@ F05 · Onda 2 · [Issue #88](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Resultado esperado:** O iPhone recebe a versão identificada e há instruções de instalação e renovação.
 
-**Situação:** Parcial · Físico parado. Instalação mínima 010 aprovada; GPS integrado e renovação atual permanecem pendentes.
+**Situação:** Implementado · Físico parado. Assinatura/perfil conferidos e +15 com GPS/STOP/ACK/recibo reais; perfil vence em 23/11/2026 às 08:27 BRT. Renovação futura e campo permanecem separados.
 
 **Inclui:**
 
@@ -2210,12 +2222,13 @@ F05 · Onda 2 · [Issue #88](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Decisão pendente:** Nenhuma adicional identificada.
 
-**Próxima ação:** Instalar e validar a versão integrada no iPhone após retomar os testes.
+**Próxima ação:** Renovar antes do vencimento e conferir a reprodução da instalação pelo procedimento, sem transferir a prova de outro build.
 
 **Onde conferir:**
 
 - `src/aplicativo-motorista/ios/Runner.xcodeproj/project.pbxproj`
 - `docs/runbooks/whatsapp-mvp/010-builds-e-instalacao.md`
+- `docs/desenvolvimento/aplicativo.md`
 
 <a id="t63"></a>
 ## T63 — Planejar instalação e retorno no servidor
@@ -2226,7 +2239,7 @@ F05 · Onda 2 · [Issue #89](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Resultado esperado:** Existe um plano concreto da instalação da versão de teste e de retorno à anterior.
 
-**Situação:** Parcial · Pendente. O laboratório temporário não é o ambiente final de teste do produto.
+**Situação:** Implementado · Laboratório. Cópia do banco ativo e três probes anterior/V43, candidata/V44 e anterior/V44 passaram em isolamento. PRs126/127 publicados sem nova migração; não é restore de produção.
 
 **Inclui:**
 
@@ -2253,12 +2266,14 @@ F05 · Onda 2 · [Issue #89](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Decisão pendente:** Nenhuma adicional identificada.
 
-**Próxima ação:** Consolidar a implantação da versão completa com verificações e retorno.
+**Próxima ação:** Preservar o retorno ensaiado e revisar o plano/recibos da mesma combinação de versões.
 
 **Onde conferir:**
 
+- `deploy/homologacao/rehearse_migration.py`
 - `docs/runbooks/whatsapp-mvp/110-laboratorio-temporario.md`
 - `docs/desenvolvimento/homologacao-da-equipe.md`
+- `deploy/homologacao/AUTOMATICO.md`
 
 <a id="t64"></a>
 ## T64 — Instalar no ambiente autorizado de teste
@@ -2269,7 +2284,7 @@ F05 · Onda 2 · [Issue #90](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Resultado esperado:** O ambiente autorizado executa os componentes corretos e passa nas verificações combinadas.
 
-**Situação:** Parcial · Laboratório. Prontidão e limpeza 120 aprovadas sem conta conectada ou despacho real.
+**Situação:** Implementado · Laboratório. HTTPS, imagem/JAR, saúde do worker e hash do APK conferidos; operações reais autorizadas de cadastro/presença/pin/finalização exercitadas. Não é aceite de produção ou campo.
 
 **Inclui:**
 
@@ -2296,14 +2311,14 @@ F05 · Onda 2 · [Issue #90](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Decisão pendente:** Nenhuma adicional identificada.
 
-**Próxima ação:** Publicar a revisão aprovada no endereço reservado, conferir certificado, versão e executar uma operação autenticada.
+**Próxima ação:** Preservar a combinação publicada e revisar os critérios de funcionamento/retorno no ambiente compartilhado.
 
 **Onde conferir:**
 
+- `.github/workflows/backend.yml`
+- `src/whatsapp/worker/dispatch.mjs`
 - `docs/runbooks/whatsapp-mvp/110-laboratorio-temporario.md`
 - `src/whatsapp/worker/README.md`
-- `docs/runbooks/whatsapp-mvp/120-entrega-e-canal-real.md`
-- `docs/desenvolvimento/homologacao-da-equipe.md`
 
 <a id="t65"></a>
 ## T65 — Conferir o número dedicado
@@ -2314,7 +2329,7 @@ F11 · Onda 2 · [Issue #91](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Resultado esperado:** A conta dedicada envia mensagem e tem o retorno de entrega conferido.
 
-**Situação:** Planejado · Pendente. Número dedicado ativo no WhatsApp Business, confirmado pelo proprietário em 03/11/2026. Pareamento Evolution e entrega/retorno reais ainda pendentes.
+**Situação:** Implementado · Laboratório. Participantes autorizados receberam mensagens/pin/finalização/preferências. Na janela 16:10–16:15 UTC: 22 callbacks reais completados e associados por instância/external_message_id, com nove entregas e quatro leituras. Não prova retry em falha ou dois passageiros.
 
 **Inclui:**
 
@@ -2341,13 +2356,14 @@ F11 · Onda 2 · [Issue #91](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Decisão pendente:** Nenhuma adicional identificada.
 
-**Próxima ação:** Executar a primeira prova delimitada com Evolution exclusiva e o WhatsApp Business do Redmi; conferir envio e callback.
+**Próxima ação:** Revisar pareamento/envios/retornos e completar destinatários distintos e ausência de confirmação sem presumir entrega.
 
 **Onde conferir:**
 
+- `src/whatsapp/worker/dispatch.mjs`
+- `src/backend/src/main/java/com/vanrides/vanrides/whatsapp/transport/WaEventService.java`
 - `src/whatsapp/worker/README.md`
 - `docs/runbooks/whatsapp-mvp/120-entrega-e-canal-real.md`
-- `docs/desenvolvimento/homologacao-da-equipe.md`
 
 <a id="t66"></a>
 ## T66 — Testar agendas no ambiente escolhido
@@ -2358,7 +2374,7 @@ F02 · Onda 1 · [Issue #92](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Resultado esperado:** A agenda real e as automações do ambiente de teste resistem à falha e ao reinício.
 
-**Situação:** Parcial · Laboratório. Importação e chamada manual não comprovam agenda/fila contínuas do ambiente integrado.
+**Situação:** Implementado · Laboratório. Ensaios 005/006 comprovaram disparo, fila, reinício e restore com o JAR publicado e dois efeitos do canal simulado sem duplicação; isso não aprova todo efeito no WhatsApp real.
 
 **Inclui:**
 
@@ -2385,14 +2401,14 @@ F02 · Onda 1 · [Issue #92](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Decisão pendente:** Nenhuma adicional identificada.
 
-**Próxima ação:** Executar agenda real, reinício e recuperação no modo operacional escolhido.
+**Próxima ação:** Revisar a prova das agendas/identidade de automação e registrar os efeitos reais específicos ainda não cobertos.
 
 **Onde conferir:**
 
+- `deploy/homologacao/rehearse_recovery.py`
 - `src/whatsapp/workflows/generate.mjs`
 - `src/whatsapp/workflows/W08.json`
 - `src/backend/src/main/java/com/vanrides/vanrides/whatsapp/attendance/WaAttendanceJobs.java`
-- `src/whatsapp/worker/attendance-jobs.mjs`
 
 <a id="t67"></a>
 ## T67 — Testar a jornada completa no Android
@@ -2403,7 +2419,7 @@ F05 · Onda 2 · [Issue #93](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Resultado esperado:** O Android de referência executa a jornada integrada com WhatsApp real e resultado registrado.
 
-**Situação:** Parcial · Físico parado. A8 não cobre WhatsApp real, aproximação útil e encerramento automático.
+**Situação:** Parcial · Físico parado. GPS FRESH/pin, FINALIZAR/revisão/CONFIRMAR, COMPLETED e STOPPED/ACK/UI conferidos. Percurso, aviso em campo, rede/tela bloqueada/bateria não executados no +15.
 
 **Inclui:**
 
@@ -2430,13 +2446,14 @@ F05 · Onda 2 · [Issue #93](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Decisão pendente:** Nenhuma adicional identificada.
 
-**Próxima ação:** Executar o ciclo completo no Android com o canal real e percurso.
+**Próxima ação:** Executar o roteiro de campo Android +15 e registrar etapas/falhas; não declarar jornada completa pelo teste estacionado.
 
 **Onde conferir:**
 
 - `src/aplicativo-motorista/android/app/src/driver/kotlin/com/example/vanrides_frontend_dev/driver/DriverTrackingRuntime.kt`
 - `src/aplicativo-motorista/android/app/src/driver/kotlin/com/example/vanrides_frontend_dev/driver/DriverTrackingService.kt`
 - `docs/runbooks/whatsapp-mvp/110-laboratorio-temporario.md`
+- `docs/desenvolvimento/rodada-final.md`
 
 <a id="t68"></a>
 ## T68 — Testar a jornada completa no iPhone
@@ -2447,7 +2464,7 @@ F05 · Onda 2 · [Issue #94](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Resultado esperado:** O iPhone executa a jornada integrada e tem resultado independente.
 
-**Situação:** Planejado · Pendente. Abertura inicial e testes em simulador não substituem essa jornada física.
+**Situação:** Parcial · Físico parado. iPhone +15 teve GPS, pin, STOP/ACK e UI parada sem apagar journal; não houve prova atual de percurso, utilidade do aviso, tela bloqueada, rede ou bateria.
 
 **Inclui:**
 
@@ -2474,12 +2491,13 @@ F05 · Onda 2 · [Issue #94](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Decisão pendente:** Nenhuma adicional identificada.
 
-**Próxima ação:** Retomar o aparelho depois de fechar as dependências.
+**Próxima ação:** Executar o roteiro de campo iPhone +15 e registrar resultados separadamente do Android, sem promover GPS parado a jornada completa.
 
 **Onde conferir:**
 
 - `src/aplicativo-motorista/ios/Runner/DriverTrackingCoordinator.swift`
 - `src/aplicativo-motorista/ios/Runner/DriverTrackingCore.swift`
+- `docs/desenvolvimento/rodada-final.md`
 
 <a id="t69"></a>
 ## T69 — Medir se o aviso ajuda no embarque
@@ -2490,7 +2508,7 @@ F11 · Onda 2 · [Issue #95](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Resultado esperado:** O ensaio mostra se a antecedência é útil e se o destinatário está correto.
 
-**Situação:** Planejado · Pendente. Não há prova de avisos úteis nos percursos dos dois aparelhos.
+**Situação:** Planejado · Pendente. Sem prova de antecedência útil/destinatário em percurso na rodada atual; elegibilidade automatizada não substitui a avaliação do proprietário.
 
 **Inclui:**
 
@@ -2517,7 +2535,7 @@ F11 · Onda 2 · [Issue #95](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Decisão pendente:** Combinar como será reconhecido um aviso útil antes de avaliar os percursos; este apoio não define minutos ou metros.
 
-**Próxima ação:** Medir antecedência útil e destinatário correto após implementar os avisos.
+**Próxima ação:** Medir antecedência útil e destinatário correto no percurso autorizado, com os apps +15 e flags registradas.
 
 <a id="t70"></a>
 ## T70 — Consolidar guia e resultados
@@ -2528,7 +2546,7 @@ F05 · Onda 2 · [Issue #96](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Resultado esperado:** A entrega reúne instruções e resultados com seus limites reais.
 
-**Situação:** Parcial · Pendente. Documentação existente não equivale ao pacote concluído do MVP.
+**Situação:** Implementado · Laboratório. Links/backlog/artefatos conferidos documentalmente; resultados estacionados +15 e pendências de campo explícitos. Revisão humana do material e aceite final continuam separados.
 
 **Inclui:**
 
@@ -2555,13 +2573,14 @@ F05 · Onda 2 · [Issue #96](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Decisão pendente:** Nenhuma adicional identificada.
 
-**Próxima ação:** Consolidar o guia e os resultados após a validação completa.
+**Próxima ação:** Revisar os guias com o grupo e acrescentar os resultados de campo/bateria/utilidade quando executados.
 
 **Onde conferir:**
 
 - `src/whatsapp/worker/README.md`
 - `docs/runbooks/whatsapp-mvp/120-entrega-e-canal-real.md`
 - `docs/runbooks/whatsapp-mvp/010-builds-e-instalacao.md`
+- `README.md`
 
 <a id="t71"></a>
 ## T71 — Reproduzir a instalação final
@@ -2572,7 +2591,7 @@ F05 · Onda 2 · [Issue #97](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Resultado esperado:** A equipe repete instalação e renovação a partir do pacote identificado.
 
-**Situação:** Planejado · Pendente. Instalações individuais anteriores não certificam a entrega final.
+**Situação:** Parcial · Físico parado. Versão/assinatura/dados preservados e hash Android HTTPS conferidos no preparo atual; isso não comprova reprodução integral por outro integrante nem renovação futura do iOS.
 
 **Inclui:**
 
@@ -2599,14 +2618,16 @@ F05 · Onda 2 · [Issue #97](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Decisão pendente:** Nenhuma adicional identificada.
 
-**Próxima ação:** Reproduzir instalação e renovação do pacote final nos dois aparelhos.
+**Próxima ação:** Reproduzir a instalação/entrada pelos guias e a renovação aplicável, preservando hashes e sem compartilhar credenciais.
 
 **Onde conferir:**
 
 - `docs/runbooks/whatsapp-mvp/010-builds-e-instalacao.md`
+- `docs/desenvolvimento/aplicativo.md`
+- `docs/desenvolvimento/homologacao-da-equipe.md`
 
 <a id="t72"></a>
-## T72 — Proposta: cancelar ou corrigir presença
+## T72 — Cancelar ou corrigir presença
 
 F06 · Onda 2 · [Issue #98](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/98)
 
@@ -2614,7 +2635,7 @@ F06 · Onda 2 · [Issue #98](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Resultado esperado:** Se a inclusão for aprovada, cancelamento e correção têm um resultado claro para a ocorrência certa.
 
-**Situação:** Proposta de escopo · Laboratório. Mudança de resposta e ausência após início foram testadas no laboratório.
+**Situação:** Implementado · Laboratório. Mudança de presença e ausência na ida exercitadas no WhatsApp real, com ida/volta e lista conferidas. Cenários PostgreSQL cobrem data/sentido, corte e disputa com início.
 
 **Inclui:**
 
@@ -2639,9 +2660,9 @@ F06 · Onda 2 · [Issue #98](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 - Decisão do grupo sobre a inclusão na Onda 2 e regra de presença vigente identificadas.
 
-**Decisão pendente:** Confirmar a inclusão de cancelamento e correção no recorte acadêmico e registrar a mudança do planejamento.
+**Decisão pendente:** Nenhuma adicional identificada.
 
-**Próxima ação:** Confirmar o enquadramento da funcionalidade com a equipe.
+**Próxima ação:** Revisar os critérios e completar a alteração após início no canal real; não reabrir a inclusão já integrada como proposta.
 
 **Onde conferir:**
 
@@ -2651,7 +2672,7 @@ F06 · Onda 2 · [Issue #98](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 - `src/backend/src/test/java/com/vanrides/vanrides/whatsapp/transport/WaAttendanceJobsIntegrationTest.java`
 
 <a id="t73"></a>
-## T73 — Proposta: definir limite da alteração
+## T73 — Definir limite da alteração
 
 F06 · Onda 2 · [Issue #99](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/99)
 
@@ -2659,7 +2680,7 @@ F06 · Onda 2 · [Issue #99](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Resultado esperado:** Se a proposta for aprovada, equipe e implementação usam a mesma regra de alteração e histórico.
 
-**Situação:** Proposta de escopo · Teste automatizado. Os testes cobrem corte e preservação da lista, com semântica diferente de proibir todo cancelamento tardio.
+**Situação:** Implementado · Teste automatizado. Cenários PostgreSQL cobrem os dois lados da saída, ausência tardia, parada passada e concorrência. Revisão da expressão horário limite e prova real após início ainda pendentes; não há bloqueio geral de toda ausência tardia.
 
 **Inclui:**
 
@@ -2684,9 +2705,9 @@ F06 · Onda 2 · [Issue #99](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 - Acordo explícito sobre a semântica de horário limite e sobre a proposta de escopo.
 
-**Decisão pendente:** Resolver a divergência entre o texto do backlog e a regra atual que permite ausência após a partida; não há bloqueio total aprovado por esta especificação.
+**Decisão pendente:** Revisar com a equipe a expressão horário limite à luz da regra integrada: após saída não há entrada/retorno à lista; ausência pode cancelar parada não passada, preservando o snapshot. Não é bloqueio geral de toda ausência tardia.
 
-**Próxima ação:** Alinhar o significado de horário limite antes de declarar a tarefa pronta.
+**Próxima ação:** Revisar a redação de horário limite com a equipe e conferir a regra após início no canal real, preservando os critérios existentes.
 
 **Onde conferir:**
 
@@ -2696,7 +2717,7 @@ F06 · Onda 2 · [Issue #99](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 - `src/backend/src/test/java/com/vanrides/vanrides/whatsapp/transport/WaAttendanceJobsIntegrationTest.java`
 
 <a id="t74"></a>
-## T74 — Proposta: avisar cancelamento ao motorista
+## T74 — Avisar cancelamento ao motorista
 
 F12 · Onda 2 · [Issue #100](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/100)
 
@@ -2704,7 +2725,7 @@ F12 · Onda 2 · [Issue #100](https://github.com/mathwidu/Vanrides-Projeto-Inova
 
 **Resultado esperado:** Se aprovada, a mudança gera aviso adequado ao motorista correto.
 
-**Situação:** Proposta de escopo · Pendente. WaAttendanceMutation responde ao passageiro; não foi identificado envio correspondente ao motorista.
+**Situação:** Implementado · Laboratório. WaStopCanceledNoticeIntegrationTest cobre criação única, replay, destinatário no claim/authorize e recusa após fim/suspensão. A entrega desse aviso específico no WhatsApp real ainda não foi comprovada.
 
 **Inclui:**
 
@@ -2729,13 +2750,15 @@ F12 · Onda 2 · [Issue #100](https://github.com/mathwidu/Vanrides-Projeto-Inova
 
 - Proposta de escopo aprovada e cancelamento da ocorrência identificado.
 
-**Decisão pendente:** Confirmar a inclusão e a regra de quando o motorista deve receber o aviso; a entrega ao motorista ainda não foi comprovada.
+**Decisão pendente:** Nenhuma adicional identificada.
 
-**Próxima ação:** Aprovar o ajuste e implementar ou localizar o aviso ao motorista.
+**Próxima ação:** Conferir no WhatsApp real o aviso ao motorista após ausência elegível pós-saída, sem duplicação e antes de perder a utilidade.
 
 **Onde conferir:**
 
+- `src/backend/src/main/java/com/vanrides/vanrides/whatsapp/transport/WaDriverAttendanceNotices.java`
 - `src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaAttendanceMutation.java`
+- `src/backend/src/test/java/com/vanrides/vanrides/whatsapp/transport/WaStopCanceledNoticeIntegrationTest.java`
 - `src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaAttendanceConversation.java`
 
 <a id="t75"></a>
@@ -2747,7 +2770,7 @@ F02 · Onda 1 · [Issue #101](https://github.com/mathwidu/Vanrides-Projeto-Inova
 
 **Resultado esperado:** A lista apresenta a ocorrência correta e a situação de cada passageiro autorizado.
 
-**Situação:** Implementado · Laboratório. Motorista consultou a lista e duas desistências no laboratório.
+**Situação:** Implementado · Laboratório. Lista real do motorista refletiu confirmação e ausência; presença de ida/volta conferida. Cenários após início ainda requerem rodada específica.
 
 **Inclui:**
 
@@ -2774,7 +2797,7 @@ F02 · Onda 1 · [Issue #101](https://github.com/mathwidu/Vanrides-Projeto-Inova
 
 **Decisão pendente:** Nenhuma adicional identificada.
 
-**Próxima ação:** Verificar a mesma consulta pelo número dedicado.
+**Próxima ação:** Revisar a lista por ocorrência e completar os cenários reais após início sem reescrever o snapshot da partida.
 
 **Onde conferir:**
 

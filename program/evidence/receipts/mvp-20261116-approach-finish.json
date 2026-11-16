@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "status": "PASS",
+  "synthetic": true,
+  "runtimeSourceRevision": "2a211d188e5fe6bc128fb039bef6f7fdeaf9ac24",
+  "testCommit": "a7f12d52586b7230dc3d564c78fd06a243ba0ecf",
+  "testFile": "src/backend/src/test/java/com/vanrides/vanrides/whatsapp/transport/WaApproachFinishJourneyIntegrationTest.java",
+  "testSourceSha256": "0d493c8aad03e3838543a7784a4c5fb795c8d11a136f3c99bd4bda3126c1bd1d",
+  "testCounts": {
+    "tests": 2,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "wallSeconds": 55.111,
+  "testSeconds": 28.97,
+  "reportSha256": "450999dc9cf0036b3c0a25eef2322350b60e8a6cc70f203df44bc137ad3cf92c",
+  "directions": [
+    "OUTBOUND",
+    "RETURN"
+  ],
+  "checks": [
+    "GPS authenticated by ingress and DPoP reaches transactional controller and PostgreSQL.",
+    "GPS produces approach, unique eligible notice and PASSED without SQL state injection.",
+    "Destination dwell before stop progress does not finish the run.",
+    "Same batch returns identical ACK; new batch with same samples is duplicate without new effects.",
+    "Valid progress and 60-second dwell finish AUTO_ARRIVAL, revoke collection and await STOP.",
+    "Late frame rejected RUN_TERMINAL; authenticated STOP and terminal receipt confirm ACK."
+  ],
+  "limits": [
+    "Synthetic coordinates and clock; no physical route or battery evidence.",
+    "Servlet requests are simulated; no public HTTP server or Evolution submission.",
+    "Does not prove real approach-notification receipt or usefulness."
+  ]
+}

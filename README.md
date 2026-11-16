@@ -26,32 +26,41 @@ Universidade Feevale, 2026/2.
 
 ## Situação do MVP
 
-A API, a área da equipe, o APK Android e o bot já estão disponíveis em
-homologação. Em 15/11/2026, validamos no WhatsApp real a emissão imediata do
-convite por link, a solicitação de vínculo e a aprovação e correção do ponto
-de embarque. O [guia de cadastro](docs/desenvolvimento/cadastro-guiado-whatsapp.md)
-documenta os comandos, o teste com um só WhatsApp e os resultados da rodada.
+Em 16/11/2026, a API da homologação está publicada pelo PR #127 em `2a211d1`,
+schema V44, com HTTPS e worker saudáveis. No WhatsApp real passaram convite,
+vínculo, aprovação do ponto, presença de ida e volta, consulta da lista e pin
+recebido pelo passageiro. As preferências de chegada foram ligadas, desligadas
+e ligadas novamente, com confirmação do bot após a correção da resposta.
 
-Em 16/11, a API publicada usa schema V44. No WhatsApp real passaram convite,
-vínculo, aprovação do ponto, presença de ida e volta e consulta da lista pelo
-motorista. O passageiro recebeu o pin do GPS real do iPhone e do Redmi e,
-após a parada, recebeu a indicação de localização indisponível. O encerramento
-manual pelo bot recebeu a confirmação de parada do iPhone.
+O APK normal Android 0.4.0+15 está publicado e passou no teste estacionado:
+primeiro GPS em 2,738 s, 81 amostras aceitas e um frame tardio corretamente
+recusado após FINALIZAR.
+O passageiro recebeu o pin; a finalização pelo WhatsApp levou a COMPLETED e
+STOP/ACK, com confirmação do bot e UI de trajeto concluído. O download HTTPS
+confere com o APK +15 instalado, com dados preservados. O +14 permanece para
+retorno e também teve GPS/STOP/ACK reais, com 451 aceitas e zero rejeitadas.
 
-O APK Android 0.4.0+14 publicado já enviou GPS real no Redmi. O iPhone recebeu
-o app corrigido 0.4.0+15 e confirmou na tela o trajeto concluído e a coleta
-desligada após recuperar um recibo de parada. O perfil gratuito vence em
-23/11/2026 às 08:27 (Brasília). A nova coleta do +15 ainda está em validação.
-Aproximação e fim automático permanecem desligados até preparar o ensaio.
-Percurso, tela bloqueada, recuperação de rede, bateria e utilidade do aviso
-continuam no [roteiro da rodada final](docs/desenvolvimento/rodada-final.md).
+O iPhone usa o app normal 0.4.0+15. Ele recuperou o recibo terminal e confirmou
+na UI a coleta desligada, preservando o journal. Na nova sessão, recebeu o
+primeiro GPS em 5,651 s: 57 amostras aceitas e um cache antigo rejeitado como
+STALE. A parada pelo app recebeu ACK e a consulta de posição ficou indisponível.
+O perfil gratuito vence em 23/11/2026 às 08:27 (Brasília).
 
-A recuperação isolada com API, PostgreSQL, Redis e n8n em fila passou no
-reinício, nos agendamentos e na restauração, sem duplicar os dois efeitos do
-canal simulado. A V44 passou também na reaplicação de exclusões sintéticas
-após restaurar o banco e no ensaio da migração sobre uma cópia recuperável;
-a API e o worker estão publicados e a limpeza real continua desabilitada. O registro de
-evidências distingue os testes locais, o publicado e a rodada física restante.
+As flags de rotinas de ensaio, aproximação e fim automático estão **ON** para
+rotinas elegíveis da coorte compartilhada, sem whitelist por rotina. Essa
+ativação ainda não comprova a utilidade do aviso ou o encerramento automático
+em campo. IA e limpeza real de privacidade continuam **OFF**. Percurso, tela
+bloqueada, recuperação de rede, bateria e aceite permanecem no
+[roteiro da rodada final](docs/desenvolvimento/rodada-final.md).
+
+A recuperação isolada de API, PostgreSQL, Redis e n8n passou em reinício,
+agendas e restauração sem duplicar os efeitos do canal simulado. A reaplicação
+do journal V44 impediu o retorno dos dados sintéticos excluídos. A rotação
+física dos backups de sete dias continua pendente; não impede testar o MVP,
+mas permanece requisito operacional. O
+[registro da entrega](program/evidence/mvp-entrega-20261116.md) identifica as
+versões, as provas e seus limites. As 65 issues MVP continuam abertas até a
+conferência dos critérios e revisão humana.
 
 ## Código e desenvolvimento
 

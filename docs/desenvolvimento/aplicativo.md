@@ -42,8 +42,9 @@ computadores da equipe ainda precisa ser conferida. O gate completo também
 executa scripts e fixtures POSIX; não presuma que Git Bash com Python do Windows
 seja equivalente ao Ubuntu da CI.
 
-Para começar, rode análise, testes Flutter e build no PowerShell e confira o
-gate completo no pull request. Se quiser executar também esse gate localmente,
+Para começar, rode as verificações relacionadas à sua mudança e o build no
+PowerShell. O pull request não executa o gate completo do aplicativo. Para
+executá-lo localmente,
 use WSL2 com as versões Linux de Git, Flutter, Python e Node instaladas dentro
 da distribuição. Não reutilize o SDK Flutter do Windows nessa sessão:
 
@@ -53,7 +54,7 @@ bash scripts/check_app.sh
 ```
 
 A compilação/instalação Android por USB pode continuar no Windows; acesso USB
-no WSL2 é uma preparação separada. O CI Ubuntu é a execução canônica do gate
+no WSL2 é uma preparação separada. O workflow opcional usa Ubuntu para o gate
 completo. Não há build nem simulação de iOS no Windows.
 
 ## Preparação macOS
@@ -79,8 +80,9 @@ git diff --exit-code -- pubspec.lock ios/Podfile.lock
 
 O build iOS da CI seleciona Xcode 26.6 no runner padrão `macos-26`; nenhuma
 equipe Apple, provisioning profile ou chave de mapas é fornecida. Uma eventual
-instalação física exige autorização e assinatura próprias. O iPhone do
-proprietário permanece **pausado**.
+instalação física exige autorização e assinatura próprias. O preparo do iPhone
+do proprietário foi retomado em 16/11: o app normal 0.4.0+15 já teve instalação,
+GPS e parada confirmados. Percurso, bateria e aceite continuam na rodada final.
 
 ## Ambiente e segurança dos testes
 
@@ -90,6 +92,30 @@ um backend local de teste. O loopback do emulador é diferente do host; no Andro
 `10.0.2.2` aponta para o host do emulador. A política do driver é independente:
 sem `VANRIDES_PAIRING_API_ORIGIN`/host revisados no build, ele permanece sem
 pareamento. Um APK de CI não acessa automaticamente a VPS.
+
+Para compilar sua branch contra a API compartilhada, configure a origem e o
+host **antes** do build. Obtenha o número do bot pela área da equipe e informe
+somente dígitos, com país e DDD, em uma variável local. Não grave o número ou
+arquivos de assinatura no Git. Exemplo no PowerShell, dentro do módulo:
+
+```powershell
+$env:VANRIDES_PAIRING_API_ORIGIN = "https://vanrides-inovacao-api.matheusduarte.dev.br"
+$env:VANRIDES_PAIRING_LINK_HOST = "vanrides-inovacao-api.matheusduarte.dev.br"
+# Preencha VANRIDES_BOT_TESTE localmente com o número do bot.
+flutter build apk --debug --flavor driver --target lib/main_driver_mvp.dart --target-platform android-arm64 --dart-define=VANRIDES_PAIRING_LINK_HOST=$env:VANRIDES_PAIRING_LINK_HOST --dart-define=VANRIDES_WHATSAPP_BOT_NUMBER=$env:VANRIDES_BOT_TESTE
+```
+
+No macOS/Linux, exporte as duas variáveis com os mesmos valores e use
+`$VANRIDES_PAIRING_LINK_HOST` e `$VANRIDES_BOT_TESTE` nos argumentos. A origem
+nativa vem do ambiente; o host também precisa chegar ao Flutter pelo
+`--dart-define`. Isso não exige senha da VPS nem token de serviço. O número
+do motorista ainda precisa estar liberado e o aparelho precisa ser vinculado.
+
+O APK de desenvolvimento usa a assinatura local. Ele não atualiza o APK
+público assinado quando os certificados diferem. Use um aparelho de
+desenvolvimento ou combine a instalação com o operador, preservando os dados
+e o vínculo existentes. Para apenas testar o MVP publicado, use o download
+da [homologação da equipe](homologacao-da-equipe.md), sem recompilar.
 
 As chaves locais opcionais do legado ficam em `ios/Flutter/Secrets.xcconfig`
 e variáveis de build, sempre ignoradas. O MVP driver não usa UI de mapas,
@@ -103,14 +129,18 @@ e `build/`, ignorados pelo Git. Antes de publicar evidência, revise o conteúdo
 
 ## O que a CI verifica
 
-O [workflow do aplicativo](../../.github/workflows/aplicativo.yml) roda no push,
-PR e acionamento manual com `contents: read`, actions fixadas por SHA, sem
-segredos e sem deploy. `scripts/check_app.sh` chama o gate de QA original
-adaptado: contratos dos scripts, analyzer, testes unitários/widgets e ratchet.
-Warnings/infos permanecem dívida registrada; erros, testes e regressões do
-ratchet bloqueiam. Os locks precisam continuar sem diff.
+O [workflow do aplicativo](../../.github/workflows/aplicativo.yml) é opcional,
+acionado por `workflow_dispatch`, com `contents: read`, actions fixadas por SHA,
+sem segredos e sem deploy. Ele não roda a cada push ou PR. A esteira automática
+constrói a API e publica somente a API/interface quando a `main` muda; não
+gera nem distribui o APK. Veja o [deploy automático](../../deploy/homologacao/AUTOMATICO.md).
 
-Depois do gate, a CI compila Android `driver`/`main_driver_mvp.dart`, testa
+Na verificação opcional, `scripts/check_app.sh` chama o gate completo:
+contratos dos scripts, analyzer, testes unitários/widgets e ratchet.
+Warnings/infos permanecem dívida registrada; erros, testes e regressões do
+ratchet reprovam a execução. Os locks precisam continuar sem diff.
+
+Depois do gate, o workflow opcional compila Android `driver`/`main_driver_mvp.dart`, testa
 o código nativo de produção e a variante explícita de regressão do spike,
 verificando o isolamento de cada artefato. iOS recebe testes host e build
 genérico sem assinatura, também com inspeção do artefato. Os logs e resumos

@@ -1,8 +1,81 @@
 # Entrega técnica do MVP — 16/11/2026
 
-## Publicação e recuperação conferidas no aparelho
+## Estado atual — PR #127 e aplicativos +15
 
-O PR #126 foi integrado em `72b9c89`. A [CI 43891354871](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/actions/runs/43891354871)
+A API live foi publicada pelo PR #127, main
+`2a211d188e5fe6bc128fb039bef6f7fdeaf9ac24`, schema V44, HTTPS UP.
+A [CI 43896934669](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/actions/runs/43896934669)
+passou em 81 s. Imagem
+`sha256:118af90a436c15f417da65ccbeb7fb8a7d80c42ec729325ab9f5a3c0fcc02490`;
+JAR `100cb29679132d7236ef4d232f13784a74304f6e62d6a821916d8271d2e7a50e`.
+Não houve nova migração. A publicação anterior do PR #126, main `72b9c89`,
+passou na [CI 43891354871](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/actions/runs/43891354871)
+em 85 s; seus hashes abaixo permanecem como histórico, não como estado live.
+
+O worker saudável contém 56 arquivos de `efd7d8b`, archive SHA-256
+`f748af5f1b2ac352223941efc765e454d1300a02d7fc674b1a0ea8e965453dc8`.
+`WA_MVP_REHEARSAL_ROUTINES`, `WA_APPROACH_ENABLED` e `WA_AUTO_FINISH_ENABLED`
+estão ON para rotinas elegíveis da coorte compartilhada, sem whitelist por
+rotina. Limpeza real de privacidade e IA permanecem OFF. A ativação não é prova
+de utilidade do aviso ou encerramento automático em campo.
+
+| Artefato normal / sessão | Primeiro GPS aceito | Amostras | Resultado físico observado |
+| --- | --- | --- | --- |
+| Android 0.4.0+14, geração 2 | 2,803409 s | 451 aceitas, zero rejeitadas | STOPPED/ACK e UI parada; prova anterior, +14 preservado para retorno. |
+| iOS 0.4.0+15, geração 3 | 5,651142 s | 57 aceitas, uma STALE | Cache antigo corretamente recusado; STOP pelo app com ACK e consulta de posição indisponível. |
+| Android 0.4.0+15, geração 4 | 2,737605 s | 81 aceitas, uma RUN_TERMINAL | GPS FRESH e pin real; FINALIZAR/revisão/CONFIRMAR pelo WhatsApp levou a COMPLETED, revogação e STOPPED/ACK, com confirmação do bot. |
+
+O app iOS +15 foi instalado/aberto e recuperou o recibo terminal com a UI de
+parada confirmada, sem apagar o journal. A sessão de geração 3 foi criada em
+16/11 às 15:32:34 UTC. O perfil gratuito vence em 23/11 às 08:27 (Brasília).
+Os recibos antigos de assinatura/build sem instalação representam a etapa
+anterior, não a situação atual do aparelho.
+
+O APK Android +15 usa fonte `dae7ab8`, build de 146,47 s e SHA-256
+`7f22ebd465f0c2f9947ee8c9639fb0ee63405bc360e618fa97a1955bf6cba946`.
+Foi instalado com a mesma assinatura e dados preservados. O checkpoint durável
+e o tratamento de ACK antigo passaram em 12 casos host e revisão independente;
+um cold start com credencial expirada mostrou coleta parada. Na rodada física,
+a geração 4 foi criada às 16:11:14 UTC; o helper v6 confirmou trajeto concluído,
+sem pendência de parada e sem controle de parar. O frame RUN_TERMINAL foi tardio,
+após o encerramento, e corretamente recusado. O APK +15 está publicado e o
+download HTTPS do Mac conferiu o mesmo SHA-256, com 56.680.985 bytes. Mudou
+somente o bind do serviço `vanrides-hml-android_links`: mesma imagem Nginx e
+cinco arquivos web idênticos. O +14 ficou preservado para retorno. Após o STOP,
+a consulta do passageiro confirmou posição indisponível às 16:13 UTC.
+
+Preferências de chegada ON/OFF/ON tiveram ACK real após publicar a correção
+`570251c` de elegibilidade de SET_PREFERENCE no PR #127. O teste dirigido havia
+reproduzido preferência APPLIED com claim vazio e passou após incluir somente
+esse comando, autorizando a própria resposta e recusando destinatário alheio.
+
+A recuperação isolada dos ensaios 005/006 já possui prova dos três critérios
+de T58: cópia identificada, restauração separada com controles e reaplicação
+das exclusões. A rotação física dos backups de sete dias não está implementada;
+é pendência operacional, não impede o teste técnico e não autoriza apagar backups.
+Os 65 itens MVP continuam OPEN, zero encerrados. Percurso, tela bloqueada,
+recuperação de rede, bateria, utilidade e aceite do usuário continuam deferidos.
+Nenhuma dessas provas estacionadas substitui essa rodada de campo.
+
+Recibos privados atuais: `integracao-final/api-preference-reply-publication-receipt.json`,
+`integracao-final/worker/publication-receipt.json`, `integracao-final/journey-flags-receipt.json`,
+`ios-ui-runner/action-inspect-20261116T151338Z`, `action-inspect-20261116T153401Z`
+e `action-stop-20261116T153748Z`; `tracking-real/20261116T152226Z.json`,
+`20261116T154500Z.json` e `20261116T161310Z.json`; logs sanitizados do helper
+Android +15 `android15-confirm-start`, `android15-inspect-active` e
+`android15-inspect-finished`; `android15-https-publication-receipt.json`.
+Identificadores pessoais, conteúdo de conversa, coordenadas, credenciais e
+assinatura nominal permanecem fora deste registro.
+
+## Como ler o histórico abaixo
+
+As seções seguintes preservam os cortes anteriores. Flags OFF, builds ainda
+não instalados, versões live anteriores e pendências nelas descritas valem
+somente para aquela etapa. O estado vigente é o consolidado acima.
+
+## Histórico — PR #126 e primeira recuperação no aparelho
+
+No corte anterior ao PR #127, o PR #126 foi integrado em `72b9c89`. A [CI 43891354871](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/actions/runs/43891354871)
 concluiu em 1 min 25 s, com construção de 37 s e deploy de 39 s. A VPS confirmou
 imagem `sha256:b41a90ee1de7aaa4ef86fb89da5276d879de5f8a2ffe3ffdea3a7e506266058a`,
 JAR `aac068f93e4452405638e2abb36cf0382e2a19b848ec8577e827e9e3b14d37c9`,
@@ -17,7 +90,7 @@ parada confirmada e nenhuma pendência/erro de atualização. O vínculo antigo
 aparece expirado após a substituição pelo Redmi; não houve nova coleta automática.
 Duas tentativas anteriores não chegaram ao caso XCTest e foram registradas
 como falha de habilitação da automação, sem reutilizar resultado antigo como prova.
-A liberação no aparelho permitiu a repetição. GPS do +15 ainda está em validação.
+A liberação no aparelho permitiu a repetição. Nesse corte, o GPS do +15 ainda estava em validação.
 
 O Redmi voltou ao APK publicado 0.4.0+14, hash
 `2b4667111bc39bf4c9dcc687168086c6a9ed5b334a3f7db1cf7e3faf83c996b5`,
@@ -33,14 +106,14 @@ a regra de elegibilidade da confirmação não incluía SET_PREFERENCE. A corre�
 `570251c` acrescenta somente esse comando às respostas da própria conversa.
 O novo teste reproduziu claim com zero respostas e passou após a correção,
 autorizando o destinatário próprio e recusando destinatário alheio. Esta correção
-aguarda publicação e repetição no WhatsApp neste corte.
+aguardava publicação e repetição no WhatsApp antes do PR #127.
 
 Recibos privados: `integracao-final/api-publication-receipt.json`,
 `integracao-final/worker/publication-receipt.json`, inspeção iOS de 15:13:38,
 `android-ui/published-artifact-check.json` e `preference-reply/receipt.json`.
 Os cortes anteriores abaixo preservam a sequência e seus limites.
 
-## GPS físico, parada e candidato do PR #126
+## Histórico — GPS físico e candidato antes da publicação do PR #126
 
 Corte: `efd7d8b` enviado no PR #126, CI em curso. A `main` e a API publicada
 permanecem em `a2b77ed`, schema V44. As correções de parada/preferências abaixo
@@ -63,8 +136,8 @@ ao perder a autorização para consultar a sessão. `1724fe8` acrescenta o recib
 terminal por prova da própria chave retida, com nonce/replay e corpo fechado.
 Só confirma a própria sessão STOPPED com `stopped_at`, geração e referência
 exatas, respeitando ambiente/coorte e apagamento. Não retorna GPS nem altera
-sessão, viagem, credenciais ou validade dos tokens. `2355e54` preserva também o ACK anterior ao primeiro GPS, mantendo a
-viagem em START_FAILED sem fabricar referência de STOP. A decisão preserva a
+sessão, viagem, credenciais ou validade dos tokens. `2355e54` preserva também
+o ACK anterior ao primeiro GPS, mantendo a viagem em START_FAILED sem fabricar referência de STOP. A decisão preserva a
 expiração e a revogação de tokens; o acesso residual é apenas ao recibo terminal
 mínimo. Passaram, em rodadas dirigidas, oito cenários novos, duas regressões de
 ACK, 143 verificações de contrato/fronteira e a regressão pré-primeiro-GPS.
@@ -73,8 +146,8 @@ sem alegação de uma execução única da suíte completa.
 
 `21a0d76` e `593cc89` permitem ao passageiro já cadastrado alterar os avisos
 de chegada e os lembretes de presença por comando explícito, com orientação
-na AJUDA. Preservam os padrões do cadastro, autorização e revalidação antes do envio. Passaram cinco cenários
-PostgreSQL de preferências, um opt-out entre claim/authorize, 279 testes Node
+na AJUDA. Preservam os padrões do cadastro, autorização e revalidação antes
+do envio. Passaram cinco cenários PostgreSQL de preferências, um opt-out entre claim/authorize, 279 testes Node
 e oito testes unitários de AJUDA. O package com estes oito casos terminou em
 10,88 s; não foi uma nova suíte PostgreSQL nem validação remota das preferências.
 
@@ -93,7 +166,7 @@ Recibos privados da rodada: `tracking-real/20261116T135721Z.json`,
 assinatura distinguem explicitamente build aprovado de instalação/execução.
 Os registros anteriores abaixo preservam o estado de cada etapa na sua data.
 
-## Integração da presença
+## Histórico — Integração da presença
 
 Os PRs #113 e #121 foram integrados com a autoria e os ancestrais preservados.
 O aviso ao motorista usa V42; V41 continua sendo o cadastro por convite.
@@ -109,7 +182,7 @@ execução única limpa da suíte completa. Também passaram 714 testes Node,
 Esses resultados cobrem o laboratório, sem provar entrega real dos novos
 avisos no WhatsApp. O recibo detalhado permanece privado no Mac.
 
-## Recuperação de conversa pela equipe — #80
+## Histórico — Recuperação de conversa pela equipe — #80
 
 A consulta informa se a conversa está pausada e identifica o caso atual.
 A retomada exige sessão GitHub ativa, CSRF, contato confirmado pela Evolution,
@@ -136,14 +209,14 @@ casos PostgreSQL passaram na repetição. O armazenamento temporário em memóri
 foi usado apenas no ensaio local devido ao disco do Docker e removido dos
 fontes. A publicação desta etapa foi concluída no PR #122; a conferência pelo WhatsApp continua pendente.
 
-## Limites desta etapa
+## Histórico — Limites desta etapa
 
 A V42/presença/suporte está publicada. Finalização V43, privacidade, nova versão
 do aplicativo e a jornada real do conjunto ainda precisam da integração e publicação próprias. Percurso físico, medição de bateria,
 utilidade do aviso e aceite final ficam para a rodada do proprietário. As
 issues correspondentes permanecem abertas até existir essa evidência.
 
-## Finalização, ensaio e revisão integrada
+## Histórico — Finalização, ensaio e revisão integrada
 
 Foram integrados os commits de finalização e dos aplicativos. A finalização
 manual usa revisão e confirmação da viagem atual; a automática usa progresso,
@@ -213,7 +286,7 @@ Flyway V42 sem falhas, tarefa convergida e HTTPS `UP`. A aprovação temporária
 foi consumida. Isso comprova publicação e saúde; não substitui a conferência
 dos novos avisos no WhatsApp real.
 
-## Aplicativos
+## Histórico — Aplicativos
 
 A frente executou 48 testes Flutter, 116 execuções Kotlin, 15 testes Swift e
 seis testes Python, com analyzer sem problemas e lockfiles intactos. O runner
@@ -226,7 +299,7 @@ permaneceram iguais. JDK e compatibilidade DartDefines estão isolados do
 ambiente pessoal, sem editar o SDK. O build iOS está em preparação. Esses
 resultados ainda não comprovam os fluxos físicos dos novos builds.
 
-## Publicação da finalização — V43
+## Histórico — Publicação da finalização — V43
 
 O [PR #123](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/pull/123)
 foi integrado em `880ea56c235990eb58a4e84f2f7a158db68d4892`.
@@ -265,7 +338,7 @@ smoke visual ou GPS. A sessão do Mac também estava bloqueada ao abrir WhatsApp
 Jornada real, habilitação controlada dos avisos e rodada física continuam
 separadas dos resultados de build, instalação e publicação acima.
 
-## Privacidade em integração — sem limpeza real
+## Histórico — Privacidade em integração — sem limpeza real
 
 V44 e o lifecycle foram integrados. A correção passou em 53 casos únicos/7
 classes PostgreSQL: mensagens recentes de terceiros preservadas, cópias
@@ -603,3 +676,57 @@ e 7 presenças pendentes antes da rodada. Nenhum serviço, credencial ou flag
 foi alterado nessa retomada. A verificação dirigida do agente passou 96 casos
 em dois arquivos; não reexecutamos a suíte PostgreSQL inteira por esse
 diagnóstico de entrada.
+
+
+## Callbacks reais da rodada Android +15 — 16/11, 16:10–16:15 UTC
+
+Uma consulta somente leitura cruzou callbacks EVOLUTION/STATUS com tentativas
+credenciadas da homologação, usando instância e identificador externo. O
+[recibo agregado](receipts/mvp-20261116-callbacks.json) contém 22 callbacks
+processados: nove SERVER_ACK, nove DELIVERY_ACK e quatro READ. A contagem
+independente por tentativa confirmou nove tentativas distintas com entrega,
+das quais quatro com leitura; todos os callbacks estavam COMPLETED.
+
+O corte da API era `2a211d1`, schema V44. Não foram publicados identificadores
+externos, contatos, conversas ou coordenadas. A prova cobre associação e avanço
+de estado no reconciliador real (#73/#91); recuperação de envio incerto (#72),
+utilidade de aproximação e segundo passageiro mantêm seus próprios critérios.
+
+
+## Composição GPS, aproximação e fim automático — IDA e VOLTA
+
+O teste `WaApproachFinishJourneyIntegrationTest`, commit `a7f12d5`, passou
+nos dois sentidos: 2 testes, zero falhas/erros/pulos, 55,111 s de parede.
+O runtime backend permaneceu idêntico a `2a211d1`. O
+[recibo sintético](receipts/mvp-20261116-approach-finish.json) identifica fonte,
+relatório e fronteira: filtros de ingresso/DPoP, controller transacional e
+PostgreSQL, com requests Servlet, coordenadas e relógio controlados.
+
+As amostras produziram APPROACHING, aviso único ao passageiro elegível e
+PASSED sem escrever esse estado por SQL. A permanência no destino antes da
+progressão não encerrou a viagem; depois da passagem e de 60 segundos válidos,
+a viagem chegou a COMPLETED/AUTO_ARRIVAL, revogou a coleta e aguardou STOP.
+Frame tardio foi recusado; STOP e recibo terminal autenticados confirmaram ACK.
+Replay do mesmo batch conservou o recibo original; outro batch com as mesmas
+sequências não repetiu os efeitos. A primeira rodada falhou em uma expectativa
+do novo teste sobre replay; o contrato foi conferido e o teste corrigido,
+sem alterar runtime. Essa rodada permanece no acervo privado.
+
+Isso fecha a composição técnica antes do campo. Não houve submit na Evolution,
+recebimento real de aproximação, sensor físico ou medição de bateria nesse ensaio.
+
+## Preparo de retenção conferido na VPS — sem exclusão real
+
+O helper de catálogo/prévia foi revisado e copiado para uma pasta privada de
+versão na VPS. Os nove testes passaram também em Linux, usando somente
+TemporaryDirectory com fixtures descartáveis. O
+[recibo operacional](receipts/mvp-20261116-backup-preparation.json) distingue
+esse teste da operação real.
+
+Foram registrados 14 dumps próprios em 11 escopos de diretório. A prévia reteve
+os 14, selecionou zero para exclusão e preservou todos os hashes dos dumps.
+A criação histórica é desconhecida; o registro não comprova cumprimento prévio
+de sete dias. Não foi criada aprovação, cron ou rotação global. Nenhum dump,
+journal, cabeça confiável ou volume foi apagado. A purga futura exige lista/hash
+revisados, confirmação do usuário e escritores parados; a proteção é por dataset
+no mesmo catálogo. Esses limites permanecem pendência operacional de #83/#84.

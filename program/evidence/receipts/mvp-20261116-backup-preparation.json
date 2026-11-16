@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "syntheticTests": {
+    "status": "LINUX_SYNTHETIC_TESTS_PASS",
+    "tests": 9,
+    "failures": 0,
+    "sourceHashes": {
+      "backup_retention.py": "188fd65adf1b2d4fbb5e3ebe3ab4f8b0bb8775df4d8e022764f154121bd0d820",
+      "backup_retention_test.py": "35c9180d2b7de53b57d09ff23b8886462b7d56f16860bdd12387b06e6d7aebb4"
+    },
+    "realBackupsDeleted": 0,
+    "automaticPurgeEnabled": false,
+    "observedAtUTC": "2026-11-16T16:41:52.767346+00:00"
+  },
+  "catalogPreview": {
+    "status": "CATALOGUED_PREVIEW_ONLY",
+    "registeredDumps": 14,
+    "scopeDirectories": 11,
+    "keepCount": 14,
+    "deleteCount": 0,
+    "realBackupsDeleted": 0,
+    "allDumpHashesUnchanged": true,
+    "historicalCreation": "UNKNOWN",
+    "approvalCreated": false,
+    "automaticPurgeEnabled": false,
+    "globalRotationApplied": false,
+    "observedAtUTC": "2026-11-16T16:43:05.871420+00:00"
+  },
+  "limits": [
+    "No real backup was deleted and no purge approval was created.",
+    "Creation dates of legacy dumps remain UNKNOWN; registration does not prove historical retention.",
+    "Scopes are per directory and dataset; no global backup rotation is activated.",
+    "All writers must be stopped before any future approved deletion; lock is cooperative."
+  ]
+}

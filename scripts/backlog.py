@@ -71,11 +71,11 @@ def render():
            "3. Reproduza a situação atual e registre a lacuna antes de alterar código.",
            "4. Abra um PR pequeno com resultado, teste e limitações. A CI não substitui o aceite específico.", "",
            "| Frente | Próximo resultado necessário | Dependência |", "|---|---|---|",
-           "| Cadastro e presença | Repetir as conversas no canal real | Linha dedicada e participantes autorizados |",
-           "| Aproximação | Concluir regras, testes e calibração do aviso | Posição recente, ordem de pontos e parâmetros revisados |",
-           "| Encerramento | Implementar a regra de fim e confirmar a parada da coleta | Critérios de chegada e recuperação |",
-           "| Android e iPhone | Percurso completo, rede, bateria e destinatário correto | Funções integradas; testes físicos iPhone pausados |",
-           "| Contribuição do grupo | Reproduzir uma frente e enviar o primeiro PR | Guia de desenvolvimento e revisão de um colega |", "",
+           "| Cadastro e presença | Repetir o cadastro novo e os cenários restantes | Bot online e participantes autorizados |",
+           "| Aproximação | Validar recebimento e calibrar o aviso no percurso | Regra integrada; posição recente e ordem dos pontos conferidas |",
+           "| Encerramento | Validar fim automático e parada na rodada de campo | Regra integrada; calibração e cenários de rede pendentes |",
+           "| Android e iPhone | Percurso completo, rede, bateria e destinatário correto | Apps +15 com prova estacionada; [registro atual](../program/evidence/mvp-entrega-20261116.md) |",
+           "| Contribuição do grupo | Escolher uma lacuna da issue e enviar um PR | Guia de desenvolvimento e revisão de um colega |", "",
            "## Como interpretar a situação", "",
            "| Implementação | Quantidade | O que falta para encerrar |", "|---|---:|---|",
            f"| Implementado | {counts['Implementado']} | Conferir escopo e provas específicas; não significa aceite real |",
@@ -84,6 +84,8 @@ def render():
            f"| Proposta de escopo | {counts['Proposta de escopo']} | Decidir com o grupo antes de implementar |", "",
            "Essas contagens não medem percentual concluído. Teste automatizado, laboratório, aparelho parado e percurso são provas diferentes.",
            "Uma tarefa só termina quando seus critérios são atendidos, o PR foi revisado e a prova registra a versão avaliada.", "",
+           "No GitHub, as etiquetas `codigo: implementado`, `codigo: parcial` e `codigo: planejado` acompanham esse inventário.",
+           "Elas não fecham a issue, não substituem seus critérios e preservam as outras etiquetas do grupo.", "",
            "## Lista por onda", "",
            "Todas as tarefas atuais têm uma issue. Já há implementação de cadastro e presença na Onda 1 e de coleta de localização na Onda 2. As issues das duas ondas registram esse andamento e o trabalho restante; publicar uma tarefa não inicia sua execução.",
            "Referências antigas ficam identificadas como histórico e fora da lista atual. T76/T77 foram retiradas junto da navegação externa.", ""]
@@ -127,7 +129,7 @@ def render_specifications():
            "Cada tarefa define problema, resultado, limites e prova. Os critérios devem ser revisados com o grupo;",
            "nenhuma caixa marcada é inferida do estado de implementação. Use a issue para registrar a revisão.", "",
            "A navegação externa foi retirada do MVP. T76/T77 permanecem somente no histórico.",
-           "T72/T73/T74 são propostas de escopo e exigem decisão antes da execução.", "",
+           "T72/T73/T74 têm implementação integrada. Revisão dos critérios, semântica do limite e provas reais restantes seguem explícitas; consulte o [registro atual](../program/evidence/mvp-entrega-20261116.md).", "",
            "[Voltar ao backlog](07-como-ler-o-backlog.md)", ""]
     for tid, task in tasks.items():
         s, item = specs[tid], status[tid]

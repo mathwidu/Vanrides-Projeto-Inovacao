@@ -13,6 +13,11 @@ internal object TrackingProtocol {
 
     fun fatalHttp(code: Int): Boolean = code in setOf(401, 403, 404, 409, 410)
     fun retryHttp(code: Int): Boolean = code == 429 || code in 500..599
+    fun preserveConfirmedStop(state: String, hasOwner: Boolean, serviceRequested: Boolean, stopping: Boolean,
+                              hasNativeRequest: Boolean, hasPendingStop: Boolean, remoteStopAcknowledgedAt: Long?): Boolean =
+        state == "STOPPED" && !hasOwner && !serviceRequested && !stopping && !hasNativeRequest &&
+            !hasPendingStop && remoteStopAcknowledgedAt != null
+
     fun failureCode(status: Int, failure: String?): String = when {
         // A malformed successful response has status 0 in the HTTP adapter.
         // Its explicit failure must win over transport retry classification.
@@ -23,6 +28,16 @@ internal object TrackingProtocol {
         fatalHttp(status) -> "HTTP_$status"
         retryHttp(status) -> "NETWORK_RETRY"
         else -> "INVALID_CONTRACT"
+    }
+}
+
+/** A failed durable invalidation cannot authorize even the first start-related HTTP request. */
+internal object TrackingStartCheckpoint {
+    fun requestAfterPersist(persist: () -> Boolean, verifyPersisted: () -> Boolean, request: () -> Unit): Boolean {
+        val durable = try { persist() && verifyPersisted() } catch (_: Exception) { false }
+        if (!durable) return false
+        request()
+        return true
     }
 }
 

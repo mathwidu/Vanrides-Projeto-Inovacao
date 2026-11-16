@@ -91,10 +91,59 @@ internal object TrackingProtocolChecks {
         check(TrackingProtocol.failureCode(302, "REDIRECT_REJECTED") == "REDIRECT_REJECTED")
         check(TrackingProtocol.failureCode(0, null) == "INVALID_CONTRACT")
     }
+    private fun preservesStop(state: String = "STOPPED", hasOwner: Boolean = false, serviceRequested: Boolean = false,
+                              stopping: Boolean = false, hasNativeRequest: Boolean = false, hasPendingStop: Boolean = false,
+                              acknowledgedAt: Long? = 1_000_000L): Boolean =
+        TrackingProtocol.preserveConfirmedStop(state, hasOwner, serviceRequested, stopping, hasNativeRequest, hasPendingStop, acknowledgedAt)
+    fun acknowledgedIdleStopSurvivesLaterCredentialFailure() {
+        // A detached service or an existing service with no own request has the same proven idle state.
+        check(preservesStop(hasNativeRequest = false))
+    }
+    fun unknownOrUnacknowledgedStopNeverBecomesConfirmed() {
+        check(!preservesStop(acknowledgedAt = null))
+        check(!preservesStop(state = "ERROR"))
+        check(!preservesStop(state = "UNKNOWN", acknowledgedAt = null))
+        check(!preservesStop(state = "READY"))
+    }
+    fun collectingOwnedProviderOrPendingStopCannotUseAnOldAcknowledgment() {
+        for (state in listOf("STARTING", "TRACKING")) check(!preservesStop(state = state))
+        check(!preservesStop(hasOwner = true))
+        check(!preservesStop(serviceRequested = true))
+        check(!preservesStop(stopping = true))
+        check(!preservesStop(hasNativeRequest = true))
+        check(!preservesStop(hasPendingStop = true))
+    }
+    fun failedCheckpointStoreNeverStartsHttp() {
+        var requests = 0
+        var reads = 0
+        for (throws in listOf(false, true)) {
+            check(!TrackingStartCheckpoint.requestAfterPersist(
+                persist = { if (throws) throw java.io.IOException("synthetic store failure") else false },
+                verifyPersisted = { reads++; true }, request = { requests++ }))
+        }
+        check(requests == 0 && reads == 0)
+    }
+    fun persistedAckInvalidationMustBeVisibleBeforeTheFirstRequest() {
+        var diskAck: Long? = 1_000_000L
+        var diskState = "STOPPED"
+        var requests = 0
+        // A silent/noncommitted store write or failed read must not trust the old ACK.
+        check(!TrackingStartCheckpoint.requestAfterPersist({ true }, { diskAck == null && diskState == "STARTING" }, { requests++ }))
+        check(requests == 0 && diskAck != null)
+        val order = mutableListOf<String>()
+        check(TrackingStartCheckpoint.requestAfterPersist(
+            persist = { order.add("persist"); diskAck = null; diskState = "STARTING"; true },
+            verifyPersisted = { order.add("read"); diskAck == null && diskState == "STARTING" },
+            request = { check(diskAck == null && diskState == "STARTING"); order.add("http"); requests++ }))
+        check(requests == 1 && order == listOf("persist", "read", "http"))
+    }
     @JvmStatic fun main(args: Array<String>) {
         endpointIsolation(); leaseConservativeAndReplay(); leaseBoundsAndCredential()
         boundedQueueAndAge(); explicitAcknowledgmentsOnly(); ownerAndFiniteNumbers()
         stopFailureClassification()
-        println("PASS: 7 Android protocol scenarios (URL, replay/lease, bounds, queue age/cap, ACK gaps, owner/numbers, stop retry)")
+        acknowledgedIdleStopSurvivesLaterCredentialFailure(); unknownOrUnacknowledgedStopNeverBecomesConfirmed()
+        collectingOwnedProviderOrPendingStopCannotUseAnOldAcknowledgment()
+        failedCheckpointStoreNeverStartsHttp(); persistedAckInvalidationMustBeVisibleBeforeTheFirstRequest()
+        println("PASS: 12 Android protocol scenarios (7 existing + 3 confirmed-stop guards + 2 durable start checkpoints)")
     }
 }
