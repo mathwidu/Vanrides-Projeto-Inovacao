@@ -132,3 +132,42 @@ instalação física está em andamento. Dois lockfiles e 480 fontes do aplicati
 permaneceram iguais. JDK e compatibilidade DartDefines estão isolados do
 ambiente pessoal, sem editar o SDK. O build iOS está em preparação. Esses
 resultados ainda não comprovam os fluxos físicos dos novos builds.
+
+## Publicação da finalização — V43
+
+O [PR #123](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/pull/123)
+foi integrado em `880ea56c235990eb58a4e84f2f7a158db68d4892`.
+Antes do merge, o JAR de `b8c8c6d` passou nos 13 casos PostgreSQL de finalização
+e foi empacotado. A adaptação tmpfs permaneceu apenas no ensaio local.
+
+Foi realizado novo backup real e restauração isolada, com conteúdo comparado
+e probes API anterior/V42, candidata/V43 e anterior/V43 aprovados. O manifesto
+v2 permitiu somente as duas novas propriedades, com default false, mantendo
+inalterados os bytes das demais configurações, bibliotecas e SQLs anteriores.
+O helper v2 passou em 21 testes Python/mock/ZIP.
+
+A [execução da main](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/actions/runs/43811921133)
+passou na primeira tentativa. A VPS confirmou V43 sem falhas, HTTPS UP,
+imagem `sha256:ee467926fe9b1bf105959a02581afedc449b700092ab2c5ce1b96612b419aeff`
+e JAR `780f7b8ff0367c4d91402488012f87a585a1186ef35b35374cf0c5e2ea6b138c`.
+O worker usa o bundle de 52 arquivos do mesmo candidato; hash do arquivo
+`a74d558b00baf1ddfbd45bd5b1210b1022c712f31fa6abbe1010e6e3a747c017`,
+healthz UP. A origem anterior foi preservada para retorno.
+
+O APK 0.4.0+14 foi instalado por atualização no Redmi, com certificado igual
+ao anterior. O download público foi atualizado em serviço separado e o hash
+HTTPS coincide com o APK gerado. A versão 13 foi preservada para retorno.
+Não houve mudança no banco por essa atualização de arquivo.
+
+O preparo iOS (pub com lock, configuração de release e Pods deployment) passou.
+A única tentativa de xcodebuild terminou com código 65: No Accounts/perfil
+ausente. HOME/usuário corretos, certificado existente e fontes/locks intactos;
+isso não prova remoção da conta. A sessão/chaveiro do Mac precisa estar
+disponível e a conta/Personal Team deve aparecer no Xcode antes de repetir.
+Nenhum app iOS assinado novo foi produzido.
+
+A captura/automação da tela do Redmi falhou nesta rodada, embora a atividade
+do novo app conste como retomada no Android. Isso não foi contabilizado como
+smoke visual ou GPS. A sessão do Mac também estava bloqueada ao abrir WhatsApp.
+Jornada real, habilitação controlada dos avisos e rodada física continuam
+separadas dos resultados de build, instalação e publicação acima.

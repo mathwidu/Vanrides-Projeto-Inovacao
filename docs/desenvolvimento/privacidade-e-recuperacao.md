@@ -10,14 +10,16 @@ O aviso deve refletir os prazos antes da ativação com pessoas reais.
 | --- | --- |
 | Posição atual e três amostras de aproximação | Remover ao encerrar, parar, revogar ou expirar a coleta. |
 | Recibos GPS sem coordenadas | Sete dias em sessão encerrada, mantendo sequência e geração contra replay. |
-| Conversa, rascunhos e conteúdo transitório de mensagens | Sete dias de inatividade humana; preservar pausa, chaves e controle necessário. |
+| Contexto e rascunhos de conversa | Sete dias de inatividade humana; preservar pausa, chaves e controle necessário. |
+| Conteúdo transitório de inbox/outbox terminal | Sete dias da criação da mensagem; atividade nova não renova o prazo de mensagens antigas. |
 | Perfil, alias, ponto e suas cópias | Enquanto ativos; descarte em até 30 dias do fechamento registrado. |
 | Presença, decisões, auditoria e suporte encerrado | Noventa dias do fato/encerramento; ocorrências futuras não vencem pela data de criação. |
 | Credenciais, provas, pareamentos e intents | Revogar no fechamento; descartar após validade sem perder proteção de replay e parada. |
 | Backups próprios do MVP | Sete dias, com inventário e exclusões reaplicadas antes de restaurar o uso. |
 
-Os prazos vêm da baseline do MVP. O enquadramento do conteúdo transitório em
-sete dias e do suporte encerrado em 90 dias é a definição técnica desta entrega.
+Os prazos vêm da baseline do MVP. A regra do conteúdo transitório terminal em
+sete dias da mensagem, independente da inatividade do contexto, e do suporte
+encerrado em 90 dias é a definição técnica desta entrega.
 Metadados mínimos que ainda impedem replay ou sustentam uma referência válida
 permanecem como registros sem conteúdo pessoal; isso deve ser distinguido de
 exclusão física completa.
@@ -70,3 +72,19 @@ as famílias ainda adiadas e os limites dos serviços externos.
 
 A implementação, revisão, ativação e resultados são registrados separadamente
 na evidência da entrega; esta descrição não equivale a teste executado.
+
+## Journal no host
+
+O adapter em preparação usa arquivo JSONL e uma cabeça de cadeia, fora do
+backup do banco, em diretório privado. Registros contêm somente UUID, escopo,
+política e datas; não contêm contato, nome, conversa ou GPS. O ACK só é emitido
+após gravação, sincronização do arquivo e publicação atômica da cabeça, com
+sincronização do diretório. Uma inicialização vazia é operação explícita de
+primeiro provisionamento, não resposta automática a arquivo perdido.
+
+A restauração deve conservar o journal atual e sua cabeça confiável, sem
+substituí-los pelos de um dump antigo. Arquivo ausente, escrita parcial ou
+cadeia/cabeça divergente bloqueiam a operação. O filesystem e seu proprietário
+são a autoridade operacional; a cadeia detecta divergência, não é uma promessa
+de resistência a um administrador que altere todos os arquivos e referências.
+O adapter, sua integração e o ensaio de restore têm resultados separados.
