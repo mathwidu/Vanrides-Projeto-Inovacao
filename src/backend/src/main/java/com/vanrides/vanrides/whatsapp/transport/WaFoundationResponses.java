@@ -15,7 +15,7 @@ public final class WaFoundationResponses {
         ((r.identity_id=o.recipient_identity_id AND ((o.policy_version='foundation-v1' AND o.response_part='foundation'
           AND r.command_type IN ('START_ONBOARDING','SET_PROFILE_NAME','ACCEPT_NOTICE','CLAIM_DRIVER_INVITE','CONFIRM_PAIRING'))
         OR (o.policy_version='conversation-v1' AND o.response_part='conversation'
-          AND r.command_type IN ('START_ONBOARDING','SET_PROFILE_NAME','ACCEPT_NOTICE','CLAIM_DRIVER_INVITE','CONFIRM_PAIRING','RESPOND_TO_MESSAGE','REQUEST_SUPPORT'))
+          AND r.command_type IN ('START_ONBOARDING','SET_PROFILE_NAME','ACCEPT_NOTICE','CLAIM_DRIVER_INVITE','CONFIRM_PAIRING','RESPOND_TO_MESSAGE','REQUEST_SUPPORT','SET_PREFERENCE'))
         OR (o.policy_version='driver-setup-v1' AND o.response_part='driver-setup'
           AND r.command_type IN ('ADVANCE_DRIVER_SETUP','CONFIGURE_ROUTINE','SET_STOP_ORDER','SET_ROUTINE_STATE','CREATE_INVITE','REVOKE_INVITE','CANCEL_OCCURRENCE','GET_SUMMARY'))
         OR (o.policy_version='attendance-v1' AND o.response_part='attendance'

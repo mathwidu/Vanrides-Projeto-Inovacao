@@ -12,6 +12,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import static com.vanrides.vanrides.whatsapp.transport.WaConversationTestSupport.*;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @Testcontainers(disabledWithoutDocker = true)
 class WaPreferenceIntegrationTest {
@@ -20,6 +21,30 @@ class WaPreferenceIntegrationTest {
     private static final WaTransportTestDatabase DATABASE = new WaTransportTestDatabase(POSTGRES);
     private WaConversationTestSupport c;
     @BeforeEach void reset() { c = new WaConversationTestSupport(DATABASE.fixture()); }
+
+    @Test void anAppliedPreferenceReplyCanBeClaimedAndAuthorizedOnlyForItsOwnPassenger() {
+        UUID actor = passenger(), other = passenger();
+        String recipient = c.string("SELECT alias_value FROM wa.identity_alias WHERE identity_id=?", actor);
+        c.h.jdbc.update("UPDATE wa.profile SET preferences_json='{\"APPROACH_MESSAGES\":true,\"ATTENDANCE_REMINDERS\":true}' WHERE identity_id=?", actor);
+        var event = c.text(actor, "DESLIGAR AVISOS CHEGADA");
+        var result = c.execute(event, "SET_PREFERENCE", preference("APPROACH_MESSAGES", false)).requireSuccess();
+        assertThat(result.path("outcome").asText()).isEqualTo("APPLIED");
+        assertThat(result.path("responseIds")).hasSize(1);
+        c.finish(event);
+
+        var items = c.outboxClaim().path("items");
+        assertThat(items).hasSize(1);
+        var item = (ObjectNode) items.get(0);
+        UUID box = UUID.fromString(item.path("outboxId").asText());
+        assertThat(box.toString()).isEqualTo(result.path("responseIds").get(0).asText());
+        c.h.jdbc.update("UPDATE wa.message_outbox SET recipient_identity_id=? WHERE id=?", other, box);
+        assertThatThrownBy(() -> c.authorize(item)).isInstanceOfSatisfying(WaProblem.class,
+            error -> assertThat(error.code()).isEqualTo(WaProblem.Code.RESOURCE_NOT_ACCESSIBLE));
+        c.h.jdbc.update("UPDATE wa.message_outbox SET recipient_identity_id=? WHERE id=?", actor, box);
+        var authorized = c.authorize(item);
+        assertThat(authorized.path("recipient").path("address").asText()).isEqualTo(recipient);
+        assertThat(authorized.path("content").path("text").asText()).startsWith("Avisos de chegada desligados.");
+    }
 
     @Test void anActivePassengerChangesOnlyTheChosenPreferenceAndRepeatingTheValueDoesNotChangeTheVersion() {
         UUID actor = passenger();
