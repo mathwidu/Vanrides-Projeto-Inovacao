@@ -10,6 +10,10 @@ quando a entrega técnica estiver pronta. Esses resultados terão registro
 próprio. Uma tarefa só será encerrada depois de conferir seus critérios e
 a evidência correspondente.
 
+O [roteiro da rodada final](rodada-final.md) reúne instalação, tela bloqueada,
+interrupção de rede, percurso, aviso, encerramento e bateria, com registro
+separado por plataforma e pelas issues correspondentes.
+
 ## Preparação conferida
 
 - API saudável e acesso ao repositório pela conta pessoal.
