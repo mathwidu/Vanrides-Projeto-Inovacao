@@ -138,7 +138,7 @@ final class DriverMVPUITests: XCTestCase {
 
   @MainActor
   private func exportPairingCode(_ app: XCUIApplication, to file: URL) throws {
-    guard app.staticTexts["Confirme pelo WhatsApp"].exists else {
+    guard has(app, "Confirme pelo WhatsApp") else {
       throw Failure(code: "PAIRING_PENDING_REQUIRED")
     }
     let show = button(app, "Mostrar código")
@@ -146,10 +146,10 @@ final class DriverMVPUITests: XCTestCase {
     guard show.exists || copy.exists else { throw Failure(code: "PAIRING_CONTROL_REQUIRED") }
     if show.exists { try tap(app, "Mostrar código") }
     guard copy.waitForExistence(timeout: 12), copy.isEnabled,
-      app.staticTexts["Confirme pelo WhatsApp"].exists else {
+      has(app, "Confirme pelo WhatsApp") else {
       throw Failure(code: "PAIRING_PENDING_REQUIRED")
     }
-    let candidates = app.staticTexts.matching(NSPredicate(format: "label MATCHES %@", MVPPairingCodeLabel.pattern))
+    let candidates = app.descendants(matching: .any).matching(NSPredicate(format: "label MATCHES %@", MVPPairingCodeLabel.pattern))
     guard candidates.count == 1 else { throw Failure(code: "PAIRING_CODE_NOT_UNIQUE") }
     let candidate = candidates.element(boundBy: 0)
     guard candidate.isHittable else { throw Failure(code: "PAIRING_CODE_NOT_VISIBLE") }

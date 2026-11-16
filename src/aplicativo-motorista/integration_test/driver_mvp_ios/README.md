@@ -121,9 +121,12 @@ contas do proprietário, quando a automação pelo Mac não dispõe do clipboard
 do iPhone. Não é uma API do produto. O runner ativa o app normal e exige o
 heading `Confirme pelo WhatsApp` e os controles conhecidos `Mostrar código` ou
 `Copiar código`. Se necessário, toca `Mostrar código`. Com o controle de cópia
-habilitado, aceita exatamente um `staticText` visível cujo label inteiro seja
+habilitado, aceita exatamente um elemento visível cujo label inteiro seja
 `^[BCDFGHJKMNPQRSTVWXYZ]{8}$`, a mesma regra do normalizador do backend.
-Lê somente esse label; não consulta clipboard, não exporta a árvore de
+Heading e código são consultados entre os descendentes, pois os elementos de
+semântica do Flutter podem ter tipos de acessibilidade distintos. O conteúdo
+exato, a unicidade e a visibilidade continuam obrigatórios. Lê somente esse
+label; não consulta clipboard, não exporta a árvore de
 acessibilidade e não usa endpoints privados, GPS ou mecanismos de debug.
 
 Preparar uma ação nova com `--command export-pairing-code`. A janela normal de

@@ -120,7 +120,8 @@ guard finishResult(["success": true, "pairingCodeExported": true], commandFile: 
         source = mvp.SOURCE.read_text()
         self.assertLess(source.index('try clearPairingCodeExport(codeFile)'), source.index('JSONDecoder().decode'))
         export = source.split('private func exportPairingCode(', 1)[1].split('private func button(', 1)[0]
-        self.assertIn('app.staticTexts["Confirme pelo WhatsApp"].exists', export)
+        self.assertEqual(export.count('has(app, "Confirme pelo WhatsApp")'), 2)
+        self.assertIn('app.descendants(matching: .any).matching(NSPredicate(format: "label MATCHES %@", MVPPairingCodeLabel.pattern))', export)
         self.assertIn('copy.waitForExistence(timeout: 12), copy.isEnabled', export)
         self.assertLess(export.index('guard candidates.count == 1'), export.index('let code = candidate.label'))
         self.assertIn('guard candidate.isHittable', export)
