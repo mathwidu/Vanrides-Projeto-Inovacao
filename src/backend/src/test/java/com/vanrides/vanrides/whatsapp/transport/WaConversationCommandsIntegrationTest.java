@@ -18,7 +18,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @Testcontainers(disabledWithoutDocker = true)
 class WaConversationCommandsIntegrationTest {
-    @Container static final PostgreSQLContainer<?> POSTGRES = WaTransportTestSupport.postgres("wa_conversation_commands");
+    @Container static final PostgreSQLContainer<?> POSTGRES = WaTransportTestSupport.postgres("wa_conversation_commands")
+        .withTmpFs(java.util.Map.of("/var/lib/postgresql/data", "rw,size=128m"));
     private static final WaTransportTestDatabase DATABASE = new WaTransportTestDatabase(POSTGRES);
     private WaConversationTestSupport c;
     @BeforeEach void reset() { c = new WaConversationTestSupport(DATABASE.fixture()); }
@@ -248,7 +249,7 @@ class WaConversationCommandsIntegrationTest {
         assertThatThrownBy(() -> c.execute(event, "RESPOND_TO_MESSAGE", reply("DRIVER_INVITE_REQUIRED"))).isInstanceOf(WaProblem.class);
     }
 
-    @Test void templatesAreClosedAndFutureOperationsStillFailWithoutReceipt() {
+    @Test void templatesAreClosedAndOperationalCommandsRejectInvalidPayloadWithoutReceipt() {
         UUID actor = c.actor(); Lease event = c.text(actor, "Uma dúvida");
         assertThatThrownBy(() -> c.execute(event, "RESPOND_TO_MESSAGE", reply("arbitrary"))).isInstanceOfSatisfying(WaProblem.class,
             error -> assertThat(error.code()).isEqualTo(WaProblem.Code.INVALID_PAYLOAD));
@@ -257,7 +258,7 @@ class WaConversationCommandsIntegrationTest {
         assertThatThrownBy(() -> c.execute(event, "RESPOND_TO_MESSAGE", reply("RUN_STARTED"))).isInstanceOfSatisfying(WaProblem.class,
             error -> assertThat(error.code()).isEqualTo(WaProblem.Code.INVALID_PAYLOAD));
         assertThatThrownBy(() -> c.execute(event, "FINISH_RUN", json())).isInstanceOfSatisfying(WaProblem.class,
-            error -> assertThat(error.code()).isEqualTo(WaProblem.Code.DEPENDENCY_UNAVAILABLE));
+            error -> assertThat(error.code()).isEqualTo(WaProblem.Code.INVALID_PAYLOAD));
         assertThatThrownBy(() -> c.execute(event, "REQUEST_START", json())).isInstanceOfSatisfying(WaProblem.class,
             error -> assertThat(error.code()).isEqualTo(WaProblem.Code.INVALID_PAYLOAD));
         assertThat(c.number("SELECT count(*) FROM wa.command_receipt")).isZero();

@@ -2209,9 +2209,9 @@
       "title": "Coletar apenas os dados necessários ao cadastro, registrar consentimento e aplicar os prazos de exclusão definidos.",
       "feature": "F10",
       "component": "Privacidade dos cadastros",
-      "implementationStatus": "Parcial",
-      "codeStatus": "Parcial",
-      "implementationNote": "Retenções V44 e journal implementados. Helper operacional de catálogo/plano com aprovação por hash preparado; rotação física global ainda não ativada.",
+      "implementationStatus": "Implementado",
+      "codeStatus": "Implementado",
+      "implementationNote": "Retenções V44, journal e executor operacional de catálogo/plano por dataset implementados. Simulação é padrão; aprovação por lista/hash é exigida para exclusão e não há purga automática.",
       "validationStatus": "Laboratório",
       "validationNote": "Retenção/restauração isoladas aprovadas. Helper passou em nove testes sintéticos também na VPS; prévia de 14 dumps em 11 pastas preservou todos, sem exclusão real. Limpeza real OFF.",
       "sourcePaths": [
@@ -2233,7 +2233,7 @@
       "planningPaths": [
         "program/cards/VR-WA-150-OPERATIONS.md"
       ],
-      "nextAction": "Revisar a prévia, os prazos e o plano operacional antes de aprovar exclusões reais; validar a ativação de privacidade separadamente.",
+      "nextAction": "Revisar os critérios e o preparo de operação; qualquer descarte real continua uma ação explícita, com lista/hash e escritores parados, sem impedir a rodada de campo.",
       "refs": [
         "VR-WA-150-OPERATIONS"
       ],
@@ -2379,11 +2379,11 @@
       "title": "Registrar as versões e os arquivos aprovados que compõem a versão de teste.",
       "feature": "F05",
       "component": "Identificação da versão de teste",
-      "implementationStatus": "Parcial",
-      "codeStatus": "Parcial",
-      "implementationNote": "Registro atual identifica API PR127/V44, imagem/JAR, worker de 56 fontes e apps normais +15 com hashes/assinatura e retorno preservados.",
+      "implementationStatus": "Implementado",
+      "codeStatus": "Implementado",
+      "implementationNote": "Inventário conjunto do pacote da rodada final reúne fontes, hashes, imagens, configuração e retorno; aplicativo iOS fica assinado localmente, sem publicar perfis privados.",
       "validationStatus": "Laboratório",
-      "validationNote": "Integridade/publicação e instalações atuais registradas; inventário não equivale a aceite integral nem congela automaticamente o pacote final após novas revisões.",
+      "validationNote": "Aplicativos normais 0.4.0+15 instalados e ensaiados, APK HTTPS comparado por hash, API V44 e worker saudáveis, fontes/manifestos e recibos conferidos. O manifesto da release identifica o corte; nova main exige reconferência.",
       "sourcePaths": [],
       "evidencePaths": [
         "program/evidence/VR-WA-110-RUN-TRACKING.md",
@@ -2394,7 +2394,7 @@
       "planningPaths": [
         "program/cards/VR-WA-160-RELEASE-PREP.md"
       ],
-      "nextAction": "Conferir o manifesto conjunto após a revisão final da fonte e guias, preservando versões, hashes, flags e retorno.",
+      "nextAction": "Conferir o manifesto do pacote antes do percurso e registrar qualquer atualização da main.",
       "refs": [
         "VR-WA-160-RELEASE-PREP"
       ],
@@ -3005,11 +3005,11 @@
       "title": "Repetir a instalação e a renovação a partir do pacote entregue e conferir se todos os arquivos necessários estão disponíveis.",
       "feature": "F05",
       "component": "Reprodução da instalação final",
-      "implementationStatus": "Parcial",
-      "codeStatus": "Parcial",
-      "implementationNote": "Artefatos normais +15 instalados/abertos nas duas plataformas e guias atualizados; reprodução independente e renovação final ainda parciais.",
+      "implementationStatus": "Implementado",
+      "codeStatus": "Implementado",
+      "implementationNote": "Procedimentos de instalação, assinatura e renovação do pacote 0.4.0+15 documentados; os dois aplicativos foram instalados e abertos, com versões e hashes registrados.",
       "validationStatus": "Físico parado",
-      "validationNote": "Versão/assinatura/dados preservados e hash Android HTTPS conferidos no preparo atual; isso não comprova reprodução integral por outro integrante nem renovação futura do iOS.",
+      "validationNote": "App normal 0.4.0+15 instalado/aberto e com GPS/parada reais em ambos os aparelhos. iOS foi reassinado com Personal Team existente; assinatura deve ser renovada ao vencer. Abrir pelo ícone sem USB e a rodada móvel permanecem no roteiro final.",
       "sourcePaths": [],
       "evidencePaths": [
         "docs/runbooks/whatsapp-mvp/010-builds-e-instalacao.md",
@@ -3019,7 +3019,7 @@
       "planningPaths": [
         "program/cards/VR-WA-190-HANDOFF.md"
       ],
-      "nextAction": "Reproduzir a instalação/entrada pelos guias e a renovação aplicável, preservando hashes e sem compartilhar credenciais.",
+      "nextAction": "Na rodada final, abrir o pacote pelo ícone sem USB; se necessário renovar a assinatura iOS pelo procedimento publicado, sem compartilhar conta/perfil.",
       "refs": [
         "VR-WA-190-HANDOFF"
       ],

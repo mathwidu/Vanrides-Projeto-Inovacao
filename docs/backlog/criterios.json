@@ -1942,7 +1942,7 @@
         "Finalidades, famílias de dados e prazos aplicáveis documentados para o cenário."
       ],
       "decisionPending": null,
-      "nextRequiredOutcome": "Revisar a prévia e a ativação humana de descarte; implementar a lacuna operacional de rotação física sem apagar backups por esta atualização.",
+      "nextRequiredOutcome": "Revisar os critérios e a prévia operacional preparada; manter exclusão real dependente de lista/hash e decisão explícita, sem ativação automática.",
       "sourcePaths": [
         "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/privacy/WaPrivacyJobs.java",
         "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/privacy/WaPrivacyService.java",
@@ -2071,7 +2071,7 @@
         "Componentes e verificações do candidato disponíveis para identificação."
       ],
       "decisionPending": null,
-      "nextRequiredOutcome": "Conferir o manifesto conjunto após a revisão final da fonte e guias, preservando versões, hashes, flags e retorno.",
+      "nextRequiredOutcome": "Conferir o manifesto da release e repetir a checagem de versões antes da rodada, caso a main mude.",
       "sourcePaths": [],
       "evidencePaths": [
         "program/evidence/VR-WA-110-RUN-TRACKING.md",
@@ -2527,7 +2527,7 @@
         "Pacote final e instruções completos, aparelhos e ações de conta do proprietário disponíveis."
       ],
       "decisionPending": null,
-      "nextRequiredOutcome": "Reproduzir a instalação/entrada pelos guias e a renovação aplicável, preservando hashes e sem compartilhar credenciais.",
+      "nextRequiredOutcome": "Aplicar a checagem de abertura sem USB e a renovação somente quando necessária na rodada final.",
       "sourcePaths": [],
       "evidencePaths": [
         "docs/runbooks/whatsapp-mvp/010-builds-e-instalacao.md",

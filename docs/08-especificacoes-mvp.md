@@ -1972,7 +1972,7 @@ F10 · Onda 1 · [Issue #83](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Resultado esperado:** O cadastro usa dados essenciais e aplica os prazos definidos para seu ciclo de vida.
 
-**Situação:** Parcial · Laboratório. Retenção/restauração isoladas aprovadas. Helper passou em nove testes sintéticos também na VPS; prévia de 14 dumps em 11 pastas preservou todos, sem exclusão real. Limpeza real OFF.
+**Situação:** Implementado · Laboratório. Retenção/restauração isoladas aprovadas. Helper passou em nove testes sintéticos também na VPS; prévia de 14 dumps em 11 pastas preservou todos, sem exclusão real. Limpeza real OFF.
 
 **Inclui:**
 
@@ -1999,7 +1999,7 @@ F10 · Onda 1 · [Issue #83](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Decisão pendente:** Nenhuma adicional identificada.
 
-**Próxima ação:** Revisar a prévia, os prazos e o plano operacional antes de aprovar exclusões reais; validar a ativação de privacidade separadamente.
+**Próxima ação:** Revisar os critérios e o preparo de operação; qualquer descarte real continua uma ação explícita, com lista/hash e escritores parados, sem impedir a rodada de campo.
 
 **Onde conferir:**
 
@@ -2107,7 +2107,7 @@ F05 · Onda 2 · [Issue #86](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Resultado esperado:** A versão de teste tem seus componentes e origem identificados.
 
-**Situação:** Parcial · Laboratório. Integridade/publicação e instalações atuais registradas; inventário não equivale a aceite integral nem congela automaticamente o pacote final após novas revisões.
+**Situação:** Implementado · Laboratório. Aplicativos normais 0.4.0+15 instalados e ensaiados, APK HTTPS comparado por hash, API V44 e worker saudáveis, fontes/manifestos e recibos conferidos. O manifesto da release identifica o corte; nova main exige reconferência.
 
 **Inclui:**
 
@@ -2134,7 +2134,7 @@ F05 · Onda 2 · [Issue #86](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Decisão pendente:** Nenhuma adicional identificada.
 
-**Próxima ação:** Conferir o manifesto conjunto após a revisão final da fonte e guias, preservando versões, hashes, flags e retorno.
+**Próxima ação:** Conferir o manifesto do pacote antes do percurso e registrar qualquer atualização da main.
 
 **Onde conferir:**
 
@@ -2591,7 +2591,7 @@ F05 · Onda 2 · [Issue #97](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Resultado esperado:** A equipe repete instalação e renovação a partir do pacote identificado.
 
-**Situação:** Parcial · Físico parado. Versão/assinatura/dados preservados e hash Android HTTPS conferidos no preparo atual; isso não comprova reprodução integral por outro integrante nem renovação futura do iOS.
+**Situação:** Implementado · Físico parado. App normal 0.4.0+15 instalado/aberto e com GPS/parada reais em ambos os aparelhos. iOS foi reassinado com Personal Team existente; assinatura deve ser renovada ao vencer. Abrir pelo ícone sem USB e a rodada móvel permanecem no roteiro final.
 
 **Inclui:**
 
@@ -2618,7 +2618,7 @@ F05 · Onda 2 · [Issue #97](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Decisão pendente:** Nenhuma adicional identificada.
 
-**Próxima ação:** Reproduzir a instalação/entrada pelos guias e a renovação aplicável, preservando hashes e sem compartilhar credenciais.
+**Próxima ação:** Na rodada final, abrir o pacote pelo ícone sem USB; se necessário renovar a assinatura iOS pelo procedimento publicado, sem compartilhar conta/perfil.
 
 **Onde conferir:**
 

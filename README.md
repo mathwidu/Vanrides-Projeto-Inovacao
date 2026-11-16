@@ -20,14 +20,16 @@ Universidade Feevale, 2026/2.
 | Testar uma versão com o grupo | [Homologação da equipe](docs/desenvolvimento/homologacao-da-equipe.md) |
 | Testar o cadastro no WhatsApp | [Cadastro de motorista e passageiro](docs/desenvolvimento/cadastro-guiado-whatsapp.md) |
 | Acompanhar a entrega técnica | [Plano e issues](docs/desenvolvimento/entrega-mvp.md) e [evidências](program/evidence/mvp-entrega-20261116.md) |
-| Fazer os testes finais nos aparelhos | [Roteiro por plataforma](docs/desenvolvimento/rodada-final.md) |
+| Fazer os testes finais nos aparelhos | [Roteiro por plataforma](docs/desenvolvimento/rodada-final.md) e [pacote identificado da rodada](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/releases/tag/mvp-0.4.0-15) |
 | Conferir falhas ou pausar envios | [Operação e recuperação](docs/desenvolvimento/operacao.md) |
 | Consultar a entrega da disciplina | [STACK](STACK.docx), [BACKLOG](BACKLOG.xlsx) e [Canvas](docs/06-canvas-mvp.md) |
 
 ## Situação do MVP
 
-Em 16/11/2026, a API da homologação está publicada pelo PR #127 em `2a211d1`,
-schema V44, com HTTPS e worker saudáveis. No WhatsApp real passaram convite,
+Em 16/11/2026, a API da homologação usa schema V44, com HTTPS e worker
+saudáveis. O [pacote da rodada final](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/releases/tag/mvp-0.4.0-15)
+identifica os componentes e hashes conferidos; novos merges na `main` atualizam
+a API e precisam ser reconferidos antes do percurso. No WhatsApp real passaram convite,
 vínculo, aprovação do ponto, presença de ida e volta, consulta da lista e pin
 recebido pelo passageiro. As preferências de chegada foram ligadas, desligadas
 e ligadas novamente, com confirmação do bot após a correção da resposta.
