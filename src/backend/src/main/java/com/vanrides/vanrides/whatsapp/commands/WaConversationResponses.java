@@ -26,7 +26,7 @@ public final class WaConversationResponses {
         + "Quando estiver pronta, envie CONVIDAR para receber um link de passageiro.";
     private static final String PAIRING = "Para compartilhar sua localização durante um trajeto, vincule o aplicativo VanRides Motorista. "
         + "Abra o aplicativo pelo ícone e envie aqui o código de pareamento exibido.";
-    private static final String ATTENDANCE = "Com o vínculo com seu motorista aprovado e uma viagem disponível, envie PRESENÇA para informar se vai na ida ou na volta.";
+    private static final String ATTENDANCE = "Antes de cada viagem você recebe um lembrete. Responda o lembrete com VOU ou NÃO VOU. Se não responder, você continua previsto na lista.";
     static final String PREFERENCE_HELP = "Para escolher seus avisos, envie LIGAR AVISOS CHEGADA ou DESLIGAR AVISOS CHEGADA; "
         + "para os lembretes, LIGAR AVISOS PRESENÇA ou DESLIGAR AVISOS PRESENÇA. Cada comando mantém a outra escolha.";
 
