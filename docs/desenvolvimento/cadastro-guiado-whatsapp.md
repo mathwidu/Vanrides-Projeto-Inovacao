@@ -32,6 +32,13 @@ próprias escolhas. [Política do WhatsApp Business](https://business.whatsapp.c
 3. O motorista envia `REVISAR PEDIDO`. Se houver um só, o bot mostra o resumo direto. Para consultar a lista, envie `PASSAGEIROS`. No resumo de aprovação, use **Responder** e escreva `APROVAR EMBARQUE`. Para corrigir um ponto inadequado, use a opção de correção na lista. Se o WhatsApp não permitir citar a mensagem, use a confirmação alternativa que o próprio resumo mostra.
 4. O passageiro recebe o resultado no mesmo chat. Para verificar presença e GPS depois desse ponto, siga o [roteiro de homologação](homologacao-da-equipe.md).
 
+Depois de concluir o cadastro, use `LIGAR AVISOS CHEGADA` ou
+`DESLIGAR AVISOS CHEGADA` para a aproximação, e `LIGAR AVISOS PRESENÇA` ou
+`DESLIGAR AVISOS PRESENÇA` para os lembretes. Cada comando altera somente a
+escolha indicada e confirma o resultado; a outra permanece como estava.
+Termine ou abandone uma revisão em andamento antes de alterar esses avisos.
+Mensagens já enviadas podem chegar depois de desligar.
+
 ## Corrigir o ponto ou retomar o cadastro
 
 - **Antes de enviar o pedido:** mande `CORRIGIR PONTO` no resumo e envie

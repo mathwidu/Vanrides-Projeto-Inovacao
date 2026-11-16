@@ -3718,9 +3718,9 @@
           "expectedVersion",
           "payload"
         ],
-        "description": "Ator derivado da inbox autenticada e do lease; nunca do texto ou do payload. A versão zero representa identidade sem perfil.",
+        "description": "Ator passageiro ativo derivado da inbox e do lease. A API reinterpreta LIGAR/DESLIGAR AVISOS CHEGADA ou LIGAR/DESLIGAR AVISOS PRESENÇA, exige payload idêntico à intenção autenticada e altera somente essa chave, preservando a outra preferência e a conversa. Mensagem corrente e ausência de rascunho ativo são obrigatórias.",
         "x-vanrides-implementation-card": "VR-WA-140-FINISH-SUPPORT",
-        "x-vanrides-availability": "FUTURE"
+        "x-vanrides-availability": "CARD_140_PREFERENCES"
       },
       "RequestSupportPayload": {
         "type": "object",
@@ -3952,7 +3952,7 @@
             "SET_OPERATIONAL_ATTENDANCE": "#/components/schemas/SetOperationalAttendanceCommand"
           }
         },
-        "description": "Catálogo de28 comandos. Fundação040, conversa070, motorista080 e passageiro090 executáveis; demais tipos continuam FUTURE. A API oferece no máximo uma operação de draft por inbox. Ator, dono, etapa, alvos, revisão e confirmação são revalidados pela API. SET_PREFERENCE continua reservado ao140; a preferência inicial é coletada dentro de ADVANCE_PASSENGER_SETUP."
+        "description": "Catálogo de28 comandos. Fundação040, conversa070, motorista080 e passageiro090 executáveis; demais tipos continuam FUTURE. A API oferece no máximo uma operação de draft por inbox. Ator, dono, etapa, alvos, revisão e confirmação são revalidados pela API. SET_PREFERENCE executa os quatro comandos explícitos de avisos após o cadastro; a preferência inicial continua dentro de ADVANCE_PASSENGER_SETUP, com default desligado."
       },
       "HumanCommandResult": {
         "type": "object",
@@ -6181,7 +6181,7 @@
         "value": {
           "commandType": "SET_PREFERENCE",
           "inboxEventId": "00000000-0000-4000-8000-000000000001",
-          "expectedVersion": 0,
+          "expectedVersion": 1,
           "payload": {
             "preference": "APPROACH_MESSAGES",
             "enabled": true

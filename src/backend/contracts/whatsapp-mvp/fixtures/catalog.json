@@ -332,11 +332,11 @@
       "schema": "SetPreferenceCommand",
       "family": "human-command",
       "implementationCard": "VR-WA-140-FINISH-SUPPORT",
-      "availability": "FUTURE",
+      "availability": "CARD_140_PREFERENCES",
       "value": {
         "commandType": "SET_PREFERENCE",
         "inboxEventId": "00000000-0000-4000-8000-000000000001",
-        "expectedVersion": 0,
+        "expectedVersion": 1,
         "payload": {
           "preference": "APPROACH_MESSAGES",
           "enabled": true

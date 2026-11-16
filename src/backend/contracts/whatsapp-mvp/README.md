@@ -315,7 +315,14 @@ completo não integram recibo, contexto do agente nem logs.
 convidado sem perfil em ONBOARDING. O servidor lê convite, nome, notice,
 preferência inicial de avisos, rotinas/dias, pin fixo e referência do evento e
 do draft. Nada disso entra no modelo, no payload de comando ou nos itens n8n.
-`SET_PREFERENCE` permanece um comando separado reservado ao140.
+`SET_PREFERENCE {preference,enabled}` altera uma preferência após o cadastro, a partir
+de `LIGAR AVISOS CHEGADA`, `DESLIGAR AVISOS CHEGADA`, `LIGAR AVISOS PRESENÇA`
+ou `DESLIGAR AVISOS PRESENÇA`. A API compara o payload com a mensagem autenticada
+e oferece o comando somente ao passageiro ativo, com aceite vigente, sem pausa
+ou rascunho ativo. A outra chave, o default desligado e a conversa são preservados.
+Replay não repete a mutação; informar o valor atual retorna `NO_CHANGE`.
+Entrega pendente revalida a preferência antes da submissão; uma mensagem já
+submetida pode chegar depois de desligar.
 
 As operações finais copiam somente as referências autorizadas do contexto:
 `REQUEST_LINK {confirmationRef}`;

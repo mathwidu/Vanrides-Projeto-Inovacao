@@ -19,13 +19,13 @@ const cases = [
   ['ApprovePickup', 'APPROVE_PICKUP', { pickupRef: 'PICKUP', confirmationRef: 'CONFIRMATION' }, 'DRIVER'],
 ];
 
-test('090 advertises exactly the six versioned operations and keeps SET_PREFERENCE reserved', () => {
+test('090 advertises exactly the six versioned operations and keeps its initial preference flow separate from SET_PREFERENCE', () => {
   const expected = cases.map(([, command]) => command).sort();
   assert.deepEqual(Object.keys(PASSENGER_PAYLOADS).sort(), expected);
   assert.deepEqual([...contract.paths['/integrations/whatsapp/v1/commands'].post['x-vanrides-supported-commands-in-090']].sort(), expected);
   assert.equal(new Set(schemas.CommandType.enum).size, schemas.CommandType.enum.length);
   assert.ok(expected.every(c => schemas.CommandType.enum.includes(c)));
-  assert.equal(schemas.SetPreferenceCommand['x-vanrides-availability'], 'FUTURE');
+  assert.equal(schemas.SetPreferenceCommand['x-vanrides-availability'], 'CARD_140_PREFERENCES');
   assert.equal(schemas.SetPreferenceCommand['x-vanrides-implementation-card'], 'VR-WA-140-FINISH-SUPPORT');
 });
 

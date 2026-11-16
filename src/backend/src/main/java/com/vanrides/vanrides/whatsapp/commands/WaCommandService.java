@@ -30,8 +30,9 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class WaCommandService {
     private static final Set<String> IMPLEMENTED = Set.of("START_ONBOARDING", "SET_PROFILE_NAME", "ACCEPT_NOTICE",
-        "CLAIM_DRIVER_INVITE", "CONFIRM_PAIRING", "RESPOND_TO_MESSAGE", "REQUEST_SUPPORT", "GET_DRIVER_LOCATION", "FINISH_RUN");
-    private static final Set<String> FUTURE = Set.of("SET_PREFERENCE", "REQUEST_DATA_DELETION");
+        "CLAIM_DRIVER_INVITE", "CONFIRM_PAIRING", "RESPOND_TO_MESSAGE", "REQUEST_SUPPORT", "GET_DRIVER_LOCATION", "FINISH_RUN", "SET_PREFERENCE");
+    private static final Set<String> FUTURE = Set.of("REQUEST_DATA_DELETION");
+    private final WaPreferenceConversation preferences;
     private final JdbcTemplate jdbc;
     private final WaInboxAccess inbox;
     private final WaCommandStore store;
@@ -79,6 +80,7 @@ public class WaCommandService {
         this.runs = new WaRunConversation(jdbc, clock, settings, crypto);
         this.locations = new WaLocationConversation(jdbc, clock, settings);
         this.finishes = new WaRunFinishConversation(jdbc, clock, settings, crypto);
+        this.preferences = new WaPreferenceConversation(jdbc, clock);
     }
 
     @Transactional
@@ -89,7 +91,7 @@ public class WaCommandService {
         ObjectNode result = WaJson.object(WaJson.write(Map.of("inboxEventId", eventId.toString(), "entityVersion", actor.version(),
             "actorState", actor.role(), "step", step(actor), "allowedCommands", allowed(actor, event),
             "options", List.of(), "serverTime", clock.now().toString())));
-        if(settings.teamApiOnly()) {
+        if(settings.teamApiOnly() || actor.role().equals("PASSENGER") && preferences.recognizes(event)) {
             result.put("registrationStep",conversation.registration(actor,settings.enabled())).put("eventFreshness",conversation.freshness(event));
             inbox.revalidate(event);return result;
         }
@@ -188,7 +190,7 @@ public class WaCommandService {
             decision = WaDecision.ok(result);
         }
         store.save(commandId, event, key, type, hash, decision);
-        if (!finishCommand && !locationCommand && !runCommand && !attendanceCommand && !driverCommand && !passengerCommand && decision.error() == null && !type.equals("REQUEST_SUPPORT")
+        if (!finishCommand && !locationCommand && !runCommand && !attendanceCommand && !driverCommand && !passengerCommand && decision.error() == null && !Set.of("REQUEST_SUPPORT", "SET_PREFERENCE").contains(type)
                 && (!type.equals("RESPOND_TO_MESSAGE") || Set.of("HELP", "CONTINUE").contains(payload.path("responseCode").asText())))
             conversation.emitted(current, event, registration);
         if (locationCommand) {
@@ -231,6 +233,7 @@ public class WaCommandService {
             conversation.support(actor, event, payload.path("reason").asText(), correlation);
             return WaDecision.ok(Map.of("changed", true));
         }
+        if (type.equals("SET_PREFERENCE")) return preferences.execute(actor, event, payload);
         if (Set.of("CLAIM_DRIVER_INVITE", "CONFIRM_PAIRING").contains(type) && !store.attempt(actor.identityId(), type))
             return WaDecision.error(WaProblem.Code.RATE_LIMITED);
         if (type.equals("ACCEPT_NOTICE") && !conversation.consentAllowed(actor, event)) return WaDecision.error(WaProblem.Code.ACTION_NOT_ALLOWED);
@@ -245,6 +248,7 @@ public class WaCommandService {
 
     private String response(String type, ObjectNode payload, WaDecision decision, String registration, WaProfileState actor, WaInboxAccess.Context event) {
         if (decision.error() != null) return WaConversationResponses.rejected(decision.error());
+        if (type.equals("SET_PREFERENCE")) return preferences.response(payload);
         if(settings.teamApiOnly() && type.equals("RESPOND_TO_MESSAGE"))
             return "Este ambiente permite somente o cadastro sintético de teste. Use o roteiro recebido para iniciar e conferir o resultado.";
         if (type.equals("RESPOND_TO_MESSAGE")) {
@@ -288,6 +292,10 @@ public class WaCommandService {
         commands.add("RESPOND_TO_MESSAGE");
         if (!conversation.freshness(event).equals("CURRENT") || conversation.question(event) != null) return List.copyOf(commands);
         if (conversation.explicitSupport(event)) commands.add("REQUEST_SUPPORT");
+        if (preferences.recognizes(event)) {
+            if (preferences.eligible(actor)) commands.add("SET_PREFERENCE");
+            return List.copyOf(commands);
+        }
         if (locations.offer(actor,event)) { commands.add("GET_DRIVER_LOCATION"); return List.copyOf(commands); }
         var runOffer = runOffer(actor, event);
         var attendanceOffer = runOffer == null ? attendanceOffer(actor, event) : null;

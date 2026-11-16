@@ -5,11 +5,12 @@ import { decideAttendance, isAttendanceChoice, isAttendanceCommand, validAttenda
 import { decideDriverLocation, isDriverLocationCommand, validDriverLocationDecision } from './driver-location.mjs';
 
 import { decideRunFinish, isRunFinishCommand, validRunFinishDecision } from './run-finish.mjs';
+import { decidePreference, isPreferenceCommand, validPreferenceDecision } from './preferences.mjs';
 
 const commands = new Set([
   'START_ONBOARDING', 'SET_PROFILE_NAME', 'ACCEPT_NOTICE', 'CLAIM_DRIVER_INVITE',
   'CONFIRM_PAIRING', 'REQUEST_SUPPORT', 'RESPOND_TO_MESSAGE', 'ADVANCE_ATTENDANCE', 'SET_ATTENDANCE',
-  'GET_DRIVER_LOCATION', 'FINISH_RUN',
+  'GET_DRIVER_LOCATION', 'FINISH_RUN', 'SET_PREFERENCE',
   ...Object.keys(DRIVER_PAYLOADS), ...Object.keys(PASSENGER_PAYLOADS),
 ]);
 const runCommands = new Set(['ADVANCE_RUN_SETUP', 'REQUEST_START', 'REQUEST_RESUME', 'SET_OPERATIONAL_ATTENDANCE']);
@@ -95,6 +96,7 @@ export function validateDecision(decision, context) {
     case 'REQUEST_SUPPORT': valid = exact(['reason', 'detail']) && ['HELP', 'PAIRING', 'LOCATION', 'OTHER'].includes(payload.reason)
       && typeof payload.detail === 'string' && payload.detail.length >= 1 && payload.detail.length <= 240; break;
     case 'RESPOND_TO_MESSAGE': valid = exact(['responseCode']) && responseCodes.has(payload.responseCode); break;
+    case 'SET_PREFERENCE': valid = validPreferenceDecision(decision, context); break;
     default: valid = isDriverCommand(decision.commandType) && validDriverDecision(decision, context)
       || isPassengerCommand(decision.commandType) && validPassengerDecision(decision, context)
       || isAttendanceCommand(decision.commandType) && validAttendanceDecision(decision, context)
@@ -125,6 +127,7 @@ export function decideDeterministically(message, context) {
     'quero atendimento humano', 'atendimento humano'].includes(text))
     return command('REQUEST_SUPPORT', { reason: 'HELP', detail: 'Pedido explícito na mensagem autenticada.' });
   if (questions.has(text) || invitePreferences.has(message.text?.trim().toLowerCase())) return reply('FAQ');
+  if (context.allowedCommands.some(isPreferenceCommand)) return decidePreference(context, text);
   // The server recognizes the invitation and interprets every private draft field.
   // Its offer must be copied even when the guest has no profile or text projection.
   // Even private replies without a text projection can advance an API-bound run review.
