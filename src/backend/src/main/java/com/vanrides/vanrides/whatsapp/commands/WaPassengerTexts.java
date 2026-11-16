@@ -59,10 +59,11 @@ final class WaPassengerTexts {
                     driverConfirm(draft.path("driverName").asText()).text() + NAVIGATION_HINT;
             case "NAME" -> "Como você prefere ser chamado? Mande seu nome, como Ana Silva.";
             case "NOTICE" ->
-                    "Usaremos seu nome, conversa, ponto de embarque e participação nas rotinas para"
-                        + " organizar seu transporte. Os avisos serão escolhidos separadamente."
-                        + "\n\nVocê aceita o aviso de privacidade VanRides wa-mvp-v1? Responda"
-                        + " ACEITO para continuar.";
+                    "Antes de continuar, um aviso sobre seus dados."
+                        + "\n\nPara organizar o seu transporte e viagens, o VanRides usa seu nome,"
+                        + " seu número de WhatsApp, esta conversa, seu ponto de embarque e as viagens"
+                        + " que você escolher. Depois disso, você escolhe quais avisos quer receber."
+                        + "\n\nSe você concorda, responda ACEITO para continuar.";
             case "PREF_APPROACH" -> APPROACH.text();
             case "PREF_REMINDER" -> REMINDER.text();
             case "ROUTINES" -> routines(draft);
