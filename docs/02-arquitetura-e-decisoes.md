@@ -93,13 +93,13 @@ coleta, pede STOP e reconcilia o ACK do aparelho.
 | Aproximação | A API avalia posição recente, ponto, ordem e sentido para avisar o passageiro elegível. | Regra testada em PostgreSQL, desligada na homologação; aceite em percurso pendente |
 | Encerramento | A API encerra por revisão manual ou chegada válida e coordena STOP/ACK do aplicativo. | Código publicado e testes dirigidos aprovados; automático desligado e parada do novo build ainda por validar em aparelho |
 
-Na versão avaliada V44, a API também reúne retenções de 7, 30 e 90 dias,
+Na V44 publicada, a API também reúne retenções de 7, 30 e 90 dias,
 journal de exclusões fora do banco e reaplicação antes de retomar consumidores
 após uma restauração. A composição isolada com API, worker, PostgreSQL, Redis e
-n8n em fila passou no ensaio real da VPS com canal simulado, preservando os
-controles e sem ressuscitar os dados excluídos. Essa versão ainda não está
-publicada nesta atualização; a manutenção privada está preparada e desligada
-por padrão, e a limpeza real continua desabilitada. A rotação física dos
+n8n em fila passou no ensaio real da VPS com canal simulado. A rodada 006
+repetiu essa prova com o JAR efetivamente publicado, preservando os controles
+e sem ressuscitar os dados excluídos. A manutenção privada está preparada e
+desligada por padrão, e a limpeza real continua desabilitada. A rotação física dos
 backups próprios ainda não foi implementada. O
 [relatório de testes](03-testes-e-resultados.md) distingue essas provas.
 
