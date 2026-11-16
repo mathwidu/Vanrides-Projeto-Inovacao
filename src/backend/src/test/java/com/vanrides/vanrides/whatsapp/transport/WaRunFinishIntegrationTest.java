@@ -63,6 +63,7 @@ class WaRunFinishIntegrationTest {
         assertEquals(0,t.f.s.number("SELECT count(*) FROM wa.tracking_session WHERE stopped_at IS NOT NULL"));
         assertEquals(0,t.f.s.number("SELECT count(*) FROM wa.start_intent WHERE run_id=? AND state='ACTIVATED'",t.run()));
         assertEquals(0,t.f.s.number("SELECT count(*) FROM wa.run_finish_progress WHERE run_id=?",t.run()));
+        assertEquals(0,t.f.s.number("SELECT count(*) FROM wa.tracking_session WHERE run_id=? AND last_latitude IS NOT NULL",t.run()));
         String ref=tracking.status(t.actor).path("stopRequestRef").asText();
         tracking.state(t.actor,t.session(),t.state("STOPPED").put("stopRequestRef",ref),"finished-stop-ack");
         assertEquals("STOPPED",tracking.status(t.actor).path("sessionState").asText());
@@ -129,6 +130,7 @@ class WaRunFinishIntegrationTest {
     }
     @Test void physicalGpsStopDoesNotCompleteTheBusinessTrip() {
         sample(1,.005,10.0); tracking.state(t.actor,t.session(),t.state("STOPPED"),"technical-stop-only");
+        assertEquals(0,t.f.s.number("SELECT count(*) FROM wa.tracking_session WHERE id=? AND last_latitude IS NOT NULL",t.session()));
         assertEquals("DEGRADED",t.runState()); assertNull(t.h.jdbc.queryForObject("SELECT completed_at FROM wa.operation_run WHERE id=?",Timestamp.class,t.run()));
     }
     @Test void manualFinishRecognizesAnAlreadyAcknowledgedTechnicalStop() {
