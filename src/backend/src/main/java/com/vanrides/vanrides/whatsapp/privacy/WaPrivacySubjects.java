@@ -14,12 +14,11 @@ final class WaPrivacySubjects {
     boolean lock(WaPrivacyService.Scope scope, UUID subject) {
         return !jdbc.queryForList("""
             SELECT p.identity_id FROM wa.profile p JOIN wa.identity i ON i.id=p.identity_id
-            LEFT JOIN wa.test_cohort c ON c.id=i.test_cohort_id
-            WHERE p.identity_id=? AND ((c.environment=? AND (?=false OR c.synthetic)) OR
-              (?=false AND i.test_cohort_id IS NULL))
+            JOIN wa.test_cohort c ON c.id=i.test_cohort_id
+            WHERE p.identity_id=? AND c.environment=? AND (?=false OR c.synthetic)
               AND EXISTS(SELECT 1 FROM wa.identity_alias a WHERE a.identity_id=i.id AND a.instance_id=?)
             FOR UPDATE OF p
-            """, subject, scope.environment(), policy.syntheticOnly(), policy.syntheticOnly(), scope.instanceId()).isEmpty();
+            """, subject, scope.environment(), policy.syntheticOnly(), scope.instanceId()).isEmpty();
     }
 
     boolean active(UUID subject) {

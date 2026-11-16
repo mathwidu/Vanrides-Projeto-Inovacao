@@ -119,6 +119,31 @@ final class WaPrivacyTestSupport {
     WaPrivacyService service(WaPrivacyPolicy policy, WaPrivacyJournal port) {
         return new WaPrivacyService(jdbc, transactions, clock, policy, port);
     }
+    com.vanrides.vanrides.whatsapp.auth.WaPrincipal job(String environment, String instance) {
+        UUID credential = UUID.randomUUID();
+        jdbc.update("""
+            INSERT INTO wa.service_credential(id,principal,environment,token_hash,allowed_instance_id,created_at,expires_at)
+            VALUES (?,'SYSTEM_JOB',?,?,?,?,?)
+            """, credential, environment, WaCrypto.digest(credential.toString()), instance,
+            timestamp(), Timestamp.from(time.now.plusSeconds(3600)));
+        return new com.vanrides.vanrides.whatsapp.auth.WaPrincipal(
+            com.vanrides.vanrides.whatsapp.auth.WaPrincipal.Kind.SYSTEM_JOB,credential,null,null,instance,null,0,false);
+    }
+    WaPrivacyTerminalMaintenance maintenance(boolean dryRun) {
+        return new WaPrivacyTerminalMaintenance(jdbc,transactions,clock,WaPrivacyPolicy.syntheticTests(),dryRun);
+    }
+    void sweepTerminal() {
+        var job = job(ENV,INSTANCE);
+        WaPrivacyTerminalMaintenance.Position cursor = null;
+        for (int page=0;page<20;page++) {
+            var result = maintenance(false).tick(job,100,cursor);
+            if (result.complete()) return;
+            if (result.deferred()>0) throw new AssertionError("Unexpected synthetic retention deferral");
+            cursor = result.next();
+        }
+        throw new AssertionError("Synthetic retention did not finish");
+    }
+    UUID freshDriverMessage(String text) { return box(driver,text,null); }
     Timestamp timestamp() { return Timestamp.from(time.now); }
     String string(String sql, Object... args) { return jdbc.queryForObject(sql, String.class, args); }
     long count(String table) { return jdbc.queryForObject("SELECT count(*) FROM wa." + table, Long.class); }
@@ -175,14 +200,16 @@ final class WaPrivacyTestSupport {
             timestamp(), timestamp(), timestamp(), timestamp(), passenger);
     }
 
-    private void box(UUID recipient, String text, UUID day) {
+    private UUID box(UUID recipient, String text, UUID day) {
+        UUID id = UUID.randomUUID();
         jdbc.update("""
             INSERT INTO wa.message_outbox(id,recipient_identity_id,purpose,business_key,occurrence_id,reminder_window,
               policy_version,payload_json,state,created_at,not_before,expires_at)
             VALUES (?,?,?,?,?,?,'attendance-v1',?::jsonb,'DELIVERED',?,?,?)
-            """, UUID.randomUUID(), recipient, day == null ? "OPERATIONAL" : "REMINDER", "synthetic-" + recipient,
+            """, id, recipient, day == null ? "OPERATIONAL" : "REMINDER", "synthetic-" + id,
             day, day == null ? null : "pre-departure", WaJson.object("{}").put("type", "TEXT").put("text", text).toString(),
             timestamp(), timestamp(), Timestamp.from(time.now.plusSeconds(300)));
+        return id;
     }
 
     static final class Time extends Clock {
@@ -196,6 +223,8 @@ final class WaPrivacyTestSupport {
         boolean available = true;
         final Map<UUID, Ack> records = new LinkedHashMap<>();
         public Ack append(Entry entry) {
+            if (org.springframework.transaction.support.TransactionSynchronizationManager.isActualTransactionActive())
+                throw new AssertionError("Journal append must be outside the database transaction");
             if (!available) throw new IllegalStateException("SYNTHETIC_JOURNAL_UNAVAILABLE");
             return records.computeIfAbsent(entry.eventId(), id -> new Ack(id, entry.payloadHash(), records.size() + 1,
                 WaCrypto.digest("synthetic-test-journal:" + entry.payloadHash())));

@@ -5,9 +5,12 @@ import java.sql.Timestamp;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 /** Integration port only: no scheduler, HTTP route or enabled bean is registered by this increment. */
 public final class WaPrivacyService {
@@ -27,18 +30,27 @@ public final class WaPrivacyService {
     private final WaPrivacyJournal journal;
     private final WaPrivacySubjects subjects;
     private final WaPrivacyLedger ledger;
+    private final Consumer<Scope> authority;
 
     public WaPrivacyService(JdbcTemplate jdbc, PlatformTransactionManager manager, WaClock clock,
                             WaPrivacyPolicy policy, WaPrivacyJournal journal) {
+        this(jdbc, manager, clock, policy, journal, scope -> { });
+    }
+    /** Runtime callers supply an authority fence; the five-argument constructor is laboratory-only. */
+    public WaPrivacyService(JdbcTemplate jdbc, PlatformTransactionManager manager, WaClock clock,
+                            WaPrivacyPolicy policy, WaPrivacyJournal journal, Consumer<Scope> authority) {
         this.jdbc = jdbc; this.transaction = new TransactionTemplate(manager); this.clock = clock;
         this.policy = policy; this.journal = journal; subjects = new WaPrivacySubjects(jdbc, policy);
         ledger = new WaPrivacyLedger(jdbc);
+        this.authority = java.util.Objects.requireNonNull(authority);
     }
 
     public Result close(Scope scope, UUID subject) {
+        requireOwnTransactionBoundary();
         if (!policy.enabled()) return Result.status("DISABLED");
-        Result result = transaction.execute(tx -> {
+        Result result = authorized(scope, () -> {
             if (!subjects.lock(scope, subject)) return Result.status("OUT_OF_SCOPE");
+            if (!subjects.lockCopyOwners(subject)) return Result.status("COPY_WRITER_BUSY");
             if (subjects.active(subject)) return Result.status("ACTIVE_REFERENCE");
             var old = jdbc.queryForList("SELECT environment,instance_id FROM wa.privacy_subject WHERE subject_id=?", subject);
             if (!old.isEmpty() && (!scope.environment().equals(old.get(0).get("environment"))
@@ -51,17 +63,19 @@ public final class WaPrivacyService {
     }
 
     public List<UUID> candidates(Scope scope, int limit) {
+        requireOwnTransactionBoundary();
         if (limit < 1 || limit > 100) throw new IllegalArgumentException("PRIVACY_BATCH_LIMIT");
         if (!policy.enabled()) return List.of();
-        return jdbc.query("""
+        return authorized(scope, () -> jdbc.query("""
             SELECT subject_id FROM wa.privacy_subject WHERE environment=? AND instance_id=?
               AND erased_at IS NULL AND erase_after<=? ORDER BY erase_after,subject_id LIMIT ?
-            """, (rs, row) -> rs.getObject(1, UUID.class), scope.environment(), scope.instanceId(), Timestamp.from(clock.now()), limit);
+            """, (rs, row) -> rs.getObject(1, UUID.class), scope.environment(), scope.instanceId(), Timestamp.from(clock.now()), limit));
     }
 
     public Result erase(Scope scope, UUID subject) {
+        requireOwnTransactionBoundary();
         if (!policy.enabled()) return Result.status("DISABLED");
-        var eligibility = transaction.execute(tx -> {
+        var eligibility = authorized(scope, () -> {
             if (!subjects.lock(scope, subject)) return "OUT_OF_SCOPE";
             if (subjects.active(subject)) return "ACTIVE_REFERENCE";
             var rows = jdbc.queryForList("""
@@ -74,9 +88,11 @@ public final class WaPrivacyService {
         });
         if (!"DUE".equals(eligibility)) return Result.status(eligibility);
         if (!journal(subject)) return Result.status("JOURNAL_PENDING");
-        return transaction.execute(tx -> {
+        return authorized(scope, () -> {
             if (!subjects.lock(scope, subject) || subjects.active(subject)) return Result.status("ACTIVE_REFERENCE");
             if (!subjects.lockCopyOwners(subject)) return Result.status("COPY_WRITER_BUSY");
+            if (!new WaPrivacyTerminalContent(jdbc).complete(scope, clock.now(), policy.syntheticOnly()))
+                return new Result("TERMINAL_CONTENT_PENDING", Map.of(), List.of("TERMINAL_CONTENT_7D"));
             var row = jdbc.queryForMap("SELECT * FROM wa.privacy_erasure_ledger WHERE subject_id=? FOR UPDATE", subject);
             if (row.get("state").equals("PURGED")) return Result.status("ALREADY_ERASED");
             if (!row.get("state").equals("JOURNALED")) return Result.status("JOURNAL_PENDING");
@@ -90,12 +106,27 @@ public final class WaPrivacyService {
         });
     }
 
+    private void requireOwnTransactionBoundary() {
+        if (TransactionSynchronizationManager.isActualTransactionActive()
+            || TransactionSynchronizationManager.hasResource(jdbc.getDataSource()))
+            throw new IllegalStateException("PRIVACY_AMBIENT_TRANSACTION_NOT_ALLOWED");
+    }
+
+    private <T> T authorized(Scope scope, Supplier<T> work) {
+        return transaction.execute(tx -> {
+            authority.accept(scope);
+            T result = work.get();
+            authority.accept(scope);
+            return result;
+        });
+    }
+
     private boolean journal(UUID subject) {
         try {
             WaPrivacyJournal.Entry entry = ledger.entry(subject);
             WaPrivacyJournal.Ack acknowledgement = journal.append(entry);
-            return journal.verify(entry, acknowledgement) && Boolean.TRUE.equals(transaction.execute(
-                tx -> ledger.acknowledge(entry, acknowledgement, clock.now())));
+            return journal.verify(entry, acknowledgement) && Boolean.TRUE.equals(authorized(
+                new Scope(entry.environment(),entry.instanceId()), () -> ledger.acknowledge(entry, acknowledgement, clock.now())));
         } catch (RuntimeException unavailable) {
             // No external error body, subject/contact data or conversation is logged.
             return false;

@@ -20,14 +20,16 @@ class WaPrivacyErasureIntegrationTest {
     @BeforeEach void setup() { f = new WaPrivacyTestSupport(POSTGRES, true); }
 
     @Test void closedPassengerLosesEveryMappedCopyWithoutChangingTheOtherPassengerOrAttendance() {
-        String other = fingerprint(f.second), attendance = f.string("SELECT row_to_json(a)::text FROM wa.attendance a WHERE passenger_id=?", f.first);
+        var other = coreFingerprint(f.second);
+        String attendance = f.string("SELECT row_to_json(a)::text FROM wa.attendance a WHERE passenger_id=?", f.first);
         String otherSnapshot = participant(f.second), oldStop = f.string("SELECT physical_stop_key::text FROM wa.run_stop WHERE passenger_id=?", f.first);
         assertThat(f.service().close(SCOPE, f.first).status()).isEqualTo("CLOSED");
         assertThat(f.journal.records).hasSize(1);
         f.time.days(31);
+        f.sweepTerminal();
         var result = f.service().erase(SCOPE, f.first);
         assertThat(result.status()).isEqualTo("ERASED");
-        assertThat(fingerprint(f.second)).isEqualTo(other);
+        assertThat(coreFingerprint(f.second)).isEqualTo(other);
         assertThat(participant(f.second)).isEqualTo(otherSnapshot);
         assertThat(f.string("SELECT row_to_json(a)::text FROM wa.attendance a WHERE passenger_id=?", f.first)).isEqualTo(attendance);
         assertThat(f.string("SELECT physical_stop_key::text FROM wa.run_stop WHERE passenger_id=?", f.first)).isEqualTo(oldStop);
@@ -64,20 +66,21 @@ class WaPrivacyErasureIntegrationTest {
         assertThat(f.string("SELECT display_name FROM wa.profile WHERE identity_id=?", f.first)).isEqualTo(NAME);
     }
 
-    @Test void missingOrUnverifiedJournalNeverAuthorizesPayloadErasure() {
+    @Test void missingOrUnverifiedJournalNeverAuthorizesSubjectErasure() {
         var denied = f.service(WaPrivacyPolicy.syntheticTests(), WaPrivacyJournal.unavailable());
         assertThat(denied.close(SCOPE, f.first).status()).isEqualTo("JOURNAL_PENDING");
         f.time.days(31);
         assertThat(denied.erase(SCOPE, f.first).status()).isEqualTo("JOURNAL_PENDING");
         assertThat(f.string("SELECT state FROM wa.privacy_erasure_ledger")).isEqualTo("INTENT");
         assertThat(f.string("SELECT display_name FROM wa.profile WHERE identity_id=?", f.first)).isEqualTo(NAME);
+        f.sweepTerminal();
         assertThat(f.service().erase(SCOPE, f.first).status()).isEqualTo("ERASED");
     }
 
     @Test void guardsRejectBypassChangedOperationalFactsAndRehydration() {
         assertThatThrownBy(() -> f.jdbc.update("UPDATE wa.run_stop SET latitude_snapshot=NULL,longitude_snapshot=NULL,privacy_erased_at=? WHERE passenger_id=?", f.timestamp(), f.first))
             .isInstanceOf(DataIntegrityViolationException.class);
-        f.service().close(SCOPE, f.first); f.time.days(31); f.service().erase(SCOPE, f.first);
+        f.service().close(SCOPE, f.first); f.time.days(31); f.sweepTerminal(); f.service().erase(SCOPE, f.first);
         assertThatThrownBy(() -> f.jdbc.update("UPDATE wa.run_stop SET stop_order=99 WHERE passenger_id=?", f.first))
             .isInstanceOf(DataIntegrityViolationException.class);
         assertThatThrownBy(() -> f.jdbc.update("UPDATE wa.profile SET display_name='rehydrated' WHERE identity_id=?", f.first))
@@ -99,7 +102,7 @@ class WaPrivacyErasureIntegrationTest {
 
     @Test void driverErasureProjectsItsLabelsAndDestinationsWithoutChangingPassengerFields() {
         String firstParticipant = participant(f.first), secondParticipant = participant(f.second);
-        f.service().close(SCOPE, f.driver); f.time.days(31);
+        f.service().close(SCOPE, f.driver); f.time.days(31); f.sweepTerminal();
         assertThat(f.service().erase(SCOPE, f.driver).status()).isEqualTo("ERASED");
         assertThat(participant(f.first)).isEqualTo(firstParticipant);
         assertThat(participant(f.second)).isEqualTo(secondParticipant);
@@ -123,7 +126,7 @@ class WaPrivacyErasureIntegrationTest {
     }
 
     @Test void anOccupiedCopyWriterDefersBeforeChangingAnyPayload() throws Exception {
-        f.service().close(SCOPE, f.first); f.time.days(31);
+        f.service().close(SCOPE, f.first); f.time.days(31); f.sweepTerminal();
         var executor = java.util.concurrent.Executors.newSingleThreadExecutor();
         var locked = new java.util.concurrent.CountDownLatch(1);
         var release = new java.util.concurrent.CountDownLatch(1);
@@ -140,6 +143,7 @@ class WaPrivacyErasureIntegrationTest {
             assertThat(f.string("SELECT display_name FROM wa.profile WHERE identity_id=?", f.first)).isEqualTo(NAME);
             assertThat(f.string("SELECT state FROM wa.privacy_erasure_ledger")).isEqualTo("JOURNALED");
             release.countDown(); writer.get(10, java.util.concurrent.TimeUnit.SECONDS);
+            f.sweepTerminal();
             assertThat(f.service().erase(SCOPE, f.first).status()).isEqualTo("ERASED");
         } finally {
             release.countDown(); executor.shutdownNow();
@@ -174,9 +178,14 @@ class WaPrivacyErasureIntegrationTest {
         f.time.days(31);
         assertThat(denied.erase(SCOPE, f.first).status()).isEqualTo("JOURNAL_PENDING");
         assertThat(f.string("SELECT payload_json::text FROM wa.message_outbox WHERE id=?", box)).isEqualTo(payload);
+        f.sweepTerminal();
         assertThat(f.service().erase(SCOPE, f.first).status()).isEqualTo("ERASED");
         assertThat(f.string("SELECT payload_json::text FROM wa.message_outbox WHERE id=?", box)).isEqualTo("{}");
-        assertThat(f.string("SELECT state FROM wa.message_outbox WHERE id=?", box)).isEqualTo("CANCELED");
+        assertThat(f.string("SELECT state FROM wa.message_outbox WHERE id=?", box)).isEqualTo("EXPIRED");
+    }
+
+    private com.fasterxml.jackson.databind.node.ObjectNode coreFingerprint(UUID subject) {
+        var value = WaJson.object(fingerprint(subject)); value.remove("outbox"); return value;
     }
 
     private String fingerprint(UUID subject) {

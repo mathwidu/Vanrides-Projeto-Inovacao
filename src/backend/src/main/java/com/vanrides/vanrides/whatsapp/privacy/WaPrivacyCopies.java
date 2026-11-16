@@ -18,7 +18,9 @@ final class WaPrivacyCopies {
         counts.put("RUN_SNAPSHOTS", jdbc.update("""
             UPDATE wa.operation_run SET snapshot_json=wa.privacy_project_run(snapshot_json,driver_id)
             WHERE state IN ('COMPLETED','CANCELED') AND snapshot_json<>wa.privacy_project_run(snapshot_json,driver_id)
-            """));
+              AND (driver_id=? OR EXISTS(SELECT 1 FROM wa.run_stop stop
+                WHERE stop.run_id=operation_run.id AND stop.passenger_id=?))
+            """, subject, subject));
         counts.put("RUN_STOPS", jdbc.update("""
             UPDATE wa.run_stop stop SET latitude_snapshot=NULL,longitude_snapshot=NULL,reference_snapshot=NULL,privacy_erased_at=?
             FROM wa.operation_run run WHERE run.id=stop.run_id AND run.state IN ('COMPLETED','CANCELED')
@@ -54,39 +56,12 @@ final class WaPrivacyCopies {
             UPDATE wa.identity_alias SET alias_value=NULL,verified_phone=NULL,privacy_erased_at=?
             WHERE identity_id=? AND privacy_erased_at IS NULL
             """, time, subject));
-        counts.put("INBOX_CONTENT", jdbc.update("""
-            UPDATE wa.integration_inbox SET payload_json=jsonb_strip_nulls(jsonb_build_object('senderAliasId',payload_json->'senderAliasId'))
-            WHERE identity_id=? AND payload_json<>jsonb_strip_nulls(jsonb_build_object('senderAliasId',payload_json->'senderAliasId'))
-            """, subject));
-        counts.put("OUTBOX_CONTENT", messages(subject));
         counts.put("CONVERSATION_CONTEXT", contexts(subject));
         counts.put("PROFILE", jdbc.update("""
             UPDATE wa.profile SET display_name=NULL,preferences_json='{}',privacy_erased_at=?,updated_at=?,version=version+1
             WHERE identity_id=? AND privacy_erased_at IS NULL
             """, time, time, subject));
         return Map.copyOf(counts);
-    }
-
-    private int messages(UUID subject) {
-        return jdbc.update("""
-            WITH subject AS (SELECT ?::uuid id), related_runs AS (
-              SELECT DISTINCT run.id,run.occurrence_id,run.driver_id FROM wa.operation_run run
-              LEFT JOIN wa.run_stop stop ON stop.run_id=run.id
-              WHERE run.state IN ('COMPLETED','CANCELED') AND
-                (run.driver_id=(SELECT id FROM subject) OR stop.passenger_id=(SELECT id FROM subject)))
-            UPDATE wa.message_outbox box SET payload_json='{}',private_payload_ciphertext=NULL,start_payload_ciphertext=NULL,
-              state=CASE WHEN box.state IN ('PENDING','LEASED') THEN 'CANCELED' ELSE box.state END,version=version+1
-            WHERE (box.payload_json<>'{}' OR box.private_payload_ciphertext IS NOT NULL OR box.start_payload_ciphertext IS NOT NULL)
-              AND (box.recipient_identity_id=(SELECT id FROM subject)
-                OR EXISTS(SELECT 1 FROM wa.command_receipt command WHERE command.command_id=box.command_id
-                  AND command.identity_id=(SELECT id FROM subject))
-                OR EXISTS(SELECT 1 FROM wa.passenger_response_route route WHERE route.outbox_id=box.id
-                  AND (route.passenger_id=(SELECT id FROM subject) OR route.driver_id=(SELECT id FROM subject)))
-                OR EXISTS(SELECT 1 FROM wa.driver_attendance_notice notice WHERE notice.outbox_id=box.id
-                  AND (notice.passenger_id=(SELECT id FROM subject) OR notice.driver_id=(SELECT id FROM subject)))
-                OR EXISTS(SELECT 1 FROM related_runs run WHERE box.recipient_identity_id=run.driver_id
-                  AND (box.run_id=run.id OR box.occurrence_id=run.occurrence_id OR box.policy_version='attendance-v1')))
-            """, subject);
     }
 
     private int contexts(UUID subject) {
