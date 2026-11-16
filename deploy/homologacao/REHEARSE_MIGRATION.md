@@ -81,8 +81,13 @@ volume ou secret do serviço live.
 2. Faz `pg_dump` real, privado 0600, com teto de **64 MiB** imposto também ao
    arquivo do subprocesso. Depois compara novamente o estado dos serviços e
    o conteúdo da origem. Escrita concorrente detectada bloqueia o ensaio.
+   Cada fingerprint usa uma transação de leitura com snapshot repetível,
+   UTC, formato ISO e representação completa de floats. Assim, configurações
+   diferentes de sessão entre a origem e a cópia não alteram os hashes.
 3. Restaura em PostgreSQL próprio com nonce, `network=none`, sem portas nem
    volume de origem; compara dados de tabelas e sequências de `wa/public`.
+   Aguarda uma consulta TCP ao banco exato; o servidor temporário por socket
+   usado no primeiro boot da imagem não é tratado como prontidão.
    Outros schemas de usuário ou large objects são recusados porque não estão
    cobertos por esse fingerprint. O dump usa `--no-owner --no-privileges`.
 4. Executa sequencialmente API anterior no schema anterior, JAR candidato no

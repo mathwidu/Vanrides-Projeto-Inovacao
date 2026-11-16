@@ -82,7 +82,8 @@ class DockerProcess:
         elif operation == 'exec':
             if 'pg_dump' in args: stdout = b'invalid-backup' if self.failure == 'bad-dump' else b'PGDMP-private-real-backup-fixture'
             elif 'psql' in args:
-                if kwargs.get('input') == M.FINGERPRINT_SQL.encode():
+                if 'SELECT 1' in args: stdout = b'1'
+                elif kwargs.get('input') == M.FINGERPRINT_SQL.encode():
                     cid = args[args.index('postgres')+1]
                     if cid == LIVE_DB: self.fingerprints += 1
                     changed = self.failure == 'source-changed' and cid == LIVE_DB and self.fingerprints > 1
@@ -141,6 +142,10 @@ class RehearsalTests(unittest.TestCase):
         self.assertEqual(receipt['backup']['fingerprint']['cohorts'], {'real':1,'synthetic':1}); self.assertEqual(receipt['backup']['fingerprint']['serviceCredentials'],5)
         self.assertEqual(receipt['ownedCleanup'], 'VERIFIED'); self.assertFalse(receipt['releaseEligible']); self.assertFalse(process.owned)
         self.assertEqual((output/'database.dump').stat().st_mode & 0o777, 0o600)
+        ready = next(command for command in process.calls if 'SELECT 1' in command)
+        self.assertEqual(ready[ready.index('--host')+1], '127.0.0.1')
+        self.assertEqual(ready[ready.index('-d')+1], M.DATABASE)
+        self.assertLess(process.calls.index(ready), next(i for i, command in enumerate(process.calls) if 'pg_restore' in command))
         for command in process.calls:
             self.assertNotIn(command[0], ('ssh','volume','network','stack','build','pull','push'))
             if command[0] == 'service': self.assertEqual(command[1], 'inspect')

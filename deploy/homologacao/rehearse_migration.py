@@ -34,6 +34,11 @@ MAX_DUMP, MAX_JAR = 64 * 1024 * 1024, 128 * 1024 * 1024
 MIGRATIONS = 'BOOT-INF/classes/db/migration/'
 OWNER = 'dev.vanrides.migration-rehearsal'
 FINGERPRINT_SQL = r"""
+BEGIN ISOLATION LEVEL REPEATABLE READ READ ONLY;
+SET LOCAL TIME ZONE 'UTC';
+SET LOCAL DateStyle = 'ISO, YMD';
+SET LOCAL extra_float_digits = 3;
+SET LOCAL client_encoding = 'UTF8';
 SELECT 'scope|' || count(*) || '|' || count(*) FILTER (WHERE environment <> 'vanrides-mvp-hml') || '|' || count(*) FILTER(WHERE NOT synthetic) || '|' || count(*) FILTER(WHERE synthetic) FROM wa.test_cohort;
 SELECT 'credentials|' || count(*) || '|' || count(*) FILTER (WHERE environment <> 'vanrides-mvp-hml') FROM wa.service_credential;
 SELECT 'unsupported|' || ((SELECT count(*) FROM pg_namespace WHERE nspname NOT IN ('wa','public','information_schema') AND nspname !~ '^pg_') + (SELECT count(*) FROM pg_largeobject_metadata));
@@ -45,6 +50,7 @@ SELECT format('SELECT %L || ''|1|'' || md5(last_value::text || ''|'' || is_calle
   schemaname || '.' || sequencename, schemaname, sequencename)
 FROM pg_sequences WHERE schemaname IN ('wa','public') ORDER BY schemaname,sequencename
 \gexec
+COMMIT;
 """
 FLYWAY_SQL = "SELECT COALESCE(max(version::integer),0)||'|'||count(*) FILTER(WHERE NOT success) FROM public.flyway_schema_history;"
 
@@ -366,7 +372,10 @@ def rehearse(value, candidate, expected, output, run, pause=time.sleep):
         run(['start', pg])
         for attempt in range(40):
             try:
-                run(['exec', '--user', 'postgres', pg, 'pg_isready', '-q', '-U', 'postgres', '-d', DATABASE]); break
+                ready = run(['exec', '--user', 'postgres', pg, 'psql', '--no-psqlrc', '-w', '-qAt',
+                    '--host', '127.0.0.1', '--port', '5432', '-U', 'postgres', '-d', DATABASE,
+                    '--set', 'ON_ERROR_STOP=1', '-c', 'SELECT 1'])
+                require(ready.strip() == b'1', 'MIG_POSTGRES_NOT_READY'); break
             except Blocked:
                 require(attempt < 39, 'MIG_POSTGRES_NOT_READY'); pause(1)
         run(['exec', '-i', '--user', 'postgres', pg, 'pg_restore', '-w', '-U', 'postgres', '-d', DATABASE,
