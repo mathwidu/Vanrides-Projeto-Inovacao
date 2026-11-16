@@ -59,7 +59,7 @@ http.createServer({requestTimeout:30000,headersTimeout:3000,maxHeaderSize:4096},
 HTTP = r"""
 let raw='';process.stdin.on('data',c=>raw+=c);process.stdin.on('end',async()=>{
  try{const r=JSON.parse(raw);const response=await fetch(r.url,{method:r.method??'GET',headers:r.headers??{},
- body:r.body===undefined?undefined:JSON.stringify(r.body),redirect:'error',signal:AbortSignal.timeout(30000)});
+ body:r.body===undefined?undefined:JSON.stringify(r.body),redirect:'error',signal:AbortSignal.timeout(r.timeoutMs)});
  const body=await response.text();if(body.length>16384)throw Error();
  process.stdout.write(JSON.stringify({status:response.status,body:JSON.parse(body)}));
  }catch{process.exitCode=1;}
@@ -102,9 +102,11 @@ def bundle(root=ROOT):
 
 def workflows(original, nonce):
     """Only copied IDs/references/URL/credential change; schedules/content stay identical."""
+    require(isinstance(nonce, str) and len(nonce) == 32 and all(c in '0123456789abcdef' for c in nonce), 'REC_WORKFLOW_NONCE_INVALID')
     result = copy.deepcopy(original)
-    mapping = {w['id']: 'rec' + nonce + key for key, w in result.items()}
-    credential = 'rec' + nonce + 'Control'
+    namespace = 'rec' + nonce[:24]  # n8n 2.45.4 PostgreSQL workflow/credential IDs are varchar(36).
+    mapping = {w['id']: namespace + key for key, w in result.items()}
+    credential = namespace + 'Control'
     for key, workflow in result.items():
         workflow['id'] = mapping[workflow['id']]
         workflow['settings']['callerIds'] = ','.join(mapping[x] for x in workflow['settings']['callerIds'].split(','))

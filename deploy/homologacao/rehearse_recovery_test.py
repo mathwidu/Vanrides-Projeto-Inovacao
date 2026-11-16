@@ -7,6 +7,7 @@ import json
 import os
 from pathlib import Path
 import tempfile
+from subprocess import TimeoutExpired
 import unittest
 from unittest.mock import Mock, patch
 from zipfile import ZipFile
@@ -93,6 +94,19 @@ class ManifestTest(TempTest):
 
 
 class FixtureTest(TempTest):
+    def test_derived_identifiers_respect_n8n_2454_postgresql_varchar36_contract(self):
+        copies, credential = fixture.workflows(fixture.bundle()[2], 'a' * 32)
+        ids = {workflow['id'] for workflow in copies.values()}
+        self.assertEqual(len(ids), 8); self.assertNotIn(credential, ids)
+        self.assertTrue(all(len(identifier) <= 36 for identifier in (*ids, credential)))
+        self.assertEqual(len(credential), 34); self.assertEqual({len(x) for x in ids}, {30})
+        for key, workflow in copies.items():
+            self.assertEqual(set(workflow['settings']['callerIds'].split(',')), {copies[x]['id'] for x in ('W01', 'W08')})
+            self.assertEqual(workflow['settings'].get('errorWorkflow'), None if key == 'W07' else copies['W07']['id'])
+            for node in workflow['nodes']:
+                if node['type'] == 'n8n-nodes-base.httpRequest': self.assertEqual(node['credentials']['httpHeaderAuth']['id'], credential)
+        self.assertNotEqual(fixture.workflows(fixture.bundle()[2], 'b' * 32)[1], credential)
+
     def test_only_copied_workflow_identifiers_url_and_credentials_change(self):
         before = fixture.bundle()[1:]; original = before[1]; frozen = copy.deepcopy(original)
         copies, credential = fixture.workflows(original, 'f' * 32)
@@ -133,6 +147,7 @@ class FixtureTest(TempTest):
     def test_services_use_internal_network_no_ports_loopback_provider_and_real_n8n_worker(self):
         value = self.value(); owned = Mock(); owned.nonce = 'a' * 32
         owned.volume.side_effect = lambda role: 'owned-' + role
+        owned.remaining.side_effect = lambda maximum: maximum
         owned.create.side_effect = lambda role, *args: 'c' * 64
         session = recovery.Session(owned, value, self.root, fixture.bundle()[2], pause=lambda _: None)
         session.wait = Mock(); session.sql = Mock(return_value='43|0')
@@ -338,6 +353,98 @@ class OrchestrationTest(TempTest):
         self.assertEqual(receipt['privacy'], {'state': 'NOT_REACHED'})
         self.assertFalse(any(call.kwargs.get('restored') for call in session.services.call_args_list))
         owned.cleanup.assert_called_once()
+
+
+class Clock:
+    def __init__(self): self.now = 0.0
+    def __call__(self): return self.now
+    def advance(self, seconds): self.now += seconds
+
+
+class DeadlineTest(TempTest):
+    def session(self, execute):
+        clock = Clock(); session = object.__new__(recovery.Session)
+        session.owned = recovery.Owned(execute, 'a' * 32, clock); session.pause = clock.advance
+        return session, clock
+
+    def test_slow_probes_consume_wall_budget_instead_of_120_iterations(self):
+        calls = []
+        def execute(args, data=None, timeout=120):
+            calls.append(timeout); clock.advance(min(40, timeout))
+            if timeout <= 40: raise TimeoutExpired('synthetic-probe', timeout)
+            return b''
+        session, clock = self.session(execute)
+        with self.assertRaisesRegex(Blocked, 'WALL_BUDGET'):
+            session.wait(lambda: session.owned.run(['probe']) == b'UP', 'WALL_BUDGET', 120)
+        self.assertEqual(clock(), 120); self.assertEqual(len(calls), 3)
+        self.assertEqual(calls, [120, 79, 38]); self.assertIsNone(session.owned.deadline)
+
+    def test_http_outer_timeout_includes_ownership_inspection_and_cleanup_has_new_budget(self):
+        docker = FakeDocker(); calls = []; session, clock = self.session(docker)
+        owned = session.owned; network = owned.network('source-network')
+        owned.create('source-channel', fixture.NODE, ['--network', network])
+        def execute(args, data=None, timeout=120, **limits):
+            calls.append((args, data, timeout)); cost = 6 if args[0] == 'inspect' else (40 if args[0] == 'exec' else 0)
+            clock.advance(min(cost, timeout))
+            if cost >= timeout: raise TimeoutExpired('synthetic-http', timeout)
+            return docker(args, data, **limits)
+        owned.execute = execute
+        with self.assertRaisesRegex(Blocked, 'HTTP_DEADLINE'):
+            session.wait(lambda: session.http('source-channel', 'api', '/actuator/health')['status'] == 200, 'HTTP_DEADLINE', 20)
+        self.assertEqual(clock(), 20); self.assertEqual([c[2] for c in calls], [20, 14])
+        self.assertEqual(json.loads(calls[1][1])['timeoutMs'], 20000)
+        owned.cleanup(); self.assertFalse(docker.containers); self.assertIsNone(owned.deadline)
+        self.assertLessEqual(clock(), 140)
+
+    def test_multiple_commands_share_remaining_and_no_call_starts_after_deadline(self):
+        calls = []
+        def execute(args, data=None, timeout=120):
+            calls.append(timeout); clock.advance(min(3, timeout))
+            if timeout < 3: raise TimeoutExpired('synthetic-command', timeout)
+            return b'UP'
+        session, clock = self.session(execute)
+        with self.assertRaisesRegex(Blocked, 'COMBINED_DEADLINE'):
+            session.wait(lambda: bool(session.owned.run(['one']) and session.owned.run(['two'])), 'COMBINED_DEADLINE', 5)
+        self.assertEqual(clock(), 5); self.assertEqual(calls, [5, 2])
+        with session.owned.budget(0), self.assertRaisesRegex(Blocked, 'DEADLINE_EXPIRED'): session.owned.run(['never'])
+        self.assertEqual(calls, [5, 2])
+
+    def test_sql_timeout_and_sleep_use_remaining_and_late_success_is_rejected(self):
+        session, clock = self.session(Mock()); session.owned.exec = Mock(return_value=b'1')
+        with session.owned.budget(2.75): session.sql('source-pg', fixture.DATABASES[0], 'SELECT 1;')
+        self.assertIn(b"statement_timeout='2750ms'", session.owned.exec.call_args.args[2])
+        def late(): clock.advance(5); return True
+        with self.assertRaisesRegex(Blocked, 'LATE_SUCCESS'): session.wait(late, 'LATE_SUCCESS', 5)
+        before = clock()
+        with self.assertRaisesRegex(Blocked, 'SHORT_PAUSE'): session.wait(lambda: False, 'SHORT_PAUSE', 0.25)
+        self.assertEqual(clock() - before, 0.25)
+
+    def test_cleanup_itself_has_one_absolute_budget(self):
+        docker = FakeDocker(); session, clock = self.session(docker); owned = session.owned
+        owned.create('source-channel', fixture.NODE, ['--network', owned.network('source-network')])
+        def execute(args, data=None, timeout=120, **limits):
+            clock.advance(min(80, timeout))
+            if timeout <= 80: raise TimeoutExpired('synthetic-cleanup', timeout)
+            return docker(args, data, **limits)
+        owned.execute = execute
+        with self.assertRaises(Blocked): owned.cleanup()
+        self.assertEqual(clock(), 120); self.assertTrue(docker.containers); self.assertIsNone(owned.deadline)
+
+    def test_wait_timeout_writes_blocked_receipt_and_runs_finally_cleanup(self):
+        value = self.value(); output = self.root / 'output'; output.mkdir(mode=0o700)
+        def execute(args, data=None, timeout=120): clock.advance(timeout); raise TimeoutExpired('probe', timeout)
+        bounded, clock = self.session(execute)
+        owned = Mock(); owned.nonce = 'a' * 32; owned.containers = {}; owned.volumes = {}; owned.networks = {}
+        session = Mock(); session.keys = {'CHANNEL': 'synthetic'}; session.instance = 'synthetic'
+        session.verify_exports.return_value = 'f' * 64
+        session.flows = fixture.workflows(fixture.bundle()[2], owned.nonce)[0]
+        session.wait.side_effect = lambda check, code, seconds=120: bounded.wait(lambda: bounded.owned.run(['probe']), code, 5)
+        with patch.object(recovery, 'Owned', return_value=owned), patch.object(recovery, 'Session', return_value=session):
+            with self.assertRaisesRegex(Blocked, 'REC_AGENDA_DID_NOT_ENQUEUE'):
+                recovery.rehearse(value, jar(), output, Mock(), fixture.bundle()[2])
+        self.assertEqual(clock(), 5); owned.cleanup.assert_called_once()
+        receipt = json.loads((output / 'receipt.json').read_bytes())
+        self.assertEqual(receipt['status'], 'BLOCKED'); self.assertEqual(receipt['stage'], 'QUEUE_PENDING')
 
 
 if __name__ == '__main__': unittest.main()

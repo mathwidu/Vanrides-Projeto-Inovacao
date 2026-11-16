@@ -11,6 +11,10 @@ simulado. Os oito exports originais permanecem inativos e intactos. Apenas
 cópias recebem IDs exclusivos, referências correspondentes, URL interna e
 credencial sintética. Agendas, nós, conexões e políticas de retenção são
 preservados. Quatro cópias de controle são publicadas no n8n próprio.
+Os IDs das cópias usam `rec` + os primeiros 24 caracteres do nonce + sufixo:
+30 caracteres para workflow e 34 para credencial, dentro do `varchar(36)`
+do schema PostgreSQL do n8n 2.45.4. Referências e `callerIds` usam o mesmo
+remapeamento; o nonce completo continua na identidade dos recursos Docker.
 
 ## Contrato de entrada
 
@@ -123,6 +127,17 @@ de memória/CPU/PIDs, não montam socket Docker, não recebem privilégios nem
 portas e usam somente a rede própria. Os limites somados cabem no ensaio
 homologado; ainda é necessário conferir capacidade disponível antes de rodar.
 
+Cada espera usa um prazo monotônico absoluto, incluindo o tempo gasto em
+sondagens, inspeções de ownership, HTTP, SQL e subprocessos. Não multiplica
+tentativas pelo timeout de cada chamada. O tempo restante limita o executor,
+o abort HTTP, o timeout SQL e a próxima pausa; sucesso depois do prazo é
+recusado. Ao esgotar uma espera, o cleanup usa um orçamento separado de até
+120 segundos e mantém a conferência de identidade. Se esse prazo também
+esgotar, o recibo permanece bloqueado e preserva os recursos para intervenção;
+o limite está sujeito somente ao pequeno custo de escalonamento/encerramento
+dos subprocessos pelo sistema operacional. Isso é controle local testado com
+relógio/executor simulados, não uma medição de recuperação real na VPS.
+
 O `receipt.json` registra manifesto, imagens, JAR, revisão/árvore declaradas,
 hashes dos fontes/exports, hash das cópias efetivas, fases, checks, hashes e
 fingerprints dos backups, IDs próprios e volumes retidos. Não registra tokens,
@@ -172,6 +187,9 @@ Também não mede RPO/RTO de desastre live nem aceita conteúdo humano em n8n;
 Documentação oficial conferida em 16/11/2026: [CLI de importação/publicação](https://docs.n8n.io/hosting/cli-commands/),
 [queue mode com PostgreSQL/Redis/main/worker](https://docs.n8n.io/hosting/scaling/queue-mode/)
 e [Schedule Trigger](https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.scheduletrigger/).
+O limite de IDs foi conferido no schema da versão fixada para
+[workflow_entity](https://github.com/n8n-io/n8n/blob/n8n%402.45.4/docs/generated/postgres-schema/public.workflow_entity.md)
+e [credentials_entity](https://github.com/n8n-io/n8n/blob/n8n%402.45.4/docs/generated/postgres-schema/public.credentials_entity.md).
 O n8n 2.x publica por `publish:workflow --id=...`; importar não comprova
 ativação, e Schedule Trigger precisa estar publicado. A versão fixada é
 2.45.4; o ensaio exige disparo observado para detectar incompatibilidade real.

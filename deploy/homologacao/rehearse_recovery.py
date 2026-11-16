@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 """Ensaio recuperável próprio: nunca acessa serviços live ou um canal externo."""
 import argparse
+from contextlib import contextmanager
 import json
 import os
 from pathlib import Path
 import re
 import signal
 import sys
+from subprocess import TimeoutExpired
 import time
 import uuid
 from zipfile import BadZipFile, ZipFile
@@ -59,9 +61,26 @@ def manifest(path, expected):
 
 class Owned:
     """Fixed generated names and labels; recover lost create ACKs. Volumes are retained."""
-    def __init__(self, run, nonce=None):
-        self.run, self.nonce = run, nonce or uuid.uuid4().hex
+    def __init__(self, run, nonce=None, clock=time.monotonic):
+        self.execute, self.nonce, self.clock = run, nonce or uuid.uuid4().hex, clock
+        self.deadline = None
         self.containers, self.networks, self.volumes = {}, {}, {}
+
+    def remaining(self, maximum):
+        remaining = maximum if self.deadline is None else min(maximum, self.deadline - self.clock())
+        require(remaining > 0, 'REC_DEADLINE_EXPIRED'); return remaining
+
+    @contextmanager
+    def budget(self, seconds):
+        previous = self.deadline
+        self.deadline = min(self.clock() + seconds, previous if previous is not None else float('inf'))
+        try: yield self.deadline
+        finally: self.deadline = previous
+
+    def run(self, args, data=None, **limits):
+        limits['timeout'] = self.remaining(limits.get('timeout', 120))
+        try: return self.execute(args, data, **limits)
+        except TimeoutExpired: raise Blocked('REC_DOCKER_OPERATION_TIMEOUT') from None
 
     def name(self, role): return 'vanrides-recovery-' + self.nonce + '-' + role
 
@@ -126,6 +145,9 @@ class Owned:
         return self.run(['exec', *(['-i'] if data is not None else []), self.check(role), *command], data, **limits)
 
     def cleanup(self):
+        with self.budget(120): self.cleanup_owned()
+
+    def cleanup_owned(self):
         ids = self.run(['ps', '-a', '--no-trunc', '--filter', 'label=' + OWNER + '=' + self.nonce, '--format', '{{.ID}}']).decode().splitlines()
         require(len(ids) <= len(self.containers) and all(re.fullmatch('[a-f0-9]{64}', x) for x in ids), 'REC_CLEANUP_QUERY_INVALID')
         # Validate every candidate before stopping/removing any; never discover by substring.
@@ -179,21 +201,25 @@ class Session:
 
     def sql(self, pg, database, statement):
         require(database in fixture.DATABASES or database == 'postgres', 'REC_DATABASE_INVALID')
+        milliseconds = max(1, int(self.owned.remaining(10) * 1000))
         return self.owned.exec(pg, ['psql', '-X', '-w', '-U', 'postgres', '-d', database, '-Atq', '-v', 'ON_ERROR_STOP=1'],
-                               ("SET statement_timeout='10s';\n" + statement).encode()).decode().strip()
+                               (f"SET statement_timeout='{milliseconds}ms';\n" + statement).encode()).decode().strip()
 
     def wait(self, check, code, seconds=120):
-        for step in range(seconds):
-            try:
-                if check(): return
-            except (Blocked, ValueError): pass
-            self.pause(1)
+        with self.owned.budget(seconds) as deadline:
+            while self.owned.clock() < deadline:
+                try:
+                    complete = check()
+                    if self.owned.clock() < deadline and complete: return
+                except (Blocked, ValueError): pass
+                remaining = deadline - self.owned.clock()
+                if remaining > 0: self.pause(min(1, remaining))
         raise Blocked(code)
 
     def http(self, channel, host, route, body=None, token=None):
         require(host in ('api', 'main', 'worker') and route.startswith('/'), 'REC_HTTP_SCOPE_INVALID')
         port = {'api': 8080, 'main': 5678, 'worker': 7081}[host]
-        request = {'url': f'http://{host}:{port}' + route}
+        request = {'url': f'http://{host}:{port}' + route, 'timeoutMs': max(1, int(self.owned.remaining(30) * 1000))}
         if body is not None: request.update(method='POST', body=body, headers={'content-type': 'application/json'})
         if token: request.setdefault('headers', {})['authorization'] = 'Bearer ' + token
         return json.loads(self.owned.exec(channel, ['node', '-e', fixture.HTTP], encode(request), timeout=40))
