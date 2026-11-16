@@ -4,7 +4,9 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.vanrides.vanrides.whatsapp.api.WaDecision;
 import com.vanrides.vanrides.whatsapp.api.WaProblem;
 import com.vanrides.vanrides.whatsapp.attendance.WaAttendanceLabels;
+import com.vanrides.vanrides.whatsapp.transport.WaDriverAttendanceNotices;
 import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -64,18 +66,34 @@ final class WaAttendanceMutation {
             questions.jdbc.update("UPDATE wa.attendance_question SET state='ANSWERED',answered_at=?,version=version+1 WHERE id=?",
                 now, questionId);
         }
-        int canceled = started && choice.equals("NOT_GOING") ? questions.jdbc.update("""
+        List<UUID> canceled = started && choice.equals("NOT_GOING") ? questions.jdbc.queryForList("""
             UPDATE wa.run_stop SET state='CANCELED',canceled_at=?,version=version+1
-            WHERE run_id=? AND passenger_id=? AND state IN ('WAITING','APPROACHING')
-            """, now, run, actor.identityId()) : 0;
+            WHERE run_id=? AND passenger_id=? AND state IN ('WAITING','APPROACHING') RETURNING id
+            """, UUID.class, now, run, actor.identityId()) : List.of();
+        if (!canceled.isEmpty()) notifyDriver(current, actor, run, canceled.get(0), instance, now.toInstant());
         questions.save(actor, event, WaAttendanceQuestions.empty());
         String text;
         if (!changed) text = (choice.equals("GOING") ? "Sua presença já estava confirmada" : "Sua ausência já estava registrada") + bullet;
         else if (choice.equals("GOING")) text = "Presença confirmada" + bullet;
-        else if (canceled > 0) text = "Ausência registrada" + bullet + "\nO motorista já saiu e sua parada foi retirada desta viagem.";
+        else if (!canceled.isEmpty()) text = "Ausência registrada" + bullet + "\nO motorista já saiu e sua parada foi retirada desta viagem.";
         else if (started) text = "Ausência registrada" + bullet;
         else text = "Ausência registrada" + bullet + "\nMudou de ideia? Responda VOU até a saída do motorista.";
         return new Result(WaDecision.ok(Map.of("changed", changed)), text);
+    }
+
+    private void notifyDriver(ObjectNode current, WaProfileState passenger, UUID run, UUID stop, String instance, Instant now) {
+        UUID driver = WaAttendanceQuestions.id(current, "driver_id");
+        UUID source = WaDriverAttendanceNotices.latestSource(questions.jdbc, driver, instance);
+        if (source == null) return;
+        String name = questions.jdbc.queryForObject("""
+            SELECT COALESCE(run.snapshot_json->'passengerNames'->>?,p.display_name,'Passageiro')
+            FROM wa.operation_run run JOIN wa.profile p ON p.identity_id=?
+            WHERE run.id=?
+            """, String.class, passenger.identityId().toString(), passenger.identityId(), run);
+        String text = name + " não vai mais na viagem de " + WaAttendanceQuestions.label(current, now)
+            + ".\nA parada foi retirada da rota.";
+        WaDriverAttendanceNotices.saveStopCanceled(questions.jdbc, WaAttendanceQuestions.id(current, "occurrence_id"), driver, run,
+            stop, passenger.identityId(), source, text, questions.settings.environment(), instance, now);
     }
 
     private Result unchanged(WaProfileState actor, WaInboxAccess.Context event, String text) {

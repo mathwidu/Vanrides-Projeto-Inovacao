@@ -363,6 +363,8 @@ ausente da lista não muda a presença. O motorista consulta o seu resumo por
 O W04 aciona somente `MATERIALIZE_OCCURRENCES` e `DUE_REMINDERS` com a
 credencial SYSTEM_JOB da instância. Cada página aceita até 100 unidades.
 A janela é o minuto UTC da chamada inicial e o servidor fornece o cursor.
-O n8n recebe apenas os contadores.
+O n8n recebe apenas os contadores. `DUE_REMINDERS` também enfileira para o
+motorista a lista de pré-saída, 30 minutos antes da viagem. Um NÃO VOU depois
+da saída enfileira um aviso ao motorista.
 
 No envio de GPS, o recibo persistido contém somente os resultados por sequência (`accepted`, `duplicate` e `rejected`). Um reenvio preserva esses resultados, mas devolve a ação, o estado do GPS e a validade da autorização atuais. Reenviar um recibo antigo não renova a posição nem a autorização e não reativa uma sessão encerrada.
