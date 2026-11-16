@@ -1,5 +1,58 @@
 # Entrega técnica do MVP — 16/11/2026
 
+## GPS físico, parada e candidato do PR #126
+
+Corte: `efd7d8b` enviado no PR #126, CI em curso. A `main` e a API publicada
+permanecem em `a2b77ed`, schema V44. As correções de parada/preferências abaixo
+estão integradas no candidato, sem nova migração e sem publicação neste corte.
+
+| Prova física | Primeiro GPS aceito | Amostras | Resultado observado |
+| --- | --- | --- | --- |
+| iOS 0.4.0+14, geração 1 | 0,317 s | 86 aceitas, zero rejeitadas | STOPPED com ACK; viagem DEGRADED após parada local. |
+| iOS 0.4.0+14, retomada geração 2 | 0,326 s | 9 aceitas, uma RUN_TERMINAL | FINALIZAR real levou a COMPLETED, STOPPED/ACK e confirmação do bot. |
+| Android diagnóstico temporário, geração 1 | 3,284 s | 263 aceitas, zero rejeitadas | GPS e STOPPED/ACK reais; viagem DEGRADED após parada local. |
+
+Vínculo e pin autorizado recebido pelo passageiro passaram na rodada real;
+a consulta ficou indisponível após STOP. O Android acima usou um APK diagnóstico
+com metadados sem dados pessoais nos logs. O APK normal 0.4.0+14 foi restaurado
+e seu ensaio de GPS está em curso; esta prova não aprova o APK final. Os tempos
+medem a primeira amostra aceita pela API, sem alegar desempenho de percurso.
+
+A UI do app iOS +14 recriava a pendência de parada após um ACK já confirmado,
+ao perder a autorização para consultar a sessão. `1724fe8` acrescenta o recibo
+terminal por prova da própria chave retida, com nonce/replay e corpo fechado.
+Só confirma a própria sessão STOPPED com `stopped_at`, geração e referência
+exatas, respeitando ambiente/coorte e apagamento. Não retorna GPS nem altera
+sessão, viagem, credenciais ou validade dos tokens. `2355e54` preserva também o ACK anterior ao primeiro GPS, mantendo a
+viagem em START_FAILED sem fabricar referência de STOP. A decisão preserva a
+expiração e a revogação de tokens; o acesso residual é apenas ao recibo terminal
+mínimo. Passaram, em rodadas dirigidas, oito cenários novos, duas regressões de
+ACK, 143 verificações de contrato/fronteira e a regressão pré-primeiro-GPS.
+As falhas de ambiente e de fixture foram corrigidas e repetidas isoladamente,
+sem alegação de uma execução única da suíte completa.
+
+`21a0d76` e `593cc89` permitem ao passageiro já cadastrado alterar os avisos
+de chegada e os lembretes de presença por comando explícito, com orientação
+na AJUDA. Preservam os padrões do cadastro, autorização e revalidação antes do envio. Passaram cinco cenários
+PostgreSQL de preferências, um opt-out entre claim/authorize, 279 testes Node
+e oito testes unitários de AJUDA. O package com estes oito casos terminou em
+10,88 s; não foi uma nova suíte PostgreSQL nem validação remota das preferências.
+
+O iOS 0.4.0+15 de `efd7d8b` corrige continuidade nativa e leitura da UI. Passaram
+33 testes Session, 20 Core e 13 do helper. App assinado em 70,42 s e runner em
+21,36 s, ainda sem instalar ou executar esses novos produtos no iPhone.
+Faltam a prova física da UI corrigida e a recuperação do recibo com a API
+candidata, além da conclusão do ensaio no APK Android normal. Aproximação, fim
+automático e ensaio continuam OFF. Percurso, bateria, utilidade e aceite final
+permanecem deferidos ao proprietário; nenhuma issue foi encerrada por estas provas.
+
+Recibos privados da rodada: `tracking-real/20261116T135721Z.json`,
+`20261116T140857Z.json` e `20261116T144559Z.json`; `stop-receipt/receipt.json` e
+`pre-gps-receipt.json`; `preferences/delivery.receipt.json` e
+`integracao-final/backend-package-receipt.json`. Os recibos iOS de build e
+assinatura distinguem explicitamente build aprovado de instalação/execução.
+Os registros anteriores abaixo preservam o estado de cada etapa na sua data.
+
 ## Integração da presença
 
 Os PRs #113 e #121 foram integrados com a autoria e os ancestrais preservados.
