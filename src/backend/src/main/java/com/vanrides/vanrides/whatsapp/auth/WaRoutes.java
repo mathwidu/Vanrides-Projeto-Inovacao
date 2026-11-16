@@ -34,7 +34,8 @@ public final class WaRoutes {
         app("POST", "/runs/" + UUID + "/resume", Mode.DEVICE, true, false),
         app("POST", "/runs/" + UUID + "/finish", Mode.DEVICE, false, true),
         app("POST", "/tracking-sessions/" + UUID + "/samples", Mode.DEVICE, true, false),
-        app("POST", "/tracking-sessions/" + UUID + "/state", Mode.DEVICE, true, true)
+        app("POST", "/tracking-sessions/" + UUID + "/state", Mode.DEVICE, true, true),
+        app("POST", "/tracking-sessions/" + UUID + "/stop-receipt", Mode.PROOF, true, true)
     );
     private WaRoutes() { }
     private static Route service(String method, String path, WaPrincipal.Kind kind, boolean available, boolean disabled) {

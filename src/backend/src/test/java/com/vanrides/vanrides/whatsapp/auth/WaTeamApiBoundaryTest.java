@@ -17,7 +17,8 @@ class WaTeamApiBoundaryTest {
             {"POST",wa+"/outbox/"+id+"/authorize-submit"},{"POST",wa+"/outbox/"+id+"/result"},{"POST",app+"/pairings/begin"},
             {"GET",app+"/pairings/"+id+"/status"},{"POST",app+"/pairings/redeem"},{"POST",app+"/session/refresh"},
             {"POST",app+"/session/revoke"},{"GET",app+"/status"},{"GET",app+"/tracking-status"},{"POST",app+"/start-intents/"+id+"/activate"},
-            {"POST",app+"/runs/"+id+"/resume"},{"POST",app+"/tracking-sessions/"+id+"/samples"},{"POST",app+"/tracking-sessions/"+id+"/state"}}) {
+            {"POST",app+"/runs/"+id+"/resume"},{"POST",app+"/tracking-sessions/"+id+"/samples"},{"POST",app+"/tracking-sessions/"+id+"/state"},
+            {"POST",app+"/tracking-sessions/"+id+"/stop-receipt"}}) {
             var response=new MockHttpServletResponse();assertThat(WaTeamApiBoundary.admit(request(route[0],route[1]),response,true)).as(route[1]).isTrue();
             assertThat(response.getHeader("X-VanRides-Environment")).isEqualTo("vanrides-mvp-hml");
         }

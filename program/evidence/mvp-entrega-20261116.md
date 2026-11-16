@@ -463,3 +463,50 @@ privados. Nenhuma credencial ou serviço compartilhado foi alterado por essa
 conferência. O primeiro recibo do Host inválido foi preservado como falha do
 probe, sem tratá-la como indisponibilidade da API. A leitura não prova
 WhatsApp, agenda ou STOP físico, e os recibos mantêm esses campos falsos.
+
+
+### Retomada — assinatura iOS e nova rodada do WhatsApp
+
+O app iOS 0.4.0+14 foi assinado em 54,1 s, após a conta e o Personal Team serem
+conferidos no Xcode. Os 480 fontes e dois locks permaneceram intactos. A
+assinatura estrita, os três entitlements, o perfil e a inclusão do aparelho
+passaram. O manifesto de conteúdo do bundle é
+`399ec6fce3ef1e2bbdbbccb2f2d16b6865bc75cd6be5d9621b133d8ce315f02c`.
+O perfil vence em 23/11/2026 às 11:27:02 UTC. A instalação passou. A primeira
+abertura foi recusada pelo iOS e passou após o proprietário confirmar
+confiança no aparelho. Não houve reinstalação ou limpeza de dados para
+resolver a confiança. GPS e parada desse build ainda não foram validados.
+
+O runner XCTest separado compilou em 12,17 s, com um job, e também foi
+instalado. O app principal não faz parte dos produtos ou dependências desse
+runner. A primeira inspeção não executou o caso: XCTest aguardou 63,2 s e
+retornou `Timed out while enabling automation mode`. Não há snapshot de UI ou
+prova de GPS nessa tentativa. A liberação da automação de tela foi solicitada
+ao proprietário. Logs, perfis e identificadores permanecem privados.
+
+No Redmi, a ponte de leitura AX foi preparada e revisada fora do produto,
+sem permissões ou mudança de política do Android. A MIUI recusou as duas
+tentativas de instalar o pacote auxiliar. Ele não foi executado. FLAG_SECURE,
+políticas de APIs ocultas e aplicativos do usuário foram preservados.
+
+No WhatsApp real, com as contas próprias autorizadas, passaram AJUDA dos dois
+papéis, emissão imediata de convite por link, consumo pelo passageiro já
+cadastrado, ponto digitado, avisos escolhidos e aprovação do motorista.
+O passageiro recebeu Cadastro confirmado. Passaram também VOU para amanhã/ida,
+alteração para ausência e a lista nominal do motorista: 1 confirmado mudou
+para 1 que não vai. A confirmação foi restaurada e recebida às 09:07. Essa
+rodada não comprova um perfil novo, dois passageiros, volta, GPS ou fim.
+
+A primeira resposta de presença chegou 30 s antes da agenda materializar as
+perguntas. Em outra tentativa, o texto recebido não equivalia ao comando
+pretendido, mesmo após normalização; a entrada não foi usada para diagnosticar
+o parser. O comando sem acento passou. Houve ainda resposta sem viagem
+elegível logo após alterar a ordem; a repetição após a agenda passou. Esses
+resultados e intervenções foram preservados, sem declarar bug de produto ou
+simular mensagens humanas.
+
+A conferência de leitura na VPS encontrou 7 ocorrências a partir do dia atual
+e 7 presenças pendentes antes da rodada. Nenhum serviço, credencial ou flag
+foi alterado nessa retomada. A verificação dirigida do agente passou 96 casos
+em dois arquivos; não reexecutamos a suíte PostgreSQL inteira por esse
+diagnóstico de entrada.

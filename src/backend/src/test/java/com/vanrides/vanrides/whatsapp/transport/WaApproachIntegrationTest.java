@@ -72,7 +72,9 @@ class WaApproachIntegrationTest {
     }
     @Test void optOutBetweenClaimAndAuthorizePreventsAnyAttempt() {
         start();approaching();var item=lease();
-        t.h.jdbc.update("UPDATE wa.profile SET preferences_json=preferences_json||'{\"APPROACH_MESSAGES\":false}'::jsonb WHERE identity_id=?",t.f.passenger);
+        var request=t.f.s.text(t.f.passenger,"DESLIGAR AVISOS CHEGADA");
+        t.f.s.execute(request,"SET_PREFERENCE",WaJson.object("{}").put("preference","APPROACH_MESSAGES").put("enabled",false)).requireSuccess();
+        t.f.s.finish(request);
         assertNotNull(outbox.authorize(t.f.s.delivery,box(),WaJson.object("{}").put("leaseToken",item.path("leaseToken").asText())).error());
         assertEquals(0,t.f.s.number("SELECT count(*) FROM wa.message_attempt WHERE outbox_id=?",box()));
     }

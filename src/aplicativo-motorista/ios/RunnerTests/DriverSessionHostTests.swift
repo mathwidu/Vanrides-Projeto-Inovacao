@@ -127,6 +127,68 @@ final class DriverSessionHostTests: XCTestCase {
     catch { }
   }
 
+  func testStopReceiptUsesExistingProofAfterAccessAndRefreshExpireWithoutRenewingEither() async throws {
+    let store = SessionMemoryStore(), keys = SessionFixtureKeys(), http = SessionFixtureHTTP()
+    _ = try await approved(store, keys, http)
+    let saved = store.bytes, count = http.requests.count
+    let expired = try controller(store, keys, http, now: { fixtureNow.addingTimeInterval(31 * 86_400) })
+    http.enqueue(["code": "PROOF_NONCE_REQUIRED"], status: 401)
+    http.enqueue(["ok": true])
+    _ = try await expired.stopReceipt(sessionID: fixtureDevice, generation: 2, stopRequestRef: fixturePairing)
+    let sent = try XCTUnwrap(http.requests.last)
+    XCTAssertEqual(http.requests.count, count + 2)
+    XCTAssertEqual(sent.url?.path, "/driver-app/v1/tracking-sessions/" + fixtureDevice + "/stop-receipt")
+    XCTAssertNil(sent.value(forHTTPHeaderField: "Authorization"))
+    let body = try XCTUnwrap(sent.httpBody)
+    let fields = try XCTUnwrap(JSONSerialization.jsonObject(with: body) as? [String: Any])
+    XCTAssertEqual(Set(fields.keys), ["generation", "stopRequestRef"])
+    XCTAssertEqual(fields["generation"] as? Int, 2)
+    XCTAssertEqual(fields["stopRequestRef"] as? String, fixturePairing)
+    let claims = try proof(sent).claims
+    XCTAssertNil(claims["ath"])
+    XCTAssertEqual(claims["vr_body_sha256"] as? String, DriverSessionCodec.digest(body))
+    XCTAssertEqual(claims["nonce"] as? String, fixtureToken(42))
+    XCTAssertEqual(keys.creates, 1)
+    XCTAssertEqual(store.bytes, saved)
+    let snapshot = await expired.snapshot(); XCTAssertEqual(snapshot["state"] as? String, "EXPIRED")
+  }
+
+  func testStopReceiptRejectsInvalidArgumentsMissingKeyAndRemoteFailuresWithoutChangingSession() async throws {
+    let store = SessionMemoryStore(), keys = SessionFixtureKeys(), http = SessionFixtureHTTP()
+    let value = try await approved(store, keys, http)
+    var saved = store.bytes
+    let initial = http.requests.count
+    do { _ = try await value.stopReceipt(sessionID: "../status", generation: 2, stopRequestRef: nil); XCTFail("Invalid route") }
+    catch { XCTAssertEqual(error as? DriverSessionFailure, .invalidArguments) }
+    XCTAssertEqual(http.requests.count, initial)
+    for status in [401, 403, 409] {
+      http.enqueue(["code": "VERSION_CONFLICT"], status: status)
+      do { _ = try await value.stopReceipt(sessionID: fixtureDevice, generation: 2, stopRequestRef: nil); XCTFail("Remote denial") }
+      catch { XCTAssertEqual((error as? DriverSessionRemoteFailure)?.status, status) }
+      XCTAssertEqual(store.bytes, saved)
+      XCTAssertNil(http.requests.last?.value(forHTTPHeaderField: "Authorization"))
+    }
+    http.loseResponse()
+    do { _ = try await value.stopReceipt(sessionID: fixtureDevice, generation: 2, stopRequestRef: nil); XCTFail("Network lost") }
+    catch { XCTAssertEqual(error as? DriverSessionFailure, .network) }
+    XCTAssertEqual(store.bytes, saved)
+    http.enqueue(revokeACK())
+    _ = try await value.perform("revokeSession")
+    saved = store.bytes
+    http.enqueue(["ok": true])
+    _ = try await value.stopReceipt(sessionID: fixtureDevice, generation: 2, stopRequestRef: nil)
+    XCTAssertNil(http.requests.last?.value(forHTTPHeaderField: "Authorization"))
+    XCTAssertEqual(store.bytes, saved)
+    let revoked = await value.snapshot(); XCTAssertEqual(revoked["state"] as? String, "REVOKED")
+    keys.values.removeAll()
+    let beforeKeyFailure = http.requests.count
+    do { _ = try await value.stopReceipt(sessionID: fixtureDevice, generation: 2, stopRequestRef: nil); XCTFail("Missing key") }
+    catch { XCTAssertEqual(error as? DriverSessionFailure, .key) }
+    XCTAssertEqual(http.requests.count, beforeKeyFailure)
+    XCTAssertEqual(keys.creates, 1)
+    XCTAssertEqual(store.bytes, saved)
+  }
+
   private func beginResponse(code: String = "BCDFGHJZ") -> [String: Any] {
     ["pairingId": fixturePairing, "userCode": code, "expiresAt": DriverSessionCodec.iso(fixtureNow.addingTimeInterval(300)),
       "serverTime": DriverSessionCodec.iso(fixtureNow)]
@@ -760,7 +822,7 @@ struct DriverSessionHostTestMain {
   static func main() {
     let suite = DriverSessionHostTests.defaultTestSuite
     suite.run()
-    guard let run = suite.testRun, run.executionCount == 31, run.totalFailureCount == 0 else { exit(1) }
+    guard let run = suite.testRun, run.executionCount == 33, run.totalFailureCount == 0 else { exit(1) }
   }
 }
 #endif

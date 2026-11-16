@@ -133,7 +133,9 @@ O [roteiro do cadastro guiado](cadastro-guiado-whatsapp.md) mostra os convites
 por link e por telefone. A [área da equipe](area-da-equipe.md) tem a simulação
 no navegador e o teste com um motorista do painel.
 
-Em 16/11, o proprietário retomou o preparo do iPhone13. O build assinado e a instalação estão pendentes; o link do APK continua sendo apenas para Android. Percurso, bateria e aceite final serão feitos depois que os artefatos estiverem prontos. As etapas 8–10 descrevem código publicado; aproximação e fim automático ainda dependem de habilitação própria, e a jornada no WhatsApp permanece pendente. A preparação iOS passou, mas a assinatura aguarda a conta Apple/Personal Team disponível no Xcode.
+Em 16/11, o iPhone 13 recebeu o aplicativo 0.4.0+14 assinado; instalação e abertura pelo Mac passaram. O perfil gratuito vence em 23/11/2026 às 08:27 (Brasília). A automação de tela ainda aguarda a liberação do iOS, e GPS/parada desse build permanecem pendentes. O link do APK continua sendo apenas para Android.
+
+Na nova rodada do WhatsApp real, passaram vínculo, ponto, presença de amanhã, alteração para ausência e consulta correspondente pelo motorista. Após aprovação ou mudança da rotina, aguarde a próxima execução da agenda, programada a cada minuto, antes de repetir a presença. Isso não dispensa conferir a data e o sentido indicados na resposta. Percurso, bateria e aceite final serão feitos depois que os artefatos estiverem prontos. Aproximação e fim automático ainda dependem de habilitar o ensaio controlado.
 
 ## Registrar um teste ou investigar uma falha
 

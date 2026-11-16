@@ -16,16 +16,20 @@ separado por plataforma e pelas issues correspondentes.
 
 ## Preparação conferida
 
-- API V44 publicada em `40ab6c2`, com schema e HTTPS saudáveis. O worker
+- API V44 publicada em `a2b77ed`, com schema e HTTPS saudáveis. O worker
   publicado usa as 54 fontes de `6100e32`. Privacidade, aproximação, fim
   automático e rotinas de ensaio seguem OFF.
 - Quatro agendas n8n ativas. Convite por link, vínculo e aprovação/correção
   do ponto validados no WhatsApp real em 15/11.
 - APK Android 0.4.0+14 publicado e instalado por atualização no Redmi;
   smoke de GPS e jornada do novo build ainda pendentes.
-- Build iOS 0.4.0+14 completo sem assinatura aprovado em 45,36 s, com fontes
-  e lockfiles intactos. Não é instalável: a assinatura aguarda sessão do Mac
-  desbloqueada e conta Apple/Personal Team disponível no Xcode.
+- iOS 0.4.0+14 assinado, instalado e aberto no iPhone 13. Assinatura, perfil,
+  aparelho e entitlements conferidos; validade até 23/11 às 08:27 (Brasília).
+  GPS/parada pendentes. O runner separado também foi instalado, mas a primeira
+  inspeção parou antes de executar por timeout ao habilitar automação de tela.
+- Nova rodada real: vínculo, aprovação do ponto, presença de amanhã, alteração
+  para ausência e lista correspondente do motorista passaram. Ainda não é
+  prova de ida/volta, GPS, aproximação ou encerramento no canal real.
 - Recuperação e migração reais isoladas na VPS aprovadas. O ensaio 006 repetiu
   o conjunto com o JAR efetivamente publicado: journal reaplicado, Alfa ausente,
   Beta e controles preservados, zero duplicados. Limpeza real continua OFF.
@@ -46,9 +50,9 @@ separado por plataforma e pelas issues correspondentes.
    API, worker, quatro agendas n8n em fila e Redis retomaram sem duplicar os
    dois efeitos do canal simulado. A cópia do banco ativo também passou nos
    probes anterior/V43, candidata/V44 e anterior/V44, sem alterar serviço live.
-4. **Fase atual:** concluir o ensaio operacional de alerta/pausa, assinar e
-   instalar no iPhone, conferir GPS do novo Android e executar a nova jornada real com os dois
-   papéis. Registrar a combinação de versões e flags; habilitar aproximação
+4. **Fase atual:** liberar a automação dos aparelhos, conferir GPS e parada
+   do build 0.4.0+14 em cada plataforma e concluir ida/volta, consulta e encerramento
+   no WhatsApp real. Registrar a combinação de versões e flags; habilitar aproximação
    e fim automático somente no ensaio controlado.
 5. **Rodada do mantenedor:** aplicar o roteiro já preparado de percurso,
    bateria e utilidade do aviso, registrar o aceite e conferir cada issue
@@ -75,7 +79,7 @@ na própria issue.
 | [#27](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/27) | [T03] Restringir ações por perfil | Autorização implementada e publicada; revisar a prova correspondente na issue. |
 | [#28](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/28) | [T04] Cadastrar passageiro e ponto | Vínculo e ponto validados no WhatsApp real em 15/11; cadastro simplificado com perfil novo, jornada completa e revisão humana pendentes. |
 | [#29](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/29) | [T05] Convidar e vincular passageiro | Convite e vínculo validados em 15/11; conferir a nova jornada integrada no WhatsApp real quando o Mac estiver disponível. |
-| [#30](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/30) | [T6] Responder presença na viagem certa | Presença publicada na V43; conferir ida e volta no WhatsApp real quando o Mac estiver disponível. |
+| [#30](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/30) | [T6] Responder presença na viagem certa | Presença de amanhã/ida e alteração para ausência conferidas no WhatsApp real; falta volta e limites após início. |
 | [#31](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/31) | [T7] Receber GPS do aparelho vinculado | Receptor de GPS implementado; smoke do APK14 pendente e percurso deferido ao usuário. |
 | [#33](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/33) | [T9a] Autorizar consulta da posição | Consulta autorizada implementada; provar o pin no WhatsApp real quando o Mac estiver desbloqueado. |
 | [#34](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/34) | [T9b] Responder consulta de localização | Resposta de localização implementada; provar recebimento no WhatsApp real quando o Mac estiver desbloqueado. |
@@ -87,19 +91,19 @@ na própria issue.
 | [#52](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/52) | [T26] Testar respostas antigas e repetidas | Cenários automatizados existentes; preservar regressões e revisar a prova da revisão atual. |
 | [#53](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/53) | [T27] Preservar versões e recuperação | Fontes e recuperação preservados; conferir a rastreabilidade do candidato integrado. |
 | [#54](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/54) | [T28] Preparar aplicativo mínimo Android | APK14 instalado e atividade aberta; smoke GPS do novo build ainda pendente. |
-| [#55](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/55) | [T29] Preparar aplicativo mínimo iPhone | Build iOS compilado sem assinatura; aguardar conta/Personal Team e Mac disponível para assinar/instalar. |
+| [#55](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/55) | [T29] Preparar aplicativo mínimo iPhone | App 0.4.0+14 assinado, instalado e aberto no iPhone; falta validar GPS/parada e reproduzir a abertura pelo ícone. |
 | [#56](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/56) | [T30] Coletar GPS no Android | Coletor Android implementado; confirmar GPS do APK14 no novo smoke, ainda pendente. |
-| [#57](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/57) | [T31] Coletar GPS no iPhone | Coletor iOS implementado; assinatura, instalação e prova física dependem da conta e do aparelho. |
+| [#57](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/57) | [T31] Coletar GPS no iPhone | Coletor iOS implementado e app 0.4.0+14 instalado; GPS/parada ainda precisam de prova neste build. |
 | [#58](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/58) | [T32] Receber GPS em ambiente de prova | Receptor isolado implementado; manter evidência sintética separada da jornada real. |
 | [#59](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/59) | [T33] Verificar localização em percurso Android | Percurso Android pendente; rodada de campo foi deferida ao usuário. |
-| [#60](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/60) | [T34] Verificar localização em percurso iPhone | Percurso iPhone pendente; requer assinatura/instalação e rodada deferida ao usuário. |
+| [#60](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/60) | [T34] Verificar localização em percurso iPhone | App 0.4.0+14 instalado e aberto; percurso iPhone continua reservado à rodada do usuário. |
 | [#61](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/61) | [T35] Medir bateria e recuperação | Medição bilateral de bateria pendente; campo foi deferido ao usuário. |
 | [#62](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/62) | [T36] Evitar ações duplicadas na entrada | Deduplicação implementada; conferir eventos reais quando o Mac/WhatsApp estiver disponível. |
 | [#63](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/63) | [T37] Guardar e enviar respostas | Fila/adaptador implementados; comprovar envio e retorno no WhatsApp real quando o Mac estiver disponível. |
 | [#64](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/64) | [T38] Interpretar mensagens com IA de forma limitada | Interpretação limitada implementada; IA continua OFF. Conferir o bot determinístico na nova jornada real, sem gasto de modelo. |
 | [#65](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/65) | [T39] Preparar automações importáveis | Oito exports preparados e quatro agendas ativas; ensaio 006 aprovado. Revisar a configuração publicada sem ampliar flags. |
 | [#66](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/66) | [T40] Configurar rotinas do motorista | Configuração de rotina implementada; validar com participantes na nova jornada real, ainda pendente. |
-| [#67](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/67) | [T41] Mostrar vínculo e recuperação no aplicativo | Estados de vínculo/recuperação implementados; conferir no iPhone após assinatura e na rodada do usuário. |
+| [#67](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/67) | [T41] Mostrar vínculo e recuperação no aplicativo | Estados implementados; conferir no iPhone após liberar automação e na rodada final. |
 | [#68](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/68) | [T42] Vincular o aparelho correto | Pareamento implementado; validar a jornada no WhatsApp real quando o Mac estiver disponível. |
 | [#69](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/69) | [T43] Fixar a lista da partida | Snapshot da partida implementado; conferir a lista na nova jornada real. |
 | [#70](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/70) | [T44] Confirmar início somente com GPS válido | Início só após GPS válido implementado; smoke do APK14 ainda pendente. |
@@ -120,18 +124,18 @@ na própria issue.
 | [#85](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/85) | [T59] Orientar operação e parada segura | Guia/helper, 11 testes Python e cenário PostgreSQL aprovados; diagnóstico e plano de leitura conferidos na VPS. Revisão humana e jornada WhatsApp real permanecem separadas. |
 | [#86](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/86) | [T60] Identificar os arquivos da versão de teste | API V44 e worker de 54 fontes identificados; ensaio 006 com JAR publicado aprovado. Revisar manifestos e rastreabilidade. |
 | [#87](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/87) | [T61] Preparar instalação de teste Android | APK14 assinado, instalado e aberto; falta smoke GPS do novo build. |
-| [#88](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/88) | [T62] Preparar instalação e renovação no iPhone | Build iOS sem assinatura; aguardar conta/Personal Team para assinar e instalar. |
+| [#88](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/88) | [T62] Preparar instalação e renovação no iPhone | App 0.4.0+14 assinado/instalado/aberto, perfil até 23/11; conferir renovação e reprodução conforme o roteiro. |
 | [#89](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/89) | [T63] Planejar instalação e retorno no servidor | Migração V44 e retorno da API ensaiados; revisar recibos da migração e do ensaio 006 aprovado com o binário publicado. |
 | [#90](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/90) | [T64] Instalar no ambiente autorizado de teste | API V44 e worker publicados; revisar saúde/versões e manter flags de efeito OFF. |
-| [#91](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/91) | [T65] Conferir o número dedicado | Instância dedicada configurada; comprovar envio e callback da nova jornada no WhatsApp real quando o Mac estiver disponível. |
+| [#91](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/91) | [T65] Conferir o número dedicado | AJUDA, vínculo e presença da nova rodada tiveram resposta real; ampliar à jornada GPS e conferir os resultados de entrega. |
 | [#92](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/92) | [T66] Testar agendas no ambiente escolhido | Quatro agendas n8n em fila aprovadas nos ensaios 005 e 006; revisar a evidência da versão publicada. |
-| [#93](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/93) | [T67] Testar a jornada completa no Android | Jornada Android completa não comprovada; smoke GPS e percurso ficam para o usuário. |
-| [#94](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/94) | [T68] Testar a jornada completa no iPhone | Jornada iPhone pendente de assinatura/instalação; percurso fica para o usuário. |
+| [#93](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/93) | [T67] Testar a jornada completa no Android | Smoke GPS/parada do app 0.4.0+14 pendente na preparação; percurso continua reservado ao usuário. |
+| [#94](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/94) | [T68] Testar a jornada completa no iPhone | App 0.4.0+14 instalado e aberto; jornada GPS/parada pendente e percurso reservado ao usuário. |
 | [#95](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/95) | [T69] Medir se o aviso ajuda no embarque | Utilidade/destinatário dependem de percurso e avaliação do usuário, ainda deferidos. |
-| [#96](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/96) | [T70] Consolidar guia e resultados | Guias atualizados com V44 publicada e ensaio 006 aprovado; acrescentar jornada real, campo e revisão humana. |
-| [#97](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/97) | [T71] Reproduzir a instalação final | Reprodução do pacote final pendente; depende da assinatura iOS e da rodada deferida. |
-| [#98](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/98) | [T72] Proposta: cancelar ou corrigir presença | Integrada/publicada na V42; conferir cancelamento/correção no WhatsApp real quando o Mac estiver disponível. |
+| [#96](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/96) | [T70] Consolidar guia e resultados | Guias atualizados com instalação iOS e presença real; faltam jornada GPS, campo e revisão humana. |
+| [#97](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/97) | [T71] Reproduzir a instalação final | App 0.4.0+14 instalado e aberto; falta reproduzir abertura pelo ícone, renovação e rodada final. |
+| [#98](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/98) | [T72] Proposta: cancelar ou corrigir presença | Ausência e volta a VOU de amanhã/ida recebidas no WhatsApp real; falta volta e limites após início. |
 | [#99](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/99) | [T73] Proposta: definir limite da alteração | Integrada/publicada na V42; conferir regra de alteração na jornada real quando o Mac estiver disponível. |
 | [#100](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/100) | [T74] Proposta: avisar cancelamento ao motorista | Aviso ao motorista integrado/publicado na V42; falta comprovar entrega no WhatsApp real. |
-| [#101](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/101) | [T75] Mostrar lista de presença ao motorista | Lista de presença implementada; conferir a mesma consulta no WhatsApp real quando o Mac estiver disponível. |
+| [#101](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/101) | [T75] Mostrar lista de presença ao motorista | Lista real do motorista mudou de 1 confirmado para 1 que não vai; falta volta e cenários após início. |
 | [#102](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/102) | [T78] Conferir contrato, permissões e banco | Contratos/permissões/migrações têm testes dirigidos; revisar evidência sem alegar execução integral da suíte. |

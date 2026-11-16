@@ -67,6 +67,16 @@ class WaConversationPolicyTest {
         assertThat(policy.isHelp(event("AJUDA\u00A0!\uFEFF"))).isFalse();
         assertThat(policy.explicitSupport(event("FALAR COM SUPORTE !"))).isFalse();
     }
+    @Test void readyPassengerHelpAndRegistrationFaqExplainTheFourExplicitNoticeChoices() {
+        for (String text : List.of(WaConversationResponses.text("HELP", "READY", "PASSENGER"),
+                WaConversationResponses.faq(WaConversationResponses.Question.REGISTRATION, "READY", "PASSENGER"))) {
+            assertThat(text).contains("LIGAR AVISOS CHEGADA", "DESLIGAR AVISOS CHEGADA",
+                "LIGAR AVISOS PRESENÇA", "DESLIGAR AVISOS PRESENÇA");
+        }
+        assertThat(WaConversationResponses.text("HELP", "READY", "DRIVER")).doesNotContain("LIGAR AVISOS");
+        assertThat(WaConversationResponses.text("HELP", "ASK_NOTICE", "PASSENGER")).doesNotContain("LIGAR AVISOS");
+    }
+
     private static WaInboxAccess.Context event(String text) {
         return new WaInboxAccess.Context(UUID.randomUUID(), UUID.randomUUID(), WaJson.MAPPER.createObjectNode()
             .put("text", text).put("occurredAt", NOW.toString()), "TEXT", NOW.plusSeconds(60), NOW.plusSeconds(3600));

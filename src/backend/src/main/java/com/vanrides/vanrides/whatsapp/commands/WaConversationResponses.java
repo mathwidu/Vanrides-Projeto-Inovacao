@@ -27,6 +27,8 @@ public final class WaConversationResponses {
     private static final String PAIRING = "Para compartilhar sua localização durante um trajeto, vincule o aplicativo VanRides Motorista. "
         + "Abra o aplicativo pelo ícone e envie aqui o código de pareamento exibido.";
     private static final String ATTENDANCE = "Com o vínculo com seu motorista aprovado e uma viagem disponível, envie PRESENÇA para informar se vai na ida ou na volta.";
+    static final String PREFERENCE_HELP = "Para escolher seus avisos, envie LIGAR AVISOS CHEGADA ou DESLIGAR AVISOS CHEGADA; "
+        + "para os lembretes, LIGAR AVISOS PRESENÇA ou DESLIGAR AVISOS PRESENÇA. Cada comando mantém a outra escolha.";
 
     enum Question { PRODUCT, REGISTRATION, APP, ROUTINE, INVITE, ATTENDANCE, INVITES_ALLOWED, INVITES_STOPPED, OTHER }
 
@@ -93,7 +95,7 @@ public final class WaConversationResponses {
                 + "\n\nQuando for enviar sua localização, eu ajudo a vincular o aplicativo. " + HELP_AND_SUPPORT;
             case "READY" -> (role.equals("DRIVER") ? ROUTINE
                 : "Se ainda precisa se vincular a um motorista, peça a ele um convite de passageiro do VanRides e envie aqui. "
-                    + ATTENDANCE) + "\n\n" + HELP_AND_SUPPORT;
+                    + ATTENDANCE + "\n\n" + PREFERENCE_HELP) + "\n\n" + HELP_AND_SUPPORT;
             default -> "O atendimento desta conversa está pausado para suporte humano.";
         };
     }

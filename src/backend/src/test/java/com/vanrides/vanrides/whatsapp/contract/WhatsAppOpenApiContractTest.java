@@ -70,7 +70,7 @@ class WhatsAppOpenApiContractTest {
         assertEquals("3.0.3", result.getOpenAPI().getOpenapi());
         assertTrue(result.getMessages() == null || result.getMessages().isEmpty(),
                 () -> "OpenAPI parser messages: " + result.getMessages());
-        assertEquals(21, result.getOpenAPI().getPaths().size());
+        assertEquals(22, result.getOpenAPI().getPaths().size());
     }
 
     @Test
@@ -316,7 +316,7 @@ class WhatsAppOpenApiContractTest {
                 }
             }
         }
-        assertEquals(21, operationIds.size());
+        assertEquals(22, operationIds.size());
     }
 
     @Test

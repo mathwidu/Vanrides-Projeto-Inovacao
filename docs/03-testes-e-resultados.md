@@ -1,7 +1,7 @@
 # Testes e resultados
 
 Situação atualizada em 16/11/2026. Cada resultado vale para a revisão e o
-ambiente indicados na evidência. A API publicada está em `40ab6c2`, schema V44,
+ambiente indicados na evidência. A API publicada está em `a2b77ed`, schema V44,
 com presença, cancelamento, encerramento manual/automático e retenção. A
 [publicação da V44](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/actions/runs/43846540102)
 passou em 1 min 50 s; API, schema e HTTPS foram conferidos saudáveis. O worker
@@ -13,18 +13,18 @@ as versões e os limites de cada rodada.
 | Área | O que foi verificado | O que falta |
 |---|---|---|
 | Cadastros | Emissão de link, dias sugeridos, vínculo e aprovação e correção do ponto no WhatsApp real, com perfis já cadastrados. Nome e aceite no fluxo simplificado em PostgreSQL. | Repetir o cadastro simplificado com um perfil novo no canal real. |
-| Presença | Data/sentido, correção, cancelamento, limite de alteração e avisos passaram em testes dirigidos; consulta sem rotina libera a conversa no WhatsApp real. | Validar ida e volta com motorista e rotina na nova jornada real. |
+| Presença | Testes dirigidos; no WhatsApp real, presença de amanhã, alteração para ausência e lista correspondente do motorista passaram na rotina de ida. | Validar volta e limites após o início. A primeira tentativa antecedeu a agenda; outra entrada da automação divergiu da frase pretendida e não foi considerada prova do parser. |
 | Atendimento | Ajuda e correção do ponto validadas no WhatsApp real; retomada pela equipe e finalização durante suporte passaram em PostgreSQL. | Exercitar a conversa durante presença e saída com os dois papéis. |
 | Envio de mensagens | Regras de repetição em laboratório. Entrega real do pedido, da aprovação e da atualização do ponto. | Ampliar cenários reais de falha e recuperação. |
 | Localização Android | Vínculo, primeira posição e parada com recuperação têm ensaios anteriores. APK 0.4.0+14 publicado e instalado por atualização no Redmi. | Smoke de GPS do novo build, percurso, tela bloqueada e bateria sem USB. |
-| Localização iPhone | Build completo 0.4.0+14 sem assinatura aprovado em 45,36 s; 480 fontes e dois lockfiles preservados. | Desbloquear a sessão do Mac e disponibilizar conta Apple/Personal Team no Xcode, assinar, instalar e validar GPS. O build sem assinatura não é instalável. |
+| Localização iPhone | App 0.4.0+14 assinado, instalado e aberto no iPhone 13. Perfil, aparelho e entitlements conferidos; 480 fontes e dois locks preservados. Validade até 23/11 às 08:27 (Brasília). | Liberar a automação de tela e validar GPS/parada desse build. A primeira inspeção XCTest parou antes de executar por timeout ao habilitar automação. Percurso/bateria ficam para a rodada final. |
 | Consulta de localização | Motorista e passageiro elegível recebem pin recente no canal simulado. A API revalida respostas atrasadas | Conferir o pin no WhatsApp real |
 | Aproximação | Política, elegibilidade, pontos compartilhados e deduplicação passaram nos testes de PostgreSQL | Medir utilidade em percurso antes de ativar avisos |
 | Encerramento | Finalização manual com revisão, chegada automática com progresso/destino/permanência e reconciliação STOP/ACK passaram em testes dirigidos e estão publicadas. | Habilitar o ensaio controlado do automático e comprovar encerramento e parada no aparelho; parâmetros ainda não calibrados em percurso. |
 | Recuperação do conjunto | Ensaio real isolado na VPS com API, PostgreSQL, worker, n8n em fila, Redis AOF e canal simulado: quatro agendas, reinícios, dois dumps restaurados em outro PG e zero efeitos duplicados. | Conferir a nova jornada com o WhatsApp real; o ensaio não comprova qualquer envio interrompido com resultado incerto. |
 | Retenção e exclusões | V44 publicada: retenções de 7/30/90 dias, journal atual fora do dump antigo, reaplicação e descarte sem ressuscitar Alfa, preservando Beta e controles do fluxo. Probe HTTP publicado: cinco famílias DISABLED, contadores zero e 401 sem autenticação; no ensaio, banco também permaneceu inalterado. | Revisar a prévia antes de qualquer ativação com pessoas reais. Limpeza real OFF; rotação física de backups ainda não implementada. |
 | Migração e retorno | Cópia real do banco ativo, 107 relações e cerca de 2,77 MB, restaurada em destino isolado. API anterior/V43, candidata/V44 e anterior/V44 ficaram saudáveis, com conteúdo restaurado comparado. Publicação V44 concluída e saúde conferida. | Preservar o retorno e revisar a evidência. Nenhum serviço ativo foi alterado pelo ensaio de migração. |
-| Operação e pausa | CLI de diagnóstico/plano e guia implementados; 11 testes Python e um cenário PostgreSQL aprovados. O serviço real recusou a credencial DELIVERY revogada, manteve reconciliação e STOP/ACK e retomou a pendência com uma nova credencial, preservando UNKNOWN. | Executar o diagnóstico e o ensaio operacional isolado de alerta/plano. O teste de serviços não comprova HTTP, Evolution, WhatsApp real nem parada física. |
+| Operação e pausa | CLI e guia implementados; 11 testes Python e um cenário PostgreSQL aprovados. Diagnóstico publicado sem alertas e plano de pausa conferido sem revogar credenciais reais. | Revisão humana e prova física de parada. Os testes de serviços não comprovam entrega no WhatsApp real. |
 
 Historicamente, a revisão `dd12cf0` passou em 1.683 testes do backend e seis
 jornadas com provedor simulado. O
