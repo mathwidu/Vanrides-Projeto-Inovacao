@@ -102,6 +102,20 @@ let refused = ["BCDFGHJ", "BCDFGHJKL", "bcdfghjk", "BCDFGHJA", "BCDFGHJ1",
                " BCDFGHJK", "BCDFGHJK\\n", "prefix BCDFGHJK", "BCDFGHJK suffix"]
 guard accepted.allSatisfy(MVPPairingCodeLabel.matches),
       refused.allSatisfy({ !MVPPairingCodeLabel.matches($0) }) else { exit(1) }
+func fixedLineMatches(_ label: String, _ line: String) throws -> Bool {
+  let whole = NSRange(label.startIndex..<label.endIndex, in: label)
+  let expression = try NSRegularExpression(pattern: MVPUIFixedLine.pattern(line))
+  return expression.firstMatch(in: label, range: whole)?.range == whole
+}
+let fixedLine = "Localização interrompida"
+for label in [fixedLine, "Título\\n" + fixedLine + "\\nDetalhe", "Título\\r\\n" + fixedLine + "\\r\\nDetalhe"] {
+  guard try fixedLineMatches(label, fixedLine) else { exit(4) }
+}
+for label in ["Prefixo " + fixedLine, fixedLine + " sufixo", "Título, " + fixedLine, fixedLine + "."] {
+  guard try !fixedLineMatches(label, fixedLine) else { exit(5) }
+}
+guard try fixedLineMatches("Título\\nTexto (fixo).\\nDetalhe", "Texto (fixo)."),
+      try !fixedLineMatches("Texto XfixoY!", "Texto (fixo).") else { exit(6) }
 let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
 try FileManager.default.createDirectory(at: root, withIntermediateDirectories: false)
 defer { try? FileManager.default.removeItem(at: root) }
@@ -152,6 +166,16 @@ guard finishResult(["success": true, "pairingCodeExported": true], commandFile: 
             self.assertNotIn(forbidden, source)
         self.assertEqual(source.count('XCTFail('), 1)
         self.assertLess(source.index('if let code = finishResult(result,'), source.index('XCTFail('))
+        inspect = source.split('case "inspect":', 1)[1].split('case "pair":', 1)[0]
+        self.assertEqual(inspect.count('app.swipeUp()'), 1)
+        self.assertIn('before["titleHittable"] != true', inspect)
+        self.assertIn('"collectionProbeBefore"', inspect)
+        self.assertIn('"collectionProbeAfter"', inspect)
+        self.assertNotIn('.tap(', inspect)
+        probe = source.split('private func collectionProbe(', 1)[1].split('private func tap(', 1)[0]
+        for forbidden in ('.label', '.tap(', 'screenshot', 'debugDescription'):
+            self.assertNotIn(forbidden, probe)
+        self.assertIn('"stopConfirmed": stopped && !pending && !button(app, "Parar localização").exists', source)
 
     def test_private_input_refuses_public_files_symlinks_and_git_paths(self):
         with tempfile.TemporaryDirectory() as temporary:

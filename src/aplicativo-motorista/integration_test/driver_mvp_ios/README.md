@@ -115,6 +115,16 @@ anterior à tentativa; não representa uma confirmação posterior da ação.
 O runner grava `result.json` e conclui a limpeza antes de chamar `XCTFail`,
 sem depender de `defer` para sobreviver à interrupção do XCTest.
 
+Somente `inspect` também devolve `collectionProbeBefore`,
+`collectionProbeAfter` e `collectionProbeScrolled`. O probe consulta uma lista
+fixa de título, estados e detalhes do painel de localização, com booleans
+`Exact` para o label inteiro e `Line` para uma linha completa delimitada por
+quebra de linha em um label agregado. Se o título não estiver atingível,
+executa no máximo uma rolagem para cima e repete a observação. Não lê nem
+exporta labels, texto livre, GPS ou screenshots e não toca controles. Esses
+booleans ajudam a distinguir semântica agregada, painel fora da tela e outro
+estado local; o critério exato de `stopConfirmed` continua inalterado.
+
 ### Ponte privada de laboratório para o código
 
 `export-pairing-code` é uma ação fechada para o laboratório autorizado nas

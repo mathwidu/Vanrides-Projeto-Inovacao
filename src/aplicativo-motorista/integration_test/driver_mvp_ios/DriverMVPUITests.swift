@@ -13,6 +13,12 @@ enum MVPPairingCodeLabel {
   }
 }
 
+enum MVPUIFixedLine {
+  static func pattern(_ line: String) -> String {
+    "(?s)\\A(?:.*\\R)?" + NSRegularExpression.escapedPattern(for: line) + "(?:\\R.*)?\\z"
+  }
+}
+
 // Persist and clean up before XCTest can abort through an Objective-C exception.
 func finishResult(_ value: [String: Any], commandFile: URL, resultFile: URL, codeFile: URL) -> String? {
   var result = value
@@ -84,6 +90,17 @@ final class DriverMVPUITests: XCTestCase {
       // Keep a sanitized pre-command observation even when a control is absent.
       result["snapshot"] = snapshot(app)
       switch fixture.command {
+      case "inspect":
+        let before = collectionProbe(app)
+        result["collectionProbeBefore"] = before
+        var after = before
+        let shouldScroll = before["titleHittable"] != true
+        if shouldScroll {
+          app.swipeUp() // Reveal the lower panel once; never tap a control.
+          after = collectionProbe(app)
+        }
+        result["collectionProbeAfter"] = after
+        result["collectionProbeScrolled"] = shouldScroll
       case "pair":
         try tap(app, "Vincular este celular")
         try waitLabel(app, "Confirme pelo WhatsApp")
@@ -174,6 +191,35 @@ final class DriverMVPUITests: XCTestCase {
   @MainActor
   private func has(_ app: XCUIApplication, _ label: String) -> Bool {
     app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", label)).firstMatch.exists
+  }
+
+  @MainActor
+  private func collectionProbe(_ app: XCUIApplication) -> [String: Bool] {
+    let lines = [
+      ("title", "Compartilhamento de localização"),
+      ("stopped", "Localização interrompida"),
+      ("completed", "Trajeto concluído"),
+      ("canceled", "Saída cancelada"),
+      ("stopPending", "Parada solicitada. Aguardando confirmação."),
+      ("collectionStopped", "Coleta parada"),
+      ("checking", "Consultando o estado deste celular"),
+      ("unavailable", "Estado da coleta indisponível"),
+      ("updateError", "Sem atualização do VanRides. Tentaremos novamente."),
+      ("confirmationError", "Sem confirmação recente da localização"),
+      ("localDisabled", "A localização deste celular está desligada."),
+      ("stopDoesNotComplete", "Parar a localização não conclui o trajeto. Confira a saída no WhatsApp."),
+    ]
+    var value: [String: Bool] = [:]
+    for (key, line) in lines {
+      let exact = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", line)).firstMatch
+      let wholeLine = app.descendants(matching: .any).matching(NSPredicate(format: "label MATCHES %@", MVPUIFixedLine.pattern(line))).firstMatch
+      value[key + "Exact"] = exact.exists
+      value[key + "Line"] = wholeLine.exists
+      if key == "title" {
+        value["titleHittable"] = (exact.exists && exact.isHittable) || (wholeLine.exists && wholeLine.isHittable)
+      }
+    }
+    return value
   }
 
   @MainActor
