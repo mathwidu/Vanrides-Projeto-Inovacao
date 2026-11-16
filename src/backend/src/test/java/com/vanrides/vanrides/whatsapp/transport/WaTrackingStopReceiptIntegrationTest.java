@@ -71,6 +71,15 @@ class WaTrackingStopReceiptIntegrationTest {
         assertEquals("no-store",first.getHeader("Cache-Control"));
         assertEquals(200,send(body(ref)).getStatus()); assertEquals(before,snapshot());
     }
+    @Test void stopBeforeFirstGpsPreservesExplicitAckWithoutInventingStopReference() throws Exception {
+        t.tracking.state(actor,t.session(),t.state("STOPPED"),"synthetic-pre-gps-stop");
+        assertEquals("STOPPED",t.sessionState()); assertEquals("START_FAILED",t.runState());
+        assertEquals(1,t.f.s.number("SELECT count(*) FROM wa.tracking_session WHERE id=? AND stopped_at IS NOT NULL AND stop_request_ref IS NULL AND last_captured_at IS NULL",t.session()));
+        var response=send(body(null)); assertEquals(200,response.getStatus());
+        var receipt=WaJson.object(response.getContentAsString());
+        assertTrue(receipt.path("stopConfirmed").booleanValue()); assertTrue(receipt.path("stopRequestRef").isNull());
+        assertEquals("START_FAILED",receipt.path("runState").asText());
+    }
     @Test void nullReferenceAckRemainsReadableForRetainedClosedOrSuspendedProfile() throws Exception {
         t.tracking.samples(actor,t.session(),t.batch(t.sample(1,0,5)));
         t.tracking.state(actor,t.session(),t.state("STOPPED"),"synthetic-local-stop");

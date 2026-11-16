@@ -37,7 +37,7 @@ final class WaTrackingState {
             store.jdbc.update("UPDATE wa.tracking_session SET state='STOPPED',stopped_at=COALESCE(stopped_at,?),lease_expires_at=LEAST(lease_expires_at,?),gps_state='STALE',last_latitude=NULL,last_longitude=NULL,last_accuracy_m=NULL,last_captured_at=NULL,version=version+1 WHERE id=?",ts(clock.now()),ts(clock.now()),id);
             store.jdbc.update("DELETE FROM wa.approach_fix WHERE session_id=?",id);
             if (terminal(run) && session.stoppedAt()==null) new WaTrackingNotices(store.jdbc).stopped(session,clock.now());
-            if(collecting(session) && !terminal(run) && store.current(run.id()).id().equals(id)) lifecycle.failOrDegrade(session,run,clock.now());
+            if(collecting(session) && !terminal(run) && store.current(run.id()).id().equals(id)) lifecycle.failOrDegrade(store.session(id,actor.driverId()),run,clock.now());
         } else if("CONTINUE".equals(WaTrackingResponses.action(session,run,clock.now(),settings.enabled()))) {
             if("PERMISSION_DENIED".equals(state)) {
                 store.stop(session,"STOP_REQUESTED",clock.now()); lifecycle.failOrDegrade(session,run,clock.now());
