@@ -42,7 +42,11 @@ class WaDriverInvitesIntegrationTest {
             INSERT INTO wa.driver_invite(id,driver_id,code_hash,expires_at,max_uses,use_count,created_at)
             VALUES (?,?,?,?,3,1,?)
             """, invite, driver, "f".repeat(64), Timestamp.from(old.clock.now().plusSeconds(600)), Timestamp.from(old.clock.now()));
-        assertEquals(1, Flyway.configure().dataSource(source).load().migrate().migrationsExecuted);
+        var latest = Flyway.configure().dataSource(source).load();
+        int pending = latest.info().pending().length;
+        assertTrue(pending >= 2, "The current schema includes onboarding V41 and driver notices V42");
+        assertEquals(pending, latest.migrate().migrationsExecuted);
+        assertEquals(0, latest.info().pending().length);
         assertEquals(1L, old.jdbc.queryForObject("""
             SELECT count(*) FROM wa.driver_invite WHERE id=? AND max_uses=3 AND use_count=1
                 AND NOT allow_first_contact AND onboarding_identity_id IS NULL

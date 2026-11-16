@@ -3,7 +3,10 @@ package com.vanrides.vanrides.whatsapp.commands;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.vanrides.vanrides.whatsapp.api.WaDecision;
 import com.vanrides.vanrides.whatsapp.api.WaProblem;
+import com.vanrides.vanrides.whatsapp.attendance.WaAttendanceLabels;
+import com.vanrides.vanrides.whatsapp.transport.WaDriverAttendanceNotices;
 import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -12,6 +15,7 @@ import java.util.UUID;
 /** Presence and activation serialize on the occurrence before either touches its snapshot. */
 final class WaAttendanceMutation {
     record Result(WaDecision decision, String text) { }
+    static final String TRIP_ENDED = "Essa viagem já foi encerrada. Não é possível alterar a presença dela.";
     private static final Set<String> STARTED = Set.of("STARTING", "START_FAILED", "TRACKING", "DEGRADED");
     private final WaAttendanceQuestions questions;
 
@@ -35,12 +39,22 @@ final class WaAttendanceMutation {
         var runs = questions.jdbc.queryForList("SELECT id,state FROM wa.operation_run WHERE occurrence_id=? FOR UPDATE", occurrences.get(0));
         boolean started = !runs.isEmpty() && STARTED.contains(runs.get(0).get("state"));
         UUID run = runs.isEmpty() ? null : (UUID) runs.get(0).get("id");
-        String label = WaAttendanceQuestions.label(current);
-        if (started && choice.equals("GOING") && !included(run, actor.identityId(), current)) {
-            questions.save(actor, event, WaAttendanceSelection.empty());
-            return new Result(WaDecision.ok(Map.of("changed", false)),
-                "A saída de " + label + " já começou. Seu pedido de ir ficou registrado nesta conversa, mas o embarque ainda precisa ser confirmado. "
-                    + "Fale com o motorista ou envie FALAR COM SUPORTE para confirmar seu embarque.");
+        String bullet = "\n• " + WaAttendanceLabels.capitalize(WaAttendanceQuestions.label(current, questions.clock.now()));
+        var stops = started ? questions.jdbc.queryForList("""
+            SELECT state,attendance_snapshot FROM wa.run_stop WHERE run_id=? AND passenger_id=? FOR UPDATE
+            """, run, actor.identityId()) : List.<Map<String, Object>>of();
+        String stopState = stops.isEmpty() ? "" : (String) stops.get(0).get("state");
+        String snapshot = stops.isEmpty() ? "" : (String) stops.get(0).get("attendance_snapshot");
+        boolean passed = Set.of("PASSED", "SKIPPED").contains(stopState);
+        boolean included = Set.of("WAITING", "APPROACHING").contains(stopState) && Set.of("PENDING", "GOING").contains(snapshot)
+            && !current.path("attendanceState").asText().equals("NOT_GOING");
+        if (passed) {
+            return unchanged(actor, event, "A van já passou pelo seu ponto." + bullet
+                + "\nA presença desta viagem não pode mais ser alterada.");
+        }
+        if (started && choice.equals("GOING") && !included) {
+            return unchanged(actor, event, "O motorista já saiu e você não está na lista desta viagem." + bullet
+                + "\nPara embarcar, fale diretamente com o motorista.");
         }
         Timestamp now = Timestamp.from(questions.clock.now());
         boolean changed = !choice.equals(current.path("attendanceState").asText());
@@ -52,31 +66,42 @@ final class WaAttendanceMutation {
             questions.jdbc.update("UPDATE wa.attendance_question SET state='ANSWERED',answered_at=?,version=version+1 WHERE id=?",
                 now, questionId);
         }
-        if (started && choice.equals("NOT_GOING")) {
-            questions.jdbc.update("""
-                UPDATE wa.run_stop SET state='CANCELED',canceled_at=?,version=version+1
-                WHERE run_id=? AND passenger_id=? AND state IN ('WAITING','APPROACHING')
-                """, now, run, actor.identityId());
-        }
-        questions.save(actor, event, WaAttendanceSelection.empty());
-        String response = choice.equals("GOING") ? "Você confirmou que vai em " : "Você informou que não vai em ";
-        response += label + ".";
-        if (started && choice.equals("NOT_GOING")) {
-            response += " Os próximos avisos para você foram suspensos. A saída já começou e a alteração não confirma um desvio do motorista.";
-        }
-        return new Result(WaDecision.ok(Map.of("changed", changed)), response);
+        List<UUID> canceled = started && choice.equals("NOT_GOING") ? questions.jdbc.queryForList("""
+            UPDATE wa.run_stop SET state='CANCELED',canceled_at=?,version=version+1
+            WHERE run_id=? AND passenger_id=? AND state IN ('WAITING','APPROACHING') RETURNING id
+            """, UUID.class, now, run, actor.identityId()) : List.of();
+        if (!canceled.isEmpty()) notifyDriver(current, actor, run, canceled.get(0), instance, now.toInstant());
+        questions.save(actor, event, WaAttendanceQuestions.empty());
+        String text;
+        if (!changed) text = (choice.equals("GOING") ? "Sua presença já estava confirmada" : "Sua ausência já estava registrada") + bullet;
+        else if (choice.equals("GOING")) text = "Presença confirmada" + bullet;
+        else if (!canceled.isEmpty()) text = "Ausência registrada" + bullet + "\nO motorista já saiu e sua parada foi retirada desta viagem.";
+        else if (started) text = "Ausência registrada" + bullet;
+        else text = "Ausência registrada" + bullet + "\nMudou de ideia? Responda VOU até a saída do motorista.";
+        return new Result(WaDecision.ok(Map.of("changed", changed)), text);
     }
 
-    private boolean included(UUID run, UUID passenger, ObjectNode current) {
-        if (current.path("attendanceState").asText().equals("NOT_GOING")) return false;
-        return Boolean.TRUE.equals(questions.jdbc.queryForObject("""
-            SELECT EXISTS(SELECT 1 FROM wa.run_stop WHERE run_id=? AND passenger_id=?
-              AND state IN ('WAITING','APPROACHING') AND attendance_snapshot IN ('PENDING','GOING'))
-            """, Boolean.class, run, passenger));
+    private void notifyDriver(ObjectNode current, WaProfileState passenger, UUID run, UUID stop, String instance, Instant now) {
+        UUID driver = WaAttendanceQuestions.id(current, "driver_id");
+        UUID source = WaDriverAttendanceNotices.latestSource(questions.jdbc, driver, instance);
+        if (source == null) return;
+        String name = questions.jdbc.queryForObject("""
+            SELECT COALESCE(run.snapshot_json->'passengerNames'->>?,p.display_name,'Passageiro')
+            FROM wa.operation_run run JOIN wa.profile p ON p.identity_id=?
+            WHERE run.id=?
+            """, String.class, passenger.identityId().toString(), passenger.identityId(), run);
+        String text = name + " não vai mais na viagem de " + WaAttendanceQuestions.label(current, now)
+            + ".\nA parada foi retirada da rota.";
+        WaDriverAttendanceNotices.saveStopCanceled(questions.jdbc, WaAttendanceQuestions.id(current, "occurrence_id"), driver, run,
+            stop, passenger.identityId(), source, text, questions.settings.environment(), instance, now);
+    }
+
+    private Result unchanged(WaProfileState actor, WaInboxAccess.Context event, String text) {
+        questions.save(actor, event, WaAttendanceQuestions.empty());
+        return new Result(WaDecision.ok(Map.of("changed", false)), text);
     }
 
     static Result expired() {
-        return new Result(WaDecision.error(WaProblem.Code.INTENT_EXPIRED),
-            "Essa pergunta já encerrou ou mudou. Nenhuma outra data foi alterada. Envie PRESENÇA para escolher uma ocorrência atual.");
+        return new Result(WaDecision.error(WaProblem.Code.INTENT_EXPIRED), TRIP_ENDED);
     }
 }

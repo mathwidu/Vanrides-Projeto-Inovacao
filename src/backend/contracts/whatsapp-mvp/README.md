@@ -350,15 +350,33 @@ evolução não altera os recibos históricos070/080 nem comprova ensaio físico
 
 ## Presença no card 100
 
-O passageiro pode declarar presença por ocorrência. A API identifica a pergunta
-pela citação entregue ou pela seleção explícita de data e sentido. Se houver
-ambiguidade, o agente encaminha `ADVANCE_ATTENDANCE`. A escolha autorizada em
-`attendanceChoice` e a única referência `QUESTION` compõem `SET_ATTENDANCE`.
-O motorista consulta o seu resumo por `GET_SUMMARY`.
+O passageiro pode declarar presença por ocorrência, sem menu. A API escolhe a
+viagem pela citação do lembrete entregue; sem citação, pelos filtros de dia e
+sentido ou, numa resposta isolada, pela primeira viagem cuja parada ainda não foi
+passada. Quando não há viagem, a citação é de uma viagem encerrada ou a mensagem
+traz mais de uma escolha, o agente encaminha `ADVANCE_ATTENDANCE` e a API responde
+só com texto. A escolha autorizada em `attendanceChoice` e a única referência
+`QUESTION` compõem `SET_ATTENDANCE`. Depois da saída, NÃO VOU retira uma parada ainda aguardando embarque sem
+reescrever a lista da partida; VOU só confirma quem continua incluído nela.
+Uma parada passada ou pulada bloqueia a alteração. Uma ausência já registrada
+não pode ser revertida para reabrir a parada após a saída. O motorista consulta o seu resumo por
+`GET_SUMMARY` e abre a lista com `ADVANCE_ATTENDANCE`.
 
 O W04 aciona somente `MATERIALIZE_OCCURRENCES` e `DUE_REMINDERS` com a
 credencial SYSTEM_JOB da instância. Cada página aceita até 100 unidades.
 A janela é o minuto UTC da chamada inicial e o servidor fornece o cursor.
-O n8n recebe apenas os contadores.
+O n8n recebe apenas os contadores. `DUE_REMINDERS` também enfileira para o
+motorista a lista de pré-saída, 30 minutos antes da viagem. Um NÃO VOU depois
+da saída enfileira um aviso ao motorista quando retira uma parada ainda ativa.
+Antes da saída, a ausência aparece na lista; não gera aviso individual.
+Cada ocorrência tem no máximo uma lista de pré-saída e cada parada cancelada,
+um aviso individual. Os avisos expiram na saída e em cinco minutos,
+respectivamente; uma viagem encerrada impede um aviso de cancelamento pendente.
+A migration aditiva V42 mantém a V41 do cadastro.
+
+A presença atual fica em `wa.attendance`; a lista original permanece em
+`wa.operation_run`/`wa.run_stop`. Correções usam o histórico já existente de
+`wa.command_receipt` ligado ao evento e à resposta da outbox, com os prazos de
+retenção vigentes. Não há novo log de conversas nem coleta adicional de GPS.
 
 No envio de GPS, o recibo persistido contém somente os resultados por sequência (`accepted`, `duplicate` e `rejected`). Um reenvio preserva esses resultados, mas devolve a ação, o estado do GPS e a validade da autorização atuais. Reenviar um recibo antigo não renova a posição nem a autorização e não reativa uma sessão encerrada.

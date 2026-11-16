@@ -31,7 +31,9 @@ class WaAttendanceCutoffIntegrationTest {
         var item = f.question(passenger, DAY, "OUTBOUND", "15:00");
         UUID run = f.starting(item, "PENDING");
         String before = f.s.string("SELECT snapshot_json::text FROM wa.operation_run WHERE id=?", run);
-        f.send(passenger, "Não vou hoje na ida");
+        var result = f.send(passenger, "Não vou hoje na ida");
+        assertEquals("Ausência registrada\n• Hoje, terça (01/01), ida às 15:00 (Ida de teste)\n"
+            + "O motorista já saiu e sua parada foi retirada desta viagem.", result.text());
         assertEquals("NOT_GOING", f.state(item));
         assertEquals("PENDING", f.s.string("SELECT attendance_snapshot FROM wa.run_stop WHERE run_id=?", run));
         assertEquals("CANCELED", f.s.string("SELECT state FROM wa.run_stop WHERE run_id=?", run));
@@ -42,26 +44,56 @@ class WaAttendanceCutoffIntegrationTest {
         var item = f.question(passenger, DAY, "OUTBOUND", "15:00");
         f.send(passenger, "Não vou hoje na ida");
         UUID run = f.starting(item, "NOT_GOING");
-        f.h.jdbc.update("UPDATE wa.run_stop SET state='SKIPPED',version=version+1 WHERE run_id=?", run);
-        f.send(passenger, "Presença");
-        assertEquals(1, f.s.number("SELECT count(*) FROM wa.conversation_state WHERE identity_id=? "
-            + "AND jsonb_exists(context_json,'attendanceDraft')", passenger));
+        f.h.jdbc.update("DELETE FROM wa.run_stop WHERE run_id=?", run);
+        String before = f.s.string("SELECT row_to_json(a)::text FROM wa.attendance a WHERE id=?", item.attendance());
         var result = f.send(passenger, "Vou hoje na ida");
-        assertEquals(0, f.s.number("SELECT count(*) FROM wa.conversation_state WHERE identity_id=? "
-            + "AND jsonb_exists(context_json,'attendanceDraft')", passenger));
-        assertEquals("NOT_GOING", f.state(item));
-        assertEquals("SKIPPED", f.s.string("SELECT state FROM wa.run_stop WHERE run_id=?", run));
-        assertTrue(result.text().contains("embarque ainda precisa ser confirmado"));
+        assertEquals("O motorista já saiu e você não está na lista desta viagem.\n"
+            + "• Hoje, terça (01/01), ida às 15:00 (Ida de teste)\nPara embarcar, fale diretamente com o motorista.", result.text());
+        assertEquals(before, f.s.string("SELECT row_to_json(a)::text FROM wa.attendance a WHERE id=?", item.attendance()));
+        assertEquals(0, f.s.number("SELECT count(*) FROM wa.run_stop WHERE run_id=?", run));
         assertEquals(2, f.s.number("SELECT count(*) FROM wa.command_receipt WHERE identity_id=? AND command_type='SET_ATTENDANCE'", passenger));
+    }
+
+    @Test void aLateRequestToJoinAfterALateAbsenceKeepsTheCanceledStopAndTheAbsence() {
+        var item = f.question(passenger, DAY, "OUTBOUND", "15:00");
+        UUID run = f.starting(item, "PENDING");
+        f.send(passenger, "Não vou hoje na ida");
+        String attendance = f.s.string("SELECT row_to_json(a)::text FROM wa.attendance a WHERE id=?", item.attendance());
+        String stop = f.s.string("SELECT row_to_json(s)::text FROM wa.run_stop s WHERE run_id=?", run);
+        var join = f.send(passenger, "Vou hoje na ida");
+        assertTrue(join.text().startsWith("O motorista já saiu e você não está na lista desta viagem."));
+        var repeat = f.send(passenger, "Não vou hoje na ida");
+        assertEquals("Sua ausência já estava registrada\n• Hoje, terça (01/01), ida às 15:00 (Ida de teste)", repeat.text());
+        assertEquals(attendance, f.s.string("SELECT row_to_json(a)::text FROM wa.attendance a WHERE id=?", item.attendance()));
+        assertEquals(stop, f.s.string("SELECT row_to_json(s)::text FROM wa.run_stop s WHERE run_id=?", run));
+    }
+
+    @Test void anAbsenceFromSomeoneNotOnTheDepartureListIsStillRecorded() {
+        var item = f.question(passenger, DAY, "OUTBOUND", "15:00");
+        UUID run = f.starting(item, "PENDING");
+        f.h.jdbc.update("DELETE FROM wa.run_stop WHERE run_id=?", run);
+        var result = f.send(passenger, "Não vou hoje na ida");
+        assertEquals("Ausência registrada\n• Hoje, terça (01/01), ida às 15:00 (Ida de teste)", result.text());
+        assertEquals("NOT_GOING", f.state(item));
+        assertEquals(0, f.s.number("SELECT count(*) FROM wa.run_stop WHERE run_id=?", run));
+        var repeat = f.send(passenger, "Não vou hoje na ida");
+        assertEquals("Sua ausência já estava registrada\n• Hoje, terça (01/01), ida às 15:00 (Ida de teste)", repeat.text());
     }
 
     @Test void anAbsenceCannotUndoAPassedStop() {
         var item = f.question(passenger, DAY, "OUTBOUND", "15:00");
+        String quote = f.sent(item);
         UUID run = f.starting(item, "GOING");
         f.h.jdbc.update("UPDATE wa.run_stop SET state='PASSED',version=version+1 WHERE run_id=?", run);
-        f.send(passenger, "Não vou hoje na ida");
+        String attendance = f.s.string("SELECT row_to_json(a)::text FROM wa.attendance a WHERE id=?", item.attendance());
+        String stop = f.s.string("SELECT row_to_json(s)::text FROM wa.run_stop s WHERE run_id=?", run);
+        var result = f.quote(passenger, "Não vou", quote);
+        assertEquals("A van já passou pelo seu ponto.\n• Hoje, terça (01/01), ida às 15:00 (Ida de teste)\n"
+            + "A presença desta viagem não pode mais ser alterada.", result.text());
         assertEquals("PASSED", f.s.string("SELECT state FROM wa.run_stop WHERE run_id=?", run));
-        assertEquals("GOING", f.s.string("SELECT attendance_snapshot FROM wa.run_stop WHERE run_id=?", run));
+        assertEquals("PENDING", f.state(item));
+        assertEquals(attendance, f.s.string("SELECT row_to_json(a)::text FROM wa.attendance a WHERE id=?", item.attendance()));
+        assertEquals(stop, f.s.string("SELECT row_to_json(s)::text FROM wa.run_stop s WHERE run_id=?", run));
     }
 
     @Test void activationWinsTheOccurrenceLockAndTheLaterAnswerSeesItsSnapshot() throws Exception {
@@ -117,6 +149,33 @@ class WaAttendanceCutoffIntegrationTest {
         }
     }
 
+    @Test void aStopPassedWhileTheAnswerWaitsForItsRowIsSeenAsPassed() throws Exception {
+        var item = f.question(passenger, DAY, "OUTBOUND", "15:00");
+        UUID run = f.starting(item, "GOING");
+        var lease = f.s.text(passenger, "Não vou hoje na ida");
+        CountDownLatch locked = new CountDownLatch(1), release = new CountDownLatch(1);
+        var executor = Executors.newFixedThreadPool(2);
+        try {
+            var passing = executor.submit(() -> f.h.transaction.execute(status -> {
+                f.h.jdbc.update("UPDATE wa.run_stop SET state='PASSED',version=version+1 WHERE run_id=?", run);
+                locked.countDown(); await(release);
+                return null;
+            }));
+            assertTrue(locked.await(10, TimeUnit.SECONDS));
+            var answer = executor.submit(() -> f.execute(lease, true));
+            awaitWaitingOnTheStopRow();
+            release.countDown();
+            passing.get(10, TimeUnit.SECONDS);
+            assertEquals("A van já passou pelo seu ponto.\n• Hoje, terça (01/01), ida às 15:00 (Ida de teste)\n"
+                + "A presença desta viagem não pode mais ser alterada.", answer.get(10, TimeUnit.SECONDS).text());
+            assertEquals("PENDING", f.state(item));
+            assertEquals("PASSED", f.s.string("SELECT state FROM wa.run_stop WHERE run_id=?", run));
+        } finally {
+            release.countDown(); executor.shutdownNow();
+            assertTrue(executor.awaitTermination(10, TimeUnit.SECONDS));
+        }
+    }
+
     @Test void todayAndTomorrowUseTheRoutineTimezoneAcrossUtcMidnight() {
         f.h.time.set(Instant.parse("2030-01-02T01:00:00Z"));
         f.h.jdbc.update("UPDATE wa.service_credential SET expires_at=?", java.sql.Timestamp.from(f.h.clock.now().plusSeconds(3600)));
@@ -131,6 +190,7 @@ class WaAttendanceCutoffIntegrationTest {
         f.h.jdbc.update("UPDATE wa.routine SET local_time='16:00',version=version+1 WHERE id=?", item.routine());
         var result = f.send(passenger, "Vou hoje na ida");
         assertEquals("ADVANCE_ATTENDANCE", result.body().path("commandType").asText());
+        assertEquals("Não há nenhuma viagem próxima registrada. Aguarde a chegada do lembrete.", result.text());
         assertEquals("PENDING", f.state(item));
     }
 
@@ -142,6 +202,15 @@ class WaAttendanceCutoffIntegrationTest {
         assertEquals("NOT_GOING", f.state(item));
         assertTrue(result.text().contains("ida às 15:00"));
         assertFalse(result.text().contains("16:00"));
+    }
+
+    private void awaitWaitingOnTheStopRow() throws InterruptedException {
+        for (int attempt = 0; attempt < 200; attempt++) {
+            if (f.s.number("SELECT count(*) FROM pg_stat_activity WHERE wait_event_type='Lock' "
+                + "AND query LIKE 'SELECT state,attendance_snapshot FROM wa.run_stop%FOR UPDATE%'") == 1) return;
+            Thread.sleep(50);
+        }
+        fail("The answer never waited for the stop row");
     }
 
     private static void await(CountDownLatch latch) {

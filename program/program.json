@@ -5891,12 +5891,13 @@
     {
       "id": "VR-HML-010-TEAM-API",
       "epic": "VR-WA-MVP",
-      "title": "Publicar a API do MVP para todo o grupo",
+      "title": "Concluir o MVP publicado para a rodada final da equipe",
       "status": "in_progress",
       "priority": 15,
       "repositories": [
         "coordination",
-        "backend"
+        "backend",
+        "app"
       ],
       "dependsOn": [
         "VR-WA-040-DOMAIN-AUTH",
@@ -5943,7 +5944,10 @@
           "src/whatsapp/scripts/070-operator-batch.test.mjs",
           "src/whatsapp/scripts/070-worker-lifecycle.mjs",
           "src/whatsapp/scripts/070-worker-smoke.test.mjs",
-          "src/whatsapp/agent/"
+          "src/whatsapp/agent/",
+          "AGENTS.md",
+          "src/whatsapp/",
+          "program/README.md"
         ],
         "backend": [
           "src/main/",
@@ -5952,6 +5956,17 @@
           "contracts/whatsapp-mvp/",
           "docs/",
           "Dockerfile"
+        ],
+        "app": [
+          "lib/",
+          "test/",
+          "integration_test/",
+          "android/",
+          "ios/",
+          "scripts/",
+          "docs/",
+          "README.md",
+          "AGENTS.md"
         ]
       },
       "blockers": [],
@@ -5969,5 +5984,12 @@
     "history": "Estados e commits anteriores são históricos; recibos importados não validam o SHA do monorepo.",
     "physicalIOS": "paused_by_owner",
     "integratedCommit": "b6ff35904ea832bbf6f4bdc208372bdf52ce92cc"
+  },
+  "deliveryPreparation": {
+    "asOf": "2026-11-16",
+    "scope": "65 open MVP issues",
+    "physicalIOS": "resumed_for_preparation",
+    "finalHumanValidation": "route_battery_usefulness_after_technical_delivery",
+    "plan": "docs/desenvolvimento/entrega-mvp.md"
   }
 }

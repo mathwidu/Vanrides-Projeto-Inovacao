@@ -67,6 +67,54 @@ class WaTeamOperations {
         return result(identity, profile, currentInvite(identity, now, false), now);
     }
 
+    @Transactional
+    public ObjectNode resumeConversation(WaTeamGitHub.Actor actor, WaTeamEvolution.Contact contact,
+                                         UUID supportCase, UUID correlation, Runnable assertSessionLive) {
+        requireCohort(true);
+        UUID identity = findIdentity(contact, true);
+        if (identity == null) throw WaProblem.missing();
+        // Business commands fence the profile before writes that take identity FK locks.
+        Profile profile = store.profile(identity, true);
+        requireIdentity(identity, true);
+        if (!store.teamAdmitted(identity)) throw WaProblem.denied();
+        if (!"ACTIVE".equals(profile.status()) && !"ONBOARDING".equals(profile.status())) throw WaProblem.denied();
+        var conversations = jdbc.queryForList(
+            "SELECT stage,context_json::text FROM wa.conversation_state WHERE identity_id=? FOR UPDATE", identity);
+        var cases = jdbc.queryForList("""
+            SELECT state FROM wa.support_case WHERE id=? AND identity_id=? AND purpose='CONVERSATION' FOR UPDATE
+            """, supportCase, identity);
+        if (cases.size() != 1) throw WaProblem.missing();
+        if (!"CLOSED".equals(cases.get(0).get("state"))) {
+            if (conversations.size() != 1 || !"PAUSED".equals(conversations.get(0).get("stage")))
+                throw new WaProblem(WaProblem.Code.VERSION_CONFLICT);
+            ObjectNode context = WaJson.object((String) conversations.get(0).get("context_json"));
+            if (!supportCase.toString().equals(context.path("supportCaseId").asText()))
+                throw new WaProblem(WaProblem.Code.VERSION_CONFLICT);
+            context.remove(List.of("supportCaseId", "sourceInboxEventId"));
+            for (String key : List.of("driverDraft", "passengerDraft", "runDraft", "attendanceDraft")) {
+                if (context.path(key) instanceof ObjectNode draft) draft.remove("confirmation");
+            }
+            Instant now = clock.now();
+            jdbc.update("""
+                UPDATE wa.support_case SET state='CLOSED',closed_at=?,version=version+1 WHERE id=?
+                """, Timestamp.from(now), supportCase);
+            jdbc.update("""
+                UPDATE wa.conversation_state SET stage='WELCOME',paused_until=NULL,question_ref=NULL,
+                  question_expires_at=NULL,context_json=?::jsonb,version=version+1,updated_at=? WHERE identity_id=?
+                """, context.toString(), Timestamp.from(now), identity);
+            jdbc.update("""
+                UPDATE wa.profile SET version=version+1,updated_at=? WHERE identity_id=?
+                """, Timestamp.from(now), identity);
+            jdbc.update("""
+                INSERT INTO wa.audit_event(id,actor_identity_id,actor_kind,action,resource_id,correlation_id,reason_code,created_at)
+                VALUES (?,?,'OPERATOR','RESUME_CONVERSATION',?,?,?,?)
+                """, UUID.randomUUID(), identity, supportCase, correlation.toString(),
+                "TEAM_GITHUB_" + actor.id(), Timestamp.from(now));
+        }
+        assertSessionLive.run();
+        return result(identity, profile, currentInvite(identity, clock.now(), false), clock.now());
+    }
+
     @Transactional(readOnly = true)
     public ObjectNode replay(WaTeamGitHub.Actor actor, Request request) {
         requireCohort(false);
@@ -265,13 +313,23 @@ class WaTeamOperations {
             + team.instance() + "\0" + request.action() + "\0" + request.phone());
     }
 
-    private static ObjectNode result(UUID identity, Profile profile, Invite invite, Instant now) {
+    private ObjectNode result(UUID identity, Profile profile, Invite invite, Instant now) {
         ObjectNode result = WaJson.MAPPER.createObjectNode()
             .put("admissionStatus", identity == null ? "NOT_ADMITTED" : "ADMITTED")
             .put("inviteStatus", invite == null ? "NONE" : invite.status(now).name());
         if (identity != null) result.put("identityId", identity.toString());
         if (profile != null && profile.role() != null) result.put("profileRole", profile.role()).put("profileStatus", profile.status());
         if (invite != null) result.put("inviteId", invite.id().toString()).put("expiresAt", invite.expires().toString());
+        if (identity != null) {
+            var cases = jdbc.query("""
+                SELECT s.id FROM wa.conversation_state c JOIN wa.support_case s ON s.identity_id=c.identity_id
+                  AND s.id::text=c.context_json->>'supportCaseId'
+                WHERE c.identity_id=? AND c.stage='PAUSED' AND s.purpose='CONVERSATION'
+                  AND s.state IN ('OPEN','IN_PROGRESS')
+                """, (rs, row) -> rs.getObject(1, UUID.class), identity);
+            result.put("conversationPaused", !cases.isEmpty());
+            if (!cases.isEmpty()) result.put("supportCaseId", cases.get(0).toString());
+        }
         return result;
     }
 }

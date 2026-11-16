@@ -127,6 +127,20 @@ public final class WaTeamController {
             () -> sessions.assertLive(cookie, current));
     }
 
+    @PostMapping("/equipe/api/participants/resume")
+    public ObjectNode resumeConversation(HttpServletRequest request) {
+        String cookie = cookie(request, SESSION_COOKIE);
+        var current = sessions.require(cookie, WaHttp.header(request, CSRF_HEADER, true), true);
+        ObjectNode data = body(request);
+        WaJson.fields(data, "phoneNumber", "supportCaseId");
+        operations.requireReady();
+        var contact = evolution.verify(phone(data));
+        UUID supportCase = WaJson.uuid(data, "supportCaseId");
+        sessions.assertLive(cookie, current);
+        return operations.resumeConversation(current.actor, contact, supportCase,
+            UUID.fromString(WaHttp.correlation(request)), () -> sessions.assertLive(cookie, current));
+    }
+
     @PostMapping("/equipe/api/test-driver/status")
     public ObjectNode testDriverStatus(HttpServletRequest request) {
         String cookie = cookie(request, SESSION_COOKIE);

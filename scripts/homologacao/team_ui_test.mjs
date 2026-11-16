@@ -140,6 +140,45 @@ test('participant status explains the next step without revealing codes or makin
   }
 });
 
+test('support recovery binds the selected case and phone, uses CSRF and clears stale controls', async () => {
+  const supportCaseId = randomUUID();
+  const active = { admissionStatus: 'ADMITTED', inviteStatus: 'NONE', profileRole: 'DRIVER', profileStatus: 'ACTIVE' };
+  const ui = await page(async (url, options) => {
+    if (url.endsWith('/participants/resume')) {
+      assert.deepEqual(JSON.parse(options.body), { phoneNumber: '+15550000001', supportCaseId });
+      assert.equal(options.headers['X-CSRF-Token'], session.csrfToken);
+      return response({ ...active, conversationPaused: false });
+    }
+    return response({ ...active, conversationPaused: true, supportCaseId });
+  });
+  await ui.node('status').events.click();
+  assert.equal(ui.node('resume-support').hidden, false);
+  assert.match(ui.node('result-description').textContent, /pausada para suporte.*Retomar conversa/);
+  await ui.node('resume-support').events.click();
+  assert.equal(ui.node('resume-support').hidden, true);
+  assert.match(ui.node('message').textContent, /Conversa retomada.*AJUDA/);
+  await ui.node('status').events.click();
+  ui.node('phone').value = '+15550000003';
+  await ui.node('resume-support').events.click();
+  assert.equal(ui.calls.filter(call => call.url.endsWith('/participants/resume')).length, 1);
+  ui.node('phone').events.input();
+  assert.equal(ui.node('resume-support').hidden, true);
+});
+
+test('support resume is unavailable for suspended profiles or malformed case references', async () => {
+  for (const data of [
+    { profileStatus: 'SUSPENDED', supportCaseId: randomUUID() },
+    { profileStatus: 'ACTIVE', supportCaseId: 'untrusted-reference' },
+  ]) {
+    const ui = await page(async () => response({ admissionStatus: 'ADMITTED', inviteStatus: 'NONE',
+      profileRole: 'DRIVER', conversationPaused: true, ...data }));
+    await ui.node('status').events.click();
+    assert.equal(ui.node('resume-support').hidden, true);
+    await ui.node('resume-support').events.click();
+    assert.equal(ui.calls.filter(call => call.url.endsWith('/participants/resume')).length, 0);
+  }
+});
+
 test('bot link is authenticated and opens only the validated WhatsApp destination', async () => {
   const markup = html.match(/<a id="bot-link"[^>]+>/)?.[0];
   assert.match(markup, /\bhidden\b/);

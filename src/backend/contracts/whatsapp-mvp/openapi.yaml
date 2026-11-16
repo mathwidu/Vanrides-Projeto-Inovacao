@@ -1916,7 +1916,7 @@
       "post": {
         "operationId": "tickSystemJob",
         "summary": "Executar janela tipada de job sem personificar humano",
-        "description": "Jobs da instância autenticada SYSTEM_JOB, com janela de minuto UTC e páginas duráveis até100 unidades. MATERIALIZE_OCCURRENCES/DUE_REMINDERS criam efeitos100. HEALTH_RECONCILE120 mantém entrega mesmo com canal/flags fechados: concilia somente IDs externos comprovados, abandona reservas vencidas, expira UNKNOWN com caso operacional deduplicado e expira pendências não submetidas. Unidade de trabalho é outbox; cursor permanece vinculado a ambiente/instância/tipo/janela. Não inicia envio nem pausa conversa. Outros tipos continuam indisponíveis.",
+        "description": "Jobs da instância autenticada SYSTEM_JOB, com janela de minuto UTC e páginas duráveis até100 unidades. MATERIALIZE_OCCURRENCES/DUE_REMINDERS criam efeitos100. DUE_REMINDERS também enfileira a lista de pré-saída do motorista 30 minutos antes da viagem, e um NÃO VOU depois da saída enfileira um aviso ao motorista somente quando cancela uma parada ainda ativa. A lista é única por ocorrência e expira na saída; o aviso individual é único por parada, expira em cinco minutos e perde validade quando a viagem termina. HEALTH_RECONCILE120 mantém entrega mesmo com canal/flags fechados: concilia somente IDs externos comprovados, abandona reservas vencidas, expira UNKNOWN com caso operacional deduplicado e expira pendências não submetidas. Unidade de trabalho é outbox; cursor permanece vinculado a ambiente/instância/tipo/janela. Não inicia envio nem pausa conversa. Outros tipos continuam indisponíveis.",
         "tags": [
           "WhatsApp integration"
         ],
@@ -5605,7 +5605,7 @@
         "type": "object",
         "additionalProperties": false,
         "properties": {},
-        "description": "Abre ou continua a seleção de presença desta conversa autenticada."
+        "description": "Passageiro: pede a resposta de orientação de presença (sem viagem, viagem encerrada ou resposta ambígua), sem alterar dados. Motorista: abre ou continua a lista de presenças desta conversa autenticada."
       },
       "AdvanceAttendanceCommand": {
         "type": "object",

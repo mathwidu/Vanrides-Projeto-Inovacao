@@ -1,7 +1,7 @@
 'use strict';
 const $ = id => document.getElementById(id);
 let csrf = null, busy = false, pending = null, invitation = null, currentPhone = null, testPending = null, linkButtons = [];
-let botLookup = null, botPhoneNumber = null, testInvite = null;
+let botLookup = null, botPhoneNumber = null, testInvite = null, pausedSupport = null;
 const messages = {
   INVALID_CREDENTIAL: 'Sua sessão terminou. Entre novamente pelo GitHub.',
   INVALID_PAYLOAD: 'Confira o número e o papel do participante.',
@@ -28,7 +28,7 @@ const messages = {
 function message(text, error = false) { $('message').textContent = text; $('message').classList.toggle('error', error); }
 function controls(value) {
   busy = value;
-  for (const id of ['submit', 'status', 'logout', 'renew', 'test-invite', 'test-refresh']) $(id).disabled = value;
+  for (const id of ['submit', 'status', 'logout', 'renew', 'resume-support', 'test-invite', 'test-refresh']) $(id).disabled = value;
   for (const button of linkButtons) button.disabled = value;
   for (const id of ['phone', 'role', 'consent']) $(id).disabled = value || pending !== null;
 }
@@ -73,6 +73,7 @@ async function loadBotLink() {
 }
 function closeSession() {
   csrf = null;
+  clearSupport();
   clearBotLink();
   clearInvitation();
   clearTestInvite();
@@ -81,6 +82,7 @@ function closeSession() {
   $('login').hidden = false;
 }
 function clearInvitation() { invitation = null; $('invite-code').value = ''; $('invitation').hidden = true; }
+function clearSupport() { pausedSupport = null; $('resume-support').hidden = true; }
 const labels = { ADMITTED: 'Liberado', NOT_ADMITTED: 'Ainda não liberado', ACTIVE: 'Ativo', ONBOARDING: 'Em cadastro',
   PASSENGER: 'Passageiro', DRIVER: 'Motorista', NONE: 'Ainda não iniciado', AVAILABLE: 'Disponível', ISSUED: 'Disponível',
   EXPIRED: 'Expirado', CONSUMED: 'Utilizado', REVOKED: 'Revogado', PENDING: 'Pendente', SUSPENDED: 'Suspenso', CLOSED: 'Encerrado' };
@@ -88,7 +90,8 @@ function label(value, fallback) { return labels[value] || fallback; }
 function validResult(data) {
   if (!data || !['ADMITTED', 'NOT_ADMITTED'].includes(data.admissionStatus)
     || !['NONE', 'ACTIVE', 'EXPIRED', 'REVOKED', 'CONSUMED'].includes(data.inviteStatus)
-    || data.driverInviteCode && (!/^[A-Za-z0-9_-]{43}$/.test(data.driverInviteCode) || !Number.isFinite(Date.parse(data.expiresAt))))
+    || data.driverInviteCode && (!/^[A-Za-z0-9_-]{43}$/.test(data.driverInviteCode) || !Number.isFinite(Date.parse(data.expiresAt)))
+    || data.conversationPaused === true && !/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/.test(data.supportCaseId))
     throw Error('O servidor não confirmou o resultado. Consulte o cadastro ou tente novamente.');
   return data;
 }
@@ -105,6 +108,7 @@ function nextStep(data, driver) {
   if (data.profileStatus === 'SUSPENDED' || data.profileStatus === 'CLOSED') {
     return 'Peça à equipe para revisar o cadastro antes de continuar.';
   }
+  if (data.conversationPaused) return 'A conversa está pausada para suporte. Depois de revisar o caso com a pessoa, use “Retomar conversa”. Ela poderá enviar AJUDA ao bot e continuar de onde parou.';
   if (data.profileStatus === 'ACTIVE') {
     return driver ? 'Cadastro concluído. No WhatsApp do motorista, envie ROTINAS para configurar uma rotina de teste.'
       : 'Cadastro concluído. Para testar o vínculo, envie ao bot a mensagem do convite de passageiro.';
@@ -128,13 +132,17 @@ function nextStep(data, driver) {
   return 'O número já pode conversar com o bot. Envie AJUDA para testar a resposta. Se já tiver um convite de passageiro, envie a mensagem do convite para iniciar o cadastro.';
 }
 function result(data) {
-  validResult(data); clearInvitation();
+  validResult(data); clearInvitation(); clearSupport();
   const driver = $('role').value === 'driver';
   $('result').hidden = false;
   $('admission').textContent = label(data.admissionStatus, 'Consulte novamente');
   $('profile').textContent = [label(data.profileRole, ''), label(data.profileStatus, 'Ainda não iniciado')].filter(Boolean).join(' · ');
   $('invite-status').textContent = label(data.inviteStatus, 'Sem convite');
   $('result-description').textContent = nextStep(data, driver);
+  if (data.conversationPaused && ['ACTIVE', 'ONBOARDING'].includes(data.profileStatus)) {
+    pausedSupport = data.supportCaseId;
+    $('resume-support').hidden = false;
+  }
   $('renew').hidden = !driver || (data.profileStatus && data.profileStatus !== 'ONBOARDING') || data.inviteStatus !== 'EXPIRED' || !data.inviteId;
   $('expiry').hidden = data.inviteStatus !== 'ACTIVE' || !Number.isFinite(Date.parse(data.expiresAt));
   if (!$('expiry').hidden) {
@@ -162,8 +170,8 @@ async function mutate(action) {
   } finally { controls(false); $('submit').textContent = pending ? 'Tentar novamente' : $('role').value === 'driver' ? 'Liberar motorista' : 'Liberar passageiro'; }
 }
 $('participant-form').addEventListener('submit', event => { event.preventDefault(); mutate($('role').value === 'driver' ? 'ISSUE_DRIVER_INVITE' : 'ADMIT_PASSENGER'); });
-$('role').addEventListener('change', () => { $('submit').textContent = $('role').value === 'driver' ? 'Liberar motorista' : 'Liberar passageiro'; $('result').hidden = true; clearInvitation(); });
-$('phone').addEventListener('input', () => { $('result').hidden = true; currentPhone = null; clearInvitation(); });
+$('role').addEventListener('change', () => { $('submit').textContent = $('role').value === 'driver' ? 'Liberar motorista' : 'Liberar passageiro'; $('result').hidden = true; clearInvitation(); clearSupport(); });
+$('phone').addEventListener('input', () => { $('result').hidden = true; currentPhone = null; clearInvitation(); clearSupport(); });
 $('status').addEventListener('click', async () => {
   if (busy) return;
   try { const number = phone(); controls(true); message('Consultando cadastro…'); currentPhone = number; result(await request('participants/status', { phoneNumber: number })); message('Consulta concluída.'); }
@@ -172,6 +180,14 @@ $('status').addEventListener('click', async () => {
 $('renew').addEventListener('click', () => {
   if (currentPhone !== $('phone').value.trim().replace(/[\s()\-]/g, '')) return;
   if (window.confirm('Gerar um novo convite para substituir o convite expirado?')) mutate('RENEW_DRIVER_INVITE');
+});
+$('resume-support').addEventListener('click', async () => {
+  if (busy || !pausedSupport || currentPhone !== $('phone').value.trim().replace(/[\s()\-]/g, '')) return;
+  try {
+    controls(true); message('Retomando a conversa…');
+    result(await request('participants/resume', { phoneNumber: currentPhone, supportCaseId: pausedSupport }));
+    message('Conversa retomada. Peça à pessoa para enviar AJUDA ao bot. O cadastro e as permissões foram preservados.');
+  } catch (error) { message(error.message, true); } finally { controls(false); }
 });
 $('copy').addEventListener('click', async () => {
   if (!invitation) return;

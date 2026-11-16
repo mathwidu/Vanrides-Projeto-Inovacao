@@ -34,6 +34,23 @@ cria outra liberação. Uma conta já ativa em outro papel não é convertida pe
 área. A consulta não revela o código do convite; emitir novamente um convite
 ativo recupera o convite elegível sem estender sua validade.
 
+## Retomar uma conversa após suporte
+
+Quando a pessoa pede `SUPORTE`, o bot pausa as ações de negócio e preserva o
+cadastro e o rascunho necessário. Um integrante pode consultar o número em
+**Consultar cadastro**, revisar o problema com a pessoa e usar **Retomar
+conversa**. Depois, a pessoa envia `AJUDA` ao bot para continuar. Essa ação
+não exige um novo cadastro nem aceita o aviso de dados por ela.
+
+O botão aparece somente para o caso de suporte atual de um perfil ativo ou
+em cadastro. A retomada encerra aquele caso e invalida confirmações antigas;
+não converte o papel, não reativa perfil suspenso ou encerrado e não renova
+convites, credenciais ou autorizações de motorista. Uma repetição após falha
+de rede não encerra um novo pedido de suporte que tenha surgido depois.
+A auditoria registra o identificador GitHub do integrante e o caso retomado.
+O atendimento humano e a disponibilidade da equipe continuam combinados
+fora do bot.
+
 ## Testar o passageiro com o motorista de teste
 
 Use **Testar com o WhatsApp** quando quiser confirmar a jornada real com um

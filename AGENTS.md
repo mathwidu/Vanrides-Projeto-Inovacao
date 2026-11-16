@@ -10,8 +10,10 @@ usar as origens privadas como dependência de build. Contratos canônicos estão
 em src/backend/contracts. Guias atuais em docs/desenvolvimento.
 
 Não tratar evidência histórica como teste do SHA atual. Executar os checks
-proporcionais à mudança e registrar limites. Testes físicos iPhone pausados;
-serviços reais e deploy não fazem parte da CI de contribuição.
+proporcionais à mudança e registrar limites. Em 16/11 o proprietário retomou o
+preparo do iPhone e autorizou a entrega técnica do MVP. Percurso, bateria e
+aceite final ficam para sua rodada após a preparação. Serviços reais e deploy
+seguem o escopo autorizado e são verificados fora da CI de contribuição.
 
 Nunca publicar credenciais, conversa ou GPS real. Exemplos e testes devem usar
 dados sintéticos. PR e revisão humana precedem o encerramento de tarefas.

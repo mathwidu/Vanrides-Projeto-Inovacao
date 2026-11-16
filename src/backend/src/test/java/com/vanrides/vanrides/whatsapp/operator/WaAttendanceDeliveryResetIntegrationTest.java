@@ -1,6 +1,7 @@
 package com.vanrides.vanrides.whatsapp.operator;
 
 import com.vanrides.vanrides.whatsapp.transport.WaAttendanceDeliveryTestSupport;
+import com.vanrides.vanrides.whatsapp.transport.WaDriverAttendanceNotices;
 import java.sql.Timestamp;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -57,6 +58,8 @@ class WaAttendanceDeliveryResetIntegrationTest {
                 SELECT ?,o.id,o.routine_id,o.driver_id,?,o.local_date,false,1,'motivo sintético',o.driver_id,?,CURRENT_TIMESTAMP
                 FROM wa.routine_occurrence o WHERE o.id=?
                 """, UUID.randomUUID(), reminder.passenger(), event, reminder.occurrence());
+            WaDriverAttendanceNotices.saveDeparture(jdbc, reminder.occurrence(), reminder.driver(), event, "Lista sintética.",
+                "transport-test", "synthetic-transport", fixture.now(), fixture.now().plusSeconds(3600));
         }
         var transactions = new TransactionTemplate(new DataSourceTransactionManager(jdbc.getDataSource()));
         transactions.executeWithoutResult(tx -> new WaOperatorReset(jdbc).reset(
@@ -70,6 +73,8 @@ class WaAttendanceDeliveryResetIntegrationTest {
         assertThat(jdbc.queryForObject("SELECT count(*) FROM wa.message_outbox WHERE id=?", Long.class, other.outbox())).isEqualTo(1);
         assertThat(jdbc.queryForObject("SELECT count(*) FROM wa.occurrence_roster_override WHERE driver_id=?", Long.class, own.driver())).isZero();
         assertThat(jdbc.queryForObject("SELECT count(*) FROM wa.occurrence_roster_override WHERE driver_id=?", Long.class, other.driver())).isEqualTo(1);
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM wa.driver_attendance_notice WHERE driver_id=?", Long.class, own.driver())).isZero();
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM wa.driver_attendance_notice WHERE driver_id=?", Long.class, other.driver())).isEqualTo(1);
         assertThat(jdbc.queryForObject("SELECT count(*) FROM wa.attendance_job_page", Long.class)).isEqualTo(1);
         assertThat(jdbc.queryForObject("SELECT count(*) FROM wa.attendance_job_cursor", Long.class)).isEqualTo(1);
     }
