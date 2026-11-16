@@ -1749,7 +1749,7 @@ F05 · Onda 2 · [Issue #78](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Resultado esperado:** O término real da viagem encerra a operação, com alternativa manual identificada.
 
-**Situação:** Implementado · Laboratório. Treze casos PostgreSQL de finalização e testes da política registrados; FINALIZAR manual real passou. O automático em percurso e sua calibração ainda não foram comprovados.
+**Situação:** Implementado · Laboratório. Composição GPS -> aproximação -> passagem -> permanência -> fim automático aprovada em IDA/VOLTA com filtros reais e PostgreSQL (2 testes, runtime em 2a211d1). Recebimento do aviso e chegada físicos permanecem pendentes.
 
 **Inclui:**
 
@@ -1776,7 +1776,7 @@ F05 · Onda 2 · [Issue #78](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Decisão pendente:** Calibrar e revisar os parâmetros de chegada em percurso; finalização manual isolada não aprova o encerramento automático.
 
-**Próxima ação:** Calibrar e comprovar fim automático em campo e revisar os critérios; a contingência manual não substitui essa prova.
+**Próxima ação:** Validar o encerramento automático e o aviso no percurso físico de cada plataforma.
 
 **Onde conferir:**
 
@@ -1794,7 +1794,7 @@ F05 · Onda 2 · [Issue #79](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Resultado esperado:** O aplicativo informa parada confirmada ou pendência até a confirmação ou expiração prevista.
 
-**Situação:** Implementado · Físico parado. Android +15 concluiu FINALIZAR pelo WhatsApp com COMPLETED/STOPPED/ACK e UI sem pendência. iOS +15 teve STOP/ACK pelo app e recuperação do recibo; fim automático em campo continua pendente.
+**Situação:** Implementado · Físico parado. Android normal 0.4.0+15 confirmou FINALIZAR/COMPLETED/STOP/ACK no WhatsApp real e na UI. Ensaio sintético confirmou STOP/recibo após AUTO_ARRIVAL em IDA/VOLTA; fim automático físico permanece pendente.
 
 **Inclui:**
 
@@ -1972,7 +1972,7 @@ F10 · Onda 1 · [Issue #83](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Resultado esperado:** O cadastro usa dados essenciais e aplica os prazos definidos para seu ciclo de vida.
 
-**Situação:** Parcial · Laboratório. Ports e restauração com journal atual aprovados em isolamento; a prévia não apaga backups. Não há prova de descarte real ativado nem de retenção física completa.
+**Situação:** Parcial · Laboratório. Retenção/restauração isoladas aprovadas. Helper passou em nove testes sintéticos também na VPS; prévia de 14 dumps em 11 pastas preservou todos, sem exclusão real. Limpeza real OFF.
 
 **Inclui:**
 
@@ -1999,7 +1999,7 @@ F10 · Onda 1 · [Issue #83](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 
 **Decisão pendente:** Nenhuma adicional identificada.
 
-**Próxima ação:** Revisar a prévia e a ativação humana de descarte; implementar a lacuna operacional de rotação física sem apagar backups por esta atualização.
+**Próxima ação:** Revisar a prévia, os prazos e o plano operacional antes de aprovar exclusões reais; validar a ativação de privacidade separadamente.
 
 **Onde conferir:**
 

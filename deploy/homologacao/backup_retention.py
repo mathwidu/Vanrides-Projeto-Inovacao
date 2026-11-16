@@ -203,7 +203,7 @@ def apply(fd, target, filename, expected, approval_file, execute=False, now=None
             and date(value['createdAt']) <= date(approval['approvedAt']) <= date(utc(now)), 'EXACT_PLAN_APPROVAL_REQUIRED')
     if not execute or not value['delete']:
         return {'status': 'SIMULATION_ONLY', 'deleteCount': len(value['delete']), 'planSha256': expected}
-    # Stage into a fresh private directory before any unlink. A late replacement is retained, never erased.
+    # Stage and verify before unlink; all other writers must remain stopped through the deletion.
     staging = '.retention-purge-' + uuid.uuid4().hex
     os.mkdir(staging, mode=0o700, dir_fd=fd)
     staged = os.open(staging, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=fd)

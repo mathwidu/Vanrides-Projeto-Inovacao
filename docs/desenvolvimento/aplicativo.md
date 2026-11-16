@@ -93,6 +93,30 @@ um backend local de teste. O loopback do emulador é diferente do host; no Andro
 sem `VANRIDES_PAIRING_API_ORIGIN`/host revisados no build, ele permanece sem
 pareamento. Um APK de CI não acessa automaticamente a VPS.
 
+Para compilar sua branch contra a API compartilhada, configure a origem e o
+host **antes** do build. Obtenha o número do bot pela área da equipe e informe
+somente dígitos, com país e DDD, em uma variável local. Não grave o número ou
+arquivos de assinatura no Git. Exemplo no PowerShell, dentro do módulo:
+
+```powershell
+$env:VANRIDES_PAIRING_API_ORIGIN = "https://vanrides-inovacao-api.matheusduarte.dev.br"
+$env:VANRIDES_PAIRING_LINK_HOST = "vanrides-inovacao-api.matheusduarte.dev.br"
+# Preencha VANRIDES_BOT_TESTE localmente com o número do bot.
+flutter build apk --debug --flavor driver --target lib/main_driver_mvp.dart --target-platform android-arm64 --dart-define=VANRIDES_PAIRING_LINK_HOST=$env:VANRIDES_PAIRING_LINK_HOST --dart-define=VANRIDES_WHATSAPP_BOT_NUMBER=$env:VANRIDES_BOT_TESTE
+```
+
+No macOS/Linux, exporte as duas variáveis com os mesmos valores e use
+`$VANRIDES_PAIRING_LINK_HOST` e `$VANRIDES_BOT_TESTE` nos argumentos. A origem
+nativa vem do ambiente; o host também precisa chegar ao Flutter pelo
+`--dart-define`. Isso não exige senha da VPS nem token de serviço. O número
+do motorista ainda precisa estar liberado e o aparelho precisa ser vinculado.
+
+O APK de desenvolvimento usa a assinatura local. Ele não atualiza o APK
+público assinado quando os certificados diferem. Use um aparelho de
+desenvolvimento ou combine a instalação com o operador, preservando os dados
+e o vínculo existentes. Para apenas testar o MVP publicado, use o download
+da [homologação da equipe](homologacao-da-equipe.md), sem recompilar.
+
 As chaves locais opcionais do legado ficam em `ios/Flutter/Secrets.xcconfig`
 e variáveis de build, sempre ignoradas. O MVP driver não usa UI de mapas,
 Places ou navegação Waze; Google FLP e CoreLocation coletam GPS. Bibliotecas

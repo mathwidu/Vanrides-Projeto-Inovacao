@@ -123,6 +123,12 @@ Cada arquivo é registrado uma vez; registrar novamente não renova sua idade.
 Essa proteção não comprova a consistência temporal entre vários bancos ou
 a recuperação de todo o conjunto sem os respectivos ensaios.
 
+O inventário de 16/11 encontrou 14 dumps próprios em 11 pastas de tentativas.
+O helper trata cada pasta como um escopo independente; não executa uma rotação
+global desses arquivos. Uma pasta com apenas um dump não poderá eliminá-lo
+sem outra cópia restaurável do mesmo dataset naquele catálogo. A prévia não
+autoriza mover arquivos legados nem considerar cumprido o prazo histórico.
+
 ### Próxima prévia na VPS, sem exclusão
 
 O principal pode copiar os dois arquivos Python para uma pasta privada de
@@ -179,8 +185,11 @@ journal, cabeça confiável, segredos, logs e volumes não são alvos de retenç
 A ferramenta usa lock exclusivo cooperativo e revalida identidade, conteúdo,
 prazo e cópias restantes. Na execução, move os candidatos para uma pasta nova
 privada `.retention-purge-*` e os confere antes de qualquer unlink. Uma troca
-tardia bloqueia e conserva os arquivos nessa pasta para inspeção; não remover
-essa pasta automaticamente. O operador deve manter outros escritores parados.
+detectada nessa conferência bloqueia e conserva os arquivos para inspeção;
+não remover essa pasta automaticamente. Entre a conferência e o unlink por
+nome ainda existe uma janela de troca por outro processo com o mesmo usuário.
+O lock é cooperativo e não impede esse escritor. O operador deve manter todos
+os outros escritores parados até o fim; sem essa condição, não executar a purga.
 Uma falha de I/O pode interromper o lote: conservar catálogo, plano, aprovação,
 recibo e pasta de preparo e reconciliar o que ocorreu, sem repetir às cegas.
 O catálogo atualizado impede reutilizar uma aprovação concluída.

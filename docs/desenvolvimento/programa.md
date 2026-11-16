@@ -59,17 +59,20 @@ Os resultados das origens não substituem a CI atual.
 
 ## CI e limites
 
-[Programa](../../.github/workflows/programa.yml) roda em `ubuntu-latest`, com
+[Programa](../../.github/workflows/programa.yml) é uma verificação opcional por
+`workflow_dispatch`, sem gatilho automático de push/PR. Usa `ubuntu-latest`,
 Python 3.12, somente `contents: read`, sem credenciais persistidas e limite de
 cinco minutos. Executa testes Python e dashboard/check/next. Não faz build dos
-módulos, deploy, publicação, promoção, teste físico ou acesso à VPS.
+módulos, deploy, publicação, promoção, teste físico ou acesso à VPS. A esteira
+automática está no [workflow da API](../../.github/workflows/backend.yml).
 A configuração segue a [sintaxe oficial de workflows](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax)
 e o [guia Python do GitHub](https://docs.github.com/en/actions/tutorials/build-and-test-code/python).
 
 PASS do controle confirma integridade de estado/contratos e organização local;
 os gates de backend, bot, app e integração têm comandos e evidências próprios.
-O modo sem perfil continua exigindo mapas. Piloto e produção estão HOLD, iOS
-físico pausado e o limite é um card vertical ativo. Outros colegas podem atuar
+O modo sem perfil continua exigindo mapas. Piloto e produção estão HOLD; o
+preparo do iPhone foi retomado em 16/11, com GPS e parada reais, e campo/bateria
+ficam na rodada final. O limite é um card vertical ativo. Outros colegas podem atuar
 em partes independentes desse mesmo card, com propriedade de arquivos definida.
 
 ## Recuperação

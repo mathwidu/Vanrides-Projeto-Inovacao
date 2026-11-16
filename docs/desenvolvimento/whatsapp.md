@@ -49,14 +49,16 @@ python3 src/whatsapp/scripts/070-n8n-smoke.py --preflight-only
 ```
 
 O Dockerfile usa o contexto `src/whatsapp` e inclui os dois adapters de
-transporte necessários. O smoke n8n completo é executado na CI com imagem
+transporte necessários. O smoke n8n completo está no workflow opcional, com imagem
 fixada por digest; importa somente exports inativos em um runtime descartável
 e aponta para controle sintético. Nenhum workflow é ativado num serviço real.
 
 Os pins existentes de Node, n8n, Python/Gunicorn e imagens foram preservados;
 consulte Dockerfiles, `requirements-production.txt` e `workflows/manifest.json`.
-A CI [whatsapp.yml](../../.github/workflows/whatsapp.yml) usa `contents: read`,
+O workflow [whatsapp.yml](../../.github/workflows/whatsapp.yml) é acionado por
+`workflow_dispatch`, sem gatilho automático de push/PR. Usa `contents: read`,
 constrói imagens somente no runner e não publica logs, imagens ou deploys.
+Essa verificação não faz parte do deploy automático da API.
 
 ## Ferramentas preservadas e limites
 

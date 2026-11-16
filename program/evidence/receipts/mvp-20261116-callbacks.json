@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "environment": "vanrides-mvp-hml",
+  "provider": "EVOLUTION",
+  "apiSourceRevision": "2a211d188e5fe6bc128fb039bef6f7fdeaf9ac24",
+  "windowUTC": [
+    "2026-11-16T16:10:00Z",
+    "2026-11-16T16:15:00Z"
+  ],
+  "correlation": [
+    "instance_id",
+    "external_message_id"
+  ],
+  "counts": {
+    "matchedCallbacks": 22,
+    "matchedAttempts": 9,
+    "deliveredAttempts": 9,
+    "readAttempts": 4,
+    "completedCallbacks": 22
+  },
+  "states": [
+    {
+      "callback_status": "DELIVERY_ACK",
+      "inbox_state": "COMPLETED",
+      "attempt_state": "DELIVERED",
+      "outbox_state": "DELIVERED",
+      "n": 5
+    },
+    {
+      "callback_status": "DELIVERY_ACK",
+      "inbox_state": "COMPLETED",
+      "attempt_state": "READ",
+      "outbox_state": "READ",
+      "n": 4
+    },
+    {
+      "callback_status": "READ",
+      "inbox_state": "COMPLETED",
+      "attempt_state": "READ",
+      "outbox_state": "READ",
+      "n": 4
+    },
+    {
+      "callback_status": "SERVER_ACK",
+      "inbox_state": "COMPLETED",
+      "attempt_state": "DELIVERED",
+      "outbox_state": "DELIVERED",
+      "n": 5
+    },
+    {
+      "callback_status": "SERVER_ACK",
+      "inbox_state": "COMPLETED",
+      "attempt_state": "READ",
+      "outbox_state": "READ",
+      "n": 4
+    }
+  ],
+  "observedAtUTC": "2026-11-16T16:26:33.685278+00:00",
+  "limits": [
+    "Agregado sem identificadores, conteúdo ou coordenadas.",
+    "Confirma callbacks de tentativas existentes; não simula falha de transporte ou retry.",
+    "Não comprova utilidade do aviso de aproximação nem teste com dois passageiros."
+  ]
+}

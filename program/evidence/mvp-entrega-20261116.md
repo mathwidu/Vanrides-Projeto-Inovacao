@@ -676,3 +676,57 @@ e 7 presenças pendentes antes da rodada. Nenhum serviço, credencial ou flag
 foi alterado nessa retomada. A verificação dirigida do agente passou 96 casos
 em dois arquivos; não reexecutamos a suíte PostgreSQL inteira por esse
 diagnóstico de entrada.
+
+
+## Callbacks reais da rodada Android +15 — 16/11, 16:10–16:15 UTC
+
+Uma consulta somente leitura cruzou callbacks EVOLUTION/STATUS com tentativas
+credenciadas da homologação, usando instância e identificador externo. O
+[recibo agregado](receipts/mvp-20261116-callbacks.json) contém 22 callbacks
+processados: nove SERVER_ACK, nove DELIVERY_ACK e quatro READ. A contagem
+independente por tentativa confirmou nove tentativas distintas com entrega,
+das quais quatro com leitura; todos os callbacks estavam COMPLETED.
+
+O corte da API era `2a211d1`, schema V44. Não foram publicados identificadores
+externos, contatos, conversas ou coordenadas. A prova cobre associação e avanço
+de estado no reconciliador real (#73/#91); recuperação de envio incerto (#72),
+utilidade de aproximação e segundo passageiro mantêm seus próprios critérios.
+
+
+## Composição GPS, aproximação e fim automático — IDA e VOLTA
+
+O teste `WaApproachFinishJourneyIntegrationTest`, commit `a7f12d5`, passou
+nos dois sentidos: 2 testes, zero falhas/erros/pulos, 55,111 s de parede.
+O runtime backend permaneceu idêntico a `2a211d1`. O
+[recibo sintético](receipts/mvp-20261116-approach-finish.json) identifica fonte,
+relatório e fronteira: filtros de ingresso/DPoP, controller transacional e
+PostgreSQL, com requests Servlet, coordenadas e relógio controlados.
+
+As amostras produziram APPROACHING, aviso único ao passageiro elegível e
+PASSED sem escrever esse estado por SQL. A permanência no destino antes da
+progressão não encerrou a viagem; depois da passagem e de 60 segundos válidos,
+a viagem chegou a COMPLETED/AUTO_ARRIVAL, revogou a coleta e aguardou STOP.
+Frame tardio foi recusado; STOP e recibo terminal autenticados confirmaram ACK.
+Replay do mesmo batch conservou o recibo original; outro batch com as mesmas
+sequências não repetiu os efeitos. A primeira rodada falhou em uma expectativa
+do novo teste sobre replay; o contrato foi conferido e o teste corrigido,
+sem alterar runtime. Essa rodada permanece no acervo privado.
+
+Isso fecha a composição técnica antes do campo. Não houve submit na Evolution,
+recebimento real de aproximação, sensor físico ou medição de bateria nesse ensaio.
+
+## Preparo de retenção conferido na VPS — sem exclusão real
+
+O helper de catálogo/prévia foi revisado e copiado para uma pasta privada de
+versão na VPS. Os nove testes passaram também em Linux, usando somente
+TemporaryDirectory com fixtures descartáveis. O
+[recibo operacional](receipts/mvp-20261116-backup-preparation.json) distingue
+esse teste da operação real.
+
+Foram registrados 14 dumps próprios em 11 escopos de diretório. A prévia reteve
+os 14, selecionou zero para exclusão e preservou todos os hashes dos dumps.
+A criação histórica é desconhecida; o registro não comprova cumprimento prévio
+de sete dias. Não foi criada aprovação, cron ou rotação global. Nenhum dump,
+journal, cabeça confiável ou volume foi apagado. A purga futura exige lista/hash
+revisados, confirmação do usuário e escritores parados; a proteção é por dataset
+no mesmo catálogo. Esses limites permanecem pendência operacional de #83/#84.

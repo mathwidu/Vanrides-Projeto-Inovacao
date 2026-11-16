@@ -1963,14 +1963,15 @@
       "codeStatus": "Implementado",
       "implementationNote": "Encerramento automático/manual implementado e publicado na V43: progresso, destino do snapshot, velocidade/permanência e revogação de coleta. Flag automática ON na coorte compartilhada.",
       "validationStatus": "Laboratório",
-      "validationNote": "Treze casos PostgreSQL de finalização e testes da política registrados; FINALIZAR manual real passou. O automático em percurso e sua calibração ainda não foram comprovados.",
+      "validationNote": "Composição GPS -> aproximação -> passagem -> permanência -> fim automático aprovada em IDA/VOLTA com filtros reais e PostgreSQL (2 testes, runtime em 2a211d1). Recebimento do aviso e chegada físicos permanecem pendentes.",
       "sourcePaths": [
         "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/tracking/WaRunFinishes.java",
         "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/tracking/WaRunFinishPolicy.java",
         "src/backend/src/test/java/com/vanrides/vanrides/whatsapp/transport/WaRunFinishIntegrationTest.java",
         "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaCommandService.java",
         "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/tracking/WaTrackingSamples.java",
-        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/tracking/WaTrackingService.java"
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/tracking/WaTrackingService.java",
+        "src/backend/src/test/java/com/vanrides/vanrides/whatsapp/transport/WaApproachFinishJourneyIntegrationTest.java"
       ],
       "evidencePaths": [
         "program/cards/VR-WA-140-FINISH-SUPPORT.md",
@@ -1979,7 +1980,7 @@
       "planningPaths": [
         "program/cards/VR-WA-140-FINISH-SUPPORT.md"
       ],
-      "nextAction": "Calibrar e comprovar fim automático em campo e revisar os critérios; a contingência manual não substitui essa prova.",
+      "nextAction": "Validar o encerramento automático e o aviso no percurso físico de cada plataforma.",
       "refs": [
         "VR-WA-140-FINISH-SUPPORT"
       ],
@@ -2008,14 +2009,15 @@
       "codeStatus": "Implementado",
       "implementationNote": "Finalização automática/manual ligada à revogação, solicitação STOP e ACK real; UI/checkpoint/recibo preservam parada confirmada nos apps +15.",
       "validationStatus": "Físico parado",
-      "validationNote": "Android +15 concluiu FINALIZAR pelo WhatsApp com COMPLETED/STOPPED/ACK e UI sem pendência. iOS +15 teve STOP/ACK pelo app e recuperação do recibo; fim automático em campo continua pendente.",
+      "validationNote": "Android normal 0.4.0+15 confirmou FINALIZAR/COMPLETED/STOP/ACK no WhatsApp real e na UI. Ensaio sintético confirmou STOP/recibo após AUTO_ARRIVAL em IDA/VOLTA; fim automático físico permanece pendente.",
       "sourcePaths": [
         "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/tracking/WaRunFinishes.java",
         "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/tracking/WaTrackingStopReceipt.java",
         "src/aplicativo-motorista/android/app/src/driver/kotlin/com/example/vanrides_frontend_dev/driver/DriverTrackingRuntime.kt",
         "src/aplicativo-motorista/android/app/src/driver/kotlin/com/example/vanrides_frontend_dev/driver/DriverTrackingService.kt",
         "src/aplicativo-motorista/ios/Runner/DriverTrackingCoordinator.swift",
-        "src/aplicativo-motorista/ios/Runner/DriverTrackingCore.swift"
+        "src/aplicativo-motorista/ios/Runner/DriverTrackingCore.swift",
+        "src/backend/src/test/java/com/vanrides/vanrides/whatsapp/transport/WaApproachFinishJourneyIntegrationTest.java"
       ],
       "evidencePaths": [
         "program/evidence/VR-WA-110-RUN-TRACKING.md",
@@ -2209,15 +2211,17 @@
       "component": "Privacidade dos cadastros",
       "implementationStatus": "Parcial",
       "codeStatus": "Parcial",
-      "implementationNote": "V44 implementa retenções 7/30/90, fechamento, journal e reaplicação de exclusões. Rotação física dos backups de sete dias ainda não implementada; limpeza real de privacidade OFF.",
+      "implementationNote": "Retenções V44 e journal implementados. Helper operacional de catálogo/plano com aprovação por hash preparado; rotação física global ainda não ativada.",
       "validationStatus": "Laboratório",
-      "validationNote": "Ports e restauração com journal atual aprovados em isolamento; a prévia não apaga backups. Não há prova de descarte real ativado nem de retenção física completa.",
+      "validationNote": "Retenção/restauração isoladas aprovadas. Helper passou em nove testes sintéticos também na VPS; prévia de 14 dumps em 11 pastas preservou todos, sem exclusão real. Limpeza real OFF.",
       "sourcePaths": [
         "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/privacy/WaPrivacyJobs.java",
         "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/privacy/WaPrivacyService.java",
         "deploy/homologacao/recovery_privacy.py",
         "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaOnboardingCommands.java",
-        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/transport/WaDeliveryMaintenance.java"
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/transport/WaDeliveryMaintenance.java",
+        "deploy/homologacao/backup_retention.py",
+        "deploy/homologacao/backup_retention_test.py"
       ],
       "evidencePaths": [
         "program/evidence/VR-WA-040-DOMAIN-AUTH.md",
@@ -2229,7 +2233,7 @@
       "planningPaths": [
         "program/cards/VR-WA-150-OPERATIONS.md"
       ],
-      "nextAction": "Revisar a prévia e a ativação humana de descarte; implementar a lacuna operacional de rotação física sem apagar backups por esta atualização.",
+      "nextAction": "Revisar a prévia, os prazos e o plano operacional antes de aprovar exclusões reais; validar a ativação de privacidade separadamente.",
       "refs": [
         "VR-WA-150-OPERATIONS"
       ],
