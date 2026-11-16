@@ -14,7 +14,7 @@ O número do bot e o host do Dart precisam corresponder à configuração nativa
 
 ```sh
 flutter pub get --enforce-lockfile
-flutter build apk --release --no-pub --flavor driver --target lib/main_driver_mvp.dart \
+flutter build apk --release --flavor driver --target lib/main_driver_mvp.dart \
   --target-platform android-arm64 \
   --dart-define="VANRIDES_PAIRING_LINK_HOST=$VANRIDES_PAIRING_LINK_HOST" \
   --dart-define="VANRIDES_WHATSAPP_BOT_NUMBER=$VANRIDES_WHATSAPP_BOT_NUMBER"
@@ -22,6 +22,9 @@ flutter build apk --release --no-pub --flavor driver --target lib/main_driver_mv
 
 No Android, `VANRIDES_PAIRING_API_ORIGIN`, `VANRIDES_PAIRING_LINK_HOST` e
 `VANRIDES_DRIVER_SIGNING_FILE` precisam estar exportadas para o processo Gradle.
+Pub permanece habilitado no build para gerar o registrant de release oficial;
+conferir locks/fontes antes e depois. O [guia Android](../../docs/build-android-mvp.md)
+explica o home isolado e a compatibilidade da versão fixa do Flutter.
 O APK é `build/app/outputs/flutter-apk/app-driver-release.apk`. Comparar o
 certificado do candidato com o app instalado antes de usar `adb install -r`.
 Não substituir o certificado nem desinstalar para contornar incompatibilidade.

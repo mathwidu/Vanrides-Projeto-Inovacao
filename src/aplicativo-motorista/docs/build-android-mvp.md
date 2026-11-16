@@ -73,10 +73,12 @@ global nem substituir a configuração pessoal.
 O processo também precisa receber a origem/host de pareamento revisados e o
 caminho da assinatura existente. O responsável pelo build carrega número do
 bot e assinatura dos arquivos privados autorizados, sem exibir valores.
-Invocação a partir da raiz Flutter:
+Primeiro conferir a resolução com lockfile. O build abaixo mantém pub habilitado
+para que o Flutter gere os registrants de release pelo fluxo oficial:
 
 ```sh
-"$MVP_REAL_FLUTTER" build apk --release --no-pub --flavor driver \
+"$MVP_REAL_FLUTTER" pub get --enforce-lockfile
+"$MVP_REAL_FLUTTER" build apk --release --flavor driver \
   --target lib/main_driver_mvp.dart --target-platform android-arm64 \
   --dart-define="VANRIDES_PAIRING_LINK_HOST=$VANRIDES_PAIRING_LINK_HOST" \
   --dart-define="VANRIDES_WHATSAPP_BOT_NUMBER=$VANRIDES_WHATSAPP_BOT_NUMBER"
@@ -88,9 +90,20 @@ código. Não registrar a lista de argumentos real no chat ou no Git. Logs do
 Flutter/Gradle ficam privados; o adapter não filtra a saída produzida pelos
 processos filhos.
 
+Não reutilizar `--no-pub` nessa preparação de release: na 3.38.5,
+`regeneratePlatformSpecificToolingIfApplicable` não executa quando
+`shouldRunPub=false`. Um registrant anterior de debug/teste pode manter
+`IntegrationTestPlugin`, enquanto o Gradle release exclui corretamente os
+plugins `dev_dependency`. Isso falha na compilação Java. A geração oficial
+`injectPlugins(releaseMode: true)` elimina a dependência de teste; não editar o
+registrant manualmente, não adicionar o plugin de teste ao release e não
+atualizar SDK/dependências para contornar esse estado gerado.
+
 O artefato esperado é `build/app/outputs/flutter-apk/app-driver-release.apk`.
 Conferir isolamento MVP, assinatura, hash, revisão e ausência de diff nos
-lockfiles antes de instalar. Build não comprova comportamento em aparelho.
+lockfiles e nos fontes lib/Android/iOS antes de instalar. Se um lockfile mudar,
+reportar o diff em vez de aceitar ou desfazer automaticamente. Build não
+comprova comportamento em aparelho.
 
 ## Testes leves e retorno
 
