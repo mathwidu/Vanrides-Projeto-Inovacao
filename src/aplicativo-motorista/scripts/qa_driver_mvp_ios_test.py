@@ -19,6 +19,23 @@ spec.loader.exec_module(mvp)
 
 
 class MVPUIHelperTest(unittest.TestCase):
+    def export_fixture(self, root, name='action-export-pairing-code-synthetic'):
+        action = root / name
+        action.mkdir(mode=0o700)
+        command = {'schemaVersion': 1, 'command': 'export-pairing-code', 'sourceDigest': 'a' * 64}
+        mvp.write_private(action / 'command.json', json.dumps(command).encode())
+        (action / 'Result.xcresult').mkdir(mode=0o700)
+        (action / 'Result.xcresult/raw').write_text('synthetic-private-canary')
+        mvp.write_private(action / 'test.private.log', b'synthetic-private-canary')
+        mvp.write_private(action / 'pairing-code.json', b'synthetic-code-still-needed')
+        return action
+
+    def export_summary(self):
+        return {'totalTestCount': 1, 'passedTests': 1, 'failedTests': 0, 'skippedTests': 0,
+                'expectedFailures': 0, 'result': 'Passed', 'startTime': 100.0, 'finishTime': 106.44,
+                'title': 'synthetic-private-canary', 'testFailures': [{'failureText': 'synthetic-private-canary'}],
+                'environmentDescription': 'synthetic-private-canary'}
+
     def document(self):
         return {'TestConfigurations': [{'TestTargets': [{
             'BlueprintName': mvp.TARGET,
@@ -151,6 +168,104 @@ guard finishResult(["success": true, "pairingCodeExported": true], commandFile: 
             (root / '.git').write_text('gitdir: synthetic')
             with self.assertRaises(mvp.PreparationError):
                 mvp.private_path(path)
+
+    def test_export_sanitizer_retains_only_typed_summary_and_removes_exact_raw_target(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve()
+            action = self.export_fixture(root)
+            sibling = action / 'Other.xcresult'
+            sibling.mkdir(); (sibling / 'keep').write_text('keep')
+            command_path = action / 'command.json'
+            command = json.loads(command_path.read_bytes())
+            command['command'] = 'pair'
+            command_path.write_text(json.dumps(command))
+            with self.assertRaisesRegex(mvp.PreparationError, '^EXPORT_ACTION_REQUIRED$'):
+                mvp.sanitize_export(argparse.Namespace(action_dir=action))
+            self.assertTrue((action / 'Result.xcresult/raw').exists())
+            command['command'] = 'export-pairing-code'
+            command_path.write_text(json.dumps(command))
+            result = subprocess.CompletedProcess([], 0, json.dumps(self.export_summary()).encode(), b'private stderr')
+            with patch.object(mvp.subprocess, 'run', return_value=result) as tool:
+                mvp.sanitize_export(argparse.Namespace(action_dir=action))
+            receipt_path = action / mvp.EXPORT_RECEIPT
+            receipt = json.loads(receipt_path.read_bytes())
+            self.assertTrue(receipt['rawBundleRemoved'])
+            self.assertTrue(receipt['testLogReplaced'])
+            self.assertEqual(receipt['summaryExtraction'], 'passed')
+            self.assertEqual(set(receipt['summary']), {'counts', 'status', 'durationSeconds'})
+            self.assertAlmostEqual(receipt['summary']['durationSeconds'], 6.44)
+            self.assertNotIn(b'synthetic-private-canary', receipt_path.read_bytes())
+            self.assertEqual(receipt_path.stat().st_mode & 0o777, 0o600)
+            self.assertFalse((action / 'Result.xcresult').exists())
+            self.assertTrue((sibling / 'keep').exists())
+            self.assertEqual((action / 'test.private.log').read_bytes(), mvp.EXPORT_LOG_REDACTED)
+            self.assertEqual((action / 'pairing-code.json').read_bytes(), b'synthetic-code-still-needed')
+            self.assertTrue(tool.call_args.kwargs['capture_output'])
+
+    def test_export_sanitizer_refuses_symlink_traversal_and_public_action_paths(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve()
+            action = self.export_fixture(root)
+            outside = root / 'outside'; outside.mkdir()
+            marker = outside / 'keep'; marker.write_text('keep')
+            link = action / 'Result.xcresult/outside'; link.symlink_to(outside, target_is_directory=True)
+            alias = root / 'alias'; alias.symlink_to(action, target_is_directory=True)
+            for path, error in ((action, 'EXPORT_SYMLINK_REFUSED'), (alias, 'EXPORT_SYMLINK_REFUSED'),
+                                (action / '..' / action.name, 'EXPORT_PATH_TRAVERSAL_REFUSED')):
+                with self.subTest(path=path), self.assertRaisesRegex(mvp.PreparationError, '^' + error + '$'), \
+                     patch.object(mvp.subprocess, 'run') as tool:
+                    mvp.sanitize_export(argparse.Namespace(action_dir=path))
+                tool.assert_not_called()
+                self.assertEqual(marker.read_text(), 'keep')
+            link.unlink()
+            action.chmod(0o755)
+            with self.assertRaisesRegex(mvp.PreparationError, '^PRIVATE_ACTION_DIRECTORY_0700_REQUIRED$'):
+                mvp.sanitize_export(argparse.Namespace(action_dir=action))
+            self.assertTrue((action / 'Result.xcresult/raw').exists())
+
+    def test_export_summary_extraction_failure_still_persists_receipt_and_cleans_raw(self):
+        invalid = self.export_summary(); invalid['passedTests'] = True
+        nonfinite = self.export_summary(); nonfinite['finishTime'] = float('nan')
+        outcomes = [subprocess.TimeoutExpired(['synthetic-tool'], 30, output=b'synthetic-private-canary'),
+                    subprocess.CompletedProcess([], 0, json.dumps(invalid).encode(), b'synthetic-private-canary'),
+                    subprocess.CompletedProcess([], 0, json.dumps(nonfinite).encode(), b'synthetic-private-canary')]
+        with tempfile.TemporaryDirectory() as temporary:
+            for index, outcome in enumerate(outcomes):
+                action = self.export_fixture(Path(temporary).resolve(), 'action-export-' + str(index))
+                kwargs = {'side_effect': outcome} if isinstance(outcome, Exception) else {'return_value': outcome}
+                captured = io.StringIO()
+                with patch.object(mvp.subprocess, 'run', **kwargs), \
+                     patch.object(mvp.sys, 'argv', ['helper', 'sanitize-export', '--action-dir', str(action)]), \
+                     contextlib.redirect_stderr(captured):
+                    self.assertEqual(mvp.main(), 2)
+                receipt = json.loads((action / mvp.EXPORT_RECEIPT).read_bytes())
+                self.assertEqual(receipt['summaryExtraction'], 'failed')
+                self.assertNotIn('summary', receipt)
+                self.assertTrue(receipt['rawBundleRemoved'])
+                self.assertEqual(receipt['cleanupStatus'], 'passed')
+                self.assertEqual(captured.getvalue(), 'BLOCKED: EXPORT_SUMMARY_EXTRACTION_FAILED\n')
+                self.assertEqual((action / 'test.private.log').read_bytes(), mvp.EXPORT_LOG_REDACTED)
+                self.assertTrue((action / 'pairing-code.json').exists())
+
+    def test_export_cleanup_failure_never_claims_raw_bundle_removed(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            action = self.export_fixture(Path(temporary).resolve())
+            result = subprocess.CompletedProcess([], 0, json.dumps(self.export_summary()).encode(), b'')
+            def failed_removal(path):
+                before = json.loads((action / mvp.EXPORT_RECEIPT).read_bytes())
+                self.assertEqual(before['cleanupStatus'], 'pending')
+                self.assertEqual(path, action / 'Result.xcresult')
+                raise PermissionError('synthetic-private-canary')
+            with patch.object(mvp.subprocess, 'run', return_value=result), \
+                 patch.object(mvp.shutil, 'rmtree', side_effect=failed_removal), \
+                 self.assertRaisesRegex(mvp.PreparationError, '^EXPORT_CLEANUP_FAILED$'):
+                mvp.sanitize_export(argparse.Namespace(action_dir=action))
+            receipt = json.loads((action / mvp.EXPORT_RECEIPT).read_bytes())
+            self.assertFalse(receipt['rawBundleRemoved'])
+            self.assertEqual(receipt['cleanupStatus'], 'failed')
+            self.assertTrue((action / 'Result.xcresult/raw').exists())
+            self.assertEqual((action / 'test.private.log').read_bytes(), mvp.EXPORT_LOG_REDACTED)
+            self.assertTrue((action / 'pairing-code.json').exists())
 
     def test_private_links_accept_only_canonical_returns_and_explicit_start_shapes(self):
         token = 'A' * 43

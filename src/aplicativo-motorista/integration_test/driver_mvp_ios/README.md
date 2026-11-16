@@ -102,7 +102,8 @@ produto dependente nem usar uma chamada que reinstale o app sob teste.
 O XCTest consome e remove o comando. Copiar de volta
 `Documents/result.json` do runner. O resultado contém booleans de UI e códigos
 de erro constantes; não contém código de pareamento, clipboard, token, URL ou
-coordenadas. Logs/xcresult completos continuam privados e não devem ir ao Git.
+coordenadas. Logs/xcresult completos são privados e não devem ir ao Git; na
+exportação de código devem ser sanitizados conforme o procedimento abaixo.
 Anexos de sistema/usuário e cobertura ficam desabilitados. `inspect` observa a
 UI; não substitui confirmação de posição no backend ou recibo do WhatsApp.
 O snapshot observa somente labels conhecidos: os onze headings de vínculo,
@@ -131,11 +132,14 @@ acessibilidade e não usa endpoints privados, GPS ou mecanismos de debug.
 
 Preparar uma ação nova com `--command export-pairing-code`. A janela normal de
 cinco minutos do app continua valendo; a ação não renova nem prolonga o código.
-O resultado contém apenas `pairingCodeExported` e o estado de UI. O valor
-transitório vai exclusivamente para `Documents/pairing-code.json` no container
+O resultado contém apenas `pairingCodeExported` e o estado de UI. O runner
+grava o valor transitório em `Documents/pairing-code.json` no container
 do runner, com apenas a chave `code`, escrita atômica, proteção completa do
 arquivo e permissão `0600`. Nunca anexar esse arquivo ou copiar seu conteúdo
 para chat, console, logs, assertions, screenshots ou evidências versionadas.
+Mesmo sem `print` ou anexos, o framework XCTest pode registrar automaticamente
+o label lido em logs ou no bundle `.xcresult`. Esses artefatos brutos não são
+seguros para guardar ou anexar e precisam da sanitização obrigatória abaixo.
 
 O principal só copia esse arquivo pelo domínio `appDataContainer` após receber
 `success: true` e `pairingCodeExported: true` da ação corrente. O destino no Mac
@@ -148,6 +152,37 @@ para limpar o container após consumir o código. Se a limpeza falhar, a ação
 falha com código constante e o principal não deve consumir nenhum arquivo
 anterior. Expiração ou estado inesperado exigem retomar os controles normais
 do aplicativo, sem contornar a segurança do vínculo.
+
+### Sanitização obrigatória da exportação
+
+O wrapper privado deve executar automaticamente, depois de copiar o arquivo
+transitório e antes de guardar ou anexar evidências:
+
+```sh
+python3 scripts/qa_driver_mvp_ios.py sanitize-export --action-dir "$MVP_UI_ACTION"
+```
+
+O diretório da ação precisa pertencer ao usuário atual, ter modo `0700`, ficar
+fora do Git e não atravessar symlinks. `command.json` deve ser privado `0600`,
+conter exatamente a ação `export-pairing-code`, versão 1 e um hash de fonte
+hexadecimal de 64 caracteres. É permitido sanitizar ações de fontes anteriores;
+esse hash identifica o fonte, nunca o código de pareamento.
+
+O comando captura `xcresulttool get test-results summary` somente em memória e
+grava `export-sanitization.private.json` em `0600`. Retém apenas contadores
+inteiros, duração finita quando disponível, status enumerado e proveniência do
+comando/fonte; descarta títulos, falhas, descrições, ambientes e identificadores.
+Antes da remoção, persiste esse recibo sanitizado. Remove somente
+`Result.xcresult` diretamente dentro da ação, recusando symlinks inclusive em
+seu conteúdo, e substitui `test.private.log` por uma mensagem constante.
+`rawBundleRemoved: true` só aparece após confirmar a ausência do bundle.
+
+Falha na extração também gera recibo de falha e tenta ambas as limpezas. Falha
+de limpeza retorna erro e mantém `cleanupStatus: failed`; não guardar nem
+anexar os artefatos restantes. Caminho inválido é recusado antes de qualquer
+alteração. O sanitizador não lê, calcula hash nem apaga `pairing-code.json`:
+o operador apaga essa cópia separadamente após consumi-la. O wrapper também
+deve suprimir o código antes de persistir qualquer texto do XCTest.
 
 Para abrir um retorno ou link real de saída sem colocá-lo no chat/comando:
 criar fora do Git um JSON 0600 com chaves `device` e `url`, usando valores
