@@ -30,16 +30,18 @@ final class WaRunDraftStore {
         var rows = jdbc.query("SELECT context_json::text FROM wa.conversation_state WHERE identity_id=? FOR UPDATE",
             (rs, row) -> WaJson.object(rs.getString(1)), actor.identityId());
         ObjectNode context = rows.isEmpty() ? WaDriverDraftStore.json() : rows.get(0);
+        boolean paused = Boolean.TRUE.equals(jdbc.queryForObject(
+            "SELECT EXISTS(SELECT 1 FROM wa.conversation_state WHERE identity_id=? AND stage='PAUSED')", Boolean.class, actor.identityId()));
         if (draft.isEmpty()) context.remove("runDraft"); else context.set("runDraft", draft);
         context.put("conversationOwner", draft.isEmpty() ? "READY" : "RUN_SETUP");
         context.put("conversationOwner", WaConversationOwnership.owner(context));
         if (!draft.isEmpty()) WaConversationOwnership.prompt(context, "RUN_SETUP", event.eventId());
         jdbc.update("""
             INSERT INTO wa.conversation_state(identity_id,stage,context_json,last_event_id,updated_at)
-            VALUES (?,'RUN_SETUP',?::jsonb,?,?) ON CONFLICT(identity_id) DO UPDATE SET
+            VALUES (?,?,?::jsonb,?,?) ON CONFLICT(identity_id) DO UPDATE SET
               stage=EXCLUDED.stage,context_json=EXCLUDED.context_json,last_event_id=EXCLUDED.last_event_id,
               version=wa.conversation_state.version+1,updated_at=EXCLUDED.updated_at
-            """, actor.identityId(), context.toString(), event.eventId(), Timestamp.from(clock.now()));
+            """, actor.identityId(), paused ? "PAUSED" : "RUN_SETUP", context.toString(), event.eventId(), Timestamp.from(clock.now()));
         jdbc.update("UPDATE wa.profile SET version=version+1,updated_at=? WHERE identity_id=?", Timestamp.from(clock.now()), actor.identityId());
     }
     String marker(WaProfileState actor, WaInboxAccess.Context event, ObjectNode draft, UUID outbox) {

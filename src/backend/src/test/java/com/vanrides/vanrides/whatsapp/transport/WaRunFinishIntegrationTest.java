@@ -139,6 +139,29 @@ class WaRunFinishIntegrationTest {
         String text=t.f.s.string("SELECT o.payload_json->>'text' FROM wa.message_outbox o JOIN wa.command_receipt r ON r.command_id=o.command_id WHERE r.command_type='FINISH_RUN' AND o.payload_json->>'text' LIKE 'Viagem encerrada manualmente.%'");
         assertTrue(text.contains("já confirmou a parada"),text); assertFalse(text.contains("ainda aguarda"),text);
     }
+    @Test void finalizationReviewAbandonAndConfirmationDoNotResumePausedSupport() {
+        sample(1,.005,10.0);
+        var support=t.f.s.text(t.f.driver,"FALAR COM SUPORTE");
+        assertNull(t.f.s.execute(support,"REQUEST_SUPPORT",WaJson.object("{}").put("reason","HELP").put("detail","Pedido sintético de suporte.")).error());
+        t.f.s.finish(support);
+        String supportId=t.f.s.string("SELECT context_json->>'supportCaseId' FROM wa.conversation_state WHERE identity_id=?",t.f.driver);
+        send("FINALIZAR"); assertPausedSupport(supportId);
+        send("ABANDONAR"); assertPausedSupport(supportId); assertEquals("TRACKING",t.runState());
+        send("FINALIZAR VIAGEM"); assertPausedSupport(supportId);
+        String marker=marker(); assertNull(send("CONFIRMAR "+marker).error());
+        assertPausedSupport(supportId); assertEquals("COMPLETED",t.runState());
+        var other=t.f.s.text(t.f.driver,"INICIAR SAÍDA");
+        assertTrue(t.f.s.commands.context(t.f.s.worker,other.id(),other.token()).path("allowedCommands").isEmpty());
+        t.f.s.finish(other);
+        var status=tracking.status(t.actor);
+        tracking.state(t.actor,t.session(),t.state("STOPPED").put("stopRequestRef",status.path("stopRequestRef").asText()),"paused-finish-stop-ack");
+        assertEquals("STOPPED",tracking.status(t.actor).path("sessionState").asText()); assertPausedSupport(supportId);
+    }
+    private void assertPausedSupport(String supportId) {
+        assertEquals("PAUSED",t.f.s.string("SELECT stage FROM wa.conversation_state WHERE identity_id=?",t.f.driver));
+        assertEquals(supportId,t.f.s.string("SELECT context_json->>'supportCaseId' FROM wa.conversation_state WHERE identity_id=?",t.f.driver));
+        assertEquals("OPEN",t.f.s.string("SELECT state FROM wa.support_case WHERE id=?",UUID.fromString(supportId)));
+    }
     @Test void progressIsRemovedBySessionCleanupWithoutAnExtraOperatorDelete() {
         sample(1,.005,10.0); assertEquals(1,t.f.s.number("SELECT count(*) FROM wa.run_finish_progress"));
         t.h.jdbc.update("DELETE FROM wa.tracking_sample_receipt WHERE session_id=?",t.session());
