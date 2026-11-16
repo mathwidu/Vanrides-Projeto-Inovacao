@@ -93,6 +93,7 @@ public final class WaOperatorReset {
         jdbc.update("DELETE FROM wa.tracking_session WHERE driver_id IN " + people, batch);
         jdbc.update("DELETE FROM wa.occurrence_roster_override WHERE driver_id IN " + people, batch);
         jdbc.update("DELETE FROM wa.attendance_question WHERE driver_id IN " + people, batch);
+        jdbc.update("DELETE FROM wa.driver_attendance_notice WHERE outbox_id IN " + outbox, batch);
         jdbc.update("DELETE FROM wa.message_attempt WHERE outbox_id IN " + outbox, batch);
         jdbc.update("DELETE FROM wa.passenger_response_route WHERE outbox_id IN " + outbox, batch);
         jdbc.update("DELETE FROM wa.message_outbox WHERE recipient_identity_id IN " + people, batch);
