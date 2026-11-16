@@ -76,6 +76,16 @@ class WaConversationPolicyTest {
         assertThat(WaConversationResponses.text("HELP", "READY", "DRIVER")).doesNotContain("LIGAR AVISOS");
         assertThat(WaConversationResponses.text("HELP", "ASK_NOTICE", "PASSENGER")).doesNotContain("LIGAR AVISOS");
     }
+    @Test void passengerAttendanceFaqAndReadyHelpPointToTheReminderReply() {
+        String reminder = "Antes de cada viagem você recebe um lembrete. Responda o lembrete com VOU ou NÃO VOU. "
+            + "Se não responder, você continua previsto na lista.";
+        var question = event("Como confirmo minha presença?");
+        assertThat(policy.question(question)).isEqualTo(WaConversationResponses.Question.ATTENDANCE);
+        assertThat(WaConversationResponses.faq(WaConversationResponses.Question.ATTENDANCE, "READY", "PASSENGER"))
+            .contains(reminder);
+        assertThat(WaConversationResponses.text("HELP", "READY", "PASSENGER")).contains(reminder);
+        assertThat(WaConversationResponses.faq(WaConversationResponses.Question.ATTENDANCE, "READY", "DRIVER")).doesNotContain(reminder);
+    }
 
     private static WaInboxAccess.Context event(String text) {
         return new WaInboxAccess.Context(UUID.randomUUID(), UUID.randomUUID(), WaJson.MAPPER.createObjectNode()
