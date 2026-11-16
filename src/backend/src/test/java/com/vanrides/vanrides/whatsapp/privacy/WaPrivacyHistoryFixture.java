@@ -12,8 +12,15 @@ final class WaPrivacyHistoryFixture {
     final UUID deliveryOpen=UUID.randomUUID(), deliveryRecent=UUID.randomUUID(), attributableAudit=UUID.randomUUID();
     final UUID recentOccurrence=UUID.randomUUID(), futureOccurrence=UUID.randomUUID();
     final Instant old;
-    WaPrivacyHistoryFixture(PostgreSQLContainer<?> postgres) {
+    WaPrivacyHistoryFixture(PostgreSQLContainer<?> postgres) { this(postgres,true); }
+    WaPrivacyHistoryFixture(PostgreSQLContainer<?> postgres,boolean pin) {
         f=new WaPrivacyTestSupport(postgres,true); old=f.time.now; historicalOrigin();
+        if(pin) f.jdbc.update("""
+            UPDATE wa.routine_occurrence o SET history_environment=i.environment,history_instance_id=source.instance_id,
+              history_origin_kind='START_INTENT',history_origin_id=i.id,history_origin_bound_at=transaction_timestamp()
+            FROM wa.start_intent i JOIN wa.command_receipt c ON c.command_id=i.request_command_id
+            JOIN wa.integration_inbox source ON source.id=c.inbox_event_id WHERE i.occurrence_id=o.id AND o.id=?
+            """,f.occurrence);
         f.time.days(91);
         support(oldClosed,"CLOSED",old,old,f.inboxes.get(f.first).toString());
         support(open,"OPEN",old,null,"open-old");

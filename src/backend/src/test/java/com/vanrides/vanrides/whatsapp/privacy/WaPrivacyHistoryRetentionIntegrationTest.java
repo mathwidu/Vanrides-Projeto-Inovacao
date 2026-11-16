@@ -171,6 +171,7 @@ class WaPrivacyHistoryRetentionIntegrationTest {
         assertThat(f.jdbc.queryForObject("SELECT count(*) FROM wa.support_case WHERE id=?",Long.class,support)).isEqualTo(1);
     }
     @Test void theOnlyOccurrenceEvidenceCannotBeDeletedBeforeOriginIsAnchored() {
+        h=new WaPrivacyHistoryFixture(POSTGRES,false); f=h.f;
         f.jdbc.update("UPDATE wa.start_intent SET request_command_id=NULL WHERE occurrence_id=?",f.occurrence);
         var result=h.retention(false).tick(f.job(ENV,INSTANCE),100,null);
         assertThat(result.pending()).extracting(WaPrivacyHistoryRetention.Deferral::reason).contains("HISTORY_ORIGIN_UNATTRIBUTABLE");
