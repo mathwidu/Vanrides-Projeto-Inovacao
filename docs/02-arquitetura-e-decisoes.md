@@ -2,8 +2,8 @@
 
 O VanRides combina conversa pelo WhatsApp, uma API que mantém as regras e um
 aplicativo do motorista que coleta a localização. Os desenhos separam a troca
-de mensagens da sequência de uso, com aproximação e fim automático identificados
-como etapas planejadas.
+de mensagens da sequência de uso. Aproximação e fim automático estão implementados,
+mas permanecem desligados na homologação até o ensaio controlado.
 
 ## Componentes e trocas
 
@@ -20,10 +20,12 @@ flowchart LR
     B -.->|Desabilitada na homologação| IA[Interpretação OpenAI]
 ```
 
-O desenho representa o ambiente de homologação conferido em 04/11/2026. Os
-arquivos gráficos da entrega acadêmica anterior permanecem em `docs/assets/`
-como registro daquele momento; para operação atual use este fluxo e o
-[guia da equipe](desenvolvimento/homologacao-da-equipe.md).
+O desenho representa os componentes da homologação, com estado atualizado em
+16/11/2026. As figuras editáveis de
+[componentes](assets/arquitetura-fluxo.svg) e [jornada](assets/jornada-fluxo.svg)
+ficam em `docs/assets/`, junto dos PNGs incorporados à STACK. Os diagramas
+atuais e o [guia da equipe](desenvolvimento/homologacao-da-equipe.md)
+orientam a operação; as versões anteriores permanecem no histórico Git.
 
 1. O WhatsApp entrega a mensagem à Evolution API. A Evolution envia a entrada
    e as atualizações de entrega ao receptor dedicado. Ele verifica a instância,
@@ -65,23 +67,41 @@ flowchart TD
     H --> I[Link abre o app; motorista confirma coleta]
     I --> J[API recebe posição válida]
     J --> K[Consulta da van pelo passageiro elegível]
-    J -.-> L[Aviso de aproximação: desligado, aguarda percurso]
+    J -.-> L[Aviso de aproximação: implementado, desligado]
     J --> M[Parar localização: encerra coleta técnica]
-    M -.-> O[Finalizar viagem automaticamente: pendente]
+    J --> O[Finalizar viagem: revisão e confirmação manual]
+    J -.-> P[Chegada automática: implementada, desligada]
+    O --> Q[Encerrar viagem e reconciliar parada do coletor]
+    P -.-> Q
 ```
 
 O perfil básico do passageiro também pode ser concluído antes de receber o
 convite. Para avançar a dias, ponto e aprovação, o vínculo exige um motorista.
-Parar a coleta não equivale a concluir a viagem na API.
+Parar a coleta não equivale a concluir a viagem na API. A contingência manual
+usa `FINALIZAR` e uma revisão da viagem atual; `ABANDONAR` não a encerra.
+A chegada automática exige progresso pelas paradas, destino fixado na saída,
+posição válida, baixa velocidade e permanência. Silêncio, perda de GPS ou uma
+passagem próxima não concluem a viagem. O encerramento revoga a autorização de
+coleta, pede STOP e reconcilia o ACK do aparelho.
 
 | Momento | Como funciona | Situação |
 |---|---|---|
-| Cadastro e ponto | O passageiro usa o convite, informa o ponto e aguarda a aprovação do motorista. | Perfil básico validado no WhatsApp real; vínculo e ponto ainda em laboratório |
-| Rotina e presença | O motorista organiza dias e horários; o passageiro responde por data e sentido. O silêncio mantém a presença pendente. | Implementado e ensaiado em laboratório |
+| Cadastro e ponto | O passageiro usa o convite, informa o ponto e aguarda a aprovação do motorista. | Convite, vínculo, aprovação e correção do ponto validados no WhatsApp real em 15/11; cadastro simplificado com perfil novo ainda pendente |
+| Rotina e presença | O motorista organiza dias e horários; o passageiro responde por data e sentido. O silêncio mantém a presença pendente. | Presença, alteração, cancelamento e avisos implementados e publicados; nova jornada real pendente |
 | Início | A API prepara o link enviado pelo WhatsApp. Ele abre o aplicativo já vinculado; o motorista confirma a coleta. | Implementado e ensaiado em laboratório |
 | GPS | O aplicativo coleta a localização com Google FLP no Android ou Core Location no iPhone e a envia à API. A confirmação de início depende de posição válida recebida, não apenas da abertura do link. | Integração ensaiada no Android; percurso completo pendente |
 | Aproximação | A API avalia posição recente, ponto, ordem e sentido para avisar o passageiro elegível. | Regra testada em PostgreSQL, desligada na homologação; aceite em percurso pendente |
-| Encerramento | A API deverá reconhecer o fim e coordenar a parada do aplicativo; a finalização manual será contingência. | Fim automático planejado; parada técnica tem ensaio próprio |
+| Encerramento | A API encerra por revisão manual ou chegada válida e coordena STOP/ACK do aplicativo. | Código publicado e testes dirigidos aprovados; automático desligado e parada do novo build ainda por validar em aparelho |
+
+Na versão avaliada V44, a API também reúne retenções de 7, 30 e 90 dias,
+journal de exclusões fora do banco e reaplicação antes de retomar consumidores
+após uma restauração. A composição isolada com API, worker, PostgreSQL, Redis e
+n8n em fila passou no ensaio real da VPS com canal simulado, preservando os
+controles e sem ressuscitar os dados excluídos. Essa versão ainda não está
+publicada nesta atualização; a manutenção privada está preparada e desligada
+por padrão, e a limpeza real continua desabilitada. A rotação física dos
+backups próprios ainda não foi implementada. O
+[relatório de testes](03-testes-e-resultados.md) distingue essas provas.
 
 ## Dúvidas e indisponibilidade
 
@@ -117,6 +137,7 @@ o esforço de operação e o valor dos fluxos visuais para a equipe.
 As versões estão na STACK e os resultados no [relatório de testes](03-testes-e-resultados.md).
 Os fluxos representam a implementação publicada e as etapas ainda pendentes.
 As quatro agendas e o tratamento de erros estão publicados no n8n; os três
-subfluxos não têm agenda própria. Perfil básico e respostas já foram validados
-no WhatsApp real. Jornada com motorista, percurso completo e fim automático
-ainda não constituem uma operação validada com usuários.
+subfluxos não têm agenda própria. Cadastro, convite, vínculo e ponto têm provas
+no WhatsApp real. A jornada com presença, saída, GPS, aviso e encerramento dos
+novos builds ainda precisa ser validada. Percurso, bateria e utilidade do aviso
+ficam para a rodada do mantenedor.

@@ -17,16 +17,19 @@ LIVE_API, LIVE_DB = 'a' * 64, 'b' * 64
 MIGRATION = M.MIGRATIONS + 'V44__retention_journal.sql'
 
 
-def jar(extra=False, change=None):
+def jar(extra=False, change=None, properties=None, extra_entries=None, omit=()):
     files = {M.MIGRATIONS + 'V43__previous.sql': b'CREATE TABLE previous(id integer);',
              'BOOT-INF/lib/flyway-core.jar': b'unchanged-library',
              'BOOT-INF/classes/application.properties': b'spring.flyway.enabled=true\n',
              'BOOT-INF/classes/application-homolog.properties': b'spring.jpa.hibernate.ddl-auto=validate\n'}
     if extra: files[MIGRATION] = b'CREATE TABLE retention_journal(id integer);'
     if change: files[change] = b'unreviewed-change'
+    if properties is not None: files[M.CONFIGURATION] = properties
+    files.update(extra_entries or {})
     output = io.BytesIO()
     with ZipFile(output, 'w') as archive:
-        for name, raw in files.items(): archive.writestr(name, raw)
+        for name, raw in files.items():
+            if name not in omit: archive.writestr(name, raw)
     return output.getvalue()
 
 
@@ -138,6 +141,7 @@ class RehearsalTests(unittest.TestCase):
     def test_success_restores_content_checks_three_schemas_and_removes_only_owned_containers(self):
         output, process, run = self.flow(); receipt = run()
         self.assertEqual(receipt['status'], 'RESTORE_AND_MIGRATION_RETURN_VERIFIED')
+        self.assertNotIn('manifestSchemaVersion',receipt); self.assertNotIn('reviewedConfigurations',receipt)
         self.assertEqual([x['schemaVersion'] for x in receipt['scenarios']], [43,44,44])
         self.assertEqual(receipt['backup']['fingerprint']['cohorts'], {'real':1,'synthetic':1}); self.assertEqual(receipt['backup']['fingerprint']['serviceCredentials'],5)
         self.assertEqual(receipt['ownedCleanup'], 'VERIFIED'); self.assertFalse(receipt['releaseEligible']); self.assertFalse(process.owned)
@@ -241,6 +245,111 @@ class RehearsalTests(unittest.TestCase):
             self.assertEqual(M.main(),2)
         self.assertIn('PREFLIGHT_BLOCKED_NO_DOCKER',captured.getvalue())
         self.assertFalse((self.root/'never').exists())
+
+
+class ConfigurationDeltaTests(unittest.TestCase):
+    def setUp(self): RehearsalTests.setUp(self)
+
+    def reviewed(self, properties=None, previous=None, **changes):
+        previous = previous or self.old
+        original = ZipFile(io.BytesIO(previous)).read(M.CONFIGURATION)
+        candidate = jar(True, properties=properties if properties is not None else original + b''.join(M.CONFIG_ADDITIONS), **changes)
+        value = json.loads(json.dumps(self.value)); value['schemaVersion'] = 2
+        value['candidate']['jarSha256'] = M.sha(candidate)
+        value['reviewedConfigurations'] = [{'path':M.CONFIGURATION,'oldSha256':M.sha(original),
+                                           'newSha256':M.sha(ZipFile(io.BytesIO(candidate)).read(M.CONFIGURATION))}]
+        return value, candidate
+
+    def test_v2_accepts_exact_additions_and_v1_remains_strict(self):
+        value, candidate = self.reviewed()
+        versions, inventory, proof = M.reviewed_inventory(self.old,candidate,value)
+        self.assertEqual(versions,(43,44)); self.assertEqual(proof[0]['unchangedBaseSha256'],value['reviewedConfigurations'][0]['oldSha256'])
+        self.assertEqual(proof[0]['addedProperties'],[line.decode().strip() for line in M.CONFIG_ADDITIONS])
+        with self.assertRaises(M.Blocked): M.reviewed_inventory(self.old,candidate,self.value)
+        value['schemaVersion'] = 1
+        with self.assertRaises(M.Blocked): M.configuration_reviews(value)
+
+    def test_v2_refuses_flyway_jpa_or_other_undeclared_content_even_with_matching_review_hashes(self):
+        original = b'spring.flyway.enabled=true\nspring.jpa.hibernate.ddl-auto=validate\n'
+        old = jar(properties=original)
+        for content in (original.replace(b'enabled=true',b'enabled=false'),original.replace(b'validate',b'update'),
+                        original + b'new.unreviewed.property=true\n', b'', b'# unrelated edit\n' + original,
+                        b''.join(reversed(original.splitlines(keepends=True)))):
+            value, candidate = self.reviewed(properties=content + b''.join(M.CONFIG_ADDITIONS),previous=old)
+            with self.subTest(content=content), self.assertRaises(M.Blocked): M.reviewed_inventory(old,candidate,value)
+
+    def test_allowed_flags_cannot_change_default_reference_spacing_or_multiplicity(self):
+        original = ZipFile(io.BytesIO(self.old)).read(M.CONFIGURATION)
+        valid = b''.join(M.CONFIG_ADDITIONS)
+        for delta in (valid.replace(b':false}',b':true}'),valid.replace(b'WA_AUTO_FINISH_ENABLED',b'OTHER_FLAG'),
+                      M.CONFIG_ADDITIONS[0], valid + M.CONFIG_ADDITIONS[0], b' ' + valid, valid.replace(b'\n',b'\r\n')):
+            value, candidate = self.reviewed(properties=original + delta)
+            with self.subTest(delta=delta), self.assertRaises(M.Blocked): M.reviewed_inventory(self.old,candidate,value)
+
+    def test_aliases_continuations_or_preexisting_references_are_not_silently_reinterpreted(self):
+        for original in (b'spring.flyway.enabled=true\\\n', b'escaped=\\u0074rue\n',
+                         b'spring.flyway.enabled=${vanrides.wa.auto-finish-enabled}\n', M.CONFIG_ADDITIONS[0]):
+            old = jar(properties=original); value, candidate = self.reviewed(previous=old)
+            with self.subTest(original=original), self.assertRaises(M.Blocked): M.reviewed_inventory(old,candidate,value)
+
+    def test_review_cannot_declare_another_file_duplicate_path_or_unmatched_hash(self):
+        value, candidate = self.reviewed()
+        for edit in ({'path':'BOOT-INF/classes/application-homolog.properties'},{'oldSha256':'0'*64},
+                     {'newSha256':'0'*64},{'command':'arbitrary shell'}):
+            changed = json.loads(json.dumps(value)); changed['reviewedConfigurations'][0].update(edit)
+            with self.subTest(edit=edit), self.assertRaises(M.Blocked): M.reviewed_inventory(self.old,candidate,changed)
+        value['reviewedConfigurations'] *= 2
+        with self.assertRaises(M.Blocked): M.configuration_reviews(value)
+
+    def test_review_never_hides_changed_libraries_old_sql_or_unlisted_configuration(self):
+        for changes in ({'extra_entries':{'BOOT-INF/lib/flyway-core.jar':b'different'}},
+                        {'extra_entries':{M.MIGRATIONS+'V43__previous.sql':b'different'}},
+                        {'extra_entries':{'BOOT-INF/classes/unreviewed.properties':b'other=true'}},
+                        {'omit':('BOOT-INF/lib/flyway-core.jar',)}, {'omit':(M.MIGRATIONS+'V43__previous.sql',)}):
+            value, candidate = self.reviewed(**changes)
+            with self.subTest(changes=changes), self.assertRaises(M.Blocked): M.reviewed_inventory(self.old,candidate,value)
+
+    def test_invalid_configuration_stops_before_backup_or_restore(self):
+        value, candidate = self.reviewed(properties=b'spring.flyway.enabled=false\n' + b''.join(M.CONFIG_ADDITIONS))
+        output = self.root/'blocked'; output.mkdir(mode=0o700); process = DockerProcess(self.old)
+        with self.assertRaises(M.Blocked): M.rehearse(value,candidate,'0'*64,output,M.Docker(output,execute=process),pause=lambda _:None)
+        self.assertFalse(any('pg_dump' in row or 'pg_restore' in row for row in process.calls)); self.assertFalse(process.owned)
+        self.assertEqual(json.loads((output/'receipt.json').read_bytes())['stage'],'JAR_INVENTORY')
+
+    def test_manifest_changed_before_private_copy_cannot_start_docker(self):
+        from contextlib import nullcontext, redirect_stderr
+        value, candidate = self.reviewed(); Path(value['candidate']['jar']).write_bytes(candidate)
+        raw=M.encode(value); self.path.write_bytes(raw); output=self.root/'changed'; original_read=M.read; seen=0
+        def changed_read(path, maximum):
+            nonlocal seen
+            result=original_read(path,maximum)
+            if Path(path)==self.path:
+                seen+=1
+                if seen==2: return result+b' '
+            return result
+        argv=['rehearse_migration.py','--execute-on-vps','--manifest',str(self.path),
+              '--expected-manifest-sha256',M.sha(raw),'--output',str(output)]
+        with patch.object(sys_module(),'argv',argv), patch.object(M,'host_identity'), patch.object(M,'deploy_lock',return_value=nullcontext()), \
+             patch.object(M,'read',side_effect=changed_read), patch.object(M,'Docker') as docker, redirect_stderr(io.StringIO()):
+            self.assertEqual(M.main(),2); docker.assert_not_called()
+        self.assertFalse((output/'manifest.json').exists())
+
+    def test_cli_preserves_exact_v2_manifest_and_auditable_configuration_receipt(self):
+        from contextlib import nullcontext, redirect_stdout
+        value, candidate = self.reviewed(); Path(value['candidate']['jar']).write_bytes(candidate)
+        raw = (json.dumps(value,indent=2) + '\n').encode(); self.path.write_bytes(raw)
+        output = self.root/'exact'; process = DockerProcess(self.old); runner = M.Docker
+        argv=['rehearse_migration.py','--execute-on-vps','--manifest',str(self.path),
+              '--expected-manifest-sha256',M.sha(raw),'--output',str(output)]
+        with patch.object(sys_module(),'argv',argv), patch.object(M,'host_identity'), patch.object(M,'deploy_lock',return_value=nullcontext()), \
+             patch.object(M,'Docker',side_effect=lambda folder:runner(folder,execute=process)), redirect_stdout(io.StringIO()):
+            self.assertEqual(M.main(),0)
+        self.assertEqual((output/'manifest.json').read_bytes(),raw)
+        self.assertEqual((output/'manifest.json').stat().st_mode & 0o777,0o600)
+        receipt=json.loads((output/'receipt.json').read_bytes())
+        self.assertEqual(receipt['manifestSchemaVersion'],2); self.assertEqual(receipt['manifestSha256'],M.sha(raw))
+        self.assertEqual(receipt['reviewedConfigurations'][0]['unchangedBaseSha256'],value['reviewedConfigurations'][0]['oldSha256'])
+        self.assertFalse(receipt['releaseEligible'])
 
 
 def re_full_container(value):

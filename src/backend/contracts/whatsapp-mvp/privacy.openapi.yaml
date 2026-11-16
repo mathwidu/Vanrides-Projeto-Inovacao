@@ -1,0 +1,88 @@
+openapi: 3.1.0
+info:
+  title: VanRides — manutenção privada de privacidade
+  version: 1.0.0
+  description: Uma página de uma família independente; não representa conclusão global nem oferece fechamento de perfil.
+paths:
+  /integrations/whatsapp/v1/privacy/tick:
+    post:
+      operationId: privacyTick
+      summary: Executar ou examinar uma página de retenção
+      description: >-
+        Exige credencial SYSTEM_JOB válida do ambiente e da instância. Continua
+        disponível com novos efeitos pausados. Sem query string e sem posição
+        fornecida pelo cliente. Flags desativadas por padrão; preview nunca
+        apaga dados ou grava journal. PROFILE_30D limita a 25 sujeitos lógicos.
+      security: [{ServiceBearer: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/PrivacyTickRequest'}
+      responses:
+        '200':
+          description: Página da família indicada; complete não representa conclusão de outras famílias.
+          headers:
+            Cache-Control:
+              schema: {type: string, const: no-store}
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/PrivacyTickResponse'}
+        '400': {description: Corpo fechado inválido ou cursor adulterado, vencido ou de outra família/escopo.}
+        '401': {description: Credencial ausente, vencida ou revogada.}
+        '403': {description: Papel técnico ou escopo não autorizado.}
+components:
+  securitySchemes:
+    ServiceBearer:
+      type: http
+      scheme: bearer
+      description: Token opaco SYSTEM_JOB; não é JWT legado nem credencial humana.
+  schemas:
+    Family:
+      type: string
+      enum: [TERMINAL_7D, TECHNICAL_7D, PROFILE_30D, HISTORY_PROJECTION_90D, HISTORY_90D]
+    Cursor:
+      type: string
+      minLength: 54
+      maxLength: 2214
+      pattern: '^privacycursor_[A-Za-z0-9_-]{40,2200}$'
+      description: >-
+        AES-GCM emitido pelo servidor, válido por cinco minutos a cada emissão,
+        vinculado à credencial, ambiente, instância e família. O corte de retenção
+        fica fixo durante a passada; sua idade não substitui a validade do token
+        nem a revalidação atual da autoridade.
+    PrivacyTickRequest:
+      type: object
+      additionalProperties: false
+      required: [family, batchLimit]
+      properties:
+        family: {$ref: '#/components/schemas/Family'}
+        batchLimit: {type: integer, minimum: 1, maximum: 100}
+        cursor: {$ref: '#/components/schemas/Cursor'}
+    Count: {type: integer, minimum: 0, maximum: 9007199254740991}
+    PrivacyTickResponse:
+      type: object
+      additionalProperties: false
+      required: [status, family, examined, erased, deleted, deferred, wouldChange, complete, nextCursor, serverTime, reasonCodes]
+      properties:
+        status: {type: string, enum: [DISABLED, DRY_RUN, APPLIED, DEFERRED]}
+        family: {$ref: '#/components/schemas/Family'}
+        examined: {type: integer, minimum: 0, maximum: 100}
+        erased: {$ref: '#/components/schemas/Count'}
+        deleted: {$ref: '#/components/schemas/Count'}
+        deferred: {$ref: '#/components/schemas/Count'}
+        wouldChange: {$ref: '#/components/schemas/Count'}
+        complete: {type: boolean, description: Ausência de trabalho no corte e escopo desta família somente.}
+        nextCursor:
+          description: >-
+            Nulo no fim da passada, inclusive se complete=false por pendências.
+            A próxima visita sem cursor escolhe um novo corte no servidor.
+          oneOf:
+            - {$ref: '#/components/schemas/Cursor'}
+            - {type: 'null'}
+        serverTime: {type: string, format: date-time}
+        reasonCodes:
+          type: array
+          uniqueItems: true
+          maxItems: 100
+          items: {type: string, pattern: '^[A-Z][A-Z0-9_]{0,63}$'}

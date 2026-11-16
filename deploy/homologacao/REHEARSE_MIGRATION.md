@@ -40,10 +40,59 @@ do helper e passado explicitamente. As chaves são fechadas:
 
 Os placeholders são intencionalmente inválidos. O inventário exige que a nova
 versão seja a seguinte à maior versão anterior; o nome V44 é apenas exemplo.
-As migrações anteriores, **todas** as bibliotecas em `BOOT-INF/lib/` e as
+No v1, as migrações anteriores, **todas** as bibliotecas em `BOOT-INF/lib/` e as
 configurações `.properties/.yaml/.yml/.xml` em `BOOT-INF/classes/` precisam ser
 idênticas byte a byte. Código Java pode mudar. Mudança em outra migração,
-biblioteca ou configuração exige outro plano; este helper recusa a combinação.
+biblioteca ou configuração exige outro plano; a exceção limitada de configuração
+do v2 está descrita a seguir.
+
+## Delta opcional de configuração: manifesto v2
+
+O v1 acima continua estrito: não aceita `reviewedConfigurations` nem mudança
+em qualquer configuração inventariada. Para a entrega V43, use
+`schemaVersion: 2`, mantendo as mesmas chaves de origem, candidato e migração,
+e acrescente **exatamente uma** entrada:
+
+```json
+"reviewedConfigurations": [
+  {
+    "path": "BOOT-INF/classes/application.properties",
+    "oldSha256": "<SHA-256 dos bytes desse arquivo no JAR anterior>",
+    "newSha256": "<SHA-256 dos bytes desse arquivo no JAR candidato>"
+  }
+]
+```
+
+Essa entrada não é permissão genérica para trocar o arquivo. A política aceita
+somente a inserção exata, uma vez por linha, de ambas as propriedades:
+
+```properties
+vanrides.wa.auto-finish-enabled=${WA_AUTO_FINISH_ENABLED:false}
+vanrides.wa.mvp-rehearsal-routines=${WA_MVP_REHEARSAL_ROUTINES:false}
+```
+
+Depois de retirar essas duas linhas do candidato, todos os bytes restantes
+devem ser idênticos aos do arquivo anterior. Assim, as propriedades Flyway/JPA,
+seus valores, comentários, ordem e o restante da configuração permanecem
+intocados. Não se aceita mudar defaults para `true`, outra variável, remover,
+reordenar ou editar conteúdo existente. As duas chaves também não podem estar
+definidas nem referenciadas no arquivo anterior. O v2 suporta o arquivo UTF-8
+plano deste incremento e recusa backslashes/continuações/escapes no anterior,
+evitando interpretar uma adição como parte de outro valor. As novas linhas
+são literais com terminador LF; outras codificações ou deltas exigem revisão.
+
+Os hashes devem vir dos arquivos **dentro dos dois JARs revisados**, não apenas
+dos fontes. Um arquivo diferente, caminho repetido, checksum divergente,
+biblioteca/SQL antigo removido ou alterado e outra configuração não declarada
+bloqueiam a operação antes do backup. Continua sendo permitida exatamente uma
+nova migração SQL revisada, com a versão seguinte. Nada aceita comandos shell.
+
+A saída guarda `manifest.json` com os bytes exatos cujo hash foi aprovado.
+No v2, o recibo mantém `manifestSha256`, acrescenta `manifestSchemaVersion` e registra
+`reviewedConfigurations`, os hashes anterior/novo, `unchangedBaseSha256` e as
+duas linhas efetivamente aceitas. A permissão não se propaga para uma migração
+futura: cada nova combinação exige manifesto e hash próprios. O ensaio de
+restauração e as verificações de isolamento/cleanup permanecem iguais ao v1.
 
 ## Execução futura na VPS
 
@@ -112,8 +161,8 @@ herda tokens nem seleção de daemon do processo chamador.
 
 ## Resultado e limites
 
-O diretório 0700 preserva dump, JARs, ambiente sintético, logs 0600 e
-`receipt.json`, inclusive quando há erro. Não anexe esses arquivos brutos ao Git
+O diretório 0700 preserva dump, JARs, manifesto exato, ambiente sintético, logs
+0600 e `receipt.json`, inclusive quando há erro. Não anexe esses arquivos brutos ao Git
 ou ao chat. O recibo contém hashes, contagens, cenários, fase e resultado de
 cleanup; `releaseEligible` permanece **false**, também no sucesso.
 
@@ -133,7 +182,8 @@ estáveis e a publicação continuam sob coordenação do principal.
 python3 deploy/homologacao/rehearse_migration_test.py
 ```
 
-Os testes usam subprocessos simulados e diretórios temporários: hashes e
-inventário, três cenários, isolamento, alteração da origem, restore divergente,
+Os testes usam subprocessos simulados, ZIPs e diretórios temporários: v1/v2,
+delta de configuração, Flyway/JPA preservados, hashes e inventário, três cenários,
+isolamento, alteração da origem, restore divergente,
 dump inválido, API falhada, perda de resposta, proprietário forjado, colisão,
 permissões, limites, ambiente e lock. Não executam Docker, SSH ou banco real.

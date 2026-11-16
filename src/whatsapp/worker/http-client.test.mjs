@@ -26,6 +26,20 @@ test('sends one bounded request with its configured Bearer credential and exact 
   assert.equal(calls, 1);
 });
 
+test('permits only the private privacy tick route without authorizing arbitrary privacy operations', async () => {
+  let calls = 0;
+  const api = client(async (url, request) => {
+    calls++;
+    assert.equal(url, 'https://synthetic.example.test' + PREFIX + 'privacy/tick');
+    assert.equal(request.headers.Authorization, 'Bearer ' + TOKEN);
+    return json({ status: 'DISABLED' });
+  });
+  await api.request(PREFIX + 'privacy/tick', { body: { family: 'PROFILE_30D', batchLimit: 20 } });
+  for (const suffix of ['privacy/close', 'privacy/tick?environment=foreign', 'privacy/restore'])
+    await assert.rejects(api.request(PREFIX + suffix, { body: {} }), { code: 'INVALID_REQUEST' });
+  assert.equal(calls, 1);
+});
+
 test('supports canonical context GET and the controlled command headers', async () => {
   const api = client(async (_, request) => {
     assert.equal(request.method, 'GET');

@@ -57,14 +57,15 @@ final class WaAttendanceMaterializer {
         Timestamp now = Timestamp.from(clock.now());
         jdbc.update("""
                 INSERT INTO wa.routine_occurrence(id,routine_id,driver_id,local_date,scheduled_at,created_at,
-                  materialized_routine_version,schedule_snapshot)
-                VALUES (?,?,?,?,?,?,?,?::jsonb) ON CONFLICT(routine_id,local_date) DO NOTHING
+                  materialized_routine_version,schedule_snapshot,history_environment,history_instance_id,
+                  history_origin_kind,history_origin_id,history_origin_bound_at)
+                VALUES (?,?,?,?,?,?,?,?::jsonb,?,?,'SYSTEM_JOB',?,transaction_timestamp()) ON CONFLICT(routine_id,local_date) DO NOTHING
                 """, UUID.randomUUID(), routine, driver, Date.valueOf(date), Timestamp.from(scheduled), now,
-                row.get("version"), snapshot(row));
+                row.get("version"), snapshot(row), settings.environment(), instance, credential);
         Map<String, Object> occurrence = jdbc.queryForMap(
                 "SELECT * FROM wa.routine_occurrence WHERE routine_id=? AND local_date=? FOR UPDATE", routine, Date.valueOf(date));
         UUID occurrenceId = (UUID) occurrence.get("id");
-        if (!occurrence.get("state").equals("PLANNED") || started(occurrenceId)) {
+        if (occurrence.get("history_erased_at")!=null || !occurrence.get("state").equals("PLANNED") || started(occurrenceId)) {
             return;
         }
         jdbc.update("""

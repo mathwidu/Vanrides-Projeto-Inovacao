@@ -19,6 +19,8 @@ Universidade Feevale, 2026/2.
 | Preparar o computador e contribuir | [Guia de contribuição](CONTRIBUTING.md) |
 | Testar uma versão com o grupo | [Homologação da equipe](docs/desenvolvimento/homologacao-da-equipe.md) |
 | Testar o cadastro no WhatsApp | [Cadastro de motorista e passageiro](docs/desenvolvimento/cadastro-guiado-whatsapp.md) |
+| Acompanhar a entrega técnica | [Plano e issues](docs/desenvolvimento/entrega-mvp.md) e [evidências](program/evidence/mvp-entrega-20261116.md) |
+| Fazer os testes finais nos aparelhos | [Roteiro por plataforma](docs/desenvolvimento/rodada-final.md) |
 | Consultar a entrega da disciplina | [STACK](STACK.docx), [BACKLOG](BACKLOG.xlsx) e [Canvas](docs/06-canvas-mvp.md) |
 
 ## Situação do MVP
@@ -29,11 +31,24 @@ convite por link, a solicitação de vínculo e a aprovação e correção do po
 de embarque. O [guia de cadastro](docs/desenvolvimento/cadastro-guiado-whatsapp.md)
 documenta os comandos, o teste com um só WhatsApp e os resultados da rodada.
 
-Presença e consulta da van passaram em ambiente de teste com canal simulado.
-O GPS do Android foi exercitado com o aparelho parado. O próximo teste em
-homologação liga presença, saída e localização com motorista e passageiro.
-Aproximação aguarda percurso para ser ativada, o encerramento automático
-segue pendente e os testes físicos do iPhone estão pausados.
+Em 16/11, a API publicada está em `880ea56`, com schema V43. Presença,
+alterações de presença e encerramento manual/automático passaram em testes
+dirigidos; a conferência dessas etapas no WhatsApp real ainda está pendente.
+Aproximação e fim automático permanecem desligados até habilitar o ensaio.
+
+O APK Android 0.4.0+14 está publicado e instalado no Redmi. A jornada com GPS
+do novo build ainda precisa ser conferida. O build completo do iPhone compilou
+sem assinatura; para instalar, falta disponibilizar a conta Apple/Personal Team
+no Xcode e concluir a assinatura gratuita. O
+mantenedor fará percurso, bateria e avaliação do aviso após a preparação dos
+artefatos, conforme o roteiro da rodada final.
+
+A recuperação isolada com API, PostgreSQL, Redis e n8n em fila passou no
+reinício, nos agendamentos e na restauração, sem duplicar os dois efeitos do
+canal simulado. A V44 passou também na reaplicação de exclusões sintéticas
+após restaurar o banco e no ensaio da migração sobre uma cópia recuperável;
+a publicação está em preparação e a limpeza real continua desabilitada. O registro de
+evidências distingue os testes locais, o publicado e a rodada física restante.
 
 ## Código e desenvolvimento
 

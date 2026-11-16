@@ -4,7 +4,7 @@ import { WorkerError } from './errors.mjs';
 
 const UUID = '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}';
 const PREFIX = '/integrations/whatsapp/v1/';
-const POST = new RegExp(`^${PREFIX}(inbox/claim|inbox/${UUID}/result|commands|outbox/claim|outbox/${UUID}/(authorize-submit|result)|jobs/tick)$`);
+const POST = new RegExp(`^${PREFIX}(inbox/claim|inbox/${UUID}/result|commands|outbox/claim|outbox/${UUID}/(authorize-submit|result)|jobs/tick|privacy/tick)$`);
 const CONTEXT = new RegExp(`^${PREFIX}context\\?inboxEventId=${UUID}$`);
 const MAX_BYTES = 32 * 1024;
 

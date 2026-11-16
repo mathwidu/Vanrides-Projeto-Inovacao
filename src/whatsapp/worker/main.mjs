@@ -4,6 +4,7 @@ import { createDispatcher } from './dispatch.mjs';
 import { createInboxProcessor } from './process-inbox.mjs';
 import { createAttendanceTicker } from './attendance-jobs.mjs';
 import { createDeliveryTicker } from './delivery-jobs.mjs';
+import { createPrivacyTicker, withPrivacyMaintenance } from './privacy-jobs.mjs';
 import { createWorkerServer } from './server.mjs';
 import { loadModelConfig } from './model-config.mjs';
 import { createOpenAIClassifier } from './model-client.mjs';
@@ -22,7 +23,10 @@ try {
     dispatchOne: createDispatcher({ api: deliveryApi, config }),
     processInbox: createInboxProcessor({ api: conversationApi, decide }),
     tickAttendance: jobApi && createAttendanceTicker({ api: jobApi }),
-    reconcileDelivery: jobApi && createDeliveryTicker({ api: jobApi }),
+    reconcileDelivery: jobApi && withPrivacyMaintenance(createDeliveryTicker({ api: jobApi }), createPrivacyTicker({
+      api: jobApi, enabled: config.privacyEnabled,
+      report: summary => process.stdout.write('WA_PRIVACY_TICK ' + JSON.stringify(summary) + '\n'),
+    })),
   });
   server.on('error', () => { process.stderr.write('WA070_START_FAILED\n'); process.exitCode = 1; });
   server.listen(config.port, config.host, () => process.stdout.write('WA070_READY\n'));

@@ -79,11 +79,14 @@ export function loadConfig(env = process.env) {
       secrets.jobToken = privateSecret(env.WA100_JOB_TOKEN_FILE);
       if (!isToken(secrets.jobToken)) invalidConfig();
     }
+    if (env.WA_PRIVACY_WORKER_ENABLED !== undefined && !['true', 'false'].includes(env.WA_PRIVACY_WORKER_ENABLED)) invalidConfig();
+    const privacyEnabled = env.WA_PRIVACY_WORKER_ENABLED === 'true';
+    if (privacyEnabled && !secrets.jobToken) invalidConfig();
     if (![secrets.conversationToken, secrets.deliveryToken, secrets.controlToken].every(isToken)
         || !/^[\x21-\x7e]{1,4096}$/.test(secrets.evolutionApiKey)
         || new Set(Object.values(secrets)).size !== Object.keys(secrets).length) invalidConfig();
     const config = { environment, backendBaseUrl, evolutionBaseUrl, instance: env.WA070_INSTANCE,
-      host, port: Number(portValue), localMode, allowedHttpHosts: Object.freeze([...allowedHttpHosts]) };
+      host, port: Number(portValue), localMode, privacyEnabled, allowedHttpHosts: Object.freeze([...allowedHttpHosts]) };
     for (const [name, value] of Object.entries(secrets)) Object.defineProperty(config, name, { value, enumerable: false });
     return Object.freeze(config);
   } catch { throw new WorkerError('CONFIG_INVALID'); }
