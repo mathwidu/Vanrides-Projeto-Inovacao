@@ -90,6 +90,13 @@ python3 -B deploy/homologacao/rehearse_recovery.py \
    de sessão Evolution ou banco live entra no conjunto. API, worker e canal
    recebem chaves novas. A fixture cria uma coorte sintética, um destinatário
    com quinze zeros e quatro credenciais distintas válidas por uma hora.
+   A API usa perfil `local`, `WA_TEAM_API_ONLY=false`, `WA_MVP_ONLINE=false`
+   e `VANRIDES_EMAIL_PROVIDER=log`: esse é o contrato do sandbox com o guard
+   atual, que recusa `disabled` fora dos modos MVP publicados. O adapter log
+   apenas registra entrega simulada sem destinatário/conteúdo; não envia
+   e-mail e o ensaio não chama rotas legadas de e-mail. Não há chave Resend.
+   A homologação publicada tem outro contrato e continua exigindo `disabled`
+   no modo MVP explícito. Nenhum guard de produto foi alterado.
 2. Importa as oito cópias e a credencial sintética. Publica individualmente
    W01/W04/W06/W08, para os endpoints de controle do worker. Para o worker
    n8n próprio, persiste um evento na API e espera uma agenda criar pendência
@@ -202,3 +209,6 @@ git diff --check
 
 Os testes usam ZIPs, IO temporário e executor Docker mockado. Nenhum Docker,
 JVM, SSH, mensagem real ou restauração real é iniciado por essa suíte.
+O teste do perfil local confere a fixture e a cláusula do guard no fonte;
+não executa o bootstrap Java. A inicialização real precisa ser repetida pelo
+mantenedor com novo inventário/manifesto após integrar esta correção.

@@ -131,7 +131,7 @@ def api_env(pg, keys):
               'WA_PUBLIC_BASE_URL': 'https://recovery.invalid', 'WA_START_LINK_BASE_URL': 'https://recovery.invalid',
               'WA_SECRET_HASH_KEY': keys['hash'], 'WA_RESPONSE_ENCRYPTION_KEY': keys['response'],
               'WA_OPERATOR_CREDENTIAL': keys['operator'], 'WA_OPERATOR_EXPIRES_AT': '2099-01-01T00:00:00Z',
-              'VANRIDES_EMAIL_PROVIDER': 'disabled', 'VANRIDES_AUTH_BASIC_ENABLED': 'false',
+              'VANRIDES_EMAIL_PROVIDER': 'log', 'VANRIDES_AUTH_BASIC_ENABLED': 'false',
               'VANRIDES_WA_TEAM_WEB_ENABLED': 'false', 'VANRIDES_RATE_LIMIT_ENABLED': 'false',
               'VANRIDES_JWT_SECRET': keys['jwt'], 'VANRIDES_ROUTING_PROVIDER': 'static',
               'VANRIDES_PUSH_PROVIDER': 'none', 'VANRIDES_MAPS_PLATFORM_ENABLED': 'false'}

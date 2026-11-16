@@ -132,7 +132,12 @@ class FixtureTest(TempTest):
             self.assertEqual(api[key], 'false')
         self.assertEqual(api['WA_ENVIRONMENT'], 'wa070-local')
         self.assertEqual(api['WA_OPERATOR_CREDENTIAL'], keys['operator']); self.assertIn('WA_OPERATOR_EXPIRES_AT', api)
-        self.assertEqual(api['VANRIDES_EMAIL_PROVIDER'], 'disabled'); self.assertEqual(api['VANRIDES_PUSH_PROVIDER'], 'none')
+        # PublicRuntimeConfigurationGuard rejects disabled outside the explicit published MVP modes.
+        guard = (fixture.ROOT / 'src/backend/src/main/java/com/vanrides/vanrides/config/PublicRuntimeConfigurationGuard.java').read_text()
+        self.assertIn('email.equals("disabled") && !publishedMvp', guard)
+        self.assertEqual(tuple(api[k] for k in ('SPRING_PROFILES_ACTIVE', 'WA_TEAM_API_ONLY', 'WA_MVP_ONLINE', 'VANRIDES_EMAIL_PROVIDER')),
+                         ('local', 'false', 'false', 'log'))
+        self.assertNotIn('VANRIDES_EMAIL_RESEND_API_KEY', api); self.assertEqual(api['VANRIDES_PUSH_PROVIDER'], 'none')
         self.assertFalse(any('OPENAI' in key or 'EVOLUTION' in key for key in api))
 
     def test_seed_is_synthetic_distinct_credentials_one_hour_and_zero_phone(self):
