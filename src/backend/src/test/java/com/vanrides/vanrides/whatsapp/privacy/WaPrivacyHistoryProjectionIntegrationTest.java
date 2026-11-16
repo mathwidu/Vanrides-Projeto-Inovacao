@@ -148,6 +148,59 @@ class WaPrivacyHistoryProjectionIntegrationTest {
             assertThatThrownBy(()->f.jdbc.update("INSERT INTO wa."+entry.getKey()+" SELECT (jsonb_populate_record(NULL::wa."+entry.getKey()+",?::jsonb)).*",entry.getValue())).isInstanceOf(RuntimeException.class);
         assertThatThrownBy(()->f.jdbc.update("INSERT INTO wa.run_stop SELECT (jsonb_populate_record(NULL::wa.run_stop,to_jsonb(s)||jsonb_build_object('id',?::uuid,'history_erased_at',NULL))).* FROM wa.run_stop s LIMIT 1",UUID.randomUUID())).isInstanceOf(RuntimeException.class);
     }
+    @Test void unknownExpiredIntentRemainsPendingButProvenForeignOriginStaysOutsideScope() {
+        f=new WaPrivacyHistoryProjectionFixture(POSTGRES,false);
+        f.jdbc.update("""
+            INSERT INTO wa.start_intent(id,driver_id,occurrence_id,run_id,token_hash,environment,state,created_at,expires_at)
+            VALUES (?,?,?,?,?,?,'REVOKED',?,?)
+            """,f.intent,f.driver,f.occurrence,f.run,"c".repeat(64),ENV,ts(f.past),ts(f.past.plusSeconds(60)));
+        String copies=rows("operation_run")+rows("run_stop")+rows("routine_occurrence");
+        var unknown=f.projection(false).tick(f.actor,100,null);
+        assertThat(unknown.complete()).isFalse();assertThat(unknown.erased()).isZero();assertThat(unknown.deleted()).isZero();
+        assertThat(unknown.pending()).extracting(WaPrivacyHistoryProjection.Deferral::reason).containsAnyOf("ORIGIN_MISSING","ORIGIN_CONFLICT");
+        assertThat(rows("operation_run")+rows("run_stop")+rows("routine_occurrence")).isEqualTo(copies);
+        UUID event=UUID.randomUUID(),command=UUID.randomUUID();
+        f.jdbc.update("""
+            INSERT INTO wa.integration_inbox(id,identity_id,provider,instance_id,message_id,category,state,created_at)
+            VALUES (?,?,'EVOLUTION','proven-foreign-instance',?,'MESSAGE','COMPLETED',?)
+            """,event,f.driver,event.toString(),ts(f.past));
+        f.jdbc.update("""
+            INSERT INTO wa.command_receipt(command_id,identity_id,inbox_event_id,idempotency_key,command_type,
+              request_hash,result_json,created_at,expires_at) VALUES (?,?,?,?,'REQUEST_START',?,'{}',?,?)
+            """,command,f.driver,event,command.toString(),"d".repeat(64),ts(f.past),ts(f.past.plusSeconds(3600)));
+        f.jdbc.update("UPDATE wa.start_intent SET request_command_id=? WHERE id=?",command,f.intent);
+        var foreign=f.projection(false).tick(f.actor,100,null);
+        assertThat(foreign.complete()).isTrue();assertThat(foreign.examined()).isZero();assertThat(foreign.pending()).isEmpty();
+        assertThat(rows("operation_run")+rows("run_stop")+rows("routine_occurrence")).isEqualTo(copies);
+    }
+    @Test void semanticPendingHeadDoesNotStarveAnotherOccurrenceAcrossSmallCursorPages() {
+        UUID unresolved=new UUID(0,0);
+        var date=f.past.minusSeconds(86400).atZone(java.time.ZoneOffset.UTC).toLocalDate();
+        f.jdbc.update("""
+            INSERT INTO wa.routine_occurrence(id,routine_id,driver_id,local_date,scheduled_at,created_at,schedule_snapshot)
+            VALUES (?,?,?,?,?,?,?::jsonb)
+            """,unresolved,f.routine,f.driver,date,ts(f.past.minusSeconds(86400)),ts(f.past.minusSeconds(86400)),
+            "{\"name\":\"UNRESOLVED_PRIVATE_COPY\"}");
+        assertThat(f.jdbc.queryForObject("SELECT ?::uuid<?::uuid",Boolean.class,unresolved,f.occurrence)).isTrue();
+        String untouched=f.string("SELECT to_jsonb(o)::text FROM wa.routine_occurrence o WHERE id=?",unresolved);
+        var first=f.projection(false).tick(f.actor,1,null);
+        assertThat(first.complete()).isFalse();assertThat(first.deferred()).isEqualTo(1);
+        assertThat(first.next().afterOccurrence()).isEqualTo(unresolved);
+        var cursor=first.next();boolean completedValid=false;
+        for(int page=0;page<20;page++){
+            var result=f.projection(false).tick(f.actor,1,cursor);
+            assertThat(result.examined()).isLessThanOrEqualTo(1);assertThat(result.erased()+result.deleted()).isLessThanOrEqualTo(1);
+            assertThat(result.complete()).isFalse();f.leaves();cursor=result.next();
+            completedValid=f.jdbc.queryForObject("SELECT history_erased_at IS NOT NULL FROM wa.routine_occurrence WHERE id=?",Boolean.class,f.occurrence);
+            if(completedValid)break;
+            assertThat(cursor).isNotNull();
+        }
+        assertThat(completedValid).isTrue();
+        assertThat(f.string("SELECT snapshot_json::text FROM wa.operation_run WHERE id=?",f.run)).isEqualTo("{\"rosterDigest\": \""+DIGEST+"\"}");
+        var pending=f.projection(false).tick(f.actor,100,null);
+        assertThat(pending.complete()).isFalse();assertThat(pending.pending()).anyMatch(p->p.id().equals(unresolved)&&p.reason().equals("ORIGIN_MISSING"));
+        assertThat(f.string("SELECT to_jsonb(o)::text FROM wa.routine_occurrence o WHERE id=?",unresolved)).isEqualTo(untouched);
+    }
     @Test void aBusyPhysicalHeadDoesNotAdvanceAndEveryBatchHonorsItsBudget() throws Exception {
         f.pin();UUID head=f.jdbc.queryForObject("SELECT id FROM wa.run_stop ORDER BY id LIMIT 1",UUID.class);
         var pool=Executors.newSingleThreadExecutor();var locked=new CountDownLatch(1);var release=new CountDownLatch(1);

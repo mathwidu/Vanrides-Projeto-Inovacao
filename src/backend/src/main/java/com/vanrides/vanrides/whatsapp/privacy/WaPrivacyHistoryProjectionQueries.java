@@ -22,7 +22,11 @@ final class WaPrivacyHistoryProjectionQueries {
             AND greatest(o.scheduled_at,o.created_at)<=s.as_of-INTERVAL '90 days'
             AND (o.history_environment=s.environment AND o.history_instance_id=s.instance_id
               OR o.history_origin_bound_at IS NULL AND (source.origin_id IS NOT NULL OR
-                NOT EXISTS(SELECT 1 FROM wa.privacy_history_sources(o.id))))
+                NOT EXISTS(SELECT 1 FROM wa.privacy_history_sources(o.id)) OR
+                EXISTS(SELECT 1 FROM wa.privacy_history_sources(o.id) unresolved_source
+                  WHERE (unresolved_source.environment IS NULL OR unresolved_source.environment=s.environment)
+                    AND (unresolved_source.instance_id IS NULL OR unresolved_source.instance_id=s.instance_id)
+                    AND (unresolved_source.environment IS NULL OR unresolved_source.instance_id IS NULL))))
         ), days AS (
           SELECT o.*,CASE WHEN conflict THEN 'ORIGIN_CONFLICT' WHEN NOT driver_scope OR NOT passengers_scope THEN 'SUBJECT_OUT_OF_SCOPE'
             WHEN run_id IS NOT NULL AND run_state NOT IN ('COMPLETED','CANCELED') THEN 'ACTIVE_REFERENCE'

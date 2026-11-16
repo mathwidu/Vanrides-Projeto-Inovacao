@@ -22,7 +22,10 @@ As fontes existentes precisam concordar, inclusive quando há mais de uma:
 - evento de destino somente quando seu UUID já está dentro do snapshot congelado.
 
 O destino atual da rotina não é usado para reconstruir a história. Ausência,
-origem desconhecida ou conflito produz adiamento explícito. Remover uma pergunta
+origem desconhecida ou conflito produz adiamento explícito. Uma fonte existente
+com ambiente/instância ainda desconhecidos continua candidata a esse adiamento
+no escopo compatível com sua coorte; não é tratada como ausência de trabalho.
+Origem comprovadamente estrangeira continua fora do escopo. Remover uma pergunta
 ou decisão não destrói o anchor já comprovado.
 
 A materialização futura grava `SYSTEM_JOB` na mesma transação do INSERT,
@@ -82,7 +85,11 @@ O executor processa no máximo cem linhas físicas por tick, entre pin, parada,
 progresso, viagem e ocorrência. Usa transação própria, recusa transação ambiente,
 deriva o escopo de SYSTEM_JOB válido com lock e exige callback de autoridade.
 A cerca de autores precede os locks da ocorrência/viagem; registros ocupados
-adiam sem avançar o prefixo. O cursor tipado vincula ator, escopo, instante e
+adiam sem avançar o prefixo. Um adiamento semântico, como origem ausente,
+encerra somente aquela unidade: registra a pendência, avança a posição da
+varredura e permite tratar unidades válidas posteriores. A pendência permanece
+na consulta independente de completude e volta a ser examinada no ciclo seguinte.
+O cursor tipado vincula ator, escopo, instante e
 modos; precisa ficar no envelope autenticado do coordenador. Cursor avançado
 não esconde trabalho nem transforma adiamento em `complete=true`.
 
@@ -135,3 +142,19 @@ repetido isoladamente após o ajuste de comparação NULL, sem repetir os verdes
 Logs e recibos sanitizados ficam fora do Git. Não houve VPS, purge de dados reais,
 ativação ou fechamento de issues. O startup/upgrade de um schema V43 e a revisão
 independente de DDL/guards pertencem à integração conduzida pelo principal.
+
+## Ajustes após revisão independente
+
+A revisão identificou uma fonte existente sem instância conhecida que ficava
+fora da consulta e uma pendência semântica que interrompia a paginação antes de
+outra ocorrência válida. As duas condições foram corrigidas sem mudar DDL,
+contrato do port ou autoridade para descarte.
+
+Quatro métodos dirigidos passaram em PostgreSQL, sem falhas, erros ou skips:
+os dois novos casos, o positivo de preservação de controles e o lock ocupado
+já existente. O primeiro novo caso mantém um intent REVOKED vencido sem comando
+como pendência, com cópias intactas, e verifica a exclusão de fonte comprovadamente
+estrangeira do escopo. O segundo mantém duas ocorrências no mesmo banco: a
+primeira sem origem continua pendente enquanto a segunda conclui pin, projeções,
+folhas e ocorrência em páginas de uma linha. A rodada levou 5,904 segundos nos
+testes e 12,098 segundos no Maven. Os 63 métodos anteriores não foram repetidos.

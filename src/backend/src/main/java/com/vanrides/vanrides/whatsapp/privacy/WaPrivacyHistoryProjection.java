@@ -75,7 +75,10 @@ public final class WaPrivacyHistoryProjection {
                 "SELECT reason FROM work WHERE family=? AND occurrence_id=? AND parent_id=? AND id=?",(rs,row)->rs.getString(1),
                 append(parameters(grant.scope(),asOf),unit.family().key,unit.occurrence(),unit.parent(),unit.id()));
             if(current.isEmpty()){prefix=position(actor,grant.scope(),asOf,unit);continue;}
-            if(current.get(0)!=null){pending.add(new Deferral(unit.family(),unit.id(),current.get(0)));blocked=true;break;}
+            if(current.get(0)!=null){
+                pending.add(new Deferral(unit.family(),unit.id(),current.get(0)));
+                prefix=position(actor,grant.scope(),asOf,unit);continue;
+            }
             if(dryRun)would++;
             else {int changed=apply(unit,asOf);if(unit.family()==Family.APPROACH_PROGRESS||unit.family()==Family.FINISH_PROGRESS)deleted+=changed;else if(unit.family()!=Family.PIN)erased+=changed;}
             prefix=position(actor,grant.scope(),asOf,unit);
