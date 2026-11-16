@@ -2084,6 +2084,88 @@
           }
         ]
       }
+    },
+    "/driver-app/v1/tracking-sessions/{id}/stop-receipt": {
+      "post": {
+        "operationId": "readTrackingStopReceipt",
+        "summary": "Conferir um ACK de parada já persistido usando a chave do dispositivo",
+        "description": "Leitura mínima sem Authorization, refresh ou ath. Requer DPoP com método, URL canônica, hash dos bytes exatos do corpo, nonce e JTI novos. Disponível com o módulo desativado e após expiração/revogação das credenciais, sem renovar autorização. A chave deve pertencer ao dispositivo da sessão no ambiente/cohort atuais e permanecer retida, sem apagamento do perfil. Confirma somente state=STOPPED e stopped_at não nulo, generation e stopRequestRef exatos (null não é curinga). Não recebe ACK, não reconcilia nem modifica sessão, viagem ou credenciais. Ausente/alheia/apagada retorna 404 indistinguível; própria sem ACK ou divergente retorna 409 VERSION_CONFLICT. Não retornar GPS, identidade ou credencial. Nova prova pode reler o recibo; não requer Idempotency-Key.",
+        "tags": [
+          "Driver app"
+        ],
+        "x-vanrides-implementation-card": "VR-WA-110-RUN-TRACKING",
+        "x-vanrides-availability": "CARD_110_RUN_TRACKING",
+        "x-vanrides-principals": [
+          "DEVICE"
+        ],
+        "x-vanrides-allowed-origins": [],
+        "security": [
+          {
+            "DPoPProof": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ACK terminal de sensor já persistido; Cache-Control: no-store.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TrackingStopReceiptResponse"
+                },
+                "examples": {
+                  "TrackingStopReceiptAck": {
+                    "$ref": "#/components/examples/TrackingStopReceiptAck"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdPath"
+          },
+          {
+            "$ref": "#/components/parameters/DPoP"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TrackingStopReceiptRequest"
+              },
+              "examples": {
+                "TrackingStopReceipt": {
+                  "$ref": "#/components/examples/TrackingStopReceipt"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -5933,6 +6015,91 @@
           "outcome",
           "failureCode"
         ]
+      },
+      "TrackingStopReceiptRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "generation": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "stopRequestRef": {
+            "type": "string",
+            "format": "uuid",
+            "minLength": 36,
+            "maxLength": 36,
+            "nullable": true
+          }
+        },
+        "required": [
+          "generation",
+          "stopRequestRef"
+        ]
+      },
+      "TrackingStopReceiptResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "schemaVersion": {
+            "type": "integer",
+            "enum": [
+              1
+            ]
+          },
+          "sessionId": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "generation": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 1,
+            "maximum": 9007199254740991
+          },
+          "stopRequestRef": {
+            "type": "string",
+            "format": "uuid",
+            "minLength": 36,
+            "maxLength": 36,
+            "nullable": true
+          },
+          "stopConfirmed": {
+            "type": "boolean",
+            "enum": [
+              true
+            ]
+          },
+          "stoppedAt": {
+            "$ref": "#/components/schemas/UtcInstant"
+          },
+          "serverTime": {
+            "$ref": "#/components/schemas/UtcInstant"
+          },
+          "runState": {
+            "type": "string",
+            "enum": [
+              "PLANNED",
+              "STARTING",
+              "START_FAILED",
+              "TRACKING",
+              "DEGRADED",
+              "COMPLETED",
+              "CANCELED"
+            ]
+          }
+        },
+        "required": [
+          "schemaVersion",
+          "sessionId",
+          "generation",
+          "stopRequestRef",
+          "stopConfirmed",
+          "stoppedAt",
+          "serverTime",
+          "runState"
+        ]
       }
     },
     "examples": {
@@ -6919,6 +7086,26 @@
           "outboxId": "00000000-0000-4000-8000-000000000009",
           "state": "PENDING",
           "serverTime": "2026-10-31T12:00:00Z"
+        }
+      },
+      "TrackingStopReceipt": {
+        "summary": "EXEMPLO SINTÉTICO; não comprova runtime, sessão ou fornecedor.",
+        "value": {
+          "generation": 1,
+          "stopRequestRef": null
+        }
+      },
+      "TrackingStopReceiptAck": {
+        "summary": "EXEMPLO SINTÉTICO; não comprova runtime, sessão ou fornecedor.",
+        "value": {
+          "schemaVersion": 1,
+          "sessionId": "00000000-0000-4000-8000-000000000001",
+          "generation": 1,
+          "stopRequestRef": null,
+          "stopConfirmed": true,
+          "stoppedAt": "2030-01-01T12:00:00Z",
+          "serverTime": "2030-01-01T12:05:00Z",
+          "runState": "COMPLETED"
         }
       }
     }
