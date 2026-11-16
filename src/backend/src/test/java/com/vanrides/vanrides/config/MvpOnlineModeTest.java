@@ -42,7 +42,7 @@ class MvpOnlineModeTest {
         for(var entry:Map.ofEntries(Map.entry("vanrides.auth.jwt-secret","change-me"),Map.entry("vanrides.auth.basic-enabled","true"),
             Map.entry("vanrides.rate-limit.enabled","false"),Map.entry("vanrides.email.provider","log"),
             Map.entry("vanrides.wa.test-cohort-only","false"),Map.entry("vanrides.wa.environment","vanrides-team-hml"),
-            Map.entry("vanrides.wa.new-starts-enabled","false"),Map.entry("vanrides.wa.approach-enabled","true"),
+            Map.entry("vanrides.wa.auto-finish-enabled","true"),Map.entry("vanrides.wa.approach-enabled","true"),
             Map.entry("vanrides.wa.approach-reviewed-routine-ids","00000000-0000-4000-8000-000000000001"),
             Map.entry("vanrides.maps-platform.enabled","true"),Map.entry("vanrides.push.provider","external"),
             Map.entry("vanrides.routing.provider","google-directions"),Map.entry("google.api.key","PRIVATE_VALUE"),

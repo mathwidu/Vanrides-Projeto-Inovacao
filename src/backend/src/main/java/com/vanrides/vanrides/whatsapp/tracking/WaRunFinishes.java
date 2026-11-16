@@ -31,7 +31,7 @@ public final class WaRunFinishes {
         if (!settings.autoFinishEnabled()) return;
         var rows = store.jdbc.queryForList("SELECT routine_id,snapshot_json::text FROM wa.operation_run WHERE id=? AND driver_id=? AND state='TRACKING'",
             runId, session.driver());
-        if (rows.size() != 1 || !settings.approachReviewed((UUID) rows.get(0).get("routine_id"))) return;
+        if (rows.size() != 1 || !new WaRoutineEligibility(store.jdbc,settings).reviewed((UUID) rows.get(0).get("routine_id"))) return;
         JsonNode routine = WaJson.object(rows.get(0).get("snapshot_json").toString()).path("routine");
         if (!coordinate(routine, "destination_latitude", -90, 90) || !coordinate(routine, "destination_longitude", -180, 180)) return;
         Instant captured = WaTrackingPolicy.instant(fix, "capturedAt");
