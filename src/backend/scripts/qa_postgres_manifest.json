@@ -156,7 +156,7 @@
     },
     {
       "className": "com.vanrides.vanrides.whatsapp.team.TeamAdmissionIntegrationTest",
-      "tests": 6,
+      "tests": 8,
       "seconds": 0
     },
     {
@@ -186,12 +186,12 @@
     },
     {
       "className": "com.vanrides.vanrides.whatsapp.transport.WaAttendanceConversationIntegrationTest",
-      "tests": 16,
+      "tests": 14,
       "seconds": 49.61
     },
     {
       "className": "com.vanrides.vanrides.whatsapp.transport.WaAttendanceCutoffIntegrationTest",
-      "tests": 8,
+      "tests": 11,
       "seconds": 25.39
     },
     {
@@ -225,8 +225,13 @@
       "seconds": 39.04
     },
     {
+      "className": "com.vanrides.vanrides.whatsapp.transport.WaAttendanceTripSelectionIntegrationTest",
+      "tests": 25,
+      "seconds": 0
+    },
+    {
       "className": "com.vanrides.vanrides.whatsapp.transport.WaConversationCommandsIntegrationTest",
-      "tests": 14,
+      "tests": 18,
       "seconds": 26.38
     },
     {
@@ -285,13 +290,23 @@
       "seconds": 12.25
     },
     {
+      "className": "com.vanrides.vanrides.whatsapp.transport.WaDepartureNoticeDeliveryIntegrationTest",
+      "tests": 6,
+      "seconds": 0
+    },
+    {
+      "className": "com.vanrides.vanrides.whatsapp.transport.WaDepartureNoticeJobIntegrationTest",
+      "tests": 11,
+      "seconds": 0
+    },
+    {
       "className": "com.vanrides.vanrides.whatsapp.transport.WaDriverFencingIntegrationTest",
       "tests": 9,
       "seconds": 30.2
     },
     {
       "className": "com.vanrides.vanrides.whatsapp.transport.WaDriverInvitesIntegrationTest",
-      "tests": 11,
+      "tests": 22,
       "seconds": 25.42
     },
     {
@@ -306,7 +321,7 @@
     },
     {
       "className": "com.vanrides.vanrides.whatsapp.transport.WaDriverWizardIntegrationTest",
-      "tests": 16,
+      "tests": 18,
       "seconds": 39.98
     },
     {
@@ -351,12 +366,12 @@
     },
     {
       "className": "com.vanrides.vanrides.whatsapp.transport.WaPassengerInputIntegrationTest",
-      "tests": 6,
+      "tests": 9,
       "seconds": 0
     },
     {
       "className": "com.vanrides.vanrides.whatsapp.transport.WaPassengerIsolationIntegrationTest",
-      "tests": 4,
+      "tests": 5,
       "seconds": 15.92
     },
     {
@@ -366,7 +381,7 @@
     },
     {
       "className": "com.vanrides.vanrides.whatsapp.transport.WaPassengerWizardIntegrationTest",
-      "tests": 11,
+      "tests": 12,
       "seconds": 39.37
     },
     {
@@ -388,6 +403,11 @@
       "className": "com.vanrides.vanrides.whatsapp.transport.WaRunPreparationIntegrationTest",
       "tests": 8,
       "seconds": 22.17
+    },
+    {
+      "className": "com.vanrides.vanrides.whatsapp.transport.WaStopCanceledNoticeIntegrationTest",
+      "tests": 6,
+      "seconds": 0
     },
     {
       "className": "com.vanrides.vanrides.whatsapp.transport.WaTeamPassengerNoticeDeliveryIntegrationTest",

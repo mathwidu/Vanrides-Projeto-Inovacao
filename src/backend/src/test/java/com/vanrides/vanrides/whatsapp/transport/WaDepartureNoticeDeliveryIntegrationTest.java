@@ -80,6 +80,24 @@ class WaDepartureNoticeDeliveryIntegrationTest {
         assertThat(attempts()).isZero();
     }
 
+    @Test
+    void aRemovedCalendarDayCancelsTheClaimedNotice() {
+        var lease = claim();
+        f.h.jdbc.update("UPDATE wa.routine SET weekdays=ARRAY[1,2,4,5]::smallint[] WHERE id=?", f.routine);
+        assertThat(authorize(lease).error()).isEqualTo(WaProblem.Code.ACTION_NOT_ALLOWED);
+        assertThat(state()).isEqualTo("CANCELED");
+        assertThat(attempts()).isZero();
+    }
+
+    @Test
+    void aRematerializedDepartureCannotSendTheOldList() {
+        var lease = claim();
+        f.h.jdbc.update("UPDATE wa.routine_occurrence SET scheduled_at=scheduled_at+INTERVAL '1 hour' WHERE routine_id=?", f.routine);
+        assertThat(authorize(lease).error()).isEqualTo(WaProblem.Code.ACTION_NOT_ALLOWED);
+        assertThat(state()).isEqualTo("CANCELED");
+        assertThat(attempts()).isZero();
+    }
+
     private ObjectNode claim() {
         var items = outbox.claim(delivery, json("{\"batchLimit\":10,\"leaseSeconds\":60}")).path("items");
         assertThat(items).hasSize(1);

@@ -97,6 +97,25 @@ class WaAttendanceConversationIntegrationTest {
         f.s.finish(lease);
     }
 
+    @Test void correctionsKeepTheExistingCommandHistoryAndTheOtherTripPending() {
+        var outbound = f.question(passenger, DAY, "OUTBOUND", "15:00");
+        var returning = f.question(passenger, DAY, "RETURN", "18:00");
+        var going = f.send(passenger, "Vou hoje na ida");
+        var absent = f.send(passenger, "Não vou hoje na ida");
+        var corrected = f.send(passenger, "Vou hoje na ida");
+        assertEquals("GOING", f.state(outbound));
+        assertEquals("PENDING", f.state(returning));
+        assertEquals(3, f.s.number("SELECT count(*) FROM wa.command_receipt WHERE identity_id=? AND command_type='SET_ATTENDANCE'", passenger));
+        for (var step : java.util.List.of(going, absent, corrected)) {
+            assertEquals(1, f.s.number("""
+                SELECT count(*) FROM wa.command_receipt receipt
+                JOIN wa.message_outbox box ON box.command_id=receipt.command_id
+                WHERE receipt.inbox_event_id=? AND receipt.identity_id=?
+                  AND receipt.result_json->>'outcome'='APPLIED' AND box.payload_json->>'text'=?
+                """, step.lease().id(), passenger, step.text()));
+        }
+    }
+
     @Test void driverSelectsOnlyItsOwnNominalPresenceList() {
         var one = f.question(passenger, DAY, "OUTBOUND", "15:00");
         f.question(passenger, DAY, "RETURN", "18:00");

@@ -87,10 +87,11 @@ public final class WaDriverAttendanceNotices {
             SELECT o.id FROM wa.routine_occurrence o
             JOIN wa.routine r ON r.id=o.routine_id AND r.driver_id=o.driver_id
             JOIN wa.profile p ON p.identity_id=o.driver_id
-            WHERE o.id=? AND o.driver_id=? AND o.state='PLANNED' AND r.state='ACTIVE'
+            WHERE o.id=? AND o.driver_id=? AND o.state='PLANNED' AND o.calendar_eligible AND r.state='ACTIVE'
+              AND extract(isodow FROM o.local_date)=ANY(r.weekdays) AND o.scheduled_at=?
               AND p.status='ACTIVE' AND p.driver_enabled
               AND NOT EXISTS(SELECT 1 FROM wa.operation_run run WHERE run.occurrence_id=o.id AND run.state<>'PLANNED')
-            """ + (lock ? " FOR SHARE OF o,r,p" : ""), notice.get("occurrence_id"), notice.get("driver_id")).isEmpty();
+            """ + (lock ? " FOR SHARE OF o,r,p" : ""), notice.get("occurrence_id"), notice.get("driver_id"), notice.get("deadline_at")).isEmpty();
     }
 
     private boolean stopCanceledCurrent(Map<String, Object> notice, boolean lock) {

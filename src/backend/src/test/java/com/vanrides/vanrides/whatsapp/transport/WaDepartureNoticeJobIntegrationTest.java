@@ -191,6 +191,26 @@ class WaDepartureNoticeJobIntegrationTest {
         assertEquals(0, f.tick("DUE_REMINDERS", 1, null).path("processed").asInt());
     }
 
+    @Test
+    void concurrentTicksQueueOneDepartureList() throws Exception {
+        f.materialize();
+        f.h.time.set(TWENTY_NINE_BEFORE);
+        var executor = java.util.concurrent.Executors.newFixedThreadPool(2);
+        var start = new java.util.concurrent.CountDownLatch(1);
+        try {
+            var first = executor.submit(() -> { start.await(); return f.tick("DUE_REMINDERS", 100, null); });
+            var second = executor.submit(() -> { start.await(); return f.tick("DUE_REMINDERS", 100, null); });
+            start.countDown();
+            assertEquals(first.get(10, java.util.concurrent.TimeUnit.SECONDS), second.get(10, java.util.concurrent.TimeUnit.SECONDS));
+            assertEquals(1, notices());
+            assertEquals(1, f.count("SELECT count(*) FROM wa.driver_attendance_notice"));
+        } finally {
+            start.countDown();
+            executor.shutdownNow();
+            assertTrue(executor.awaitTermination(10, java.util.concurrent.TimeUnit.SECONDS));
+        }
+    }
+
     private void name(UUID passenger, String name) {
         f.h.jdbc.update("UPDATE wa.profile SET display_name=? WHERE identity_id=?", name, passenger);
     }

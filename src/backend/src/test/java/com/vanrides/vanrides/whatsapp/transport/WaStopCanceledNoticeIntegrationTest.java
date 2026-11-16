@@ -56,6 +56,19 @@ class WaStopCanceledNoticeIntegrationTest {
     }
 
     @Test
+    void replayReturnsTheSameReceiptWithoutAnotherCancellationNotice() {
+        driverWrote();
+        f.starting(f.question(passenger, DAY, "OUTBOUND", "15:00"), "PENDING");
+        var lease = f.s.text(passenger, ABSENCE);
+        var first = f.execute(lease, false);
+        var replay = f.s.execute(lease, first.body(), "synthetic-attendance-command-" + lease.id());
+        assertThat(replay.body()).isEqualTo(first.decision().body());
+        assertThat(notices()).isOne();
+        assertThat(f.s.number("SELECT count(*) FROM wa.command_receipt WHERE inbox_event_id=?", lease.id())).isOne();
+        f.s.finish(lease);
+    }
+
+    @Test
     void anAbsenceBeforeTheDepartureQueuesNoDriverNotice() {
         driverWrote();
         f.question(passenger, DAY, "OUTBOUND", "15:00");
