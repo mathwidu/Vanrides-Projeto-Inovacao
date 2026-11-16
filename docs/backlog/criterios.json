@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "asOf": "2026-11-02",
-  "reviewStatus": "Proposta para revisão da equipe; não altera critérios canônicos nem autoriza publicação, mudança de estado ou piloto.",
+  "asOf": "2026-11-16",
+  "reviewStatus": "Critérios de aceite preservados para revisão da equipe; evidências e próximos passos reconciliados em 16/11. Nenhuma caixa marcada, aceite ou promoção de piloto é inferida do código.",
   "completionBoundary": "Critérios delimitam o objetivo da tarefa para revisão. Implementação, prova local, integração no canal real e aceite de piloto são níveis distintos. Resultados existentes podem ser conferidos contra os critérios; nada aqui afirma que novos testes foram executados.",
   "sourceDigests": {
     "backlogData": "af73a759aeae70bc9ba1b7dd9eecc3feda956137d7322436260e39aa5c1a528d",
@@ -83,14 +83,15 @@
         "Identidade da conversa autenticada e operações de cadastro disponíveis."
       ],
       "decisionPending": null,
-      "nextRequiredOutcome": "Repetir a conversa com o número dedicado.",
+      "nextRequiredOutcome": "Revisar os critérios de cadastro na issue e reproduzir os casos ainda não cobertos com participantes autorizados.",
       "sourcePaths": [
         "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaDriverSetup.java",
         "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaDriverMutations.java"
       ],
       "evidencePaths": [
         "program/evidence/VR-WA-080-DRIVER-ROUTINES.md",
-        "program/cards/VR-WA-080-DRIVER-ROUTINES.md"
+        "program/cards/VR-WA-080-DRIVER-ROUTINES.md",
+        "program/evidence/mvp-entrega-20261116.md"
       ],
       "planningPaths": [
         "program/cards/VR-WA-080-DRIVER-ROUTINES.md"
@@ -163,14 +164,15 @@
         "Convite ou rotina válida e motorista habilitado para aprovar o pedido."
       ],
       "decisionPending": null,
-      "nextRequiredOutcome": "Conferir o cadastro no WhatsApp real.",
+      "nextRequiredOutcome": "Repetir o cadastro simplificado com perfil novo no canal real e revisar os critérios com a equipe.",
       "sourcePaths": [
         "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaPassengerSetup.java",
         "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaPassengerMutations.java"
       ],
       "evidencePaths": [
         "program/evidence/VR-WA-090-PASSENGERS.md",
-        "program/cards/VR-WA-090-PASSENGERS.md"
+        "program/cards/VR-WA-090-PASSENGERS.md",
+        "program/evidence/mvp-entrega-20261116.md"
       ],
       "planningPaths": [
         "program/cards/VR-WA-090-PASSENGERS.md"
@@ -203,7 +205,7 @@
         "Motorista, rotina e regras de uso do convite disponíveis."
       ],
       "decisionPending": null,
-      "nextRequiredOutcome": "Verificar convite com participantes autorizados no número dedicado.",
+      "nextRequiredOutcome": "Revisar convite/vínculo e completar o cenário de perfil novo e dois passageiros autorizados.",
       "sourcePaths": [
         "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/transport/WaPrivateInviteDelivery.java",
         "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaPassengerSetup.java"
@@ -212,7 +214,8 @@
         "program/evidence/VR-WA-080-DRIVER-ROUTINES.md",
         "program/evidence/VR-WA-090-PASSENGERS.md",
         "program/cards/VR-WA-080-DRIVER-ROUTINES.md",
-        "program/cards/VR-WA-090-PASSENGERS.md"
+        "program/cards/VR-WA-090-PASSENGERS.md",
+        "program/evidence/mvp-entrega-20261116.md"
       ],
       "planningPaths": [
         "program/cards/VR-WA-080-DRIVER-ROUTINES.md",
@@ -246,14 +249,15 @@
         "Ocorrências de ida e volta e vínculo do passageiro existentes."
       ],
       "decisionPending": null,
-      "nextRequiredOutcome": "Repetir respostas e lembrete no canal real.",
+      "nextRequiredOutcome": "Conferir os limites após início na jornada real e revisar a prova por data e sentido.",
       "sourcePaths": [
         "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaAttendanceMutation.java",
         "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaAttendanceConversation.java"
       ],
       "evidencePaths": [
         "program/evidence/VR-WA-100-ATTENDANCE.md",
-        "program/cards/VR-WA-100-ATTENDANCE.md"
+        "program/cards/VR-WA-100-ATTENDANCE.md",
+        "program/evidence/mvp-entrega-20261116.md"
       ],
       "planningPaths": [
         "program/cards/VR-WA-100-ATTENDANCE.md"
@@ -286,14 +290,15 @@
         "Sessão de localização e regras de validade da versão avaliada configuradas."
       ],
       "decisionPending": null,
-      "nextRequiredOutcome": "Validar continuidade durante os percursos nos dois aparelhos.",
+      "nextRequiredOutcome": "Validar continuidade e atrasos em percurso nas duas plataformas, com a combinação final de versões.",
       "sourcePaths": [
         "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/tracking/WaTrackingSamples.java",
         "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/tracking/WaTrackingService.java"
       ],
       "evidencePaths": [
         "program/evidence/VR-WA-110-RUN-TRACKING.md",
-        "program/cards/VR-WA-110-RUN-TRACKING.md"
+        "program/cards/VR-WA-110-RUN-TRACKING.md",
+        "program/evidence/mvp-entrega-20261116.md"
       ],
       "planningPaths": [
         "program/cards/VR-WA-110-RUN-TRACKING.md"
@@ -326,7 +331,7 @@
         "Operação de consulta prevista e regra de elegibilidade da viagem disponíveis."
       ],
       "decisionPending": null,
-      "nextRequiredOutcome": "Validar consulta e recebimento do pin no WhatsApp de teste, após publicar a homologação.",
+      "nextRequiredOutcome": "Revisar autorização e critérios restantes; conferir frescor e continuidade em percurso e falha de rede.",
       "sourcePaths": [
         "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/auth/WaIngressFilter.java",
         "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/auth/WaProofFilter.java",
@@ -338,7 +343,8 @@
         "program/evidence/VR-WA-110-RUN-TRACKING.md",
         "program/cards/VR-WA-040-DOMAIN-AUTH.md",
         "program/cards/VR-WA-110-RUN-TRACKING.md",
-        "program/evidence/VR-WA-130-APPROACH.md"
+        "program/evidence/VR-WA-130-APPROACH.md",
+        "program/evidence/mvp-entrega-20261116.md"
       ],
       "planningPaths": [
         "program/cards/VR-WA-040-DOMAIN-AUTH.md",
@@ -372,7 +378,7 @@
         "Consulta autorizada e acesso à última posição com seu horário."
       ],
       "decisionPending": null,
-      "nextRequiredOutcome": "Validar consulta e recebimento do pin no WhatsApp de teste, após publicar a homologação.",
+      "nextRequiredOutcome": "Revisar autorização e critérios restantes; conferir frescor e continuidade em percurso e falha de rede.",
       "sourcePaths": [
         "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaCommandService.java",
         "src/whatsapp/transport/evolution-location.mjs"
@@ -380,7 +386,8 @@
       "evidencePaths": [
         "program/cards/VR-WA-110-RUN-TRACKING.md",
         "program/cards/VR-WA-130-APPROACH.md",
-        "program/evidence/VR-WA-130-APPROACH.md"
+        "program/evidence/VR-WA-130-APPROACH.md",
+        "program/evidence/mvp-entrega-20261116.md"
       ],
       "planningPaths": [
         "program/cards/VR-WA-110-RUN-TRACKING.md",
@@ -414,7 +421,7 @@
         "Recepção de GPS validada e operação de consulta autorizada."
       ],
       "decisionPending": null,
-      "nextRequiredOutcome": "Validar consulta e recebimento do pin no WhatsApp de teste, após publicar a homologação.",
+      "nextRequiredOutcome": "Revisar autorização e critérios restantes; conferir frescor e continuidade em percurso e falha de rede.",
       "sourcePaths": [
         "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/tracking/WaTrackingSamples.java",
         "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/tracking/WaTrackingService.java",
@@ -424,7 +431,8 @@
       "evidencePaths": [
         "program/evidence/VR-WA-110-RUN-TRACKING.md",
         "program/cards/VR-WA-110-RUN-TRACKING.md",
-        "program/evidence/VR-WA-130-APPROACH.md"
+        "program/evidence/VR-WA-130-APPROACH.md",
+        "program/evidence/mvp-entrega-20261116.md"
       ],
       "planningPaths": [
         "program/cards/VR-WA-110-RUN-TRACKING.md"
@@ -457,14 +465,15 @@
         "Regra de aproximação configurada e base de envio e recuperação disponíveis."
       ],
       "decisionPending": null,
-      "nextRequiredOutcome": "Validar o aviso com passageiros consentidos e rotina revisada em percurso.",
+      "nextRequiredOutcome": "Validar destinatário, calibração e utilidade em percurso com passageiros consentidos; manter o escopo da coorte compartilhada.",
       "sourcePaths": [
         "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaCommandService.java",
         "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/transport/WaApproachDelivery.java"
       ],
       "evidencePaths": [
         "program/cards/VR-WA-130-APPROACH.md",
-        "program/evidence/VR-WA-130-APPROACH.md"
+        "program/evidence/VR-WA-130-APPROACH.md",
+        "program/evidence/mvp-entrega-20261116.md"
       ],
       "planningPaths": [
         "program/cards/VR-WA-130-APPROACH.md"
@@ -703,13 +712,14 @@
         "Aparelho Android disponibilizado e permissões de instalação concedidas pelo proprietário."
       ],
       "decisionPending": null,
-      "nextRequiredOutcome": "Usar a versão integrada nos próximos testes físicos.",
+      "nextRequiredOutcome": "Usar o APK +15 identificado na rodada de campo e preservar o +14 para retorno.",
       "sourcePaths": [
         "src/aplicativo-motorista/android/app/build.gradle.kts"
       ],
       "evidencePaths": [
         "program/evidence/VR-WA-010-TOOLCHAINS.md",
-        "program/cards/VR-WA-010-TOOLCHAINS.md"
+        "program/cards/VR-WA-010-TOOLCHAINS.md",
+        "program/evidence/mvp-entrega-20261116.md"
       ],
       "planningPaths": [
         "program/cards/VR-WA-010-TOOLCHAINS.md"
@@ -742,14 +752,15 @@
         "iPhone e conta de desenvolvimento fornecidos pelo proprietário, com autorizações no fluxo nativo."
       ],
       "decisionPending": null,
-      "nextRequiredOutcome": "Renovar a instalação e retomar os testes do coletor quando autorizado.",
+      "nextRequiredOutcome": "Executar a rodada de campo e renovar a instalação antes do vencimento, conforme o guia.",
       "sourcePaths": [
         "src/aplicativo-motorista/ios/Runner.xcodeproj/project.pbxproj"
       ],
       "evidencePaths": [
         "program/evidence/VR-WA-010-TOOLCHAINS.md",
         "docs/runbooks/whatsapp-mvp/010-builds-e-instalacao.md",
-        "program/cards/VR-WA-010-TOOLCHAINS.md"
+        "program/cards/VR-WA-010-TOOLCHAINS.md",
+        "program/evidence/mvp-entrega-20261116.md"
       ],
       "planningPaths": [
         "program/cards/VR-WA-010-TOOLCHAINS.md"
@@ -782,14 +793,15 @@
         "Permissões de localização e receptor de teste compatível disponíveis."
       ],
       "decisionPending": null,
-      "nextRequiredOutcome": "Concluir os ensaios de percurso e energia no Android.",
+      "nextRequiredOutcome": "Concluir percurso, tela bloqueada, recuperação de rede e energia no Android +15 sem transferir a prova estacionada para esses cenários.",
       "sourcePaths": [
         "src/aplicativo-motorista/android/app/src/driver/kotlin/com/example/vanrides_frontend_dev/driver/DriverTrackingRuntime.kt",
         "src/aplicativo-motorista/android/app/src/driver/kotlin/com/example/vanrides_frontend_dev/driver/DriverTrackingService.kt"
       ],
       "evidencePaths": [
         "program/evidence/VR-WA-020-GPS-SPIKE.md",
-        "program/cards/VR-WA-020-GPS-SPIKE.md"
+        "program/cards/VR-WA-020-GPS-SPIKE.md",
+        "program/evidence/mvp-entrega-20261116.md"
       ],
       "planningPaths": [
         "program/cards/VR-WA-020-GPS-SPIKE.md"
@@ -822,14 +834,15 @@
         "Aplicativo iOS mínimo, configuração de localização e receptor compatível."
       ],
       "decisionPending": null,
-      "nextRequiredOutcome": "Executar o coletor no iPhone físico após a retomada.",
+      "nextRequiredOutcome": "Executar percurso, tela bloqueada, recuperação de rede e energia no iPhone +15; preservar os limites da prova estacionada.",
       "sourcePaths": [
         "src/aplicativo-motorista/ios/Runner/DriverTrackingCoordinator.swift",
         "src/aplicativo-motorista/ios/Runner/DriverTrackingCore.swift"
       ],
       "evidencePaths": [
         "program/evidence/VR-WA-020-GPS-SPIKE.md",
-        "program/cards/VR-WA-020-GPS-SPIKE.md"
+        "program/cards/VR-WA-020-GPS-SPIKE.md",
+        "program/evidence/mvp-entrega-20261116.md"
       ],
       "planningPaths": [
         "program/cards/VR-WA-020-GPS-SPIKE.md"
@@ -902,7 +915,7 @@
         "Aparelho instalado, ambiente alcançável pela rede móvel e percurso privado combinado com o proprietário."
       ],
       "decisionPending": null,
-      "nextRequiredOutcome": "Realizar o percurso Android e registrar atrasos e recuperação da rede.",
+      "nextRequiredOutcome": "Realizar o percurso Android +15 e registrar atrasos, destinatário, rede e consumo sem USB.",
       "sourcePaths": [
         "src/aplicativo-motorista/android/app/src/driver/kotlin/com/example/vanrides_frontend_dev/driver/DriverTrackingRuntime.kt",
         "src/aplicativo-motorista/android/app/src/driver/kotlin/com/example/vanrides_frontend_dev/driver/DriverTrackingService.kt"
@@ -910,7 +923,8 @@
       "evidencePaths": [
         "program/evidence/VR-WA-030-GPS-PROOF.md",
         "program/evidence/VR-WA-110-RUN-TRACKING.md",
-        "program/cards/VR-WA-030-GPS-PROOF.md"
+        "program/cards/VR-WA-030-GPS-PROOF.md",
+        "program/evidence/mvp-entrega-20261116.md"
       ],
       "planningPaths": [
         "program/cards/VR-WA-030-GPS-PROOF.md"
@@ -943,14 +957,15 @@
         "Retomada dos testes físicos autorizada pelo proprietário, instalação válida e ambiente alcançável."
       ],
       "decisionPending": null,
-      "nextRequiredOutcome": "Retomar o aparelho e executar o percurso completo.",
+      "nextRequiredOutcome": "Executar o percurso completo no iPhone +15 quando o proprietário iniciar a rodada de campo.",
       "sourcePaths": [
         "src/aplicativo-motorista/ios/Runner/DriverTrackingCoordinator.swift",
         "src/aplicativo-motorista/ios/Runner/DriverTrackingCore.swift"
       ],
       "evidencePaths": [
         "program/evidence/VR-WA-030-GPS-PROOF.md",
-        "program/cards/VR-WA-030-GPS-PROOF.md"
+        "program/cards/VR-WA-030-GPS-PROOF.md",
+        "program/evidence/mvp-entrega-20261116.md"
       ],
       "planningPaths": [
         "program/cards/VR-WA-030-GPS-PROOF.md"
@@ -983,14 +998,15 @@
         "Aparelhos carregados e disponíveis, janela de observação e roteiro de energia definidos."
       ],
       "decisionPending": null,
-      "nextRequiredOutcome": "Medir bateria e interrupções em Android e iPhone no cenário previsto.",
+      "nextRequiredOutcome": "Medir bateria e interrupções nos dois aparelhos +15, sem USB e com versões/flags registradas.",
       "sourcePaths": [
         "src/aplicativo-motorista/android/app/src/driver/kotlin/com/example/vanrides_frontend_dev/driver/DriverTrackingRuntime.kt",
         "src/aplicativo-motorista/android/app/src/driver/kotlin/com/example/vanrides_frontend_dev/driver/DriverTrackingService.kt"
       ],
       "evidencePaths": [
         "program/evidence/VR-WA-030-GPS-PROOF.md",
-        "program/cards/VR-WA-030-GPS-PROOF.md"
+        "program/cards/VR-WA-030-GPS-PROOF.md",
+        "program/evidence/mvp-entrega-20261116.md"
       ],
       "planningPaths": [
         "program/cards/VR-WA-030-GPS-PROOF.md"
@@ -1064,7 +1080,7 @@
         "Adaptador do serviço de WhatsApp e respostas autorizadas disponíveis."
       ],
       "decisionPending": null,
-      "nextRequiredOutcome": "Comprovar a entrega e seu retorno pelo WhatsApp real.",
+      "nextRequiredOutcome": "Ampliar falhas de comunicação e recuperação real, preservando resultado incerto e evitando duplicação.",
       "sourcePaths": [
         "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/transport/WaOutboxService.java",
         "src/whatsapp/transport/evolution-text.mjs"
@@ -1072,7 +1088,8 @@
       "evidencePaths": [
         "program/evidence/VR-WA-050-WHATSAPP-TRANSPORT.md",
         "program/evidence/VR-WA-120-DELIVERY-RECOVERY.md",
-        "program/cards/VR-WA-050-WHATSAPP-TRANSPORT.md"
+        "program/cards/VR-WA-050-WHATSAPP-TRANSPORT.md",
+        "program/evidence/mvp-entrega-20261116.md"
       ],
       "planningPaths": [
         "program/cards/VR-WA-050-WHATSAPP-TRANSPORT.md"
@@ -1105,14 +1122,15 @@
         "Intenções permitidas e regras de validação identificadas; chamadas pagas não são necessárias para estes cenários."
       ],
       "decisionPending": null,
-      "nextRequiredOutcome": "Revalidar as mensagens do uso real mantendo a autorização na API.",
+      "nextRequiredOutcome": "Preservar a IA OFF na rodada atual; qualquer validação futura do modelo deve manter intenções/contexto autorizados e recusa de saída inválida.",
       "sourcePaths": [
         "src/whatsapp/agent/model-policy.mjs",
         "src/whatsapp/worker/model-client.mjs"
       ],
       "evidencePaths": [
         "program/evidence/VR-WA-070-AGENT-WORKFLOWS.md",
-        "program/cards/VR-WA-070-AGENT-WORKFLOWS.md"
+        "program/cards/VR-WA-070-AGENT-WORKFLOWS.md",
+        "program/evidence/mvp-entrega-20261116.md"
       ],
       "planningPaths": [
         "program/cards/VR-WA-070-AGENT-WORKFLOWS.md"
@@ -1145,7 +1163,7 @@
         "Versão do n8n e referências de configuração identificadas."
       ],
       "decisionPending": null,
-      "nextRequiredOutcome": "Ativar somente no ambiente autorizado após revisar a operação.",
+      "nextRequiredOutcome": "Revisar os exports e a configuração publicada, preservando o escopo das flags ON e os limites do ensaio.",
       "sourcePaths": [
         "src/whatsapp/workflows/generate.mjs",
         "src/whatsapp/workflows/W08.json"
@@ -1153,7 +1171,8 @@
       "evidencePaths": [
         "program/evidence/VR-WA-070-AGENT-WORKFLOWS.md",
         "program/evidence/VR-WA-120-DELIVERY-RECOVERY.md",
-        "program/cards/VR-WA-070-AGENT-WORKFLOWS.md"
+        "program/cards/VR-WA-070-AGENT-WORKFLOWS.md",
+        "program/evidence/mvp-entrega-20261116.md"
       ],
       "planningPaths": [
         "program/cards/VR-WA-070-AGENT-WORKFLOWS.md"
@@ -1226,7 +1245,7 @@
         "Estados e respostas do vínculo disponíveis para o aplicativo."
       ],
       "decisionPending": null,
-      "nextRequiredOutcome": "Conferir a apresentação no iPhone e no percurso.",
+      "nextRequiredOutcome": "Conferir estados sob rede interrompida, tela bloqueada e percurso; preservar a correspondência entre UI e ACK.",
       "sourcePaths": [
         "src/aplicativo-motorista/lib/features/driver_mvp/presentation/driver_pairing_app.dart",
         "src/aplicativo-motorista/lib/features/driver_mvp/presentation/driver_tracking_view_state.dart"
@@ -1234,7 +1253,8 @@
       "evidencePaths": [
         "program/evidence/VR-WA-060-DRIVER-APP.md",
         "program/evidence/VR-WA-110-RUN-TRACKING.md",
-        "program/cards/VR-WA-060-DRIVER-APP.md"
+        "program/cards/VR-WA-060-DRIVER-APP.md",
+        "program/evidence/mvp-entrega-20261116.md"
       ],
       "planningPaths": [
         "program/cards/VR-WA-060-DRIVER-APP.md"
@@ -1267,7 +1287,7 @@
         "Motorista autenticado e aplicativo capaz de criar o pedido de vínculo."
       ],
       "decisionPending": null,
-      "nextRequiredOutcome": "Repetir com a conta WhatsApp dedicada e depois no iPhone.",
+      "nextRequiredOutcome": "Revisar os critérios de pareamento e repetir apenas os cenários de troca/recusa ainda não cobertos na combinação final.",
       "sourcePaths": [
         "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/pairing/WaPairingService.java",
         "src/aplicativo-motorista/lib/features/driver_mvp/presentation/driver_pairing_controller.dart"
@@ -1275,7 +1295,8 @@
       "evidencePaths": [
         "program/evidence/VR-WA-060-DRIVER-APP.md",
         "program/evidence/VR-WA-110-RUN-TRACKING.md",
-        "program/cards/VR-WA-060-DRIVER-APP.md"
+        "program/cards/VR-WA-060-DRIVER-APP.md",
+        "program/evidence/mvp-entrega-20261116.md"
       ],
       "planningPaths": [
         "program/cards/VR-WA-060-DRIVER-APP.md"
@@ -1348,7 +1369,7 @@
         "Aparelho vinculado, pedido de início válido e receptor integrado disponíveis."
       ],
       "decisionPending": null,
-      "nextRequiredOutcome": "Repetir no iPhone e durante o percurso.",
+      "nextRequiredOutcome": "Conferir início/frescor em percurso e falhas de rede, sem confundir heartbeat com nova posição.",
       "sourcePaths": [
         "src/aplicativo-motorista/lib/features/driver_mvp/presentation/driver_tracking_setup.dart",
         "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/tracking/WaTrackingService.java",
@@ -1357,7 +1378,8 @@
       ],
       "evidencePaths": [
         "program/evidence/VR-WA-110-RUN-TRACKING.md",
-        "program/cards/VR-WA-110-RUN-TRACKING.md"
+        "program/cards/VR-WA-110-RUN-TRACKING.md",
+        "program/evidence/mvp-entrega-20261116.md"
       ],
       "planningPaths": [
         "program/cards/VR-WA-110-RUN-TRACKING.md"
@@ -1390,7 +1412,7 @@
         "Sessão integrada e aparelho com a versão identificada disponíveis em ensaio controlado."
       ],
       "decisionPending": null,
-      "nextRequiredOutcome": "Exercitar a mesma parada no iPhone físico e no percurso.",
+      "nextRequiredOutcome": "Nos dois apps +15, parar sem rede, reabrir e reconectar; comprovar sensor parado, pendência durável e baixa sem reiniciar coleta.",
       "sourcePaths": [
         "src/aplicativo-motorista/android/app/src/driver/kotlin/com/example/vanrides_frontend_dev/driver/DriverTrackingRuntime.kt",
         "src/aplicativo-motorista/android/app/src/driver/kotlin/com/example/vanrides_frontend_dev/driver/DriverTrackingService.kt",
@@ -1399,7 +1421,8 @@
       ],
       "evidencePaths": [
         "program/evidence/VR-WA-110-RUN-TRACKING.md",
-        "program/cards/VR-WA-110-RUN-TRACKING.md"
+        "program/cards/VR-WA-110-RUN-TRACKING.md",
+        "program/evidence/mvp-entrega-20261116.md"
       ],
       "planningPaths": [
         "program/cards/VR-WA-110-RUN-TRACKING.md"
@@ -1432,7 +1455,7 @@
         "Mensagem persistida e política atual de tentativas identificadas."
       ],
       "decisionPending": null,
-      "nextRequiredOutcome": "Comprovar as mesmas regras com o número dedicado.",
+      "nextRequiredOutcome": "Exercitar falha/reconexão real de envio sem duplicar e preservar UNKNOWN quando não houver confirmação.",
       "sourcePaths": [
         "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/transport/WaDeliveryAttempts.java",
         "src/backend/src/test/java/com/vanrides/vanrides/whatsapp/transport/WaDeliveryRetryIntegrationTest.java",
@@ -1440,7 +1463,9 @@
       ],
       "evidencePaths": [
         "program/evidence/VR-WA-120-DELIVERY-RECOVERY.md",
-        "program/cards/VR-WA-120-DELIVERY-RECOVERY.md"
+        "program/cards/VR-WA-120-DELIVERY-RECOVERY.md",
+        "program/evidence/mvp-entrega-20261116.md",
+        "program/evidence/receipts/mvp-20261116-callbacks.json"
       ],
       "planningPaths": [
         "program/cards/VR-WA-120-DELIVERY-RECOVERY.md"
@@ -1473,14 +1498,16 @@
         "Tentativas identificadas e formato do retorno do serviço documentado."
       ],
       "decisionPending": null,
-      "nextRequiredOutcome": "Verificar envio e confirmação reais com destinatário autorizado.",
+      "nextRequiredOutcome": "Revisar a associação dos retornos reais e completar cenários sem callback, entrega incerta e destinatários distintos.",
       "sourcePaths": [
         "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/transport/WaDeliveryReconciler.java",
         "src/backend/src/test/java/com/vanrides/vanrides/whatsapp/transport/WaDeliveryRecoveryIntegrationTest.java"
       ],
       "evidencePaths": [
         "program/evidence/VR-WA-120-DELIVERY-RECOVERY.md",
-        "program/cards/VR-WA-120-DELIVERY-RECOVERY.md"
+        "program/cards/VR-WA-120-DELIVERY-RECOVERY.md",
+        "program/evidence/mvp-entrega-20261116.md",
+        "program/evidence/receipts/mvp-20261116-callbacks.json"
       ],
       "planningPaths": [
         "program/cards/VR-WA-120-DELIVERY-RECOVERY.md"
@@ -1688,15 +1715,19 @@
       "prerequisites": [
         "Antes de iniciar, documentar a versão da regra final, seus parâmetros e os cenários de fim verdadeiro e fim indevido. A regra deve considerar progresso, validade e precisão das posições, velocidade e permanência; a sessão integrada deve estar disponível."
       ],
-      "decisionPending": "Confirmar os parâmetros de ensaio e seus resultados esperados antes da implementação. As hipóteses existentes precisam de calibração em percurso; terminar manualmente não aprova o encerramento automático.",
-      "nextRequiredOutcome": "Implementar e testar o reconhecimento de fim da viagem.",
+      "decisionPending": "Calibrar e revisar os parâmetros de chegada em percurso; finalização manual isolada não aprova o encerramento automático.",
+      "nextRequiredOutcome": "Calibrar e comprovar fim automático em campo e revisar os critérios; a contingência manual não substitui essa prova.",
       "sourcePaths": [
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/tracking/WaRunFinishes.java",
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/tracking/WaRunFinishPolicy.java",
+        "src/backend/src/test/java/com/vanrides/vanrides/whatsapp/transport/WaRunFinishIntegrationTest.java",
         "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaCommandService.java",
         "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/tracking/WaTrackingSamples.java",
         "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/tracking/WaTrackingService.java"
       ],
       "evidencePaths": [
-        "program/cards/VR-WA-140-FINISH-SUPPORT.md"
+        "program/cards/VR-WA-140-FINISH-SUPPORT.md",
+        "program/evidence/mvp-entrega-20261116.md"
       ],
       "planningPaths": [
         "program/cards/VR-WA-140-FINISH-SUPPORT.md"
@@ -1739,8 +1770,10 @@
         "Encerramento da viagem integrado ao contrato do coletor."
       ],
       "decisionPending": null,
-      "nextRequiredOutcome": "Integrar ao encerramento automático e repetir nos dois aparelhos.",
+      "nextRequiredOutcome": "Validar o encerramento automático em campo e os cenários atuais de rede/tela bloqueada nas duas plataformas.",
       "sourcePaths": [
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/tracking/WaRunFinishes.java",
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/tracking/WaTrackingStopReceipt.java",
         "src/aplicativo-motorista/android/app/src/driver/kotlin/com/example/vanrides_frontend_dev/driver/DriverTrackingRuntime.kt",
         "src/aplicativo-motorista/android/app/src/driver/kotlin/com/example/vanrides_frontend_dev/driver/DriverTrackingService.kt",
         "src/aplicativo-motorista/ios/Runner/DriverTrackingCoordinator.swift",
@@ -1748,7 +1781,8 @@
       ],
       "evidencePaths": [
         "program/evidence/VR-WA-110-RUN-TRACKING.md",
-        "program/cards/VR-WA-140-FINISH-SUPPORT.md"
+        "program/cards/VR-WA-140-FINISH-SUPPORT.md",
+        "program/evidence/mvp-entrega-20261116.md"
       ],
       "planningPaths": [
         "program/cards/VR-WA-140-FINISH-SUPPORT.md"
@@ -1781,7 +1815,7 @@
         "Estados de conversa e procedimentos de suporte e revogação identificados."
       ],
       "decisionPending": null,
-      "nextRequiredOutcome": "Concluir retirada de acesso e recuperação do ciclo de viagem.",
+      "nextRequiredOutcome": "Conferir no canal real a pausa/retomada e retirada de acesso, sem restaurar permissões nem perder o contexto.",
       "sourcePaths": [
         "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaConversationPolicy.java",
         "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaOnboardingCommands.java",
@@ -1791,7 +1825,8 @@
       "evidencePaths": [
         "program/evidence/VR-WA-070-AGENT-WORKFLOWS.md",
         "program/evidence/VR-WA-060-DRIVER-APP.md",
-        "program/cards/VR-WA-140-FINISH-SUPPORT.md"
+        "program/cards/VR-WA-140-FINISH-SUPPORT.md",
+        "program/evidence/mvp-entrega-20261116.md"
       ],
       "planningPaths": [
         "program/cards/VR-WA-140-FINISH-SUPPORT.md"
@@ -1865,14 +1900,16 @@
         "Modo de execução e armazenamento do n8n definidos para o ambiente avaliado."
       ],
       "decisionPending": null,
-      "nextRequiredOutcome": "Validar o modo operacional, a fila e as agendas do ambiente escolhido.",
+      "nextRequiredOutcome": "Revisar a evidência 006 e os critérios do conjunto, mantendo separados os cenários reais de resultado incerto.",
       "sourcePaths": [
+        "deploy/homologacao/rehearse_recovery.py",
         "src/whatsapp/workflows/generate.mjs",
         "src/whatsapp/workflows/W08.json"
       ],
       "evidencePaths": [
         "program/evidence/VR-WA-120-DELIVERY-RECOVERY.md",
-        "program/cards/VR-WA-150-OPERATIONS.md"
+        "program/cards/VR-WA-150-OPERATIONS.md",
+        "program/evidence/mvp-entrega-20261116.md"
       ],
       "planningPaths": [
         "program/cards/VR-WA-150-OPERATIONS.md"
@@ -1905,8 +1942,11 @@
         "Finalidades, famílias de dados e prazos aplicáveis documentados para o cenário."
       ],
       "decisionPending": null,
-      "nextRequiredOutcome": "Definir e testar retenção e exclusão de todas as famílias necessárias.",
+      "nextRequiredOutcome": "Revisar a prévia e a ativação humana de descarte; implementar a lacuna operacional de rotação física sem apagar backups por esta atualização.",
       "sourcePaths": [
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/privacy/WaPrivacyJobs.java",
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/privacy/WaPrivacyService.java",
+        "deploy/homologacao/recovery_privacy.py",
         "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaOnboardingCommands.java",
         "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/transport/WaDeliveryMaintenance.java"
       ],
@@ -1914,7 +1954,8 @@
         "program/evidence/VR-WA-040-DOMAIN-AUTH.md",
         "program/evidence/VR-WA-070-AGENT-WORKFLOWS.md",
         "program/evidence/VR-WA-120-DELIVERY-RECOVERY.md",
-        "program/cards/VR-WA-150-OPERATIONS.md"
+        "program/cards/VR-WA-150-OPERATIONS.md",
+        "program/evidence/mvp-entrega-20261116.md"
       ],
       "planningPaths": [
         "program/cards/VR-WA-150-OPERATIONS.md"
@@ -1947,13 +1988,16 @@
         "Catálogo do conjunto de cópia e regras de exclusão definidos, com destino de restauração separado."
       ],
       "decisionPending": null,
-      "nextRequiredOutcome": "Executar restauração isolada e reaplicação de exclusões do conjunto completo.",
+      "nextRequiredOutcome": "Revisar os três critérios contra a evidência 006. Manter separada a pendência operacional de rotação física; nenhum backup é apagado por este registro.",
       "sourcePaths": [
+        "deploy/homologacao/rehearse_recovery.py",
+        "deploy/homologacao/recovery_privacy.py",
         "src/whatsapp/gps-spike/deploy/state_backup.py"
       ],
       "evidencePaths": [
         "program/evidence/VR-WA-020-GPS-SPIKE.md",
-        "program/cards/VR-WA-150-OPERATIONS.md"
+        "program/cards/VR-WA-150-OPERATIONS.md",
+        "program/evidence/mvp-entrega-20261116.md"
       ],
       "planningPaths": [
         "program/cards/VR-WA-150-OPERATIONS.md"
@@ -1986,12 +2030,15 @@
         "Ambiente de teste, limites configurados e papel do operador definidos."
       ],
       "decisionPending": null,
-      "nextRequiredOutcome": "Consolidar alertas, limites e parada segura no ensaio de operação.",
-      "sourcePaths": [],
+      "nextRequiredOutcome": "Revisar guia/responsável e conferir cenários operacionais ainda necessários, distinguindo plano, revogação e retorno efetivo.",
+      "sourcePaths": [
+        "deploy/homologacao/operations.py"
+      ],
       "evidencePaths": [
         "src/whatsapp/worker/README.md",
         "docs/runbooks/whatsapp-mvp/120-entrega-e-canal-real.md",
-        "program/cards/VR-WA-150-OPERATIONS.md"
+        "program/cards/VR-WA-150-OPERATIONS.md",
+        "program/evidence/mvp-entrega-20261116.md"
       ],
       "planningPaths": [
         "program/cards/VR-WA-150-OPERATIONS.md"
@@ -2024,12 +2071,13 @@
         "Componentes e verificações do candidato disponíveis para identificação."
       ],
       "decisionPending": null,
-      "nextRequiredOutcome": "Fechar dependências e identificar todos os arquivos da versão integrada.",
+      "nextRequiredOutcome": "Conferir o manifesto conjunto após a revisão final da fonte e guias, preservando versões, hashes, flags e retorno.",
       "sourcePaths": [],
       "evidencePaths": [
         "program/evidence/VR-WA-110-RUN-TRACKING.md",
         "program/evidence/VR-WA-120-DELIVERY-RECOVERY.md",
-        "program/cards/VR-WA-160-RELEASE-PREP.md"
+        "program/cards/VR-WA-160-RELEASE-PREP.md",
+        "program/evidence/mvp-entrega-20261116.md"
       ],
       "planningPaths": [
         "program/cards/VR-WA-160-RELEASE-PREP.md"
@@ -2062,7 +2110,7 @@
         "Versão Android candidata e material de assinatura mantido fora da publicação."
       ],
       "decisionPending": null,
-      "nextRequiredOutcome": "Gerar nova versão quando os módulos pendentes forem integrados.",
+      "nextRequiredOutcome": "Preservar hash/versão/retorno e usar o APK +15 publicado na rodada de campo.",
       "sourcePaths": [
         "src/aplicativo-motorista/android/app/build.gradle.kts"
       ],
@@ -2070,7 +2118,8 @@
         "program/evidence/VR-WA-010-TOOLCHAINS.md",
         "program/evidence/VR-WA-110-RUN-TRACKING.md",
         "docs/runbooks/whatsapp-mvp/010-builds-e-instalacao.md",
-        "program/cards/VR-WA-160-RELEASE-PREP.md"
+        "program/cards/VR-WA-160-RELEASE-PREP.md",
+        "program/evidence/mvp-entrega-20261116.md"
       ],
       "planningPaths": [
         "program/cards/VR-WA-160-RELEASE-PREP.md"
@@ -2103,7 +2152,7 @@
         "iPhone disponibilizado, assinatura válida e ações de conta realizadas pelo proprietário."
       ],
       "decisionPending": null,
-      "nextRequiredOutcome": "Instalar e validar a versão integrada no iPhone após retomar os testes.",
+      "nextRequiredOutcome": "Renovar antes do vencimento e conferir a reprodução da instalação pelo procedimento, sem transferir a prova de outro build.",
       "sourcePaths": [
         "src/aplicativo-motorista/ios/Runner.xcodeproj/project.pbxproj"
       ],
@@ -2111,7 +2160,8 @@
         "program/evidence/VR-WA-010-TOOLCHAINS.md",
         "program/evidence/VR-WA-110-RUN-TRACKING.md",
         "docs/runbooks/whatsapp-mvp/010-builds-e-instalacao.md",
-        "program/cards/VR-WA-160-RELEASE-PREP.md"
+        "program/cards/VR-WA-160-RELEASE-PREP.md",
+        "program/evidence/mvp-entrega-20261116.md"
       ],
       "planningPaths": [
         "program/cards/VR-WA-160-RELEASE-PREP.md"
@@ -2144,11 +2194,14 @@
         "Versão candidata identificada e inventário de leitura do ambiente alvo."
       ],
       "decisionPending": null,
-      "nextRequiredOutcome": "Consolidar a implantação da versão completa com verificações e retorno.",
-      "sourcePaths": [],
+      "nextRequiredOutcome": "Preservar o retorno ensaiado e revisar o plano/recibos da mesma combinação de versões.",
+      "sourcePaths": [
+        "deploy/homologacao/rehearse_migration.py"
+      ],
       "evidencePaths": [
         "docs/runbooks/whatsapp-mvp/110-laboratorio-temporario.md",
-        "program/cards/VR-WA-160-RELEASE-PREP.md"
+        "program/cards/VR-WA-160-RELEASE-PREP.md",
+        "program/evidence/mvp-entrega-20261116.md"
       ],
       "planningPaths": [
         "program/cards/VR-WA-160-RELEASE-PREP.md"
@@ -2181,14 +2234,18 @@
         "Plano e candidato conferidos, autorização externa específica e configuração de endereço realizada quando necessária."
       ],
       "decisionPending": null,
-      "nextRequiredOutcome": "Preparar ambiente final quando as funções e o número dedicado estiverem disponíveis.",
-      "sourcePaths": [],
+      "nextRequiredOutcome": "Preservar a combinação publicada e revisar os critérios de funcionamento/retorno no ambiente compartilhado.",
+      "sourcePaths": [
+        ".github/workflows/backend.yml",
+        "src/whatsapp/worker/dispatch.mjs"
+      ],
       "evidencePaths": [
         "program/evidence/VR-WA-120-DELIVERY-RECOVERY.md",
         "docs/runbooks/whatsapp-mvp/110-laboratorio-temporario.md",
         "src/whatsapp/worker/README.md",
         "docs/runbooks/whatsapp-mvp/120-entrega-e-canal-real.md",
-        "program/cards/VR-WA-170-TEST-ENVIRONMENT.md"
+        "program/cards/VR-WA-170-TEST-ENVIRONMENT.md",
+        "program/evidence/mvp-entrega-20261116.md"
       ],
       "planningPaths": [
         "program/cards/VR-WA-170-TEST-ENVIRONMENT.md"
@@ -2221,13 +2278,18 @@
         "Nova linha sob controle do proprietário e destinatário distinto e autorizado disponíveis."
       ],
       "decisionPending": null,
-      "nextRequiredOutcome": "Disponibilizar a linha e conferir envio e confirmação reais.",
-      "sourcePaths": [],
+      "nextRequiredOutcome": "Revisar pareamento/envios/retornos e completar destinatários distintos e ausência de confirmação sem presumir entrega.",
+      "sourcePaths": [
+        "src/whatsapp/worker/dispatch.mjs",
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/transport/WaEventService.java"
+      ],
       "evidencePaths": [
         "program/evidence/VR-WA-120-DELIVERY-RECOVERY.md",
         "src/whatsapp/worker/README.md",
         "docs/runbooks/whatsapp-mvp/120-entrega-e-canal-real.md",
-        "program/cards/VR-WA-170-TEST-ENVIRONMENT.md"
+        "program/cards/VR-WA-170-TEST-ENVIRONMENT.md",
+        "program/evidence/mvp-entrega-20261116.md",
+        "program/evidence/receipts/mvp-20261116-callbacks.json"
       ],
       "planningPaths": [
         "program/cards/VR-WA-170-TEST-ENVIRONMENT.md"
@@ -2260,8 +2322,9 @@
         "Ambiente e modo de execução escolhidos e autorizados, com calendário de teste configurado."
       ],
       "decisionPending": null,
-      "nextRequiredOutcome": "Executar agenda real, reinício e recuperação no modo operacional escolhido.",
+      "nextRequiredOutcome": "Revisar a prova das agendas/identidade de automação e registrar os efeitos reais específicos ainda não cobertos.",
       "sourcePaths": [
+        "deploy/homologacao/rehearse_recovery.py",
         "src/whatsapp/workflows/generate.mjs",
         "src/whatsapp/workflows/W08.json",
         "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/attendance/WaAttendanceJobs.java",
@@ -2270,7 +2333,8 @@
       "evidencePaths": [
         "program/evidence/VR-WA-100-ATTENDANCE.md",
         "program/evidence/VR-WA-120-DELIVERY-RECOVERY.md",
-        "program/cards/VR-WA-170-TEST-ENVIRONMENT.md"
+        "program/cards/VR-WA-170-TEST-ENVIRONMENT.md",
+        "program/evidence/mvp-entrega-20261116.md"
       ],
       "planningPaths": [
         "program/cards/VR-WA-170-TEST-ENVIRONMENT.md"
@@ -2303,7 +2367,7 @@
         "Prova de localização Android e ambiente integrado com canal real disponíveis."
       ],
       "decisionPending": null,
-      "nextRequiredOutcome": "Executar o ciclo completo no Android com o canal real e percurso.",
+      "nextRequiredOutcome": "Executar o roteiro de campo Android +15 e registrar etapas/falhas; não declarar jornada completa pelo teste estacionado.",
       "sourcePaths": [
         "src/aplicativo-motorista/android/app/src/driver/kotlin/com/example/vanrides_frontend_dev/driver/DriverTrackingRuntime.kt",
         "src/aplicativo-motorista/android/app/src/driver/kotlin/com/example/vanrides_frontend_dev/driver/DriverTrackingService.kt"
@@ -2311,7 +2375,8 @@
       "evidencePaths": [
         "program/evidence/VR-WA-110-RUN-TRACKING.md",
         "docs/runbooks/whatsapp-mvp/110-laboratorio-temporario.md",
-        "program/cards/VR-WA-180-E2E-DEVICES.md"
+        "program/cards/VR-WA-180-E2E-DEVICES.md",
+        "program/evidence/mvp-entrega-20261116.md"
       ],
       "planningPaths": [
         "program/cards/VR-WA-180-E2E-DEVICES.md"
@@ -2344,14 +2409,15 @@
         "Retomada do iPhone autorizada, prova de localização da plataforma e ambiente com canal real disponíveis."
       ],
       "decisionPending": null,
-      "nextRequiredOutcome": "Retomar o aparelho depois de fechar as dependências.",
+      "nextRequiredOutcome": "Executar o roteiro de campo iPhone +15 e registrar resultados separadamente do Android, sem promover GPS parado a jornada completa.",
       "sourcePaths": [
         "src/aplicativo-motorista/ios/Runner/DriverTrackingCoordinator.swift",
         "src/aplicativo-motorista/ios/Runner/DriverTrackingCore.swift"
       ],
       "evidencePaths": [
         "program/evidence/VR-WA-030-GPS-PROOF.md",
-        "program/cards/VR-WA-180-E2E-DEVICES.md"
+        "program/cards/VR-WA-180-E2E-DEVICES.md",
+        "program/evidence/mvp-entrega-20261116.md"
       ],
       "planningPaths": [
         "program/cards/VR-WA-180-E2E-DEVICES.md"
@@ -2384,10 +2450,11 @@
         "Produtor de aproximação, canal real e percursos disponíveis."
       ],
       "decisionPending": "Combinar como será reconhecido um aviso útil antes de avaliar os percursos; este apoio não define minutos ou metros.",
-      "nextRequiredOutcome": "Medir antecedência útil e destinatário correto após implementar os avisos.",
+      "nextRequiredOutcome": "Medir antecedência útil e destinatário correto no percurso autorizado, com os apps +15 e flags registradas.",
       "sourcePaths": [],
       "evidencePaths": [
-        "program/cards/VR-WA-180-E2E-DEVICES.md"
+        "program/cards/VR-WA-180-E2E-DEVICES.md",
+        "program/evidence/mvp-entrega-20261116.md"
       ],
       "planningPaths": [
         "program/cards/VR-WA-180-E2E-DEVICES.md"
@@ -2420,13 +2487,14 @@
         "Arquivos de instalação, roteiros e resultados dos componentes reunidos."
       ],
       "decisionPending": null,
-      "nextRequiredOutcome": "Consolidar o guia e os resultados após a validação completa.",
+      "nextRequiredOutcome": "Revisar os guias com o grupo e acrescentar os resultados de campo/bateria/utilidade quando executados.",
       "sourcePaths": [],
       "evidencePaths": [
         "src/whatsapp/worker/README.md",
         "docs/runbooks/whatsapp-mvp/120-entrega-e-canal-real.md",
         "docs/runbooks/whatsapp-mvp/010-builds-e-instalacao.md",
-        "program/cards/VR-WA-190-HANDOFF.md"
+        "program/cards/VR-WA-190-HANDOFF.md",
+        "program/evidence/mvp-entrega-20261116.md"
       ],
       "planningPaths": [
         "program/cards/VR-WA-190-HANDOFF.md"
@@ -2459,11 +2527,12 @@
         "Pacote final e instruções completos, aparelhos e ações de conta do proprietário disponíveis."
       ],
       "decisionPending": null,
-      "nextRequiredOutcome": "Reproduzir instalação e renovação do pacote final nos dois aparelhos.",
+      "nextRequiredOutcome": "Reproduzir a instalação/entrada pelos guias e a renovação aplicável, preservando hashes e sem compartilhar credenciais.",
       "sourcePaths": [],
       "evidencePaths": [
         "docs/runbooks/whatsapp-mvp/010-builds-e-instalacao.md",
-        "program/cards/VR-WA-190-HANDOFF.md"
+        "program/cards/VR-WA-190-HANDOFF.md",
+        "program/evidence/mvp-entrega-20261116.md"
       ],
       "planningPaths": [
         "program/cards/VR-WA-190-HANDOFF.md"
@@ -2472,7 +2541,7 @@
     {
       "taskId": "T72",
       "title": "Registrar cancelamento ou correção de presença para a viagem indicada na conversa.",
-      "shortTitle": "Proposta: cancelar ou corrigir presença",
+      "shortTitle": "Cancelar ou corrigir presença",
       "feature": "F06",
       "problem": "O passageiro pode mudar sua participação e precisa saber qual viagem será afetada.",
       "outcome": "Se a inclusão for aprovada, cancelamento e correção têm um resultado claro para a ocorrência certa.",
@@ -2495,8 +2564,8 @@
       "prerequisites": [
         "Decisão do grupo sobre a inclusão na Onda 2 e regra de presença vigente identificadas."
       ],
-      "decisionPending": "Confirmar a inclusão de cancelamento e correção no recorte acadêmico e registrar a mudança do planejamento.",
-      "nextRequiredOutcome": "Confirmar o enquadramento da funcionalidade com a equipe.",
+      "decisionPending": null,
+      "nextRequiredOutcome": "Revisar os critérios e completar a alteração após início no canal real; não reabrir a inclusão já integrada como proposta.",
       "sourcePaths": [
         "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaAttendanceMutation.java",
         "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaAttendanceConversation.java",
@@ -2505,7 +2574,8 @@
       ],
       "evidencePaths": [
         "program/evidence/VR-WA-100-ATTENDANCE.md",
-        "program/cards/VR-WA-100-ATTENDANCE.md"
+        "program/cards/VR-WA-100-ATTENDANCE.md",
+        "program/evidence/mvp-entrega-20261116.md"
       ],
       "planningPaths": [
         "program/cards/VR-WA-100-ATTENDANCE.md"
@@ -2514,7 +2584,7 @@
     {
       "taskId": "T73",
       "title": "Aplicar o horário limite para alterar a presença e manter o histórico mínimo dos cancelamentos.",
-      "shortTitle": "Proposta: definir limite da alteração",
+      "shortTitle": "Definir limite da alteração",
       "feature": "F06",
       "problem": "O texto de horário limite pode ser entendido como bloqueio total, mas a regra atual permite informar ausência depois da partida.",
       "outcome": "Se a proposta for aprovada, equipe e implementação usam a mesma regra de alteração e histórico.",
@@ -2537,8 +2607,8 @@
       "prerequisites": [
         "Acordo explícito sobre a semântica de horário limite e sobre a proposta de escopo."
       ],
-      "decisionPending": "Resolver a divergência entre o texto do backlog e a regra atual que permite ausência após a partida; não há bloqueio total aprovado por esta especificação.",
-      "nextRequiredOutcome": "Alinhar o significado de horário limite antes de declarar a tarefa pronta.",
+      "decisionPending": "Revisar com a equipe a expressão horário limite à luz da regra integrada: após saída não há entrada/retorno à lista; ausência pode cancelar parada não passada, preservando o snapshot. Não é bloqueio geral de toda ausência tardia.",
+      "nextRequiredOutcome": "Revisar a redação de horário limite com a equipe e conferir a regra após início no canal real, preservando os critérios existentes.",
       "sourcePaths": [
         "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaAttendanceMutation.java",
         "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaAttendanceConversation.java",
@@ -2548,7 +2618,8 @@
       "evidencePaths": [
         "program/evidence/VR-WA-100-ATTENDANCE.md",
         "program/cards/VR-WA-100-ATTENDANCE.md",
-        "program/cards/VR-WA-120-DELIVERY-RECOVERY.md"
+        "program/cards/VR-WA-120-DELIVERY-RECOVERY.md",
+        "program/evidence/mvp-entrega-20261116.md"
       ],
       "planningPaths": [
         "program/cards/VR-WA-100-ATTENDANCE.md",
@@ -2558,7 +2629,7 @@
     {
       "taskId": "T74",
       "title": "Informar ao motorista a mudança de presença pelo WhatsApp, evitando aviso repetido ou atrasado.",
-      "shortTitle": "Proposta: avisar cancelamento ao motorista",
+      "shortTitle": "Avisar cancelamento ao motorista",
       "feature": "F12",
       "problem": "Alterar a presença sem informar o motorista pode manter a expectativa de um embarque que foi cancelado.",
       "outcome": "Se aprovada, a mudança gera aviso adequado ao motorista correto.",
@@ -2581,15 +2652,18 @@
       "prerequisites": [
         "Proposta de escopo aprovada e cancelamento da ocorrência identificado."
       ],
-      "decisionPending": "Confirmar a inclusão e a regra de quando o motorista deve receber o aviso; a entrega ao motorista ainda não foi comprovada.",
-      "nextRequiredOutcome": "Aprovar o ajuste e implementar ou localizar o aviso ao motorista.",
+      "decisionPending": null,
+      "nextRequiredOutcome": "Conferir no WhatsApp real o aviso ao motorista após ausência elegível pós-saída, sem duplicação e antes de perder a utilidade.",
       "sourcePaths": [
+        "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/transport/WaDriverAttendanceNotices.java",
         "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaAttendanceMutation.java",
+        "src/backend/src/test/java/com/vanrides/vanrides/whatsapp/transport/WaStopCanceledNoticeIntegrationTest.java",
         "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaAttendanceConversation.java"
       ],
       "evidencePaths": [
         "program/evidence/VR-WA-100-ATTENDANCE.md",
-        "program/cards/VR-WA-120-DELIVERY-RECOVERY.md"
+        "program/cards/VR-WA-120-DELIVERY-RECOVERY.md",
+        "program/evidence/mvp-entrega-20261116.md"
       ],
       "planningPaths": [
         "program/cards/VR-WA-120-DELIVERY-RECOVERY.md"
@@ -2622,13 +2696,14 @@
         "Motorista autorizado e ocorrências com respostas de teste existentes."
       ],
       "decisionPending": null,
-      "nextRequiredOutcome": "Verificar a mesma consulta pelo número dedicado.",
+      "nextRequiredOutcome": "Revisar a lista por ocorrência e completar os cenários reais após início sem reescrever o snapshot da partida.",
       "sourcePaths": [
         "src/backend/src/main/java/com/vanrides/vanrides/whatsapp/commands/WaAttendanceSummary.java"
       ],
       "evidencePaths": [
         "program/evidence/VR-WA-100-ATTENDANCE.md",
-        "program/cards/VR-WA-100-ATTENDANCE.md"
+        "program/cards/VR-WA-100-ATTENDANCE.md",
+        "program/evidence/mvp-entrega-20261116.md"
       ],
       "planningPaths": [
         "program/cards/VR-WA-100-ATTENDANCE.md"
