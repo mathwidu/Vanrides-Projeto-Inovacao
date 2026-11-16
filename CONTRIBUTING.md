@@ -3,6 +3,12 @@
 Comece por uma frente e uma tarefa pequena. Os testes simulados não exigem
 número do bot, acesso à VPS ou chave OpenAI.
 
+Para conhecer o estado publicado antes de editar código, abra a [área da
+equipe](https://vanrides-inovacao-api.matheusduarte.dev.br/equipe) com a conta
+GitHub que tem escrita no repositório. O [guia da homologação](docs/desenvolvimento/homologacao-da-equipe.md)
+mostra quando usar o simulador, seu WhatsApp como passageiro ou dois números
+de teste. Para reproduzir só o cadastro, siga o [roteiro do WhatsApp](docs/desenvolvimento/cadastro-guiado-whatsapp.md).
+
 ## 1. Obter o projeto
 
 Com Git instalado, no PowerShell, Terminal do macOS ou Linux:
@@ -131,16 +137,10 @@ Envie uma correção pequena de instrução ou um teste de cenário compreendido
 Isso confirma acesso e revisão. A escolha da área depende do grupo, não do
 sistema operacional de cada pessoa.
 
-Deploy e testes com usuários são etapas separadas. O bot está conectado à
-Evolution e o perfil básico foi validado no WhatsApp real. O uso pelo colega
-requer admissão do contato; credenciais e convites são individuais. Testes
-físicos do aplicativo iPhone continuam pausados. O novo fluxo publica a API
-automaticamente após a construção da aplicação e da imagem em um push na `main`.
-O provisionamento está ativo. PRs e pushes em `dev` constroem sem publicar. Consulte o
-[estado de ativação](docs/desenvolvimento/area-da-equipe.md) e o
-[procedimento de deploy](deploy/homologacao/AUTOMATICO.md).
-
-O [guia de homologação da equipe](docs/desenvolvimento/homologacao-da-equipe.md)
-reúne URLs, versões, fluxos, roteiro de teste e limites do que está publicado.
-Antes de diagnosticar uma diferença de resposta, confira se a mudança está
-somente na sua branch, na `main` ou também na versão instalada na VPS.
+O WhatsApp de homologação recebe a versão publicada da API. Faça o teste
+da sua branch localmente e descreva o resultado no PR. O build do PR verifica
+a construção. O merge na `main` publica a API e a interface da equipe. Antes
+de repetir o teste no WhatsApp, confira a revisão no
+[GitHub Actions](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/actions/workflows/backend.yml).
+Para mudanças no agente, receptor, n8n ou APK, combine a publicação com o
+mantenedor. Veja o [procedimento de deploy](deploy/homologacao/AUTOMATICO.md).

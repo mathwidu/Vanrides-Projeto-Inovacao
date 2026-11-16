@@ -85,9 +85,10 @@ continua sendo loopback e não usa esses destinos automaticamente.
 
 O [guia da homologação](homologacao-da-equipe.md) descreve o ambiente real:
 Evolution dedicada → receptor → API; n8n aciona o worker para conversa e envio.
-A OpenAI está desabilitada e um contato de passageiro foi admitido. Novos
-participantes dependem de admissão pelo operador. Não importar os exports nem
-ativar agendas novamente para testar uma alteração de código.
+A OpenAI está desabilitada. Integrantes com acesso de escrita podem liberar
+participantes na [área da equipe](area-da-equipe.md). O
+[guia do cadastro](cadastro-guiado-whatsapp.md) explica como emitir o link
+individual e testar vínculo, ponto e aprovação na conversa.
 
 O código no Git não altera automaticamente o bot hospedado. Desenvolva e teste
 localmente; a publicação de uma revisão e o teste de contato real são passos
