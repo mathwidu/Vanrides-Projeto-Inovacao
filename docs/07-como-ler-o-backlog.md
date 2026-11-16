@@ -12,11 +12,11 @@ As issues são o espaço de discussão e revisão. A planilha mantém o formato 
 
 | Frente | Próximo resultado necessário | Dependência |
 |---|---|---|
-| Cadastro e presença | Repetir as conversas no canal real | Linha dedicada e participantes autorizados |
-| Aproximação | Concluir regras, testes e calibração do aviso | Posição recente, ordem de pontos e parâmetros revisados |
+| Cadastro e presença | Repetir o cadastro novo e os cenários restantes | Bot online e participantes autorizados |
+| Aproximação | Validar recebimento e calibrar o aviso no percurso | Regra integrada; posição recente e ordem dos pontos conferidas |
 | Encerramento | Validar fim automático e parada na rodada de campo | Regra integrada; calibração e cenários de rede pendentes |
 | Android e iPhone | Percurso completo, rede, bateria e destinatário correto | Apps +15 com prova estacionada; [registro atual](../program/evidence/mvp-entrega-20261116.md) |
-| Contribuição do grupo | Reproduzir uma frente e enviar o primeiro PR | Guia de desenvolvimento e revisão de um colega |
+| Contribuição do grupo | Escolher uma lacuna da issue e enviar um PR | Guia de desenvolvimento e revisão de um colega |
 
 ## Como interpretar a situação
 
@@ -29,6 +29,9 @@ As issues são o espaço de discussão e revisão. A planilha mantém o formato 
 
 Essas contagens não medem percentual concluído. Teste automatizado, laboratório, aparelho parado e percurso são provas diferentes.
 Uma tarefa só termina quando seus critérios são atendidos, o PR foi revisado e a prova registra a versão avaliada.
+
+No GitHub, as etiquetas `codigo: implementado`, `codigo: parcial` e `codigo: planejado` acompanham esse inventário.
+Elas não fecham a issue, não substituem seus critérios e preservam as outras etiquetas do grupo.
 
 ## Lista por onda
 
