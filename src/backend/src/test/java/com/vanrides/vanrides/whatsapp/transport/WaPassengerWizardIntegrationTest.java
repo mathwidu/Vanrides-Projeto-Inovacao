@@ -145,7 +145,16 @@ class WaPassengerWizardIntegrationTest {
         fixture.transport.time.advance(601);
         var expired = fixture.send(passenger, "ACEITO");
         assertTrue(expired.text().startsWith("O prazo para aceitar o aviso terminou."), expired.text());
-        assertTrue(expired.text().contains("Você aceita o aviso de privacidade"), expired.text());
+        assertTrue(
+                expired.text()
+                        .contains(
+                                "Antes de continuar, um aviso sobre seus dados.\n\nPara organizar o seu"
+                                        + " transporte e viagens, o VanRides usa seu nome, seu número de"
+                                        + " WhatsApp, esta conversa, seu ponto de embarque e as viagens que"
+                                        + " você escolher. Depois disso, você escolhe quais avisos quer"
+                                        + " receber.\n\nSe você concorda, responda ACEITO para continuar."),
+                expired.text());
+        assertFalse(expired.text().contains("wa-mvp-v1"), expired.text());
         assertNull(
                 fixture.conversation.string(
                         "SELECT notice_version FROM wa.profile WHERE identity_id=?", passenger));
