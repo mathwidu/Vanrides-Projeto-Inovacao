@@ -54,6 +54,13 @@ final class WaPassengerTexts {
         return "• " + routineLabel(name, direction, time) + ", dias " + WaPassengerAnswers.dayNames(days);
     }
 
+    private static String routineBlock(JsonNode routine, JsonNode days) {
+        return routine.path("name").asText() + "\n"
+                + (routine.path("direction").asText().equals("OUTBOUND") ? "→ Ida" : "← Volta")
+                + " às " + clock(routine.path("local_time").asText())
+                + (days.isArray() && !days.isEmpty() ? "\nDias: " + WaPassengerAnswers.dayNames(days) : "");
+    }
+
     static String prompt(ObjectNode draft) {
         String stage = draft.path("stage").asText();
         return switch (stage) {
@@ -101,15 +108,10 @@ final class WaPassengerTexts {
                                 + ".");
                 List<String> lines = new ArrayList<>();
                 for (JsonNode selection : draft.path("selections")) {
-                    lines.add(
-                            routineLine(
-                                    selection.path("name").asText(),
-                                    selection.path("direction").asText(),
-                                    selection.path("local_time").asText(),
-                                    selection.path("selectedDays")));
+                    lines.add("• " + routineBlock(selection, selection.path("selectedDays")));
                 }
                 if (!lines.isEmpty()) {
-                    sections.add(String.join("\n", lines));
+                    sections.add(String.join("\n\n", lines));
                 }
                 if (!draft.path("addingRoutines").asBoolean()) sections.add(
                         "Avisos de aproximação: "
@@ -215,9 +217,8 @@ final class WaPassengerTexts {
     private static String days(ObjectNode draft) {
         JsonNode routine = draft.path("selections").path(draft.path("dayIndex").asInt());
         return WaPassengerAnswers.dayPrompt(
-                                "Para "
-                                        + routine.path("name").asText()
-                                        + ", em quais dias você participa?",
+                                routineBlock(routine, com.fasterxml.jackson.databind.node.MissingNode.getInstance())
+                                        + "\n\nEm quais dias você participa?",
                                 routine.path("weekdays"))
                         .text()
                 + "\n\nVocê pode enviar vários dias separados por vírgula, por exemplo: Segunda,"
@@ -235,16 +236,13 @@ final class WaPassengerTexts {
             lines.add(
                     (lines.size() + 1)
                             + ": "
-                            + routineLabel(
-                                    routine.path("name").asText(),
-                                    routine.path("direction").asText(),
-                                    routine.path("local_time").asText()));
+                            + routineBlock(routine, routine.path("weekdays")));
         }
-        String head = "Quais rotinas você utiliza? Envie os números separados por vírgula.";
+        String head = "Quais trajetos você utiliza? Envie os números separados por vírgula, como 1,2.";
         if (draft.path("addingRoutines").asBoolean()) head = lines.isEmpty()
                 ? "Não há novos trajetos disponíveis. Seus trajetos e seu pedido atual foram mantidos."
                     + " Para revisar o embarque, envie ABANDONAR e depois CORRIGIR PONTO."
-                : "Quais novos trajetos você quer acrescentar? Envie os números separados por vírgula.";
+                : "Quais novos trajetos você quer acrescentar? Envie os números separados por vírgula, como 1,2.";
         if (lines.isEmpty()) {
             if (draft.path("addingRoutines").asBoolean()) return head;
             return head
@@ -252,7 +250,7 @@ final class WaPassengerTexts {
                     + " publicar uma rotina ativa ou reduzir o catálogo. Peça orientação ao"
                     + " suporte.";
         }
-        return head + "\n\n" + String.join("\n", lines);
+        return head + "\n\n" + String.join("\n\n", lines);
     }
 
     private static String points(ObjectNode draft) {
@@ -269,9 +267,8 @@ final class WaPassengerTexts {
         }
         if (draft.path("simpleSignup").asBoolean() && draft.path("selections").size() == 1) {
             JsonNode selection = draft.path("selections").path(0);
-            text.insert(0, "Sua rotina: " + routineLabel(selection.path("name").asText(),
-                    selection.path("direction").asText(), selection.path("local_time").asText())
-                    + ", " + WaPassengerAnswers.dayNames(selection.path("selectedDays")) + ". Para mudar os dias, envie ALTERAR DIAS.\n\n");
+            text.insert(0, "Seu trajeto:\n" + routineBlock(selection, selection.path("selectedDays"))
+                    + "\nPara mudar os dias, envie ALTERAR DIAS.\n\n");
         }
         if (draft.path("commonChoicesBlocked").asBoolean()) {
             text.append(

@@ -34,6 +34,9 @@ uma interação com o bot e até três ações totais para iniciar uma saída j�
 preparada. O primeiro incremento está em implementação e validação locais,
 incluindo início curto e reuso do cadastro; não é a versão publicada nem
 comprova o teto de ações no iPhone ou com várias saídas.
+O mantenedor aceitou provisoriamente o botão intermediário do iPhone: a meta
+nesse aparelho passa a quatro ações. O desenho mantém entrada por link e retorno
+à conversa, sem contratação nova.
 
 Em 16/11/2026, a API da homologação usa schema V44, com HTTPS e worker
 saudáveis. O [pacote da rodada final](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/releases/tag/mvp-0.4.0-15)

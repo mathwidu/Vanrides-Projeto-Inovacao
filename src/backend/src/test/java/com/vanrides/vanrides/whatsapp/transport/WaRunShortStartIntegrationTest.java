@@ -20,7 +20,7 @@ class WaRunShortStartIntegrationTest {
         assertEquals(WaProblem.Code.ACTION_NOT_ALLOWED, f.send("Começar viagem").decision().error());
         assertEquals(0, f.s.number("SELECT count(*) FROM wa.start_intent"));
         f.pair();
-        var lease = f.s.text(f.driver, "Começar viagem");
+        var lease = f.s.text(f.driver, "Quero iniciar a rota");
         var offered = f.execute(lease, false);
         assertNull(offered.decision().error());
         assertEquals("ADVANCE_RUN_SETUP", offered.body().path("commandType").asText());

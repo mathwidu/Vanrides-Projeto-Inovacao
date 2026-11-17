@@ -247,6 +247,22 @@ class _PairingPageState extends State<_PairingPage>
               intent: controller.runIntent,
               onStarted: controller.runStarted,
             ),
+            if (controller.conversationReturnPending) ...[
+              Semantics(
+                liveRegion: true,
+                child: const Text(
+                  'Para voltar à conversa, abra o WhatsApp e procure o VanRides.',
+                ),
+              ),
+              if (controller.links.hasConversation)
+                TextButton(
+                  onPressed:
+                      controller.openingConversation
+                          ? null
+                          : controller.returnToConversation,
+                  child: const Text('Voltar à conversa no WhatsApp'),
+                ),
+            ],
             const SizedBox(height: 12),
             const Text(
               'Precisa de ajuda? Envie AJUDA na sua conversa com o VanRides.',

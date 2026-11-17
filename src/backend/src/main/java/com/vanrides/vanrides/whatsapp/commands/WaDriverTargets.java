@@ -125,8 +125,8 @@ final class WaDriverTargets {
     }
     ArrayNode routines(UUID actor) {
         ArrayNode result = WaDriverDraftStore.options();
-        jdbc.query("SELECT id,version,name,state,direction,local_time::text,timezone FROM wa.routine WHERE driver_id=? AND state IN ('ACTIVE','PAUSED') ORDER BY created_at,id LIMIT 101",
-            (rs, i) -> WaDriverDraftStore.json().put("id", rs.getObject(1).toString()).put("version", rs.getLong(2))
+        jdbc.query("SELECT id,version,name,state,direction,local_time::text,timezone,to_json(weekdays)::text FROM wa.routine WHERE driver_id=? AND state IN ('ACTIVE','PAUSED') ORDER BY created_at,id LIMIT 101",
+            (rs, i) -> WaJson.object("{\"weekdays\":" + rs.getString(8) + "}").put("id", rs.getObject(1).toString()).put("version", rs.getLong(2))
                 .put("name", rs.getString(3)).put("state", rs.getString(4)).put("direction", rs.getString(5))
                 .put("localTime", rs.getString(6)).put("timezone", rs.getString(7)), actor).forEach(result::add);
         return result;
@@ -144,6 +144,7 @@ final class WaDriverTargets {
     }
     ObjectNode display(ObjectNode routine) {
         return WaDriverDraftStore.json().put("name", routine.path("name").asText()).put("direction", routine.path("direction").asText())
-            .put("localTime", routine.path("local_time").asText()).put("timezone", routine.path("timezone").asText());
+            .put("localTime", routine.path("local_time").asText()).put("timezone", routine.path("timezone").asText())
+            .set("weekdays", routine.path("weekdays").deepCopy());
     }
 }

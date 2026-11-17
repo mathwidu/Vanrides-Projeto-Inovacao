@@ -1,6 +1,8 @@
 # Proposta de cadastro e início simples pelo WhatsApp
 
-Proposta de produto de 16/11/2026, em implementação local desde 17/11.
+Proposta de produto de 16/11/2026, detalhada pelo mantenedor e em implementação
+local desde 17/11. A entrada desejada continua sendo o link enviado pelo bot;
+abrir o aplicativo pelo ícone não foi escolhido como substituto desse fluxo.
 Referência inicial: `ce35224`; a implementação incorpora a `main` em `14cd663`,
 incluindo a melhoria do aviso de privacidade do PR #132. Este texto não substitui
 o [guia da versão publicada](cadastro-guiado-whatsapp.md) nem comprova publicação.
@@ -25,26 +27,37 @@ com tecnologia.
 - **Orientações:** AJUDA, lembrete da saída e botão do app usam a mesma linguagem:
   “Começar viagem” e “Começar e compartilhar localização”. As mensagens de
   recuperação também levam de volta à entrada curta.
+- **Apresentação:** catálogo do motorista e seleção/resumo do passageiro usam
+  blocos com nome, seta, ida/volta, horário e dias disponíveis. As setas não
+  inventam origem nem trocam pontos de embarque.
+- **Retorno após início:** o app tenta abrir a conversa fixa do bot uma vez
+  depois do sucesso explícito do início atual. Não navega por uma consulta,
+  resposta antiga ou ao reabrir a tela. Falha de abertura oferece retorno
+  manual sem reiniciar a coleta; esperar o WhatsApp não bloqueia o botão de parar.
+  Implementado e testado com fakes, ainda sem prova no WhatsApp/aparelho real.
 
 Essas mudanças são locais, com validação registrada nas
 [evidências de implementação](../../program/evidence/mvp-ux-20261117.md).
-O pareamento sem códigos, o início visual com várias opções e a entrada curta
-no iPhone ainda precisam de implementação/decisão. Os comandos antigos de
+O pareamento sem códigos e o início visual com várias opções ainda precisam de
+implementação. A entrada iPhone mantém o botão provisório aceito. Os comandos antigos de
 início e retomada continuam compatíveis; não foram removidos.
 
 No iPhone, a conta Apple gratuita usada no projeto não habilita Associated
 Domains, conforme a [matriz de capacidades da Apple](https://developer.apple.com/help/account/reference/supported-capabilities-ios).
-O link HTTPS atual passa por uma página com outro botão. A alternativa sem custo
-proposta é o bot preparar a saída e o app encontrá-la ao ser aberto pelo ícone;
-isso exige um novo contrato autenticado para consultar a saída pendente.
-A consulta não poderá iniciar GPS. Essa alternativa depende da escolha de uso
-do mantenedor; não está implementada. Não contratar uma assinatura para contornar
-essa limitação sem decisão sobre custo e distribuição.
+O link HTTPS atual passa por uma página com outro botão. Em 17/11 o mantenedor
+aceitou esse botão intermediário provisoriamente no iPhone, sem contratar uma
+assinatura: link → “Abrir VanRides” → confirmação no app. A abertura pelo ícone
+foi uma alternativa apresentada, não uma decisão aceita. Abertura direta no
+iPhone fica como evolução de distribuição; não bloqueia essa opção provisória.
+Qualquer consulta de saída pendente permanece autenticada e não pode iniciar GPS.
 
 ## Regra de aceitação do início
 
 - Motorista cadastrado, trajeto pronto, aparelho autorizado e permissões concedidas:
   **uma mensagem do motorista ao bot e até três ações no total**.
+- Exceção provisória aceita em 17/11 para o iPhone gratuito: **até quatro ações**,
+  incluindo o botão da página intermediária. Não declarar três ações nesse caso.
+  Pedidos adicionais do sistema também entram na contagem da prova física.
 - Uma ação de jornada é enviar uma mensagem, abrir uma opção/link ou confirmar
   o início no app. Escrever e enviar uma mesma resposta contam juntos; não se
   contam teclas ou o toque de envio novamente. Abrir o link e confirmar no app
@@ -65,30 +78,39 @@ cinco ações, fora do preparo e das permissões.
 
 ## Uso diário proposto
 
-1. O motorista escreve **“Começar viagem”**.
+1. O motorista escreve **“Quero iniciar a rota”** ou **“Começar viagem”**.
 2. O bot mostra o trajeto, o horário, a quantidade de passageiros previstos e a
    ação **“Abrir viagem”**. O motorista toca e entra direto no aplicativo.
 3. O aplicativo mostra o nome do trajeto e uma única decisão:
-   **“Começar e compartilhar localização”**. Somente após o backend aceitar a
-   primeira posição válida da sessão atual, o bot informa
-   **“Viagem iniciada. Vou avisar seus passageiros.”**
+   **“Compartilhar localização”**. Depois do sucesso da ativação explícita,
+   abre a conversa do bot e permanece coletando em segundo plano. Somente após
+   o backend aceitar a primeira posição válida da sessão atual, o bot informa
+   **“Você está compartilhando sua localização. Vou avisar os passageiros.
+   Quando terminar, me avise por aqui.”** O retorno ao WhatsApp não conta como
+   prova de GPS recebido. Não enviar uma mensagem em nome do motorista só
+   para anunciar o retorno.
 
-São uma mensagem e dois toques. Não pedir um código de confirmação no WhatsApp
+Abrir a conversa usa uma URL fixa do bot, sem copiar autorização, coordenadas
+ou identificadores de viagem para o WhatsApp. Fazer uma tentativa por ação
+explícita e com a tela ativa; não redirecionar em loop, após uma simples
+atualização, ao reabrir o app ou em resposta atrasada depois de sair da tela.
+Se falhar a ativação, permanecer no app e orientar a recuperação. Se falhar
+somente a abertura do WhatsApp, preservar a coleta e oferecer retorno manual.
+
+São uma mensagem e dois toques (três toques no iPhone provisório). Não pedir um código de confirmação no WhatsApp
 e outra confirmação equivalente no aplicativo.
-Essa contagem depende de o link abrir diretamente o app. Se houver uma página
-intermediária exigindo tocar em “Abrir VanRides”, esse toque também conta e o
-fluxo passa de três ações. Resolver e provar a abertura a partir do WhatsApp
-em cada plataforma é condição de aceite, incluindo as limitações da distribuição
-iOS usada no piloto. Não contar abertura por ferramenta de desenvolvimento
-como prova desse percurso.
+Essa contagem depende de o link abrir diretamente o app. No iPhone, o botão
+“Abrir VanRides” aceito provisoriamente leva a quatro ações. Provar a abertura a
+partir do WhatsApp em cada plataforma continua condição de aceite. Não contar
+abertura por ferramenta de desenvolvimento como prova desse percurso.
 
 Na referência examinada, o iOS registra o esquema `vanridesdriver`, mas não há
 entitlement de Associated Domains nem arquivo AASA servido. A página HTTPS
 exige um toque para abrir esse esquema. O Android declara App Links, sem prova
-atual de associação a partir do WhatsApp. Portanto, o teto é um requisito a
-implementar e provar, não uma capacidade já demonstrada. Se a abertura direta
-não for viável no modo de distribuição escolhido, revisar o desenho da
-confirmação antes de aprovar o limite; não omitir o clique intermediário.
+atual de associação a partir do WhatsApp. Portanto, os tetos são requisitos a
+provar, não capacidades já demonstradas. A exceção provisória do iPhone preserva
+a confirmação nativa; não omitir o clique intermediário nem iniciar GPS ao abrir
+o link para reduzir artificialmente a contagem.
 
 Se houver várias saídas válidas, cada opção deve abrir diretamente a sua saída,
 com nome e horário legíveis. Não acrescentar a sequência “escolher número →
@@ -138,9 +160,11 @@ conhecidas não são pedidas novamente.
    A autorização de motorista continua sendo conferida nos bastidores.
 2. Apresentação curta e nome, caso ainda falte. Exemplo: “Oi! Eu sou o VanRides.
    Organizo seus passageiros e aviso quando você está chegando. Como posso chamar você?”
-3. Trajeto: destino, dias e horário. Aceitar uma resposta que já contenha vários
+3. Trajeto: nome legível, destino, dias e horário. Aceitar uma resposta que já contenha vários
    desses dados e perguntar somente o que falta. Ida e volta devem aparecer com
    esses nomes. Reutilizar dados ao criar o retorno, com revisão do motorista.
+   Permitir criar mais de um trajeto. Setas expressam a direção, sem inventar
+   uma origem ou inverter pontos automaticamente quando isso não foi informado.
 4. Um resumo claro para salvar. O aviso de dados e as escolhas necessárias são
    explícitos, curtos e acessíveis; não são aceitos silenciosamente.
 5. Instalação e conexão do aplicativo guiadas no mesmo contexto, com uma ação
@@ -152,18 +176,82 @@ conhecidas não são pedidas novamente.
 
 **Passageiro**
 
-1. Abre o convite do motorista e já vê quem o convidou e qual é o trajeto.
+1. Abre o convite e já vê quem o convidou. O convite identifica o motorista;
+   depois o passageiro escolhe um ou mais dos trajetos disponíveis dele.
 2. Informa apenas nome/dados que faltarem e suas escolhas necessárias.
-3. Envia o ponto fixo pelo recurso de localização do próprio WhatsApp. Orientação
+3. Escolhe os dias por trajeto. Ida e volta são seleções independentes; oferecer
+   “mesmos dias” como atalho, sem obrigar a ir em ambas. Envia o ponto fixo de
+   embarque de cada trajeto pelo recurso de localização do próprio WhatsApp. Orientação
    curta e específica para o celular, com uma imagem de apoio quando necessário.
    Coordenadas e o comando `PONTO` ficam no guia técnico de testes pelo computador.
 4. Confere um resumo de motorista, trajeto, dias, ponto e avisos e envia o pedido.
-   O motorista recebe o pedido diretamente, com ações de aprovar ou pedir ajuste;
-   não precisa descobrir que deve escrever `REVISAR PEDIDO`.
+   O convite autoriza entrar com aquele motorista; não pedir ao motorista que
+   aprove novamente a mesma pessoa. A conferência operacional de ponto novo e
+   ordem continua necessária e aparece diretamente ao motorista, com ação de
+   ajustar, sem descobrir um comando interno. Informar se o embarque ainda
+   depende desse preparo; não dizer “tudo pronto” antes da elegibilidade real.
 5. Recebe a confirmação ou a instrução de correção no mesmo chat.
+
+Exemplo de apresentação, com texto legível mesmo sem botões nativos:
+
+```text
+Trajetos do seu motorista
+
+1 · Centro → Faculdade
+Ida · segunda a sexta · 07:00
+
+2 · Faculdade → Centro
+Volta · segunda a sexta · 18:00
+
+3 · Bairro Norte → Faculdade
+Ida · sábado · 08:00
+
+Em quais você vai? Pode escolher mais de um.
+```
+
+O link é o convite padrão e continua individual, de um uso. O desenho assume
+autorização ao primeiro destinatário que resgatar esse convite; não é um link
+genérico ilimitado. Quando o destinatário já for conhecido, usar a identidade
+esperada. O motorista pode revogar um convite ainda não utilizado.
+O motorista também pode pedir
+o envio pelo número. O código atual restringe esse envio a contato conhecido,
+admitido e com autorização prévia de 24 horas. Isso ainda não realiza a ideia
+de convidar um contato novo apenas informando o número. É preciso redesenhar
+a obtenção/registro da autorização e a admissão antes de oferecer esse caminho
+como pronto; não adicionar uma sequência pública de códigos nem fingir envio.
+
+Hoje há um ponto aprovado global por passageiro, embora a participação tenha
+referência de ponto por trajeto. Permitir embarques diferentes na ida e na volta
+exige rever essa restrição no banco e o escopo da proposta/aprovação. Corrigir
+um ponto de uma rota não pode alterar silenciosamente as demais nem o snapshot
+de uma viagem já iniciada. Reusar o ponto antigo só mediante escolha explícita.
 
 O usuário não deve precisar conhecer GitHub, o painel da equipe ou a configuração
 de testes. Controles do piloto permanecem na operação interna.
+
+## Finalização pelo mesmo caminho
+
+1. O motorista escreve “Quero finalizar a viagem”.
+2. O bot mostra qual viagem está em andamento e entrega o link de finalização.
+3. No app, uma ação **“Finalizar viagem e parar localização”** confirma as duas
+   coisas. Depois da parada e confirmação da operação atual, o app abre a
+   conversa do bot. O bot confirma a viagem concluída e a localização desligada.
+
+É o fluxo de produto escolhido pelo mantenedor, ainda não implementado. O botão
+atual “Parar localização” só interrompe o sensor; não conclui a viagem. Hoje
+`FINALIZAR` abre uma revisão com código e pode solicitar parada remota. Esse
+caminho antigo não deve ser apresentado como se fosse a experiência acima.
+
+O novo link prepara a operação, não encerra ao ser aberto. A autorização de
+finalização deve ser distinta da de início, ligada à viagem, sessão, aparelho,
+ambiente, versão e prazo. Link antigo não encerra viagem nova e repetição não
+gera efeito duplicado. O retorno externo nunca carrega o segredo desse link.
+
+Sem internet, parar o sensor localmente continua disponível. Manter o recibo
+pendente, mostrar “Localização desligada. Falta confirmar a finalização” e
+reconciliar ao reconectar, sem anunciar sucesso remoto nem iniciar outra coleta.
+Não usar um estado antigo de parada como prova da ação atual. Se o motorista
+sair da tela, não abrir o WhatsApp depois por causa de uma resposta atrasada.
 
 ## Manutenção sem refazer o cadastro
 
@@ -227,7 +315,9 @@ parada e sua confirmação permanecem persistidas e não reiniciam ao reconectar
 | 2 | Acrescentar rotina e reutilizar dados sem fechar vínculo; apresentação e recuperação do cadastro | #28, #49 |
 | 3 | Emitir resumo/link da saída sem confirmação duplicada; seleção direta por saída; confirmação final no app | #59, #60, #87, #96 |
 | 4 | Conectar/reconectar celular sem copiar código; estados e instruções claras | #59, #60, #87, #97 |
-| 5 | Ensaiar a jornada completa parado, com pessoas que não conhecem o projeto, antes de novo percurso | #95, #96 |
+| 5 | Convite autoriza entrada; escolher vários trajetos e dias, com ponto próprio por trajeto e revisão operacional delimitada | #28, #49 |
+| 6 | Retorno ao WhatsApp após início explícito; finalização no app com encerramento da viagem e parada confirmada | #59, #60, #87, #96 |
+| 7 | Ensaiar a jornada completa parado, com pessoas que não conhecem o projeto, antes de novo percurso | #95, #96 |
 
 As referências não alteram critérios nem fecham issues; a equipe deve conferir
 a distribuição na especificação antes de implementar. O card vertical ativo
@@ -237,11 +327,13 @@ A prova deve registrar ações, mensagens e tempo até GPS válido em cadastro n
 pessoa já cadastrada, uma/várias saídas, acesso expirado, link vencido, clique
 repetido e perda de internet. É falha de experiência depender de explicação do
 desenvolvedor, apagar vínculo para continuar ou exceder três ações no início
-cotidiano preparado. Cadastro inicial e recuperação têm contagem própria.
+cotidiano preparado (quatro no iPhone, pela exceção provisória aceita).
+Cadastro inicial e recuperação têm contagem própria.
 
-Esta revisão altera somente documentação local. Não há mudança de runtime,
-schema, CI, VPS ou aparelhos. Reverter os arquivos desta proposta restaura a
-documentação anterior; a versão publicada mantém seu comportamento atual.
+As partes implementadas localmente estão separadas no início desta proposta e
+nas evidências; os contratos novos descritos aqui continuam por implementar.
+Não há publicação, migração, mudança de CI ou operação nos aparelhos nesta
+revisão. A versão publicada não recebe essas mudanças automaticamente.
 Antes de outro ensaio, conferir a pausa da rotina temporária da tentativa
 interrompida: ela não ficou confirmada na automação. Não usar essa pendência
 como motivo para retomar testes nos aparelhos agora.

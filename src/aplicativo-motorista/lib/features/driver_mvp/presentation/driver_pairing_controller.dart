@@ -18,6 +18,8 @@ class DriverPairingController extends ChangeNotifier {
   bool busy = false;
   bool fromLink = false;
   bool launchChecked = false;
+  bool conversationReturnPending = false;
+  bool openingConversation = false;
   bool _foreground = true;
   bool _closed = false;
   int _visibilityEpoch = 0;
@@ -72,8 +74,47 @@ class DriverPairingController extends ChangeNotifier {
     );
   }
 
-  void runStarted() {
+  Future<void> runStarted(
+    DriverRunIntent started,
+    bool trackingStarted,
+    bool allowAutomaticReturn,
+  ) async {
+    // A newer link can arrive while the old native START is still awaiting its
+    // reply. Only that reply's authorization may be consumed here.
+    if (_closed || !identical(runIntent, started)) return;
     runIntent = null;
+    conversationReturnPending = trackingStarted;
+    notifyListeners();
+    if (trackingStarted && allowAutomaticReturn) {
+      // The collector's START has already completed. Opening another app must
+      // not delay its status or keep the driver's stop control busy.
+      unawaited(returnToConversation());
+    }
+  }
+
+  Future<void> returnToConversation() async {
+    if (_closed ||
+        !_foreground ||
+        openingConversation ||
+        !conversationReturnPending ||
+        runIntent != null) {
+      return;
+    }
+    final epoch = _visibilityEpoch;
+    openingConversation = true;
+    notifyListeners();
+    var opened = false;
+    try {
+      if (links.hasConversation) opened = await links.openConversation();
+    } catch (_) {
+      // Collection is already running. A failed chat launch must not start it
+      // again or change the device's authorization state.
+    }
+    if (_closed) return;
+    openingConversation = false;
+    if (_foreground && epoch == _visibilityEpoch && runIntent == null) {
+      conversationReturnPending = !opened;
+    }
     notifyListeners();
   }
 
@@ -81,6 +122,7 @@ class DriverPairingController extends ChangeNotifier {
     if (_closed) return;
     fromLink = true;
     _acceptRun(uri);
+    conversationReturnPending = false;
     code = null;
     _visibilityEpoch++;
     notifyListeners();

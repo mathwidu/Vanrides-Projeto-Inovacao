@@ -280,6 +280,8 @@ final class WaRunConversation {
     private static String entry(String text) {
         return switch (text) {
             case "comecar viagem", "comecar a viagem", "iniciar viagem", "iniciar a viagem", "comecar saida", "comecar a saida" -> "SHORT_START";
+            case "iniciar rota", "iniciar a rota", "quero iniciar rota", "quero iniciar a rota",
+                "comecar rota", "comecar a rota", "quero comecar a rota", "quero iniciar a viagem" -> "SHORT_START";
             case "iniciar", "iniciar saida" -> "START"; case "retomar", "retomar saida" -> "RESUME";
             case "corrigir lista" -> "CORRECT"; default -> null;
         };

@@ -61,7 +61,7 @@ class WaPassengerWizardIntegrationTest {
                 fixture.conversation.string(
                         "SELECT preferences_json::text FROM wa.profile WHERE identity_id=?",
                         passenger));
-        assertTrue(review.text().contains("dias segunda, quarta e sexta"));
+        assertTrue(review.text().contains("Dias: segunda, quarta e sexta"));
         var request = fixture.confirm(passenger, review);
         assertEquals("REQUEST_LINK", request.body().path("commandType").asText());
         assertEquals(2, request.response().path("responseIds").size());
@@ -266,17 +266,17 @@ class WaPassengerWizardIntegrationTest {
         fixture.send(passenger, "CONTINUAR");
         fixture.send(passenger, "Passageiro Sintético");
         var routines = fixture.send(passenger, "ACEITO");
-        assertTrue(routines.text().contains("Rotina Sintética (ida)"), routines.text());
+        assertTrue(routines.text().contains("Rotina Sintética\n→ Ida"), routines.text());
         var returnChoice =
-                java.util.regex.Pattern.compile("(\\d): Rotina Sintética \\(volta\\)")
+                java.util.regex.Pattern.compile("(\\d): Rotina Sintética\\n← Volta")
                         .matcher(routines.text());
         assertTrue(returnChoice.find(), routines.text());
         fixture.send(passenger, returnChoice.group(1));
         fixture.send(passenger, "1,3,5");
         fixture.pin(passenger);
         var review = fixture.send(passenger, "PULAR");
-        assertTrue(review.text().contains("(volta)"), review.text());
-        assertFalse(review.text().contains("(ida)"), review.text());
+        assertTrue(review.text().contains("← Volta"), review.text());
+        assertFalse(review.text().contains("→ Ida"), review.text());
         fixture.confirm(passenger, review);
         assertEquals(
                 "RETURN",
@@ -308,10 +308,8 @@ class WaPassengerWizardIntegrationTest {
         fixture.send(passenger, "terça e quinta");
         fixture.pin(passenger);
         var review = fixture.send(passenger, "PULAR");
-        assertTrue(review.text().contains("(ida)"), review.text());
-        assertTrue(review.text().contains("(volta)"), review.text());
-        assertTrue(review.text().contains("segunda, quarta e sexta"), review.text());
-        assertTrue(review.text().contains("terça e quinta"), review.text());
+        assertTrue(review.text().contains("→ Ida às 06:00\nDias: segunda, quarta e sexta"), review.text());
+        assertTrue(review.text().contains("← Volta às 06:00\nDias: terça e quinta"), review.text());
     }
 
     @Test

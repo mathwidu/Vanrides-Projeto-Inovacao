@@ -361,3 +361,18 @@ exigem escolha e a entrada iOS depende da decisão de uso/distribuição. Não
 declarar atingida a meta de três ações nem o aceite de usabilidade. Plano e
 pendências na [proposta atualizada](../../docs/desenvolvimento/proposta-fluxo-simples.md)
 e resultados nas [evidências](../evidence/mvp-ux-20261117.md).
+
+Alinhamento adicional de 17/11: o mantenedor manteve a entrada por link e pediu
+retorno automático ao WhatsApp após a ação no app. Fluxo-alvo inclui vários
+trajetos, seleção de trajetos/dias pelo passageiro e finalização que conclui a
+viagem e para o sensor no mesmo toque. Abertura pelo ícone não foi aprovada como
+substituta. Implementar apresentação do catálogo, frase natural de início e
+retorno START em incremento local; sem migração, contrato HTTP novo ou STOP
+automático. Impacto: projeção dos dias existentes, mensagens, lifecycle/callback
+Flutter e testes. Preservar escopo de arquivos de colegas e rollback por commit.
+Ponto por trajeto, autorização do vínculo pelo convite e intenção de finalização
+são mudanças seguintes de domínio/contrato; não declarar implementadas.
+O mantenedor aceitou o botão intermediário no iPhone em 17/11. Registrar quatro
+ações como meta provisória nesse aparelho, sem compra; manter três no Android
+como alvo a provar. A escolha remove a espera por decisão de distribuição para
+o fluxo provisório, sem comprovar abertura/handoff real.

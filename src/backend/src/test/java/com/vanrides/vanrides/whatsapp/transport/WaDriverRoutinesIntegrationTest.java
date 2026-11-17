@@ -127,11 +127,16 @@ class WaDriverRoutinesIntegrationTest {
     }
     @Test void homonymousRoutinesAndStateOrDateReviewsIdentifyDirectionTimeAndTarget() {
         UUID actor = f.driver(); f.routine(actor); f.confirm(actor, f.review(actor, "VOLTA"));
-        f.h.jdbc.update("UPDATE wa.routine SET local_time='17:00',version=version+1 WHERE driver_id=? AND direction='RETURN'", actor);
+        f.h.jdbc.update("UPDATE wa.routine SET local_time='17:00',weekdays=ARRAY[2,4]::smallint[],version=version+1 WHERE driver_id=? AND direction='RETURN'", actor);
         var menu = f.send(actor, "ROTINAS"); assertTrue(menu.text().contains("IDA 06:00")); assertTrue(menu.text().contains("VOLTA 17:00"));
+        assertTrue(menu.text().contains("Dias: segunda a sexta")); assertTrue(menu.text().contains("Dias: terça e quinta"));
+        for (var choice : f.draft(actor).path("routineChoices")) {
+            assertEquals(choice.path("direction").asText().equals("RETURN") ? "[2,4]" : "[1,2,3,4,5]", choice.path("weekdays").toString());
+        }
         String selectedDirection = f.draft(actor).path("routineChoices").get(0).path("direction").asText();
         var pause = f.send(actor, "PAUSAR 1");
         assertTrue(pause.text().contains("Rotina Sintética")); assertTrue(pause.text().contains(selectedDirection.equals("OUTBOUND") ? "IDA 06:00" : "VOLTA 17:00"));
+        assertTrue(pause.text().contains(selectedDirection.equals("OUTBOUND") ? "Dias: segunda a sexta" : "Dias: terça e quinta"));
         f.send(actor, "ROTINAS"); f.send(actor, "CANCELAR 1"); var cancel = f.send(actor, "2030-01-07");
         assertTrue(cancel.text().contains("Rotina Sintética")); assertTrue(cancel.text().contains("2030-01-07")); assertTrue(cancel.text().contains("fuso Brasília"));
     }
