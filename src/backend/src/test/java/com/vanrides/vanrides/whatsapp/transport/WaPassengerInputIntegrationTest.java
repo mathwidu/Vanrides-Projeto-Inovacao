@@ -60,14 +60,23 @@ class WaPassengerInputIntegrationTest {
     void firstMessageNamesTheDriverAndDoesNotRegisterAReplyOfYesAsTheName() {
         UUID passenger = fixture.passenger();
         var opened = fixture.open(passenger, code);
-        assertTrue(opened.text().contains("Motorista sintético"), opened.text());
-        assertTrue(opened.text().contains("ABANDONAR"), opened.text());
+        assertTrue(opened.text().startsWith("Olá! Você foi convidado pelo motorista Motorista sintético. Vou ajudar"
+                + " você a fazer seu cadastro inicial. Se o convite não for para você, envie SAIR."), opened.text());
         var unclear = fixture.send(passenger, "  SÍM!!  ");
         assertTrue(unclear.text().startsWith("Não entendi sua resposta."), unclear.text());
         assertEquals("NAME", fixture.draft(passenger).path("stage").asText());
         assertNull(fixture.conversation.string("SELECT display_name FROM wa.profile WHERE identity_id=?", passenger));
         fixture.send(passenger, "Nome sintético");
         assertEquals("NOTICE", fixture.draft(passenger).path("stage").asText());
+    }
+
+    @Test
+    void leavingTheInviteWithSairCancelsTheRegistration() {
+        UUID passenger = fixture.passenger();
+        fixture.open(passenger, code);
+        fixture.send(passenger, "SAIR");
+        assertTrue(fixture.draft(passenger).isEmpty());
+        assertEquals(0, fixture.count("driver_passenger_link"));
     }
 
     @Test

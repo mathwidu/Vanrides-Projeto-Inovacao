@@ -40,8 +40,8 @@ final class WaPassengerTexts {
     static String inviteLead(ObjectNode draft) {
         if (draft.path("addingRoutines").asBoolean()) return "Seu cadastro com "
                 + draft.path("driverName").asText() + " foi mantido. Escolha os novos trajetos.\n\n";
-        return "Seu convite é do motorista " + draft.path("driverName").asText()
-                + ". Vou ajudar você a indicar seu embarque. Se o convite não for para você, envie ABANDONAR.\n\n";
+        return "Olá! Você foi convidado pelo motorista " + draft.path("driverName").asText()
+                + ". Vou ajudar você a fazer seu cadastro inicial. Se o convite não for para você, envie SAIR.\n\n";
     }
 
     static String clock(String time) {
@@ -237,7 +237,7 @@ final class WaPassengerTexts {
         JsonNode routine = draft.path("selections").path(draft.path("dayIndex").asInt());
         return WaPassengerAnswers.dayPrompt(
                                 routineBlock(routine, com.fasterxml.jackson.databind.node.MissingNode.getInstance())
-                                        + "\n\nEm quais dias você participa?",
+                                        + "\n\nEm quais dias você irá usar o transporte?",
                                 routine.path("weekdays"))
                         .text()
                 + "\n\nVocê pode enviar vários dias separados por vírgula, por exemplo: Segunda,"

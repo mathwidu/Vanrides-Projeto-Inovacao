@@ -73,7 +73,8 @@ class WaPassengerRoutePickupIntegrationTest {
         }
         f.send(passenger, Integer.toString(index));
         var summary = f.pin(passenger, -11.5, 33.25);
-        f.confirm(passenger, summary);
+        var proposed = f.confirm(passenger, summary);
+        assertFalse(proposed.text().contains("Cadastro solicitado!"), proposed.text());
         assertEquals(oldPoint, point(outbound)); assertEquals(old, row("pickup_point", oldPoint));
         assertEquals(otherMember, member(returning)); assertEquals(other, row("pickup_point", otherPoint));
         assertEquals(returnDigest, preparation.rosterDigest(driver, occurrence));
