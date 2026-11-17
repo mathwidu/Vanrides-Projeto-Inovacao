@@ -33,6 +33,8 @@ final class WaPassengerTexts {
     }
 
     static String inviteLead(ObjectNode draft) {
+        if (draft.path("addingRoutines").asBoolean()) return "Seu cadastro com "
+                + draft.path("driverName").asText() + " foi mantido. Escolha os novos trajetos.\n\n";
         return "Seu convite é do motorista " + draft.path("driverName").asText()
                 + ". Vou ajudar você a indicar seu embarque. Se o convite não for para você, envie ABANDONAR.\n\n";
     }
@@ -87,12 +89,12 @@ final class WaPassengerTexts {
     }
 
     static String review(ObjectNode draft, String marker) {
-        String action = draft.path("action").asText();
+        String action = draft.path("addingRoutines").asBoolean() ? "REQUEST_LINK" : draft.path("action").asText();
         List<String> sections = new ArrayList<>();
         switch (action) {
             case "REQUEST_LINK" -> {
                 sections.add(
-                        "Solicitação de "
+                        (draft.path("addingRoutines").asBoolean() ? "Novos trajetos de " : "Solicitação de ")
                                 + draft.path("passengerName").asText()
                                 + " ao motorista "
                                 + draft.path("driverName").asText()
@@ -109,7 +111,7 @@ final class WaPassengerTexts {
                 if (!lines.isEmpty()) {
                     sections.add(String.join("\n", lines));
                 }
-                sections.add(
+                if (!draft.path("addingRoutines").asBoolean()) sections.add(
                         "Avisos de aproximação: "
                                 + (draft.path("approachMessages").asBoolean() ? "sim" : "não")
                                 + "\nLembretes de presença: "
@@ -128,7 +130,7 @@ final class WaPassengerTexts {
                                     + ".\nConfira o acesso e a segurança física do embarque.");
             case "APPROVE_PICKUP" ->
                     sections.add(
-                            "Aprovar novo ponto de "
+                            (draft.path("keepingPoint").asBoolean() ? "Aprovar os novos trajetos e manter o ponto de " : "Aprovar novo ponto e trajetos pendentes de ")
                                     + draft.path("passengerName").asText()
                                     + ".\nSaídas já iniciadas mantêm o ponto anterior.");
             case "RECTIFY" ->
@@ -171,7 +173,8 @@ final class WaPassengerTexts {
         if (draft.path("simpleSignup").asBoolean() && action.equals("REQUEST_LINK")) {
             sections.add("Se estiver tudo certo, envie CONFIRMAR em até 5 minutos. O motorista vai conferir seu pedido.");
             sections.add("Para ajustar, envie ALTERAR DIAS, CORRIGIR PONTO ou REFERÊNCIA seguido de um detalhe."
-                    + " Para escolher avisos, envie AVISOS TODOS, AVISOS CHEGADA, AVISOS PRESENÇA ou AVISOS NENHUM.");
+                    + (draft.path("addingRoutines").asBoolean() ? " Seus avisos e trajetos anteriores serão mantidos."
+                    : " Para escolher avisos, envie AVISOS TODOS, AVISOS CHEGADA, AVISOS PRESENÇA ou AVISOS NENHUM."));
         } else {
             String approval = approvalReply(action);
             String confirm = "Para confirmar este resumo em até 5 minutos, responda CONFIRMAR"
@@ -238,7 +241,12 @@ final class WaPassengerTexts {
                                     routine.path("local_time").asText()));
         }
         String head = "Quais rotinas você utiliza? Envie os números separados por vírgula.";
+        if (draft.path("addingRoutines").asBoolean()) head = lines.isEmpty()
+                ? "Não há novos trajetos disponíveis. Seus trajetos e seu pedido atual foram mantidos."
+                    + " Para revisar o embarque, envie ABANDONAR e depois CORRIGIR PONTO."
+                : "Quais novos trajetos você quer acrescentar? Envie os números separados por vírgula.";
         if (lines.isEmpty()) {
+            if (draft.path("addingRoutines").asBoolean()) return head;
             return head
                     + "\n\nNão há uma lista selecionável neste momento. O motorista pode precisar"
                     + " publicar uma rotina ativa ou reduzir o catálogo. Peça orientação ao"
@@ -253,6 +261,12 @@ final class WaPassengerTexts {
                         "Envie um pin estático do ponto onde a van deve buscar você. No celular,"
                             + " escolha o local de embarque no mapa do WhatsApp.\n\n"
                             + WaConversationResponses.COMPUTER_POINT);
+        if (draft.has("reusablePoint")) {
+            JsonNode point = draft.path("reusablePoint");
+            text.insert(0, "Quer usar o mesmo ponto? Confira: https://www.google.com/maps?q="
+                    + point.path("latitude").asDouble() + "," + point.path("longitude").asDouble()
+                    + "\nEnvie MESMO PONTO para mantê-lo, ou envie outro ponto abaixo.\n\n");
+        }
         if (draft.path("simpleSignup").asBoolean() && draft.path("selections").size() == 1) {
             JsonNode selection = draft.path("selections").path(0);
             text.insert(0, "Sua rotina: " + routineLabel(selection.path("name").asText(),

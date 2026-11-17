@@ -26,6 +26,7 @@ const questions = new Set([
   'preciso baixar o app', 'preciso baixar o aplicativo', 'preciso instalar o aplicativo', 'como vinculo o aplicativo',
   'como crio uma rotina', 'como faco para criar uma rotina',
   'como convido passageiros', 'como convido um passageiro', 'como envio um convite',
+  'como comeco a viagem', 'como inicio a viagem', 'como faco para comecar a viagem',
   'como confirmo minha presenca', 'como aviso que vou',
   'tenho uma duvida', 'posso tirar uma duvida',
 ]);

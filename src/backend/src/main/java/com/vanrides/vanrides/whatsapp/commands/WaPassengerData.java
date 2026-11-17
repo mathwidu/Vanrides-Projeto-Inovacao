@@ -111,6 +111,22 @@ final class WaPassengerData {
                 driver);
     }
 
+    ArrayNode additionalRoutines(UUID driver, UUID link) {
+        return array("""
+                SELECT to_jsonb(r)::text FROM wa.routine r WHERE r.driver_id=? AND r.state='ACTIVE'
+                AND NOT EXISTS(SELECT 1 FROM wa.passenger_link_routine s WHERE s.link_id=? AND s.routine_id=r.id)
+                ORDER BY r.created_at,r.id LIMIT 9
+                """, driver, link);
+    }
+
+    ObjectNode currentPoint(UUID link) {
+        ArrayNode points = array("""
+                SELECT to_jsonb(p)::text FROM wa.pickup_point p WHERE link_id=? AND state IN ('APPROVED','PROPOSED')
+                AND valid_until IS NULL ORDER BY CASE state WHEN 'APPROVED' THEN 0 ELSE 1 END,created_at DESC,id LIMIT 1
+                """, link);
+        return points.isEmpty() ? null : (ObjectNode) points.get(0);
+    }
+
     ArrayNode commons(UUID driver) {
         return array(
                 "SELECT to_jsonb(p)::text FROM wa.common_pickup_point p WHERE driver_id=? AND"
@@ -205,11 +221,20 @@ final class WaPassengerData {
             requireScope(passenger, event, driver);
         }
         ArrayNode routineRows = WaJson.MAPPER.createArrayNode();
+        var ids = new java.util.TreeSet<String>();
+        draft.path("selections").forEach(s -> ids.add(s.path("id").asText()));
         if (draft.has("linkId")) {
-            jdbc.queryForList(
-                    "SELECT r.id FROM wa.routine r JOIN wa.passenger_link_routine s ON"
-                            + " s.routine_id=r.id WHERE s.link_id=? ORDER BY r.id FOR UPDATE OF r",
-                    UUID.fromString(draft.path("linkId").asText()));
+            array("SELECT jsonb_build_object('id',routine_id)::text FROM wa.passenger_link_routine WHERE link_id=?",
+                    UUID.fromString(draft.path("linkId").asText())).forEach(s -> ids.add(s.path("id").asText()));
+        }
+        for (String id : ids) {
+            var rows = array("SELECT to_jsonb(r)::text FROM wa.routine r WHERE id=? AND driver_id=? FOR UPDATE",
+                    UUID.fromString(id), driver);
+            if (rows.size() != 1) throw WaProblem.missing();
+            routineRows.add(rows.get(0));
+        }
+        result.set("selectedRoutines", routineRows);
+        if (draft.has("linkId")) {
             result.set(
                     "selections",
                     array(
@@ -236,30 +261,12 @@ final class WaPassengerData {
                             "SELECT to_jsonb(p)::text FROM wa.pickup_point p WHERE link_id=? ORDER"
                                     + " BY id FOR UPDATE",
                             UUID.fromString(draft.path("linkId").asText())));
-        } else {
-            if (draft.has("selections")) {
-                var ids = new java.util.TreeSet<String>();
-                draft.path("selections").forEach(s -> ids.add(s.path("id").asText()));
-                for (String id : ids) {
-                    var rows =
-                            array(
-                                    "SELECT to_jsonb(r)::text FROM wa.routine r WHERE id=? AND"
-                                            + " driver_id=? AND state='ACTIVE' FOR UPDATE",
-                                    UUID.fromString(id),
-                                    driver);
-                    if (rows.size() != 1) {
-                        throw WaProblem.missing();
-                    }
-                    routineRows.add(rows.get(0));
-                }
-                result.set("routines", routineRows);
-            }
         }
         if (draft.has("sourceEvent")) {
             result.set(
                     "sourcePin", pin(actor, draft.path("sourceEvent").asText(), event.eventId()));
         }
-        if (draft.has("commonId")) {
+        if (draft.has("commonId") && !draft.has("reusePickupId")) {
             var rows =
                     array(
                             "SELECT to_jsonb(c)::text FROM wa.common_pickup_point c WHERE id=? AND"
@@ -283,7 +290,8 @@ final class WaPassengerData {
         for (JsonNode selection :
                 array(
                         """
-                        SELECT jsonb_build_object('name',r.name,'direction',r.direction,'time',r.local_time::text,'days',s.weekdays)::text
+                        SELECT jsonb_build_object('name',r.name,'direction',r.direction,'time',r.local_time::text,'days',s.weekdays,
+                        'pending',NOT EXISTS(SELECT 1 FROM wa.routine_member m WHERE m.link_id=s.link_id AND m.routine_id=s.routine_id AND m.state='ACTIVE'))::text
                         FROM wa.passenger_link_routine s JOIN wa.routine r ON r.id=s.routine_id WHERE s.link_id=? ORDER BY r.created_at,r.id
                         """,
                         link)) {
@@ -292,7 +300,7 @@ final class WaPassengerData {
                             selection.path("name").asText(),
                             selection.path("direction").asText(),
                             selection.path("time").asText(),
-                            selection.path("days")));
+                            selection.path("days")) + (selection.path("pending").asBoolean() ? " (aguarda aprovação)" : ""));
         }
         return String.join("\n", lines);
     }

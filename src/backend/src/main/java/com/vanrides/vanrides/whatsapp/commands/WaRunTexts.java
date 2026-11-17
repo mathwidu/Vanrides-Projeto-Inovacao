@@ -9,6 +9,14 @@ final class WaRunTexts {
         StringBuilder text = new StringBuilder();
         switch (draft.path("stage").asText()) {
             case "OCCURRENCE" -> {
+                if (draft.path("shortStart").asBoolean()) {
+                    if (draft.path("tooMany").asBoolean()) return "Há muitas viagens prontas para mostrar nesta conversa. Peça ajuda ao suporte para escolher seu trajeto.";
+                    if (draft.path("choices").isEmpty()) return "Nenhuma viagem está pronta para começar hoje. Confira seus trajetos e a lista de passageiros. Se a viagem já começou, envie Retomar saída.";
+                    text.append("Qual viagem você quer começar?\n");
+                    for (int i = 0; i < draft.path("choices").size(); i++) text.append(i + 1).append(" — ")
+                        .append(draft.path("choices").get(i).path("label").asText()).append("\n");
+                    return text.append("Responda com o nome do trajeto, ida, volta ou o número. Para indicar pelo número sem dúvida, escreva opção 1, por exemplo. Para desistir, envie Abandonar.").toString();
+                }
                 if (draft.path("tooMany").asBoolean()) return "Há muitas saídas para uma revisão completa nesta conversa. Envie FALAR COM SUPORTE para escolher a ocorrência.";
                 text.append("Escolha a saída para ").append(draft.path("action").asText().equals("CORRECT") ? "corrigir a lista" : "iniciar ou retomar").append(". ");
                 for (int i = 0; i < draft.path("choices").size(); i++) text.append(i + 1).append(" — ")
@@ -28,8 +36,19 @@ final class WaRunTexts {
             }
             case "ACTION" -> { return "Para " + draft.path("passengerName").asText() + ", envie INCLUIR ou EXCLUIR. A declaração pessoal de presença será preservada."; }
             case "REASON" -> { return "Informe o motivo operacional desta correção, entre 3 e 160 caracteres. Depois você revisará antes de confirmar."; }
-            default -> { return "Envie INICIAR SAÍDA, RETOMAR SAÍDA ou CORRIGIR LISTA para escolher uma ocorrência atual."; }
+            default -> { return "Envie Começar viagem, Retomar saída ou CORRIGIR LISTA para conferir as opções atuais."; }
         }
+    }
+    static String startSummary(String label, ObjectNode review) {
+        int included = 0, pending = 0;
+        for (JsonNode member : review.path("members")) if (member.path("included").asBoolean()) {
+            included++;
+            if (member.path("attendance").asText().equals("PENDING")) pending++;
+        }
+        String passengers = included == 1 ? "1 passageiro previsto" : included + " passageiros previstos";
+        String unanswered = pending == 0 ? "" : ", incluindo " + pending + (pending == 1 ? " que ainda não respondeu" : " que ainda não responderam");
+        return label + "\n" + passengers + unanswered + ".\nAo começar, vou usar a localização deste celular para avisar seus passageiros. "
+            + "Confirme o início no aplicativo.";
     }
     static String roster(ObjectNode review) {
         StringBuilder text = new StringBuilder();

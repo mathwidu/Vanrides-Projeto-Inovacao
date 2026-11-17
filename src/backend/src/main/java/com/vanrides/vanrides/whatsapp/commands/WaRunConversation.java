@@ -67,7 +67,7 @@ final class WaRunConversation {
         ObjectNode draft = store.load(actor.identityId());
         String text = text(event);
         if (entry(text) == null && !draft.isEmpty() && !WaConversationOwnership.currentDraftReply(jdbc, event))
-            return ok(false, "A mensagem citada não corresponde à revisão atual da saída. Responda à última pergunta ou envie INICIAR SAÍDA para revisar.", null);
+            return ok(false, "A mensagem citada não corresponde à revisão atual da saída. Responda à última pergunta ou envie Começar viagem para conferir de novo.", null);
         if (text.equals("abandonar")) {
             store.save(actor, event, WaDriverDraftStore.json());
             return ok(true, "Seleção encerrada. Nenhuma saída ou presença foi alterada.", null);
@@ -88,16 +88,31 @@ final class WaRunConversation {
                 : "A lista foi revisada. Abra o link no aplicativo VanRides Motorista para autorizar o acompanhamento. A partida ainda aguarda GPS válido.", intent);
         } catch (WaProblem conflict) {
             store.save(actor, event, WaDriverDraftStore.json());
+            if (draft.path("shortStart").asBoolean() || "SHORT_START".equals(entry(text)))
+                return new Result(WaDecision.error(conflict.code()), switch (conflict.code()) {
+                    case INTENT_EXPIRED, VERSION_CONFLICT -> "A lista ou a viagem mudou, ou sua escolha venceu. Envie Começar viagem para conferir de novo.";
+                    case ACTIVE_RUN_EXISTS -> "Você já tem uma viagem em andamento. Confira o aplicativo ou envie Retomar saída.";
+                    case DEPENDENCY_UNAVAILABLE -> "Não consegui preparar o link agora. Tente enviar Começar viagem novamente em instantes.";
+                    default -> "Não consegui liberar esta viagem. Confira seu cadastro e a conexão deste celular no aplicativo. Depois, envie Começar viagem novamente.";
+                }, null);
             return new Result(WaDecision.error(conflict.code()), "A lista ou a saída mudou e a revisão perdeu a validade. Nenhuma outra data foi alterada. "
                 + "Envie INICIAR SAÍDA, RETOMAR SAÍDA ou CORRIGIR LISTA para revisar as opções atuais.", null);
         }
     }
     private Result advance(WaProfileState actor, WaInboxAccess.Context event, ObjectNode draft, UUID box) {
         String text = text(event), action = entry(text), response;
-        if (action != null) draft = menu(actor.identityId(), event, action);
+        if (action != null) {
+            draft = menu(actor.identityId(), event, action.equals("SHORT_START") ? "START" : action, action.equals("SHORT_START"));
+            if (draft.path("shortStart").asBoolean() && draft.path("choices").size() == 1)
+                return shortStart(actor, event, draft.path("choices").get(0));
+        }
         else if (draft.path("stage").asText().equals("OCCURRENCE")) {
-            JsonNode choice = numbered(draft.path("choices"), text);
+            JsonNode choice = draft.path("shortStart").asBoolean() ? tripChoice(draft.path("choices"), text) : numbered(draft.path("choices"), text);
             if (choice != null) {
+                if (draft.path("shortStart").asBoolean()) {
+                    if (!store.selects(actor, event, draft)) throw new WaProblem(WaProblem.Code.INTENT_EXPIRED);
+                    return shortStart(actor, event, choice);
+                }
                 UUID id = UUID.fromString(choice.path("id").asText());
                 ObjectNode row = draft.path("action").asText().equals("RESUME") ? resumedOccurrence(actor.identityId(), id)
                     : summaries.own(actor.identityId(), questions.instance(event), id);
@@ -137,8 +152,20 @@ final class WaRunConversation {
         else if (draft.path("stage").asText().equals("REVIEW")) return ok(false, "A revisão aguarda o código de confirmação da última mensagem. Para escolher novamente, envie INICIAR SAÍDA, RETOMAR SAÍDA ou CORRIGIR LISTA.", null);
         else response = WaRunTexts.prompt(draft);
         if (response.length() > 2000) return oversized(actor, event);
+        if (draft.path("shortStart").asBoolean()) store.bindSelection(actor, event, draft, box);
         store.save(actor, event, draft);
         return ok(true, response, null);
+    }
+    private Result shortStart(WaProfileState actor, WaInboxAccess.Context event, JsonNode choice) {
+        UUID occurrence = UUID.fromString(choice.path("id").asText());
+        ObjectNode review = preparation.startReview(actor.identityId(), occurrence);
+        String digest = WaRunPreparation.digest(review);
+        if (!WaCrypto.same(digest, choice.path("rosterDigest").asText())
+                || review.path("occurrence").path("version").asLong() != choice.path("version").asLong(-1))
+            throw new WaProblem(WaProblem.Code.VERSION_CONFLICT);
+        ObjectNode intent = tracking.requestStart(actor.identityId(), occurrence, false, digest);
+        store.save(actor, event, WaDriverDraftStore.json());
+        return ok(true, WaRunTexts.startSummary(choice.path("label").asText(), review), intent);
     }
     private Result oversized(WaProfileState actor, WaInboxAccess.Context event) {
         store.save(actor, event, WaDriverDraftStore.json());
@@ -160,8 +187,9 @@ final class WaRunConversation {
             draft.path("reason").asText(), actor.identityId(), event.eventId(), Timestamp.from(clock.now()), review.path("occurrence").path("version").asLong() + 1);
         jdbc.update("UPDATE wa.routine_occurrence SET version=version+1 WHERE id=?", UUID.fromString(draft.path("occurrence").asText()));
     }
-    private ObjectNode menu(UUID driver, WaInboxAccess.Context event, String action) {
+    private ObjectNode menu(UUID driver, WaInboxAccess.Context event, String action, boolean shortStart) {
         ObjectNode draft = WaDriverDraftStore.json().put("action", action).put("stage", "OCCURRENCE").put("expiresAt", clock.now().plusSeconds(300).toString());
+        if (shortStart) draft.put("shortStart", true);
         ArrayNode choices = draft.putArray("choices");
         ArrayNode catalogue = summaries.occurrences(driver, questions.instance(event));
         if (action.equals("RESUME")) {
@@ -174,10 +202,22 @@ final class WaRunConversation {
             var runs = jdbc.queryForList("SELECT state FROM wa.operation_run WHERE occurrence_id=? AND driver_id=?", id, driver);
             boolean active = !runs.isEmpty() && List.of("STARTING", "START_FAILED", "TRACKING", "DEGRADED").contains(runs.get(0).get("state"));
             boolean resumable = !runs.isEmpty() && List.of("START_FAILED", "DEGRADED").contains(runs.get(0).get("state"));
+            boolean terminal = !runs.isEmpty() && List.of("COMPLETED", "CANCELED").contains(runs.get(0).get("state"));
+            if (terminal) continue;
             if (action.equals("RESUME") ? !resumable : active || !occurrence.path("state").asText().equals("PLANNED")) continue;
             if (action.equals("START") && !LocalDate.parse(occurrence.path("local_date").asText()).equals(
                     clock.now().atZone(ZoneId.of(occurrence.path("schedule_snapshot").path("timezone").asText(occurrence.path("timezone").asText()))).toLocalDate())) continue;
-            choices.add(WaDriverDraftStore.json().put("id", id.toString()).put("label", WaAttendanceQuestions.storedLabel(occurrence)));
+            ObjectNode choice = WaDriverDraftStore.json().put("id", id.toString()).put("label", WaAttendanceQuestions.storedLabel(occurrence));
+            if (shortStart) {
+                // Only startable trips count towards the automatic single choice. The chosen
+                // digest is checked again before requesting the device-bound intent.
+                try {
+                    ObjectNode review = preparation.startReview(driver, id);
+                    choice.put("rosterDigest", WaRunPreparation.digest(review)).put("version", review.path("occurrence").path("version").asLong())
+                        .put("name", occurrence.path("routineName").asText()).put("direction", occurrence.path("direction").asText());
+                } catch (WaProblem unavailable) { continue; }
+            }
+            choices.add(choice);
         }
         if (choices.size() > 30) { choices.removeAll(); draft.put("tooMany", true); }
         return draft;
@@ -223,11 +263,28 @@ final class WaRunConversation {
         int index = Integer.parseInt(text) - 1;
         return index < options.size() ? options.get(index) : null;
     }
+    private static JsonNode tripChoice(JsonNode options, String text) {
+        if (text.matches("opcao [1-9][0-9]?")) return numbered(options, text.substring(6));
+        JsonNode numbered = numbered(options, text);
+        JsonNode selected = null;
+        for (JsonNode option : options) {
+            String direction = option.path("direction").asText().equals("OUTBOUND") ? "ida" : "volta";
+            if (!option.equals(numbered) && !text.equals(direction) && !text.equals(WaAttendanceAnswers.normalize(option.path("name").asText()))
+                    && !text.equals(WaAttendanceAnswers.normalize(option.path("label").asText()))) continue;
+            if (selected != null) return null;
+            selected = option;
+        }
+        return selected;
+    }
     private static String text(WaInboxAccess.Context event) { return WaAttendanceAnswers.normalize(event.normalizedPayload().path("text").asText()); }
     private static String entry(String text) {
-        return switch (text) { case "iniciar", "iniciar saida" -> "START"; case "retomar", "retomar saida" -> "RESUME"; case "corrigir lista" -> "CORRECT"; default -> null; };
+        return switch (text) {
+            case "comecar viagem", "comecar a viagem", "iniciar viagem", "iniciar a viagem", "comecar saida", "comecar a saida" -> "SHORT_START";
+            case "iniciar", "iniciar saida" -> "START"; case "retomar", "retomar saida" -> "RESUME";
+            case "corrigir lista" -> "CORRECT"; default -> null;
+        };
     }
     private static Offer advance() { return new Offer("ADVANCE_RUN_SETUP", WaDriverDraftStore.options()); }
     private static Result ok(boolean changed, String text, ObjectNode intent) { return new Result(WaDecision.ok(Map.of("changed", changed)), text, intent); }
-    static Result unavailable() { return new Result(WaDecision.error(WaProblem.Code.ACTION_NOT_ALLOWED), "Essa revisão da saída não está mais disponível. Envie INICIAR SAÍDA ou CORRIGIR LISTA para revisar.", null); }
+    static Result unavailable() { return new Result(WaDecision.error(WaProblem.Code.ACTION_NOT_ALLOWED), "Essa revisão da saída não está mais disponível. Envie Começar viagem ou CORRIGIR LISTA para revisar.", null); }
 }

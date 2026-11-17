@@ -24,13 +24,16 @@ public final class WaConversationResponses {
         + "Para enviar pelo bot, escreva CONVIDAR seguido do número com DDD. O passageiro precisa autorizar esse envio primeiro.";
     private static final String ROUTINE = "Envie CRIAR ROTINA para configurar os dias e o horário da van. "
         + "Quando estiver pronta, envie CONVIDAR para receber um link de passageiro.";
+    private static final String DAILY_DRIVER = "Vai sair com a van? Envie Começar viagem. "
+        + "Eu mostro o trajeto e os passageiros previstos; você confirma o início no aplicativo VanRides Motorista.\n"
+        + "Para ver suas rotinas, envie RESUMO. Para chamar um passageiro, envie CONVIDAR e encaminhe o link que eu gerar.";
     private static final String PAIRING = "Para compartilhar sua localização durante um trajeto, vincule o aplicativo VanRides Motorista. "
         + "Abra o aplicativo pelo ícone e envie aqui o código de pareamento exibido.";
     private static final String ATTENDANCE = "Antes de cada viagem você recebe um lembrete. Responda o lembrete com VOU ou NÃO VOU. Se não responder, você continua previsto na lista.";
     static final String PREFERENCE_HELP = "Para escolher seus avisos, envie LIGAR AVISOS CHEGADA ou DESLIGAR AVISOS CHEGADA; "
         + "para os lembretes, LIGAR AVISOS PRESENÇA ou DESLIGAR AVISOS PRESENÇA. Cada comando mantém a outra escolha.";
 
-    enum Question { PRODUCT, REGISTRATION, APP, ROUTINE, INVITE, ATTENDANCE, INVITES_ALLOWED, INVITES_STOPPED, OTHER }
+    enum Question { PRODUCT, REGISTRATION, APP, ROUTINE, INVITE, START, ATTENDANCE, INVITES_ALLOWED, INVITES_STOPPED, OTHER }
 
     private WaConversationResponses() { }
     static Question question(String text) {
@@ -40,6 +43,7 @@ public final class WaConversationResponses {
             case "preciso baixar o app", "preciso baixar o aplicativo", "preciso instalar o aplicativo", "como vinculo o aplicativo" -> Question.APP;
             case "como crio uma rotina", "como faco para criar uma rotina" -> Question.ROUTINE;
             case "como convido passageiros", "como convido um passageiro", "como envio um convite" -> Question.INVITE;
+            case "como comeco a viagem", "como inicio a viagem", "como faco para comecar a viagem" -> Question.START;
             case "como confirmo minha presenca", "como aviso que vou" -> Question.ATTENDANCE;
             case "tenho uma duvida", "posso tirar uma duvida" -> Question.OTHER;
             default -> null;
@@ -63,6 +67,10 @@ public final class WaConversationResponses {
                 + "Para permitir convites enviados pelo bot ao seu número, envie ACEITO RECEBER CONVITES."
                 : registered ? INVITE_PASSENGERS
                 : "Depois de concluir seu cadastro de motorista e criar uma rotina ativa, você poderá enviar convites por link ou pelo número do passageiro.")
+                + "\n\n" + GUIDANCE;
+            case START -> (driver ? registered ? DAILY_DRIVER
+                : "Primeiro vamos concluir seu cadastro. Depois eu ajudo a preparar o trajeto e o aplicativo que envia a localização."
+                : "Quem começa a viagem é o motorista. Você confirma sua presença pelo WhatsApp e recebe o aviso de aproximação se os avisos estiverem ligados.")
                 + "\n\n" + GUIDANCE;
             case ATTENDANCE -> (driver
                 ? "Passageiros vinculados podem informar pelo WhatsApp se vão na ida ou na volta. Envie RESUMO para ver sua operação quando o cadastro estiver pronto."
@@ -93,7 +101,7 @@ public final class WaConversationResponses {
             case "ASK_NOTICE" -> role.equals("DRIVER") ? DRIVER_NOTICE : NOTICE;
             case "PAIRING" -> "Seu cadastro de motorista está pronto. " + ROUTINE
                 + "\n\nQuando for enviar sua localização, eu ajudo a vincular o aplicativo. " + HELP_AND_SUPPORT;
-            case "READY" -> (role.equals("DRIVER") ? ROUTINE
+            case "READY" -> (role.equals("DRIVER") ? DAILY_DRIVER
                 : "Se ainda precisa se vincular a um motorista, peça a ele um convite de passageiro do VanRides e envie aqui. "
                     + ATTENDANCE + "\n\n" + PREFERENCE_HELP) + "\n\n" + HELP_AND_SUPPORT;
             default -> "O atendimento desta conversa está pausado para suporte humano.";

@@ -199,7 +199,7 @@ void main() {
       await _show(t, session, links, gps);
       final start = find.widgetWithText(
         FilledButton,
-        'Iniciar localização desta saída',
+        'Começar e compartilhar localização',
       );
       expect(t.widget<FilledButton>(start).onPressed, isNull);
       expect(find.text('Permitir localização no percurso'), findsOneWidget);
@@ -230,13 +230,13 @@ void main() {
       await _show(t, session, links, tracking);
       expect(tracking.starts, isEmpty);
       expect(find.textContaining(token), findsNothing);
-      final start = find.text('Iniciar localização desta saída');
+      final start = find.text('Começar e compartilhar localização');
       await t.ensureVisible(start);
       await t.tap(start);
       await t.pumpAndSettle();
       expect(tracking.starts, hasLength(1));
       expect(find.text('Parar localização'), findsOneWidget);
-      expect(find.text('Iniciar localização desta saída'), findsNothing);
+      expect(find.text('Começar e compartilhar localização'), findsNothing);
       await _close(t, links);
     },
   );
@@ -251,7 +251,7 @@ void main() {
           ..approved = true;
     final tracking = _Tracking();
     await _show(t, session, links, tracking);
-    expect(find.text('Iniciar localização desta saída'), findsNothing);
+    expect(find.text('Começar e compartilhar localização'), findsNothing);
     expect(tracking.starts, isEmpty);
     await _close(t, links);
   });

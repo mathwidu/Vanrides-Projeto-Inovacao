@@ -124,7 +124,7 @@ final class DriverMVPUITests: XCTestCase {
       case "confirm-start":
         // A real private deep link must already have reached the normal app.
         // This explicit tap is the only action here that can request a start.
-        try tap(app, "Iniciar localização desta saída")
+        try tap(app, "Começar e compartilhar localização")
         try waitLabel(app, "Parar localização")
       case "stop":
         if button(app, "Parar localização").exists { try tap(app, "Parar localização") }
@@ -274,7 +274,7 @@ final class DriverMVPUITests: XCTestCase {
       "canShowCode": show.exists && show.isEnabled,
       "canCopyCode": copy.exists && copy.isEnabled,
       "canRefresh": refresh.exists && refresh.isEnabled,
-      "startAvailable": button(app, "Iniciar localização desta saída").exists,
+      "startAvailable": button(app, "Começar e compartilhar localização").exists,
       "canStop": button(app, "Parar localização").exists,
       "stopPending": pending,
       "stopConfirmed": stopped && !pending && !button(app, "Parar localização").exists,

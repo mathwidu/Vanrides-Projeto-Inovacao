@@ -46,7 +46,9 @@ public final class WaStartDelivery {
             }
             String fragment=crypto.decrypt(aad(box,(UUID)row.get("command_id"),actor),(byte[])row.get("start_payload_ciphertext"));
             if(settings.startLinkBaseUrl().isEmpty() || !fragment.matches("#v1\\."+row.get("start_intent_id")+"\\.[0-9]{1,16}\\.[A-Za-z0-9_-]{43}")) throw new IllegalArgumentException();
-            return content.deepCopy().put("text","Abra o aplicativo VanRides Motorista e confirme a coleta: "+settings.startLinkBaseUrl()+"/motorista/saida"+fragment);
+            String summary=content.path("text").asText("").strip();
+            return content.deepCopy().put("text",(summary.isEmpty()?"":summary+"\n\n")
+                +"Abrir VanRides Motorista: "+settings.startLinkBaseUrl()+"/motorista/saida"+fragment);
         } catch(RuntimeException invalid) { cancel(box); return null; }
     }
     public boolean relevant(UUID box) {

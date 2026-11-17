@@ -1,11 +1,45 @@
 # Proposta de cadastro e início simples pelo WhatsApp
 
-Proposta de produto de 16/11/2026, após o ensaio interrompido pelo mantenedor.
-Referência técnica examinada: `ce35224`. Este texto descreve a próxima experiência;
-não substitui o [guia da versão publicada](cadastro-guiado-whatsapp.md) nem comprova
-que as mudanças foram implementadas. A prioridade é tornar o uso cotidiano
+Proposta de produto de 16/11/2026, em implementação local desde 17/11.
+Referência inicial: `ce35224`; a implementação incorpora a `main` em `14cd663`,
+incluindo a melhoria do aviso de privacidade do PR #132. Este texto não substitui
+o [guia da versão publicada](cadastro-guiado-whatsapp.md) nem comprova publicação.
+A prioridade é tornar o uso cotidiano
 compreensível para pessoas que não conhecem o projeto e têm pouca familiaridade
 com tecnologia.
+
+## Implementação em andamento
+
+- **Uma saída pronta:** “Começar viagem” prepara a autorização e responde com
+  trajeto, horário, passageiros previstos e link. Não pede número da saída nem
+  `CONFIRMAR` com código. O aplicativo continua exigindo o toque de início;
+  receber a mensagem ou abrir o link não liga o GPS.
+- **Várias saídas:** o bot ainda pede uma escolha por nome, direção ou opção.
+  Nomes repetidos ou ambíguos não são escolhidos automaticamente. Esse caso
+  ainda exige uma segunda mensagem e não atende à meta de uma interação.
+- **Cadastro existente:** um convite do mesmo motorista permite adicionar outro
+  trajeto sem encerrar o vínculo. A pessoa pode responder “MESMO PONTO”. Nome,
+  preferências e trajetos anteriores são preservados; novas participações
+  continuam passando pela aprovação e preparação da ordem pelo motorista.
+  Mudar para outro motorista continua fora deste incremento.
+- **Orientações:** AJUDA, lembrete da saída e botão do app usam a mesma linguagem:
+  “Começar viagem” e “Começar e compartilhar localização”. As mensagens de
+  recuperação também levam de volta à entrada curta.
+
+Essas mudanças são locais, com validação registrada nas
+[evidências de implementação](../../program/evidence/mvp-ux-20261117.md).
+O pareamento sem códigos, o início visual com várias opções e a entrada curta
+no iPhone ainda precisam de implementação/decisão. Os comandos antigos de
+início e retomada continuam compatíveis; não foram removidos.
+
+No iPhone, a conta Apple gratuita usada no projeto não habilita Associated
+Domains, conforme a [matriz de capacidades da Apple](https://developer.apple.com/help/account/reference/supported-capabilities-ios).
+O link HTTPS atual passa por uma página com outro botão. A alternativa sem custo
+proposta é o bot preparar a saída e o app encontrá-la ao ser aberto pelo ícone;
+isso exige um novo contrato autenticado para consultar a saída pendente.
+A consulta não poderá iniciar GPS. Essa alternativa depende da escolha de uso
+do mantenedor; não está implementada. Não contratar uma assinatura para contornar
+essa limitação sem decisão sobre custo e distribuição.
 
 ## Regra de aceitação do início
 

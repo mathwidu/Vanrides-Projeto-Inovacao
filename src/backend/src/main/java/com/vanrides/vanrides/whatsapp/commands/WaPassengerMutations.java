@@ -56,7 +56,7 @@ final class WaPassengerMutations {
                     "Ponto comum publicado. Seus passageiros podem selecioná-lo no cadastro.",
                     null);
         }
-        if (action.equals("REQUEST_LINK")) {
+        if (action.equals("REQUEST_LINK") || draft.path("addingRoutines").asBoolean()) {
             return request(actor, event, draft, prepared, now);
         }
         UUID link = UUID.fromString(prepared.link().path("id").asText());
@@ -130,19 +130,26 @@ final class WaPassengerMutations {
                             : "O vínculo de transporte foi encerrado.\n\nSaídas já iniciadas"
                                     + " conservam o histórico.");
         }
-        // Retire before approving to respect the one-current-approved-point invariant.
-        data.jdbc.update(
+        ObjectNode currentPoint = data.currentPoint(link);
+        boolean reuse = WaPassengerValidation.samePoint(prepared.point(), currentPoint);
+        if (reuse) {
+            rejectProposals(link, now);
+            pickup = UUID.fromString(currentPoint.path("id").asText());
+        } else {
+            // Retire before approving to respect the one-current-approved-point invariant.
+            data.jdbc.update(
                 "UPDATE wa.pickup_point SET state='RETIRED',valid_until=?,version=version+1 WHERE"
                         + " link_id=? AND state='APPROVED' AND id<>?",
                 now,
                 link,
                 pickup);
-        data.jdbc.update(
+            data.jdbc.update(
                 "UPDATE wa.pickup_point SET"
                     + " state='APPROVED',approved_by=?,approved_at=?,version=version+1 WHERE id=?",
                 driver,
                 now,
                 pickup);
+        }
         data.jdbc.update(
                 "UPDATE wa.driver_passenger_link SET"
                     + " state='APPROVED',approved_by=?,approved_at=COALESCE(approved_at,?),version=version+1"
@@ -150,8 +157,9 @@ final class WaPassengerMutations {
                 driver,
                 now,
                 link);
-        if (action.equals("APPROVE_LINK")) {
-            data.jdbc.update(
+        java.util.List<UUID> changedRoutines = java.util.List.of();
+        if (action.equals("APPROVE_LINK") || action.equals("APPROVE_PICKUP")) {
+            changedRoutines = data.jdbc.query(
                     """
                     INSERT INTO wa.routine_member(id,routine_id,driver_id,passenger_id,link_id,pickup_point_id,stop_order,weekdays,version,created_at)
                     SELECT gen_random_uuid(),s.routine_id,s.driver_id,s.passenger_id,s.link_id,?,
@@ -159,28 +167,41 @@ final class WaPassengerMutations {
                     FROM wa.passenger_link_routine s WHERE s.link_id=?
                     ON CONFLICT(routine_id,passenger_id) DO UPDATE SET link_id=EXCLUDED.link_id,pickup_point_id=EXCLUDED.pickup_point_id,
                       stop_order=EXCLUDED.stop_order,weekdays=EXCLUDED.weekdays,state='ACTIVE',version=wa.routine_member.version+1
+                    WHERE wa.routine_member.state='REMOVED'
+                    RETURNING routine_id
                     """,
+                    (rs, row) -> rs.getObject(1, UUID.class),
                     pickup,
                     now,
                     link);
-        } else {
+        }
+        if (!reuse && action.equals("APPROVE_PICKUP")) {
             data.jdbc.update(
                     "UPDATE wa.routine_member SET pickup_point_id=?,version=version+1 WHERE"
                             + " link_id=? AND state='ACTIVE'",
                     pickup,
                     link);
         }
-        touchRoutines(link, now);
+        if (reuse) {
+            for (UUID routine : changedRoutines) {
+                data.jdbc.update("UPDATE wa.routine SET version=version+1,stop_order_pending=true,updated_at=? WHERE id=?", now, routine);
+                data.jdbc.update("UPDATE wa.passenger_link_routine SET version=version+1 WHERE link_id=? AND routine_id=?", link, routine);
+            }
+        } else {
+            touchRoutines(link, now);
+        }
         String kind = action.equals("APPROVE_LINK") ? "APPROVED" : "POINT_APPROVED";
         return new Result(
                 link,
                 pickup,
                 kind,
-                kind.equals("APPROVED")
+                reuse ? "Pedido aprovado. O ponto anterior foi mantido."
+                        : kind.equals("APPROVED")
                         ? "Vínculo e ponto aprovados.\n\nRevise a ordem das rotinas antes da"
                                 + " próxima saída."
                         : "Novo ponto aprovado.\n\nRevise a ordem antes da próxima saída.",
-                kind.equals("APPROVED")
+                reuse ? "Seu pedido foi aprovado. Seu ponto foi mantido.\n\n" + data.selectionSummary(link)
+                        : kind.equals("APPROVED")
                         ? "Cadastro confirmado.\n\n"
                                 + data.selectionSummary(link)
                                 + "\n\nSeu ponto foi aprovado pelo motorista."
@@ -194,8 +215,10 @@ final class WaPassengerMutations {
             ObjectNode draft,
             Prepared prepared,
             Timestamp now) {
-        UUID link = UUID.randomUUID(), driver = UUID.fromString(draft.path("driverId").asText());
-        data.jdbc.update(
+        boolean additional = prepared.link() != null;
+        UUID link = additional ? UUID.fromString(prepared.link().path("id").asText()) : UUID.randomUUID();
+        UUID driver = UUID.fromString(draft.path("driverId").asText());
+        if (!additional) data.jdbc.update(
                 "INSERT INTO"
                     + " wa.driver_passenger_link(id,driver_id,passenger_id,invite_id,requested_source_event_id,created_at,valid_from)"
                     + " VALUES (?,?,?,?,?,?,?)",
@@ -206,11 +229,16 @@ final class WaPassengerMutations {
                 event.eventId(),
                 now,
                 now);
+        if (additional) {
+            rejectProposals(link, now);
+            data.jdbc.update("UPDATE wa.driver_passenger_link SET version=version+1 WHERE id=?", link);
+        }
         for (JsonNode selection : draft.path("selections")) {
             data.jdbc.update(
                     """
                     INSERT INTO wa.passenger_link_routine(id,link_id,routine_id,driver_id,passenger_id,weekdays,routine_version,created_at)
                     VALUES (?,?,?,?,?,?::smallint[],?,?)
+                    ON CONFLICT(link_id,routine_id) DO NOTHING
                     """,
                     UUID.randomUUID(),
                     link,
@@ -229,7 +257,7 @@ final class WaPassengerMutations {
                 WaPassengerDraftStore.json()
                         .put("APPROACH_MESSAGES", draft.path("approachMessages").asBoolean())
                         .put("ATTENDANCE_REMINDERS", draft.path("attendanceReminders").asBoolean());
-        data.jdbc.update(
+        if (!additional) data.jdbc.update(
                 "UPDATE wa.profile SET preferences_json=preferences_json||?::jsonb,status='ACTIVE'"
                         + " WHERE identity_id=?",
                 preferences.toString(),
@@ -237,10 +265,10 @@ final class WaPassengerMutations {
         return new Result(
                 link,
                 pickup,
-                "REQUESTED",
-                "Solicitação encaminhada ao motorista.\n\nSeu cadastro aguarda aprovação do"
-                        + " vínculo e do ponto.",
-                "Solicitação de "
+                additional ? "POINT_CHANGE" : "REQUESTED",
+                additional ? "Pedido de novo trajeto enviado ao motorista. Seu cadastro e seus avisos foram mantidos."
+                        : "Solicitação encaminhada ao motorista.\n\nSeu cadastro aguarda aprovação do vínculo e do ponto.",
+                (additional ? "Pedido de novo trajeto de " : "Solicitação de ")
                         + draft.path("passengerName").asText()
                         + ".\n\n"
                         + data.selectionSummary(link)

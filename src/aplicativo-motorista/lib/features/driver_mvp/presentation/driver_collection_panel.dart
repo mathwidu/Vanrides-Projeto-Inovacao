@@ -182,11 +182,11 @@ class _DriverCollectionPanelState extends State<DriverCollectionPanel>
                             if (next.isActive) widget.onStarted?.call();
                             return next;
                           }),
-                  child: const Text('Iniciar localização desta saída'),
+                  child: const Text('Começar e compartilhar localização'),
                 ),
               if (widget.paired && widget.intent == null && !canStop)
                 const Text(
-                  'Para iniciar ou retomar, abra o link da saída enviado pelo VanRides no WhatsApp.',
+                  'No WhatsApp, envie Começar viagem ao VanRides e abra o link que eu enviar.',
                 ),
               if (canStop)
                 OutlinedButton(

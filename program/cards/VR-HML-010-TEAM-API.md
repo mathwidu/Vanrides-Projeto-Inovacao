@@ -340,3 +340,24 @@ liberação de passageiro e convite de motorista verificados com o mantenedor.
 Guia `docs/desenvolvimento/area-da-equipe.md` publicado para os colegas.
 O aceite individual de um colega e a jornada completa do MVP continuam
 pendentes; o card permanece em andamento. Recibos de CI só provam build/deploy.
+
+### Simplificação da experiência — 17/11/2026
+
+O mantenedor autorizou implementar a redução de etapas do uso cotidiano após o
+ensaio interrompido de 16/11. Impact Analysis: conversas de início, reuso de
+cadastro do passageiro, revelação do link autorizado, lembrete e apresentação
+do botão no aplicativo. Sem migração, dependência nova ou mudança dos canais
+nativos. Preservar as melhorias da equipe: `main` em `14cd663`/PR #132 integrada
+normalmente à branch `codex/ux-cadastro-e-inicio`.
+
+Manter as cercas de perfil, aparelho, versão, lista, prazo, replay e parada.
+Nenhum GPS automático ao receber mensagem, abrir link ou carregar tela. Reuso
+do ponto só quando explícito e exatamente igual; trajetos anteriores continuam
+intactos. Retorno: reverter os commits deste incremento, sem reversão de banco.
+Sem publicação nesta etapa; os testes físicos continuam pausados.
+
+Uma saída pronta passa a dispensar seleção e código no bot; várias opções ainda
+exigem escolha e a entrada iOS depende da decisão de uso/distribuição. Não
+declarar atingida a meta de três ações nem o aceite de usabilidade. Plano e
+pendências na [proposta atualizada](../../docs/desenvolvimento/proposta-fluxo-simples.md)
+e resultados nas [evidências](../evidence/mvp-ux-20261117.md).

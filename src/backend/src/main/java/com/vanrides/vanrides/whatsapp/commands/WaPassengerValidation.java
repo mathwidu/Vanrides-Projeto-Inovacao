@@ -106,7 +106,7 @@ final class WaPassengerValidation {
                         || !link.path("state").asText().equals("REQUESTED"))) {
             throw WaProblem.denied();
         }
-        if (action.equals("REQUEST_LINK")) {
+        if (action.equals("REQUEST_LINK") || draft.path("addingRoutines").asBoolean()) {
             if (!actor.role().equals("PASSENGER")
                     || actor.name() == null
                     || !WaOnboardingCommands.NOTICE_VERSION.equals(actor.noticeVersion())
@@ -114,7 +114,10 @@ final class WaPassengerValidation {
                     || !draft.path("attendanceReminders").isBoolean()) {
                 throw WaProblem.denied();
             }
-            if (!data.links(passenger, false).isEmpty()) {
+            var links = data.links(passenger, false);
+            if (link == null ? !links.isEmpty() : links.size() != 1
+                    || !links.path(0).path("id").equals(link.path("id"))
+                    || !actor.identityId().equals(passenger)) {
                 throw WaProblem.denied();
             }
             ObjectNode invite =
@@ -138,8 +141,13 @@ final class WaPassengerValidation {
                                 selected.path("selectedDays"), rows.get(0).path("weekdays"))) {
                     throw new WaProblem(WaProblem.Code.VERSION_CONFLICT);
                 }
+                if (link != null && Boolean.TRUE.equals(data.jdbc.queryForObject(
+                        "SELECT EXISTS(SELECT 1 FROM wa.passenger_link_routine WHERE link_id=? AND routine_id=?)",
+                        Boolean.class, UUID.fromString(link.path("id").asText()), UUID.fromString(selected.path("id").asText())))) {
+                    throw new WaProblem(WaProblem.Code.VERSION_CONFLICT);
+                }
             }
-            return new Prepared(null, null, invite, proposedPin(actor, event, draft));
+            return new Prepared(link, null, invite, proposedPin(actor, event, draft));
         }
         if (action.equals("PROPOSE_PICKUP")) {
             if (!actor.role().equals("PASSENGER") || !actor.identityId().equals(passenger)) {
@@ -152,6 +160,24 @@ final class WaPassengerValidation {
 
     private ObjectNode proposedPin(
             WaProfileState actor, WaInboxAccess.Context event, ObjectNode draft) {
+        if (draft.has("reusePickupId")) {
+            ObjectNode point = data.point(UUID.fromString(draft.path("linkId").asText()),
+                    UUID.fromString(draft.path("reusePickupId").asText()), true);
+            if (point.path("version").asLong() != draft.path("reusePickupVersion").asLong()
+                    || !List.of("APPROVED", "PROPOSED").contains(point.path("state").asText())
+                    || !point.path("valid_until").isNull()) {
+                throw new WaProblem(WaProblem.Code.VERSION_CONFLICT);
+            }
+            if (!draft.path("addingRoutines").asBoolean()) throw WaProblem.denied();
+            if (!draft.has("selectionEvent") || !Boolean.TRUE.equals(data.jdbc.queryForObject("""
+                    SELECT EXISTS(SELECT 1 FROM wa.integration_inbox s JOIN wa.integration_inbox e ON e.id=?
+                    WHERE s.id=? AND s.identity_id=? AND s.instance_id=e.instance_id AND s.provider=e.provider
+                    AND s.category='MESSAGE' AND s.state IN ('CLAIMED','COMPLETED'))
+                    """, Boolean.class, event.eventId(), UUID.fromString(draft.path("selectionEvent").asText()), actor.identityId()))) {
+                throw WaProblem.denied();
+            }
+            return point;
+        }
         if (draft.has("sourceEvent")) {
             return data.pin(
                     actor.identityId(), draft.path("sourceEvent").asText(), event.eventId());
@@ -184,6 +210,16 @@ final class WaPassengerValidation {
         return WaPassengerDraftStore.json()
                 .put("latitude", common.get(0).path("latitude").asDouble())
                 .put("longitude", common.get(0).path("longitude").asDouble());
+    }
+
+    static boolean samePoint(ObjectNode first, ObjectNode second) {
+        if (first == null || second == null || !second.path("state").asText().equals("APPROVED")
+                || !first.path("latitude").isNumber() || !first.path("longitude").isNumber()) return false;
+        for (String field : List.of("latitude", "longitude", "label", "reference_text",
+                "common_pickup_point_id", "common_pickup_version")) {
+            if (!first.path(field).equals(second.path(field))) return false;
+        }
+        return true;
     }
 
     private void validateSelections(ObjectNode link) {

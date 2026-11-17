@@ -219,13 +219,30 @@ final class WaPassengerSetup {
             throw failure;
         }
         draft.remove("confirmation");
+        if (failure.code() == WaProblem.Code.ACTION_NOT_ALLOWED && actor.role().equals("PASSENGER")
+                && event.normalizedPayload().hasNonNull("passengerInviteCodeHash")
+                && !data.links(actor.identityId(), false).isEmpty()) {
+            store.save(actor, event, WaPassengerDraftStore.json());
+            return new Result(WaDecision.error(failure.code()),
+                    "Você já tem um pedido ou cadastro com outro motorista. Este convite não troca seu motorista. Fale com o suporte para revisar essa mudança.", null);
+        }
+        if (draft.path("addingRoutines").asBoolean() && failure.code() == WaProblem.Code.INTENT_EXPIRED) {
+            store.save(actor, event, WaPassengerDraftStore.json());
+            return new Result(WaDecision.error(failure.code()),
+                    "Esse convite venceu ou não está mais disponível. Peça outro convite ao mesmo motorista. Seu cadastro e seus trajetos foram mantidos.", null);
+        }
         if (failure.code() == WaProblem.Code.ACTION_NOT_ALLOWED) {
             draft = WaPassengerDraftStore.json();
         } else {
             if (actor.role().equals("DRIVER")) {
                 draft = wizard.advance(actor, event, WaPassengerDraftStore.json()).draft();
             } else {
-                if (draft.has("linkId")) {
+                if (draft.path("addingRoutines").asBoolean()) {
+                    draft.put("stage", "ROUTINES");
+                    draft.remove("selections");
+                    draft.set("routineChoices", data.additionalRoutines(
+                            UUID.fromString(draft.path("driverId").asText()), UUID.fromString(draft.path("linkId").asText())));
+                } else if (draft.has("linkId")) {
                     draft.put("stage", "POINT");
                 } else {
                     if (draft.has("inviteHash")) {
