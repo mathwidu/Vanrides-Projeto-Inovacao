@@ -114,7 +114,7 @@ final class WaPassengerPoints {
         StringBuilder text = new StringBuilder("Embarque " + (index+1) + " de " + draft.path("selections").size() + ":\n"
                 + WaPassengerTexts.routineBlock(selected, selected.path("selectedDays"))
                 + "\nPara mudar os dias, envie ALTERAR DIAS."
-                + "\n\nEnvie um pin estático do ponto onde a van deve buscar você neste trajeto pelo mapa do WhatsApp.\n\n" + WaConversationResponses.COMPUTER_POINT);
+                + "\n\n" + WaPassengerTexts.ATTACH_LOCATION);
         if (draft.path("approvedChoicesBlocked").asBoolean()) text.append("\n\nHá muitos pontos aprovados para mostrar. Envie um ponto fixo ou peça ajuda ao suporte.");
         int pointIndex = 0;
         for (var point : draft.path("approvedChoices")) {

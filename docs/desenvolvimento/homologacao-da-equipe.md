@@ -220,9 +220,10 @@ Se a viagem estiver parada e confirmada após reconectar o celular, o bot pode
 oferecer **Finalizar esta viagem** na conversa. A revisão vale só para aquela
 viagem e parada; resposta antiga não pode encerrar uma coleta posterior.
 
-No computador, envie o ponto fixo com `PONTO` e as coordenadas copiadas do mapa.
-No celular, também é possível usar a localização estática do WhatsApp.
-Confira o formato no [roteiro do cadastro guiado](cadastro-guiado-whatsapp.md#enviar-um-ponto-fixo-no-mac).
+O passageiro envia o ponto de embarque pela localização estática do WhatsApp
+no celular. O motorista também pode enviar o destino pelo computador, com
+`PONTO` e as coordenadas copiadas do mapa. Confira os passos no
+[roteiro do cadastro guiado](cadastro-guiado-whatsapp.md#enviar-um-ponto-fixo).
 
 O [roteiro do cadastro guiado](cadastro-guiado-whatsapp.md) mostra os convites
 por link e por telefone. A [área da equipe](area-da-equipe.md) tem a simulação

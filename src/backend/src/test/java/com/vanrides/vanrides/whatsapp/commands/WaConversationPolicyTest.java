@@ -101,6 +101,13 @@ class WaConversationPolicyTest {
             .contains("Quem começa a viagem é o motorista").doesNotContain("você confirma o início no aplicativo");
     }
 
+    @Test void onlyDriversAreToldToTypeCoordinatesWhenALocationIsRefused() {
+        assertThat(WaConversationResponses.text("STATIC_PIN_REQUIRED", "READY", "PASSENGER"))
+            .contains("escolha Localização").doesNotContain("PONTO -29.68123, -51.13123");
+        assertThat(WaConversationResponses.text("STATIC_PIN_REQUIRED", "READY", "DRIVER"))
+            .contains("PONTO -29.68123, -51.13123");
+    }
+
     private static WaInboxAccess.Context event(String text) {
         return new WaInboxAccess.Context(UUID.randomUUID(), UUID.randomUUID(), WaJson.MAPPER.createObjectNode()
             .put("text", text).put("occurredAt", NOW.toString()), "TEXT", NOW.plusSeconds(60), NOW.plusSeconds(3600));

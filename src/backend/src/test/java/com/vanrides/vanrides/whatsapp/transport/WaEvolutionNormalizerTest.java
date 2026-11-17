@@ -64,22 +64,39 @@ class WaEvolutionNormalizerTest {
         assertThat(normalizer.normalize(envelope).kind()).isEqualTo("PIN");
     }
 
-    @Test void shouldNormalizeAnExplicitTextPointExactlyLikeANativePin() {
+    @Test void shouldNormalizeAnExplicitTextPointLikeANativePinMarkedAsTyped() {
         ObjectNode envelope = fixture("message-pin-zero");
         ObjectNode message = (ObjectNode) envelope.path("data").path("message");
         ((ObjectNode) message.path("locationMessage"))
             .put("degreesLatitude", -29.68123).put("degreesLongitude", -51.13123);
-        var expected = normalizer.normalize(envelope);
+        var nativeEvent = normalizer.normalize(envelope);
+        ObjectNode expectedPayload = nativeEvent.payload().deepCopy();
+        ((ObjectNode) expectedPayload.path("pin")).put("typed", true);
 
         message.removeAll().put("conversation", "PONTO -29.68123, -51.13123");
-        assertThat(normalizer.normalize(envelope)).isEqualTo(expected);
+        var typed = normalizer.normalize(envelope);
+        assertThat(typed.kind()).isEqualTo(nativeEvent.kind());
+        assertThat(typed.payload()).isEqualTo(expectedPayload);
         message.removeAll().putObject("extendedTextMessage").put("text", "  ponto -29.68123,-51.13123  ");
-        assertThat(normalizer.normalize(envelope)).isEqualTo(expected);
+        assertThat(normalizer.normalize(envelope).payload()).isEqualTo(expectedPayload);
 
         message.removeAll().put("conversation", "PONTO +90.0, -180");
         var boundary = normalizer.normalize(envelope);
         assertThat(boundary.kind()).isEqualTo("PIN");
-        assertThat(boundary.payload().path("pin")).isEqualTo(WaJson.object("{\"latitude\":90.0,\"longitude\":-180.0}"));
+        assertThat(boundary.payload().path("pin")).isEqualTo(WaJson.object("{\"latitude\":90.0,\"longitude\":-180.0,\"typed\":true}"));
+    }
+
+    @Test void shouldMarkTypedTextPointsAsTypedAndNeverNativeLocationMessages() {
+        ObjectNode envelope = fixture("message-pin-zero");
+        ObjectNode message = (ObjectNode) envelope.path("data").path("message");
+        var nativePin = normalizer.normalize(envelope).payload().path("pin");
+        assertThat(nativePin.has("typed")).isFalse();
+
+        message.removeAll().put("conversation", "PONTO -12.25, +34.5");
+        var typedPin = normalizer.normalize(envelope).payload().path("pin");
+        assertThat(typedPin.path("typed").asBoolean()).isTrue();
+        assertThat(typedPin.path("latitude").doubleValue()).isEqualTo(-12.25);
+        assertThat(typedPin.path("longitude").doubleValue()).isEqualTo(34.5);
     }
 
     @Test void shouldRejectMalformedTextPointsWithoutKeepingTheInput() {

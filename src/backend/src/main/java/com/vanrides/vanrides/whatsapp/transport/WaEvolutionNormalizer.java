@@ -81,7 +81,7 @@ public final class WaEvolutionNormalizer {
             JsonNode latitude = location.get("degreesLatitude"), longitude = location.get("degreesLongitude");
             if (!coordinate(latitude, 90) || !coordinate(longitude, 180))
                 return unsupported(id, aliases, "INVALID_PIN");
-            return pin(envelope, data, message, id, aliases, latitude.doubleValue(), longitude.doubleValue());
+            return pin(envelope, data, message, id, aliases, latitude.doubleValue(), longitude.doubleValue(), false);
         }
         String conversation = string(message.get("conversation"));
         String extended = string(message.path("extendedTextMessage").get("text"));
@@ -97,7 +97,7 @@ public final class WaEvolutionNormalizer {
             if (!coordinate(latitude, 90) || !coordinate(longitude, 180)
                     || quoted(data.path("contextInfo")) || quoted(message.path("extendedTextMessage").path("contextInfo")))
                 return unsupported(id, aliases, "INVALID_PIN");
-            return pin(envelope, data, message, id, aliases, latitude, longitude);
+            return pin(envelope, data, message, id, aliases, latitude, longitude, true);
         }
         // Keep numbered point selections as text while dropping malformed coordinate commands.
         if (TEXT_PIN_PREFIX.matcher(code).lookingAt() && !POINT_SELECTION.matcher(code).matches())
@@ -170,9 +170,10 @@ public final class WaEvolutionNormalizer {
         return new Event("MESSAGE", id, null, "UNSUPPORTED", reason(reason), "PENDING", aliases);
     }
     private static Event pin(ObjectNode envelope, JsonNode data, JsonNode message, String id,
-                             List<Alias> aliases, double latitude, double longitude) {
+                             List<Alias> aliases, double latitude, double longitude, boolean typed) {
         ObjectNode payload = object();
-        payload.putObject("pin").put("latitude", latitude).put("longitude", longitude);
+        ObjectNode pin = payload.putObject("pin").put("latitude", latitude).put("longitude", longitude);
+        if (typed) pin.put("typed", true);
         messageMetadata(envelope, data, message, payload);
         return new Event("MESSAGE", id, null, "PIN", payload, "PENDING", aliases);
     }

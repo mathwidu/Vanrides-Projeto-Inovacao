@@ -86,7 +86,7 @@ class WaPassengerWizardIntegrationTest {
     }
 
     @Test
-    void knownNameAndNoticeAreReusedWithoutGrantingNotificationPreferences() {
+    void knownNameAndNoticeAreReusedWithOnlyAttendanceRemindersOnByDefault() {
         UUID passenger = fixture.passenger();
         fixture.transport.jdbc.update(
                 "INSERT INTO"
@@ -98,7 +98,7 @@ class WaPassengerWizardIntegrationTest {
         assertEquals("POINT", fixture.draft(passenger).path("stage").asText());
         assertTrue(next.text().contains("ALTERAR DIAS"));
         assertFalse(fixture.draft(passenger).path("approachMessages").asBoolean());
-        assertFalse(fixture.draft(passenger).path("attendanceReminders").asBoolean());
+        assertTrue(fixture.draft(passenger).path("attendanceReminders").asBoolean());
         assertEquals("Nome já aceito", fixture.draft(passenger).path("passengerName").asText());
         assertEquals(
                 "{}",
@@ -213,13 +213,14 @@ class WaPassengerWizardIntegrationTest {
     }
 
     @Test
-    void textPointOpensTheSameReviewAsANativePickupPin() {
+    void nativePickupPinOpensTheReviewAndIsStoredOnConfirmation() {
         UUID passenger = fixture.passenger();
         fixture.review(passenger, code);
         var prompt = fixture.send(passenger, "CORRIGIR PONTO");
-        assertTrue(prompt.text().endsWith("PONTO -29.68123, -51.13123"));
+        assertTrue(prompt.text().endsWith("escolha Localização e envie o ponto onde a van deve buscar você."), prompt.text());
+        assertFalse(prompt.text().contains("PONTO -29.68123, -51.13123"), prompt.text());
 
-        var point = fixture.send(passenger, "PONTO -12.25, +34.5");
+        var point = fixture.pin(passenger, -12.25, 34.5);
         assertEquals(
                 json().put("type", "STATIC_PIN_REFERENCE")
                         .put("sourceMessageId", "event_" + point.lease().id()),
@@ -239,6 +240,85 @@ class WaPassengerWizardIntegrationTest {
                         """,
                         passenger,
                         point.lease().id()));
+    }
+
+    @Test
+    void typedPointIsRefusedForPassengersAndARealLocationIsStillAccepted() {
+        UUID passenger = fixture.passenger();
+        fixture.open(passenger, code);
+        fixture.send(passenger, "Nome sintético");
+        var prompt = fixture.send(passenger, "ACEITO");
+        assertEquals("POINT", fixture.draft(passenger).path("stage").asText());
+        assertFalse(prompt.text().contains("PONTO -"), prompt.text());
+        assertFalse(prompt.text().contains("google.com"), prompt.text());
+
+        var typed = fixture.send(passenger, "PONTO -12.25, +34.5");
+        assertTrue(typed.text().startsWith("Não consegui usar esse ponto. Envie a localização pelo WhatsApp do celular."), typed.text());
+        assertEquals("POINT", fixture.draft(passenger).path("stage").asText());
+        assertFalse(fixture.draft(passenger).path("selections").path(0).has("pickup"));
+        assertFalse(fixture.draft(passenger).has("sourceEvent"));
+        assertEquals(0, fixture.count("pickup_point"));
+
+        var review = fixture.pin(passenger, -12.25, 34.5);
+        assertEquals("REVIEW", fixture.draft(passenger).path("stage").asText());
+        assertFalse(review.text().startsWith("Não consegui usar esse ponto. Envie a localização pelo WhatsApp do celular."), review.text());
+    }
+
+    @Test
+    void confirmingWithoutAnyAvisosCommandKeepsAttendanceRemindersOnAndApproachMessagesOff() {
+        UUID passenger = fixture.passenger();
+        fixture.open(passenger, code);
+        fixture.send(passenger, "Nome sintético");
+        fixture.send(passenger, "ACEITO");
+        var review = fixture.pin(passenger, -12.25, 34.5);
+        assertTrue(review.text().contains("Lembretes de presença: sim"), review.text());
+        assertTrue(review.text().contains("Avisos de aproximação: não"), review.text());
+        fixture.confirm(passenger, review);
+        assertEquals(
+                "true",
+                fixture.conversation.string(
+                        "SELECT preferences_json->>'ATTENDANCE_REMINDERS' FROM wa.profile WHERE"
+                                + " identity_id=?",
+                        passenger));
+        assertEquals(
+                "false",
+                fixture.conversation.string(
+                        "SELECT preferences_json->>'APPROACH_MESSAGES' FROM wa.profile WHERE"
+                                + " identity_id=?",
+                        passenger));
+    }
+
+    @Test
+    void signupReviewOffersOnlyConfirmAndAdjust() {
+        UUID passenger = fixture.passenger();
+        var review = fixture.review(passenger, code);
+        assertTrue(review.text().contains("envie AJUSTAR"), review.text());
+        for (String removed : new String[] {"ALTERAR DIAS", "CORRIGIR PONTO", "REFERÊNCIA"}) {
+            assertFalse(review.text().contains(removed), review.text());
+        }
+        assertTrue(review.text().contains("AVISOS"), review.text());
+    }
+
+    @Test
+    void adjustAtSignupReviewRestartsFromTheNameAndKeepsTheSignupGoing() {
+        UUID passenger = fixture.passenger();
+        fixture.review(passenger, code);
+        var restarted = fixture.send(passenger, "AJUSTAR");
+        var draft = fixture.draft(passenger);
+        assertEquals("NAME", draft.path("stage").asText());
+        assertTrue(draft.path("selections").isMissingNode() || draft.path("selections").isEmpty());
+        assertFalse(draft.has("confirmation"));
+        assertFalse(restarted.text().isBlank());
+        assertEquals(0, fixture.count("driver_passenger_link"));
+
+        fixture.send(passenger, "Nome Corrigido");
+        assertEquals("POINT", fixture.draft(passenger).path("stage").asText());
+        assertEquals(
+                "Nome Corrigido",
+                fixture.conversation.string(
+                        "SELECT display_name FROM wa.profile WHERE identity_id=?", passenger));
+        fixture.pin(passenger, -12.25, 34.5);
+        assertEquals("REVIEW", fixture.draft(passenger).path("stage").asText());
     }
 
     private record ObjectNodeHolder(String value) {}
