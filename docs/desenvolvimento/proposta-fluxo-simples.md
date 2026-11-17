@@ -1,16 +1,16 @@
 # Proposta de cadastro e início simples pelo WhatsApp
 
-Proposta de produto de 16/11/2026, detalhada pelo mantenedor e em implementação
-local desde 17/11. A entrada desejada continua sendo o link enviado pelo bot;
+Proposta de produto de 16/11/2026, detalhada pelo mantenedor e publicada em
+17/11 com a API V48 e o APK 0.5.0+16. A entrada desejada continua sendo o link enviado pelo bot;
 abrir o aplicativo pelo ícone não foi escolhido como substituto desse fluxo.
-Referência inicial: `ce35224`; a implementação incorpora a `main` em `14cd663`,
-incluindo a melhoria do aviso de privacidade do PR #132. Este texto não substitui
-o [guia da versão publicada](cadastro-guiado-whatsapp.md) nem comprova publicação.
+Referência publicada: PR #133, `main` em `5ef07cb`, preservando a melhoria
+do aviso de privacidade do PR #132. O [guia da versão publicada](cadastro-guiado-whatsapp.md)
+explica como testar; instalação, WhatsApp real e aceite ainda serão conferidos.
 A prioridade é tornar o uso cotidiano
 compreensível para pessoas que não conhecem o projeto e têm pouca familiaridade
 com tecnologia.
 
-## Implementação em andamento
+## Comportamento implementado
 
 - **Uma saída pronta:** “Começar viagem” prepara a autorização e responde com
   trajeto, horário, passageiros previstos e link. Não pede número da saída nem
@@ -43,8 +43,7 @@ com tecnologia.
   permite desligar o GPS imediatamente e confirmar o encerramento remoto. Só
   retorna ao WhatsApp depois da confirmação da parada daquela operação. Sem
   rede, mantém a localização desligada e a finalização pendente para tentativa
-  explícita; não anuncia conclusão remota antes da confirmação. Implementação
-  local, ainda sem prova no WhatsApp/aparelho real.
+  explícita; não anuncia conclusão remota antes da confirmação. API publicada e app compilado, ainda sem prova no WhatsApp/aparelho real.
 - **Apresentação:** catálogo do motorista e seleção/resumo do passageiro usam
   blocos com nome, seta, ida/volta, horário e dias disponíveis. As setas não
   inventam origem nem trocam pontos de embarque.
@@ -54,7 +53,7 @@ com tecnologia.
   manual sem reiniciar a coleta; esperar o WhatsApp não bloqueia o botão de parar.
   Implementado e testado com fakes, ainda sem prova no WhatsApp/aparelho real.
 
-Essas mudanças são locais, com validação registrada nas
+Essas mudanças foram publicadas, com validação técnica e limites registrados nas
 [evidências de implementação](../../program/evidence/mvp-ux-20261117.md).
 A conexão sem códigos e as opções de início com links independentes agora
 integram o candidato local (V48 e V47, respectivamente). A entrada iPhone mantém

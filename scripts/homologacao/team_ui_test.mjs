@@ -9,6 +9,11 @@ const session = { login: 'synthetic-user', csrfToken: 'c'.repeat(43) };
 const response = (data, status = 200) => ({ ok: status >= 200 && status < 300, status, json: async () => data });
 const flush = () => new Promise(resolve => setImmediate(resolve));
 async function page(handler, { auth = response(session), bot = () => response({}) } = {}) {
+  let now = Date.parse('2026-11-17T12:00:00Z');
+  class ClockDate extends Date {
+    constructor(...args) { super(...(args.length ? args : [now])); }
+    static now() { return now; }
+  }
   const nodes = new Map(), calls = [], clipboard = [];
   const element = tag => ({ tagName: tag, children: [], value: '', checked: false, hidden: true, disabled: false, textContent: '', attributes: {},
     classList: { toggle() {} }, events: {}, addEventListener(event, fn) { this.events[event] = fn; },
@@ -20,7 +25,7 @@ async function page(handler, { auth = response(session), bot = () => response({}
   };
   node('role').value = 'driver'; node('phone').value = '+15550000001'; node('consent').checked = true;
   node('bot-fallback').hidden = false;
-  runInNewContext(source, { document: { getElementById: node, createElement: element }, URLSearchParams, crypto: { randomUUID },
+  runInNewContext(source, { Date: ClockDate, document: { getElementById: node, createElement: element }, URLSearchParams, crypto: { randomUUID },
     window: { location: { search: '' }, confirm: () => true }, navigator: { clipboard: { writeText: async text => clipboard.push(text) } },
     fetch: async (url, options) => {
       calls.push({ url, options });
@@ -29,10 +34,10 @@ async function page(handler, { auth = response(session), bot = () => response({}
       return handler(url, options);
     } });
   await flush();
-  return { node, calls, clipboard, submit: async () => { node('participant-form').events.submit({ preventDefault() {} }); await flush(); } };
+  return { node, calls, clipboard, advance: seconds => { now += seconds * 1000; }, submit: async () => { node('participant-form').events.submit({ preventDefault() {} }); await flush(); } };
 }
 const result = (id, extras = {}) => ({ admissionStatus: 'ADMITTED', inviteStatus: 'ACTIVE', operationId: id,
-  inviteId: 'synthetic-invite', driverInviteCode: 'a'.repeat(43), expiresAt: '2026-11-10T12:00:00Z', ...extras });
+  inviteId: 'synthetic-invite', driverInviteCode: 'a'.repeat(43), expiresAt: '2030-01-01T12:00:00Z', ...extras });
 
 test('separate pickup cards send only the selected reference and keep technical IDs out of the copy', async () => {
   const linkId = randomUUID(), first = randomUUID(), second = randomUUID();
@@ -116,7 +121,7 @@ test('expired invitation exposes renewal; rejection and session expiry clear sta
   assert.equal(ui.node('bot-link').attributes.href, undefined);
 });
 
-test('copy preserves the driver code and the complete passenger command without extra text', async () => {
+test('manual fallback preserves the driver code and the complete passenger command without extra text', async () => {
   const passengerCode = 'b'.repeat(43);
   const ui = await page(async (url, options) => {
     const { operationId } = JSON.parse(options.body);
@@ -125,7 +130,9 @@ test('copy preserves the driver code and the complete passenger command without 
       : response(result(operationId));
   });
   await ui.submit();
-  assert.match(ui.node('result-description').textContent, /somente o código ao bot.*AJUDA/);
+  assert.match(ui.node('result-description').textContent, /Copie o link.*próprio WhatsApp.*mensagem pronta/);
+  assert.doesNotMatch(ui.node('result-description').textContent, /AJUDA|somente o código/);
+  assert.equal(ui.node('invite-manual').open, false);
   assert.match(ui.node('expiry').textContent, /válido até.*Brasília/);
   await ui.node('copy').events.click();
   await ui.node('test-invite').events.click();
@@ -134,6 +141,82 @@ test('copy preserves the driver code and the complete passenger command without 
   await ui.node('test-copy').events.click();
   assert.deepEqual(ui.clipboard, ['a'.repeat(43), 'PASSAGEIRO ' + passengerCode]);
   assert.equal(ui.calls.filter(call => call.options.method === 'POST').length, 2);
+});
+
+test('driver admission defaults to a private link and leaves the code inside a closed fallback', async () => {
+  const ui = await page(async (url, options) => response(result(JSON.parse(options.body).operationId)),
+    { bot: () => response({ phoneNumber: '15550000002' }) });
+  await ui.submit();
+  const href = 'https://wa.me/15550000002?text=' + 'a'.repeat(43);
+  assert.equal(ui.node('driver-wa-link').attributes.href, href);
+  assert.equal(ui.node('driver-wa-link').hidden, false);
+  assert.equal(ui.node('copy-driver-link').disabled, false);
+  assert.equal(ui.node('invite-manual').open, false);
+  await ui.node('copy-driver-link').events.click();
+  assert.deepEqual(ui.clipboard, [href]);
+  assert.match(ui.node('message').textContent, /Link copiado.*em privado.*próprio WhatsApp/);
+  const markup = html.match(/<a id="driver-wa-link"[^>]+>/)?.[0];
+  assert.match(markup, /hidden/); assert.doesNotMatch(markup, /href=/);
+  assert.match(markup, /rel="noopener noreferrer"/);
+  assert.match(html, /<details id="invite-manual">/);
+});
+
+test('driver links never use an invalid bot, malformed code or expired invitation', async () => {
+  for (const [bot, extras] of [
+    [{ phoneNumber: '15550000002?text=other' }, {}],
+    [{ phoneNumber: '15550000002' }, { driverInviteCode: 'invalid-code' }],
+    [{ phoneNumber: '15550000002' }, { expiresAt: '2026-11-10T12:00:00Z' }],
+  ]) {
+    const ui = await page(async (url, options) => response(result(JSON.parse(options.body).operationId, extras)),
+      { bot: () => response(bot) });
+    await ui.submit();
+    assert.equal(ui.node('driver-wa-link').attributes.href, undefined);
+    assert.equal(ui.node('driver-wa-link').hidden, true);
+    assert.equal(ui.node('copy-driver-link').disabled, true);
+  }
+  const ui = await page(async (url, options) => response(result(JSON.parse(options.body).operationId,
+    { expiresAt: '2026-11-17T12:00:01Z' })), { bot: () => response({ phoneNumber: '15550000002' }) });
+  await ui.submit(); assert.equal(ui.node('driver-wa-link').hidden, false);
+  ui.advance(2);
+  let prevented = false;
+  ui.node('driver-wa-link').events.click({ preventDefault() { prevented = true; } });
+  await ui.node('copy-driver-link').events.click();
+  assert.equal(prevented, true); assert.deepEqual(ui.clipboard, []);
+  assert.equal(ui.node('driver-wa-link').attributes.href, undefined);
+  assert.equal(ui.node('invite-code').value, '');
+});
+
+test('contact, role, consumed status and logout clear driver links and manual fallback', async () => {
+  for (const action of ['phone', 'role', 'status', 'logout']) {
+    const ui = await page(async (url, options) => url.endsWith('/logout') ? response({}, 204)
+      : response(result(url.endsWith('/status') ? undefined : JSON.parse(options.body).operationId,
+        url.endsWith('/status') ? { inviteStatus: 'CONSUMED', driverInviteCode: undefined } : {})),
+    { bot: () => response({ phoneNumber: '15550000002' }) });
+    await ui.submit(); assert.equal(ui.node('driver-wa-link').hidden, false);
+    ui.node('invite-manual').open = true;
+    if (action === 'phone') ui.node('phone').events.input();
+    else if (action === 'role') { ui.node('role').value = 'passenger'; ui.node('role').events.change(); }
+    else await ui.node(action).events.click();
+    assert.equal(ui.node('driver-wa-link').attributes.href, undefined);
+    assert.equal(ui.node('copy-driver-link').disabled, true);
+    assert.equal(ui.node('invite-code').value, '');
+    assert.equal(ui.node('invite-manual').open, false);
+  }
+});
+
+test('a delayed bot lookup enables only the current driver invitation', async () => {
+  for (const clearContact of [false, true]) {
+    let completeBot;
+    const lookup = new Promise(resolve => { completeBot = resolve; });
+    const ui = await page(async (url, options) => response(result(JSON.parse(options.body).operationId)), { bot: () => lookup });
+    await ui.submit();
+    assert.equal(ui.node('copy-driver-link').disabled, true);
+    if (clearContact) ui.node('phone').events.input();
+    completeBot(response({ phoneNumber: '15550000002' })); await flush();
+    assert.equal(ui.node('driver-wa-link').hidden, clearContact);
+    assert.equal(ui.node('copy-driver-link').disabled, clearContact);
+    assert.equal(Boolean(ui.node('driver-wa-link').attributes.href), !clearContact);
+  }
 });
 
 test('the test-driver shortcut prefills only the validated invitation and clears it on logout', async () => {
@@ -165,7 +248,7 @@ test('participant status explains the next step without revealing codes or makin
     ['passenger', {}, /pode conversar com o bot.*AJUDA/],
     ['driver', {}, /Liberar motorista.*gerar o convite/],
     ['driver', { ...passengerOnboarding, ...activeInvite }, /recuperar o mesmo convite com a validade original/],
-    ['driver', { profileRole: 'DRIVER', profileStatus: 'ONBOARDING', inviteStatus: 'CONSUMED' }, /código já foi utilizado.*AJUDA/],
+    ['driver', { profileRole: 'DRIVER', profileStatus: 'ONBOARDING', inviteStatus: 'CONSUMED' }, /convite já foi utilizado.*Continue a conversa/],
     ['driver', { profileRole: 'DRIVER', profileStatus: 'ACTIVE', inviteStatus: 'CONSUMED' }, /Cadastro concluído.*ROTINAS/],
     ['driver', passengerActive, /cadastro como passageiro/],
     ['passenger', passengerOnboarding, /cadastro está em andamento.*AJUDA/],

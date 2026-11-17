@@ -1,20 +1,21 @@
 # Roteiro de validação do fluxo simples
 
-Preparação de 17/11/2026 para testar o **candidato local** com pessoas que não
-conhecem o projeto. Este documento não registra testes executados nem autoriza
-iniciar uma rodada física agora.
+Roteiro de 17/11/2026 para validar o fluxo publicado com pessoas que não
+conhecem o projeto. Ele planeja a rodada; os resultados reais serão registrados
+separadamente, depois da instalação dos builds compatíveis.
 
-O candidato acrescenta ponto por trajeto, finalização pelo link e app,
+O fluxo publicado acrescenta ponto por trajeto, finalização pelo link e app,
 conexão do celular sem copiar códigos e links próprios para várias saídas.
-**A referência publicada em V44 e os builds anteriores não comprovam esses
-incrementos locais (V45–V48).**
+**API V48 e APK 0.5.0+16 publicados; iOS 0.5.0+16 compilado sem assinatura,
+ainda precisa ser assinado e instalado no aparelho. Builds anteriores não
+comprovam os incrementos V45–V48.**
 Antes da rodada, o responsável deve identificar as versões compatíveis da API,
 do bot, da página do link e do aplicativo. Código implementado ou compilação
 aprovada não comprovam esses percursos. Com componente antigo, registrar
 “bloqueado pela versão”; não testar uma experiência diferente como substituta.
 
 A [proposta](proposta-fluxo-simples.md) explica as decisões de produto. O
-[guia publicado](cadastro-guiado-whatsapp.md) descreve o caminho anterior. O
+[guia publicado](cadastro-guiado-whatsapp.md) descreve o fluxo atual. O
 [roteiro de campo](rodada-final.md) detalha bateria, duração e evidências
 técnicas; usar este roteiro curto primeiro, sem repetir toda aquela matriz.
 

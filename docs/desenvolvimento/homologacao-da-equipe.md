@@ -2,18 +2,24 @@
 
 **Endereço:** <https://vanrides-inovacao-api.matheusduarte.dev.br>
 
-Em 16/11/2026, a API usa banco V44 e HTTPS saudável. As correções de parada e
-preferências dos PRs [#126](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/pull/126)
-e [#127](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/pull/127) estão publicadas.
-O agente atualizado e o APK normal 0.4.0+15 estão disponíveis. O
-[registro da entrega](entrega-mvp.md) reúne as versões e as validações atuais.
+A API do [PR #133](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/pull/133)
+está publicada em `5ef07cb`, com banco V48. O APK **0.5.0+16 já pode ser
+baixado e instalado** pelo link abaixo. Worker, receptor e páginas de conexão,
+início e fim também foram atualizados. A manutenção foi retirada.
 
-O cadastro por convite foi validado no WhatsApp em 15/11; o
-[guia de cadastro](cadastro-guiado-whatsapp.md) preserva essa evidência.
-Presença, GPS real, consulta do pin e encerramento manual tiveram provas no
-WhatsApp/aparelhos. Aproximação e fim automático estão habilitados para ensaio,
-mas ainda dependem de percurso e avaliação. Publicação saudável não encerra
-essa validação.
+A publicação passou na [execução 44143760375, tentativa 3](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/actions/runs/44143760375/attempts/3).
+Foram conferidos banco sem migrações falhas, serviços disponíveis, páginas HTTPS,
+recusa das rotas sem prova do aparelho e hash do APK baixado. Isso prepara a
+instalação e o teste; **o novo fluxo ainda não tem aceite físico**. Conexão,
+contagem de ações, retorno ao WhatsApp e parada precisam ser observados nos
+aparelhos. Não usar o app anterior para comprovar este fluxo.
+
+A referência anterior era a API V44 e o APK 0.4.0+15, nos quais cadastro,
+presença, GPS, pin e encerramento manual tiveram provas reais. O pacote novo
+acrescenta conexão sem copiar códigos, links próprios por viagem, finalização
+pelo app e pontos por trajeto. Veja o [registro da entrega](entrega-mvp.md) e o
+[roteiro do novo fluxo](roteiro-validacao-fluxo-simples.md). Aproximação, bateria
+e utilidade do aviso continuam exigindo a rodada final.
 
 Usamos um único ambiente de desenvolvimento compartilhado. Os nomes técnicos ainda dizem “hml”; não existe produção real liberada para usuários. Stage e produção separados ficam para a versão 1.0.
 
@@ -30,7 +36,7 @@ convites sem acesso à VPS. Veja o [passo a passo](area-da-equipe.md) e o
 | --- | --- | --- |
 | Entender o fluxo sozinho | Abra **Simular conversas** na [área da equipe](https://vanrides-inovacao-api.matheusduarte.dev.br/equipe). | Os dois papéis com dados fictícios no navegador. |
 | Testar o cadastro com meu WhatsApp | Entre no painel com GitHub, libere seu número como passageiro e escolha [Testar com o WhatsApp](area-da-equipe.md#testar-o-passageiro-com-o-motorista-de-teste). | Convite, ponto, correção e aprovação com um motorista de teste no painel. |
-| Testar presença e GPS no ambiente publicado | Combine um número de motorista e outro de passageiro e siga a [jornada com dois papéis](#jornada-completa-motorista-e-passageiro). Para GPS, instale o APK no Android do motorista. | Preparação da rotina, presença na ocorrência certa e início e parada do compartilhamento. |
+| Testar presença e GPS no ambiente publicado | Combine um número de motorista e outro de passageiro e siga a [jornada com dois papéis](#jornada-completa-motorista-e-passageiro). Para GPS, use o app compatível no Android ou iPhone do motorista. | Preparação da rotina, presença na ocorrência certa e início e parada do compartilhamento. |
 | Validar uma mudança da minha branch | Use o [guia de contribuição](../../CONTRIBUTING.md) para rodar o componente localmente e abrir o PR. | A alteração do PR, com dados de teste e canal simulado quando necessário. |
 
 ## O que cada integrante pode acessar
@@ -38,7 +44,7 @@ convites sem acesso à VPS. Veja o [passo a passo](area-da-equipe.md) e o
 | Acesso | Como usar | Condição atual |
 | --- | --- | --- |
 | [Saúde da API](https://vanrides-inovacao-api.matheusduarte.dev.br/actuator/health) | Abrir no navegador; esperado HTTP 200 e `{"status":"UP"}`. | Público, disponível para os quatro integrantes. Não testa uma jornada de negócio. |
-| [APK do motorista](https://vanrides-inovacao-api.matheusduarte.dev.br/motorista/VanRides.apk) | Baixar no Android e instalar o VanRides Motorista **0.4.0+15**. | Download público; já aponta para a API online. Instalar não habilita automaticamente um motorista. |
+| [APK do motorista](https://vanrides-inovacao-api.matheusduarte.dev.br/motorista/VanRides.apk) | Baixar no Android e instalar o VanRides Motorista **0.5.0+16**. | Download HTTPS conferido. Instalar não habilita automaticamente o motorista nem liga GPS. O +15 não comprova o novo fluxo. |
 | [Área da equipe](https://vanrides-inovacao-api.matheusduarte.dev.br/equipe) | Entrar com GitHub, informar o contato que aceitou participar e escolher passageiro ou motorista. | Disponível para contas com escrita no repositório. |
 | Bot pelo WhatsApp | Abra o convite individual ou use **Abrir conversa com o bot** no painel e envie `AJUDA`. | O cadastro é feito na conversa. O convite por link é o caminho padrão do passageiro. |
 | API de produto | O app e o atendimento usam as credenciais próprias de cada fluxo. | Rotas `/driver-app/v1/` e `/integrations/whatsapp/v1/` exigem autenticação. Receber 401 ao abrir no navegador é esperado. |
@@ -47,25 +53,31 @@ convites sem acesso à VPS. Veja o [passo a passo](area-da-equipe.md) e o
 
 Todos usam a mesma URL e podem testar com identidades distintas. O número do
 bot recebe as mensagens do WhatsApp. Para a jornada completa, use números
-diferentes para motorista e passageiro. O motorista é liberado no painel
-antes de enviar seu código. O passageiro pode iniciar pelo link individual.
+diferentes para motorista e passageiro. A equipe prepara a autorização inicial
+do motorista no painel. Depois do cadastro, o próprio motorista conecta o app pelo link do bot, sem copiar códigos
+de aparelho. O passageiro começa pelo convite individual compartilhado pelo
+motorista. São três etapas distintas: liberação do piloto, cadastro e conexão
+do celular.
 
 A janela e as credenciais técnicas atuais vencem em **01/12/2026 às 00:00 UTC** (30/11 às 21h em Brasília). O operador deve renová-las antes de manter os testes depois desse horário. Contatos e credenciais ficam fora do Git.
 
-## O que está hospedado e o que funciona
+## Serviços publicados e alcance da validação
 
 | Parte | Hospedagem e função | Prova e limite |
 | --- | --- | --- |
-| API Spring Boot e PostgreSQL | Regras, cadastros, vínculo, rotinas, presença, aparelho, viagens, GPS e filas de mensagens. Banco próprio da homologação. | API 200/UP e autenticação 401 sem credencial. Perfil do passageiro preservado depois da atualização. |
-| Receptor de eventos | Recebe o webhook da Evolution, confere instância/contato/tipo de mensagem e encaminha o evento à API. | Texto e confirmações de entrega reais foram verificados. Quem chega pelo link individual passa pela validação do convite. |
-| Bot VanRides / worker Node.js | Busca mensagens pendentes, propõe comandos à API e envia as respostas autorizadas pela Evolution. | Convite, vínculo, aprovação e correção de embarque exercitados no WhatsApp. O fluxo usa regras determinísticas. |
-| n8n | Dispara processamento, envios e tarefas agendadas do worker; recebe resultados de controle, sem texto da conversa nem GPS. | Oito fluxos importados. W01/W04/W06/W08 ativos e com execuções recentes bem-sucedidas; W07 publicado para erros. W02/W03/W05 são subfluxos sem agenda própria. |
-| Evolution, Redis e banco da sessão | Conexão dedicada do WhatsApp, envio, recebimento e callbacks de entrega. | Instância `vanrides-hml` em OPEN, separada dos outros projetos. |
-| APK e páginas de vínculo/início | Arquivos HTTPS e links de acesso ao aplicativo do motorista. | APK +15 baixado e hash conferido; vínculo, início, GPS e parada reais aprovados no Redmi. O transporte do link no ensaio foi feito pelo Mac; o toque no WhatsApp móvel continua no roteiro final. |
+| API Spring Boot e PostgreSQL | Regras, cadastros, vínculo, rotinas, presença, aparelho, viagens, GPS e filas de mensagens. Banco próprio da homologação. | API `5ef07cb`, banco V48 sem migrações falhas. Ensaio de migração V44→V48 e publicação passaram; a jornada nova nos aparelhos continua pendente. |
+| Receptor de eventos | Recebe o webhook da Evolution, confere instância/contato/tipo de mensagem e encaminha o evento à API. | Atualizado junto do pacote, com serviço disponível. Texto e callbacks tiveram prova real na versão anterior; repetir a jornada nova no canal. |
+| Bot VanRides / worker Node.js | Busca mensagens pendentes, propõe comandos à API e envia as respostas autorizadas pela Evolution. | Atualizado e disponível. O fluxo usa regras determinísticas. Os novos percursos de conexão, início e fim aguardam prova real conjunta. |
+| n8n | Dispara processamento, envios e tarefas agendadas do worker; recebe resultados de controle, sem texto da conversa nem GPS. | Configuração registrada antes desta atualização: oito fluxos importados, W01/W04/W06/W08 ativos e W07 publicado para erros. W02/W03/W05 são subfluxos sem agenda própria. |
+| Evolution, Redis e banco da sessão | Conexão dedicada do WhatsApp, envio, recebimento e callbacks de entrega. | Serviços preservados. A instância `vanrides-hml`, separada dos outros projetos, estava em OPEN na referência anterior; conferir o canal na rodada. |
+| APK e páginas de conexão/início/fim | Arquivos HTTPS e links de acesso ao aplicativo do motorista. | APK +16 baixado e hash conferido; páginas de conexão, saída e fim respondem 200. Abertura pelo WhatsApp e GPS físicos da versão nova continuam pendentes. |
 | Aproximação | Regra implementada na API, dependente de posição recente e passageiro elegível. | Habilitada para as rotinas elegíveis da coorte compartilhada. Calibração, destinatário e utilidade ainda dependem de percurso. Não há ETA prometido. |
-| Encerramento e suporte | FINALIZAR/CONFIRMAR encerra a viagem; o coletor deve confirmar STOP. A equipe retoma a conversa pelo painel. | Encerramento manual e ACK reais passaram nos dois aparelhos. Fim automático habilitado para ensaio, ainda sem prova física de chegada. Pedir suporte mantém a conversa pausada. |
+| Encerramento e suporte | O caminho normal agora é “Quero finalizar a viagem”, link e confirmação no app. A equipe retoma suporte pelo painel. | Publicação técnica conferida; novo fim/retorno ainda sem prova física. O encerramento antigo teve ACK real nos dois aparelhos. Fim automático depende de campo; pedir suporte pausa a conversa. |
 
-A conferência encontrou nove serviços da homologação com 1/1 réplica: API, banco da API, servidor do APK e seis serviços do canal. O n8n é um serviço existente compartilhado, com fluxos exclusivos do VanRides. Isso comprova disponibilidade técnica; não substitui testes de percurso, bateria ou utilidade.
+Os serviços conferidos após a publicação estavam com 1/1 réplica. O n8n é um
+serviço existente compartilhado, com fluxos exclusivos do VanRides. Isso
+comprova disponibilidade técnica; não substitui a jornada no WhatsApp nem os
+testes de percurso, bateria e utilidade.
 
 ## Como a conversa passa pelos serviços
 
@@ -107,24 +119,106 @@ O GPS segue outro caminho: **aplicativo do motorista → API → PostgreSQL**. O
 6. Envie `AJUDA` novamente. A conversa deve continuar normalmente, sem exigir `ABANDONAR` para sair de uma lista vazia.
 
 Esse roteiro cobre perfil básico e orientação. Para testar cadastro e ponto no
-mesmo fluxo, libere o número e comece direto pelo convite `PASSAGEIRO <código>`.
-O passageiro já cadastrado continua do mesmo convite com seu perfil existente.
+mesmo fluxo, abra e envie a mensagem preenchida pelo link individual do
+motorista. Não peça que o passageiro leia ou redigite o conteúdo técnico do
+convite. Quem já estiver cadastrado preserva o perfil existente.
 
 ## Jornada completa: motorista e passageiro
 
-As etapas de cadastro e vínculo já foram exercitadas no WhatsApp. Use o
-mesmo vínculo e uma rotina de teste para passar à presença e ao GPS no Android.
+### Preparar uma vez: cadastro, trajetos e celular
 
-1. **Preparar o motorista.** Libere o novo número como **Motorista** na área da equipe e use **Copiar código do motorista**. Entregue o código em privado. O motorista envia somente o código a partir do WhatsApp liberado e segue as perguntas de nome e aceite. `AJUDA` permite conferir a resposta e retomar a conversa.
-2. **Configurar a rotina.** Envie `CRIAR ROTINA`, informe o nome, o sentido, os dias, o horário e o ponto fixo do destino. O bot aceita sentido, dias e horário juntos, por exemplo `IDA, SEGUNDA A SEXTA, 07:30`. Confira o fuso e salve pelo resumo. Ida e volta são rotinas separadas. Para testar hoje, inclua o dia atual.
-3. **Convidar o passageiro.** Envie `CONVIDAR` e compartilhe o link individual devolvido pelo bot. Ele tem um uso e vale 24 horas. O passageiro envia a mensagem preenchida no WhatsApp e segue as instruções para conferir a rotina, informar o ponto fixo e enviar o pedido.
-4. **Aprovar vínculo e ponto.** Envie `REVISAR PEDIDO` para abrir o resumo. Se houver vários pedidos, escolha o correto na lista. Responda ao resumo com `APROVAR EMBARQUE` ou siga a opção de correção. Depois use `ROTINAS → ORDEM N`, informe todos os pontos na ordem desejada e confirme o novo resumo. A presença só fica disponível depois de aprovar o embarque.
-5. **Vincular o aplicativo.** No Android, instalar o APK da equipe. No app, tocar em **Vincular este celular → Mostrar código**; enviar somente as oito letras ao bot pelo WhatsApp do motorista e depois tocar em **Atualizar vínculo** e esperar **Aparelho vinculado**. O código dura cinco minutos. Não preencher o APK com tokens da API ou credenciais administrativas.
-6. **Confirmar presença.** Aguardar a agenda W04 criar as ocorrências. Responder ao lembrete (citando a mensagem) com `VOU` ou `NÃO VOU`, ou enviar `VOU`/`NÃO VOU` com `HOJE`, `AMANHÃ`, `IDA` ou `VOLTA`. Sem citação, a resposta vale para a primeira viagem cuja parada ainda não passou; o passageiro não escolhe por menu. O bot confirma com o dia e o sentido da viagem. O motorista consulta `PRESENÇAS` e escolhe a ocorrência. Depois da saída, só quem ainda está na lista pode se ausentar; parada já passada não muda. O passageiro habitual que não responde continua previsto, identificado como pendente.
-7. **Iniciar e observar o GPS.** O motorista envia `INICIAR SAÍDA`, escolhe o número da ocorrência de hoje, revisa a lista e confirma. Recebe o link individual, válido por cinco minutos. Abre o app (ou toca em **Abrir VanRides Motorista** na página), permite localização precisa/notificações e toca em **Iniciar localização desta saída**. Aguarda **Posição recente recebida** e a confirmação do bot. Abrir o link não prova início: a API precisa aceitar uma posição válida. O passageiro elegível pode consultar `ONDE ESTÁ A VAN`; posição ausente ou antiga não deve ser apresentada como atual.
-8. **Observar a aproximação no ensaio habilitado.** O passageiro previsto recebe um aviso quando as posições válidas e o progresso indicam que a van está chegando ao seu ponto. O aviso inicial não promete minutos. A habilitação é própria do ensaio da equipe; rota ativa, motorista autorizado e aparelho vinculado continuam obrigatórios. A utilidade do aviso será avaliada em percurso.
-9. **Encerrar a viagem.** Com o ensaio automático habilitado, a viagem termina após passar pelas paradas e permanecer no destino com GPS válido. Se precisar encerrar manualmente, envie `FINALIZAR`, confira a viagem mostrada e envie `CONFIRMAR` com o código da revisão. `ABANDONAR` mantém a viagem. O aplicativo distingue a viagem encerrada da coleta: enquanto não devolver o ACK, a API informa que aguarda a parada do GPS.
-10. **Parar ou recuperar só o GPS.** **Parar localização** interrompe a coleta e apaga a posição atual no receptor; não conclui a viagem. Se ela ainda estiver em andamento, use `RETOMAR SAÍDA`, escolha a ocorrência, confirme e abra o novo link. Fechar a tela não comprova parada. Durante suporte, o motorista ainda pode finalizar a viagem; a conversa continua pausada até a equipe usar a retomada pelo painel.
+1. **Autorizar o motorista do piloto.** Um integrante libera o número como
+   **Motorista** na área da equipe, usa **Copiar link para o motorista** e
+   encaminha o convite em privado. O motorista abre pelo próprio WhatsApp,
+   envia a mensagem pronta, informa nome e lê/aceita o aviso de dados.
+   **Abrir neste WhatsApp** só serve quando a conta atual é a do motorista.
+   A área não transforma um passageiro ativo em motorista e não aceita o
+   aviso por ele. O código manual fica nos detalhes como contingência; veja o
+   [convite por link](area-da-equipe.md#convite-inicial-do-motorista-por-link).
+2. **Criar os trajetos.** Envie `CRIAR ROTINA`, informe nome, sentido, dias,
+   horário e destino fixo. Pode enviar, por exemplo,
+   `IDA, SEGUNDA A SEXTA, 07:30` na mesma mensagem. Confira o fuso e salve pelo
+   resumo. Ida e volta são trajetos separados. Dê nomes que ajudem a distinguir
+   as opções e inclua o dia atual se for testar hoje.
+3. **Convidar o passageiro pelo link.** Envie `CONVIDAR` e compartilhe em privado
+   o link individual devolvido. Ele tem um uso e vale 24 horas. O passageiro
+   abre e envia a mensagem preenchida; o bot identifica o motorista e pede
+   somente os dados e escolhas que faltam.
+4. **Escolher trajetos e embarques.** O passageiro pode selecionar mais de um
+   trajeto, por exemplo `1,2`, e informar os dias de cada um. Envia um ponto fixo
+   por trajeto, sem localização ao vivo. “MESMO PONTO” reutiliza um ponto aprovado
+   quando essa for a escolha dele. Confere o resumo e envia o pedido. O convite
+   já autoriza a pessoa; a revisão restante confere os pontos e a ordem.
+5. **Conferir o embarque.** O motorista envia `REVISAR PEDIDO`, escolhe o pedido
+   se houver vários e responde ao resumo com `APROVAR EMBARQUE` ou a correção
+   indicada. Cada ponto pertence ao trajeto mostrado: aprovar a ida não aprova
+   silenciosamente a volta. Depois, confira a ordem dos pontos em `ROTINAS`.
+   A viagem só fica pronta quando os embarques e a ordem estiverem preparados.
+6. **Instalar e conectar o celular.** Instale o app da rodada: APK no Android;
+   no iPhone, instalação assinada pelo Mac. Pelo WhatsApp do motorista, envie
+   “Conectar meu celular”, abra o link e toque em **Conectar este celular**.
+   O app volta à conversa. Leia o pedido recebido e envie “Conectar este celular”
+   somente se acabou de solicitá-lo. Abra **Concluir no app**, aguarde
+   **Aparelho vinculado** e o retorno à conversa. O link vale cinco minutos;
+   vencido, peça outro ao bot. Não é preciso copiar oito letras nem informar
+   credenciais da API. No iPhone, use o botão intermediário **Abrir VanRides**.
+7. **Autorizar o sistema na preparação.** Conceda localização precisa, o acesso
+   em segundo plano indicado pelo app e as notificações solicitadas. Confira
+   internet e bateria. Conectar o celular e abrir links não ligam a localização.
+   Uma troca de aparelho exige **Usar este celular** e é bloqueada enquanto a
+   coleta anterior não tiver parada confirmada.
+
+O primeiro cadastro e as permissões têm contagem própria. O caminho diário
+abaixo pressupõe motorista cadastrado, trajetos prontos e celular conectado.
+Não apagar um cadastro real para repetir o teste: um novo convite do mesmo
+motorista permite adicionar trajetos preservando perfil e escolhas anteriores.
+O [guia do cadastro](cadastro-guiado-whatsapp.md) detalha esses casos.
+
+### Usar no dia a dia: presença, início e fim
+
+1. **Presença.** Aguarde a agenda criar as saídas. O passageiro responde ao
+   lembrete, citando-o, com `VOU` ou `NÃO VOU`; também pode indicar `HOJE`,
+   `AMANHÃ`, `IDA` ou `VOLTA`. Confira a data e o sentido na resposta. O motorista
+   consulta `PRESENÇAS`. Quem é habitual e não responde continua previsto,
+   identificado como pendente. Só mudar a presença não liga ou desliga a
+   preferência de avisos.
+2. **Começar.** O motorista envia “Começar viagem”. O bot já mostra os trajetos
+   prontos de hoje, cada um com nome, sentido, horário, passageiros e link
+   próprio. Abra o link da viagem certa e toque em **Começar e compartilhar
+   localização** no app. Não há outra escolha por texto nem confirmação com
+   código. Com mais opções, o bot envia blocos de até três links; a primeira
+   ativação aceita invalida os demais da oferta.
+3. **Conferir a localização.** Depois do início, o app retorna à conversa.
+   Aguarde **Posição recente recebida** e a confirmação do bot após a primeira
+   posição válida. Voltar ao WhatsApp sozinho não prova GPS recebido. O
+   passageiro elegível pode enviar `ONDE ESTÁ A VAN`; posição ausente ou antiga
+   não deve aparecer como atual.
+4. **Acompanhar os avisos.** Em percurso, passageiros previstos, com ponto e
+   preferência de chegada habilitados, podem receber a aproximação. O aviso não
+   promete minutos. Estar parado junto do ponto não comprova a utilidade dessa
+   regra; ela continua na rodada de campo.
+5. **Finalizar.** Envie “Quero finalizar a viagem”, abra o link recebido e toque
+   em **Finalizar viagem e parar localização**. O sensor para e o app aguarda a
+   confirmação daquela parada no servidor antes de retornar à conversa e
+   anunciar a conclusão. Abrir o link sozinho não encerra a viagem.
+6. **Se houver falha de rede.** A ação **Parar localização** continua desligando
+   o sensor; sozinha, não encerra a viagem. Se a finalização ficar pendente,
+   mantenha o app parado e tente confirmar novamente quando a rede voltar.
+   Não registre conclusão remota antes da confirmação. Para retomar uma viagem
+   interrompida, siga a orientação específica do bot; início, retomada e fim
+   usam autorizações diferentes.
+
+Para começar uma viagem já preparada, a meta é **três ações no Android**:
+enviar a mensagem, abrir o link e confirmar no app. No **iPhone são quatro**,
+pois o botão provisório da página intermediária também conta. Pedidos extras
+do sistema, falhas e ajuda do facilitador entram no registro. Esse teto precisa
+ser observado no WhatsApp e nos aparelhos, não presumido pelo build.
+
+Conexão, início e finalização com códigos continuam como contingências nos
+detalhes do app e nos comandos antigos; não são o caminho a ensinar no dia a dia.
+Se a viagem estiver parada e confirmada após reconectar o celular, o bot pode
+oferecer **Finalizar esta viagem** na conversa. A revisão vale só para aquela
+viagem e parada; resposta antiga não pode encerrar uma coleta posterior.
 
 No computador, envie o ponto fixo com `PONTO` e as coordenadas copiadas do mapa.
 No celular, também é possível usar a localização estática do WhatsApp.
@@ -187,5 +281,6 @@ registrada no [PR #108](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/pu
 - [Operação do canal](../runbooks/whatsapp-mvp/homologacao-canal.md) e [receita da API](../runbooks/whatsapp-mvp/homologacao-api.md).
 - [Arquitetura](../02-arquitetura-e-decisoes.md) e [especificações das tarefas](../08-especificacoes-mvp.md).
 - Issues: [API #89](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/89), [publicação #90](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/90), [canal #91](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/91), [Android #87](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/87), [passageiro #28](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/28).
-- APK 0.4.0+15: 56.680.985 bytes; SHA-256 `7f22ebd465f0c2f9947ee8c9639fb0ee63405bc360e618fa97a1955bf6cba946`. Download HTTPS conferido byte a byte em 16/11. Instalado no Redmi, com GPS/pin/finalização/parada reais; percurso continua pendente.
-- Os APKs históricos `0.1.0+8` (receptor GPS), `0.2.0+12` (laboratório por USB/localhost), `0.3.0-hml+13` e `0.4.0+14` não substituem o `0.4.0+15` atual.
+- APK publicado **0.5.0+16**: SHA-256 `d3a4b3f39b2f4474ad8b3c72a5b9821d5e044b2c08c23e5debe5baac6fc37915`, conferido por download HTTPS. Pronto para instalação; novo fluxo físico pendente.
+- APK anterior 0.4.0+15: 56.680.985 bytes; SHA-256 `7f22ebd465f0c2f9947ee8c9639fb0ee63405bc360e618fa97a1955bf6cba946`, conferido em 16/11. Teve GPS/pin/finalização/parada reais no Redmi; essas provas não são do +16.
+- Os APKs `0.1.0+8`, `0.2.0+12`, `0.3.0-hml+13` e `0.4.0+14` são históricos. Para o fluxo deste guia, use o pacote +16 compatível com a API publicada.

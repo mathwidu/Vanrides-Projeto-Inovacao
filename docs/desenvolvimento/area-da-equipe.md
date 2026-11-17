@@ -10,6 +10,14 @@ Login real do mantenedor, consulta/liberação do passageiro e recuperação do
 convite de motorista foram verificados no ambiente online. A equipe também
 confirmou acesso ao painel em testes com contas individuais.
 
+O botão **Abrir guia de testes** do painel leva à
+[homologação da equipe](homologacao-da-equipe.md). Ali estão os dois caminhos:
+praticar cadastro sem motorista físico e testar a jornada completa com números
+distintos. O fluxo do PR #133 está publicado, com API `5ef07cb`, banco V48 e
+APK Android **0.5.0+16 disponível para instalar**. Worker, receptor e páginas
+foram atualizados. A publicação técnica foi conferida; os novos percursos de
+conexão, início e fim ainda precisam de prova no WhatsApp e nos aparelhos.
+
 ## Preparar um teste
 
 1. Acesse a área e escolha **Entrar com GitHub**. Use a conta que tem acesso de
@@ -20,19 +28,40 @@ confirmou acesso ao painel em testes com contas individuais.
 4. Siga a próxima etapa mostrada no resultado. Use **Abrir conversa com o bot**
    ou o contato já compartilhado pela equipe. Para testar a resposta, envie
    `AJUDA` pelo WhatsApp do participante.
-5. Para motorista, use **Copiar código do motorista** e entregue o código em
-   conversa privada. O motorista envia o código isolado ao bot e segue as
-   perguntas de nome e aceite. Para passageiro com convite de vínculo, envie
-   a mensagem `PASSAGEIRO <código>` e faça o cadastro dentro dessa conversa.
+5. **Preparo inicial do motorista no piloto:** use **Copiar link para o
+   motorista** e encaminhe o link individual em privado. Ele abre pelo próprio
+   WhatsApp, envia a mensagem pronta e segue nome e aviso de dados. Isso
+   autoriza seu papel; não conecta o aplicativo.
+   **Passageiro:** prefira abrir o link individual compartilhado pelo motorista
+   e enviar a mensagem preenchida. Não precisa ler nem redigitar o conteúdo
+   técnico do convite.
 6. Use **Consultar cadastro** para acompanhar liberação, papel e convite.
    Um convite de motorista expirado e não utilizado pode ser renovado.
    Convites são individuais e valem 24 horas.
-7. Depois, siga a [jornada de testes](homologacao-da-equipe.md).
+7. Depois, siga a [jornada de testes](homologacao-da-equipe.md). Com o cadastro
+   pronto, a conexão do celular é feita pelo bot com “Conectar meu celular”,
+   sem copiar códigos do aplicativo. Nome, trajetos e permissões não precisam
+   ser refeitos a cada saída.
 
 Repetir a operação após uma falha de rede reutiliza o mesmo identificador e não
 cria outra liberação. Uma conta já ativa em outro papel não é convertida pela
 área. A consulta não revela o código do convite; emitir novamente um convite
 ativo recupera o convite elegível sem estender sua validade.
+
+## Convite inicial do motorista por link
+
+A interface oferece **Copiar link para o motorista** para a equipe
+encaminhar o convite em privado. O link abre a conversa com o bot e já
+preenche a mensagem do convite; o motorista confere e toca em **Enviar**.
+O WhatsApp continua mostrando essa mensagem antes do envio. O link evita
+copiar ou redigitar o código, mas não o torna invisível nessa conversa.
+
+A opção secundária **Abrir neste WhatsApp** usa a conta conectada no aparelho
+ou navegador atual. Só deve ser usada se essa for a conta do motorista
+convidado; o integrante que prepara outro motorista deve encaminhar o link.
+O código manual permanece nos detalhes para contingência. Esta melhoria só
+muda a apresentação do convite: não conecta o app, não troca o papel de um passageiro e não aceita
+o aviso de dados pela pessoa.
 
 ## Retomar uma conversa após suporte
 
@@ -82,6 +111,10 @@ A simulação guarda o progresso enquanto a página permanece aberta. Use
 **Recomeçar** para praticar o outro formato de convite. Ela usa dados fictícios
 e o estado fica no navegador. Para conferir o bot, a entrega de mensagens e a
 API da homologação, siga a jornada real da seção anterior.
+A simulação é um treino com dados fictícios; não comprova conexão de aparelho,
+GPS ou o novo percurso entre WhatsApp e aplicativo. Para esses casos, use o
+[roteiro do candidato](roteiro-validacao-fluxo-simples.md), depois da publicação
+compatível e com os aparelhos preparados.
 
 ## Acesso e responsabilidades
 

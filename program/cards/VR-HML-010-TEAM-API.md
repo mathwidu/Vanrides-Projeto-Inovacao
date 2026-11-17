@@ -423,3 +423,14 @@ Validar localmente por etapas, com um build/suíte pesada por vez. Aparelhos
 continuam pausados até o pacote estar preparado; percurso e aceite são a etapa
 posterior com o mantenedor. Atualizar evidências e issues sem encerrar critérios
 que dependam de prova humana ou física ainda ausente.
+
+
+## Publicação da simplificação em 17/11/2026
+
+PR #133 integrado e API V48 publicada pela CI 44143760375/tentativa 3, com
+backup restaurado em cópia isolada e recuperação limitada registrada na
+[evidência](../evidence/mvp-ux-20261117.md). APK 0.5.0+16 disponível e iOS
+correspondente compilado sem assinatura. Worker, receptor e páginas dos links
+atualizados; serviços 1/1 e HTTPS conferidos. O estado permanece in_progress:
+instalação e prova de usabilidade nos aparelhos, além de percurso/bateria e
+aceite humano, ainda não foram concluídos. Nenhuma issue física foi encerrada.
