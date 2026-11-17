@@ -32,6 +32,7 @@ function controls(value) {
   for (const id of ['submit', 'status', 'logout', 'renew', 'resume-support', 'test-invite', 'test-refresh']) $(id).disabled = value;
   for (const button of linkButtons) button.disabled = value;
   for (const id of ['phone', 'role', 'consent']) $(id).disabled = value || pending !== null;
+  renderDriverInviteLink();
 }
 function phone() {
   const value = $('phone').value.trim().replace(/[\s()\-]/g, '');
@@ -59,6 +60,7 @@ function clearBotLink() {
   $('bot-link').removeAttribute('href');
   $('bot-fallback').hidden = false;
   renderTestInviteLink();
+  renderDriverInviteLink();
 }
 async function loadBotLink() {
   const lookup = request('bot');
@@ -71,6 +73,7 @@ async function loadBotLink() {
   $('bot-link').hidden = false;
   $('bot-fallback').hidden = true;
   renderTestInviteLink();
+  renderDriverInviteLink();
 }
 function closeSession() {
   csrf = null;
@@ -82,7 +85,30 @@ function closeSession() {
   $('workspace').hidden = true;
   $('login').hidden = false;
 }
-function clearInvitation() { invitation = null; $('invite-code').value = ''; $('invitation').hidden = true; }
+function clearInvitation() {
+  invitation = null;
+  $('invite-code').value = '';
+  $('invite-manual').open = false;
+  $('invitation').hidden = true;
+  renderDriverInviteLink();
+}
+function driverInviteUrl() {
+  return invitation && invitation.expires > Date.now() && botPhoneNumber
+    ? 'https://wa.me/' + botPhoneNumber + '?text=' + encodeURIComponent(invitation.code) : null;
+}
+function renderDriverInviteLink() {
+  const href = driverInviteUrl(), link = $('driver-wa-link');
+  link.hidden = !href;
+  if (href) link.setAttribute('href', href); else link.removeAttribute('href');
+  $('copy-driver-link').disabled = busy || !href;
+  $('invite-link-note').hidden = Boolean(href) || !invitation;
+}
+function liveDriverInvite() {
+  if (invitation?.expires > Date.now()) return true;
+  clearInvitation();
+  message('O convite expirou. Consulte o cadastro e gere um novo convite para continuar.', true);
+  return false;
+}
 function clearSupport() { pausedSupport = null; $('resume-support').hidden = true; }
 const labels = { ADMITTED: 'Liberado', NOT_ADMITTED: 'Ainda não liberado', ACTIVE: 'Ativo', ONBOARDING: 'Em cadastro',
   PASSENGER: 'Passageiro', DRIVER: 'Motorista', NONE: 'Ainda não iniciado', AVAILABLE: 'Disponível', ISSUED: 'Disponível',
@@ -116,11 +142,13 @@ function nextStep(data, driver) {
   }
   if (driver) {
     switch (data.inviteStatus) {
-      case 'ACTIVE': return data.driverInviteCode
-        ? 'Entregue o código em privado. Pelo próprio WhatsApp, o motorista deve enviar somente o código ao bot, depois enviar AJUDA e seguir as instruções.'
-        : 'Se o motorista ainda precisar do código, use “Liberar motorista” para recuperar o mesmo convite com a validade original.';
-      case 'EXPIRED': return 'Use “Gerar novo convite de motorista” e entregue o novo código em privado.';
-      case 'CONSUMED': return 'O código já foi utilizado. Pelo WhatsApp do motorista, envie AJUDA e siga as instruções para concluir o cadastro.';
+      case 'ACTIVE':
+        if (data.driverInviteCode && Date.parse(data.expiresAt) <= Date.now()) return 'O convite venceu. Consulte o cadastro e gere um novo convite para enviar ao motorista.';
+        return data.driverInviteCode
+          ? 'Copie o link e envie em privado ao motorista. Ele abre pelo próprio WhatsApp, envia a mensagem pronta e o bot orienta o restante do cadastro.'
+          : 'Se o motorista ainda precisar do convite, use “Liberar motorista” para recuperar o mesmo convite com a validade original.';
+      case 'EXPIRED': return 'Use “Gerar novo convite de motorista” e envie o novo link em privado.';
+      case 'CONSUMED': return 'O convite já foi utilizado. Continue a conversa pelo WhatsApp do motorista para concluir o cadastro. Se precisar de orientação, envie AJUDA.';
       case 'REVOKED': return 'O convite foi revogado. Peça à equipe para revisar a liberação antes de continuar.';
     }
     if (data.profileRole !== 'DRIVER') return 'Use “Liberar motorista” para gerar o convite antes de concluir o cadastro pelo WhatsApp.';
@@ -149,10 +177,13 @@ function result(data) {
   if (!$('expiry').hidden) {
     $('expiry').textContent = 'Convite válido até ' + new Date(data.expiresAt).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }) + ' (Brasília).';
   }
-  if (data.inviteStatus === 'ACTIVE' && data.driverInviteCode) {
-    invitation = { code: data.driverInviteCode, expiresAt: data.expiresAt };
+  if (driver && data.admissionStatus === 'ADMITTED' && data.inviteStatus === 'ACTIVE' && data.driverInviteCode
+    && (!data.profileStatus || data.profileStatus === 'ONBOARDING') && !data.conversationPaused
+    && Date.parse(data.expiresAt) > Date.now()) {
+    invitation = { code: data.driverInviteCode, expires: Date.parse(data.expiresAt) };
     $('invite-code').value = invitation.code;
     $('invitation').hidden = false;
+    renderDriverInviteLink();
   }
 }
 async function mutate(action) {
@@ -190,8 +221,21 @@ $('resume-support').addEventListener('click', async () => {
     message('Conversa retomada. Peça à pessoa para enviar AJUDA ao bot. O cadastro e as permissões foram preservados.');
   } catch (error) { message(error.message, true); } finally { controls(false); }
 });
+$('copy-driver-link').addEventListener('click', async () => {
+  if (!liveDriverInvite()) return;
+  renderDriverInviteLink();
+  const href = driverInviteUrl();
+  if (!href) { message('Não foi possível preparar o link do bot. Consulte o cadastro e tente novamente.', true); return; }
+  try { await navigator.clipboard.writeText(href); message('Link copiado. Envie em privado ao motorista para ele abrir pelo próprio WhatsApp.'); }
+  catch { message('Não foi possível copiar. Copie o endereço de “Abrir neste WhatsApp” para enviar em privado.', true); }
+});
+$('driver-wa-link').addEventListener('click', event => {
+  if (liveDriverInvite() && driverInviteUrl()) return;
+  event.preventDefault();
+  renderDriverInviteLink();
+});
 $('copy').addEventListener('click', async () => {
-  if (!invitation) return;
+  if (!liveDriverInvite()) return;
   try { await navigator.clipboard.writeText(invitation.code); message('Código copiado. Entregue-o em uma conversa privada com o motorista.'); }
   catch { message('Não foi possível copiar automaticamente. Selecione o código e copie manualmente.', true); }
 });
@@ -315,6 +359,7 @@ $('test-copy').addEventListener('click', async () => {
 $('logout').addEventListener('click', async () => {
   controls(true);
   clearBotLink();
+  clearInvitation();
   try { await request('logout', {}); closeSession(); pending = null; testPending = null; $('phone').value = ''; message('Você saiu da área da equipe.'); }
   catch (error) { message(error.message, true); if (csrf) loadBotLink(); } finally { controls(false); }
 });
