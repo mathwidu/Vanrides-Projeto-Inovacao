@@ -24,6 +24,35 @@ final class DriverSessionBridge: NSObject, FlutterPlugin {
   }
 
   func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
+    if call.method == "completePairingReturn" {
+      guard (call.arguments == nil || call.arguments is NSNull),
+        UIApplication.shared.applicationState == .active, let controller = controller
+      else { result(false); return }
+      Task {
+        do { let consumed = try await controller.completePairingReturn(); DispatchQueue.main.async { result(consumed) } }
+        catch { DispatchQueue.main.async { result(false) } }
+      }
+      return
+    }
+    if ["preparePairingLink","claimPairingLink"].contains(call.method) {
+      guard UIApplication.shared.applicationState == .active,
+        let args = call.arguments as? [String: Any], let link = try? DriverPairingLink.arguments(args),
+        DriverRunEntry.pairingAuthorization?.matches(link) == true,
+        let controller = controller else { result(FlutterError(code:"INVALID_ARGUMENTS",message:nil,details:nil)); return }
+      let tracking = DriverTrackingCoordinator.shared.snapshot()
+      if call.method == "claimPairingLink" && (["TRACKING","STARTING"].contains(tracking["state"] as? String ?? "") || tracking["stopPending"] as? Bool == true) {
+        result(FlutterError(code:"PAIRING_ACTIVE_RUN",message:nil,details:nil)); return
+      }
+      Task {
+        do {
+          let value: [String: Any]
+          if call.method == "preparePairingLink" { value = try await controller.preparePairingLink(link) }
+          else { value = try await controller.claimPairingLink(link) }
+          DispatchQueue.main.async { result(value) }
+        } catch { DispatchQueue.main.async { result(FlutterError(code:(error as? DriverSessionFailure ?? .unavailable).rawValue,message:nil,details:nil)) } }
+      }
+      return
+    }
     guard ["getState", "beginPairing", "syncSession", "refreshSession", "revokeSession", "showPairingCode"].contains(call.method)
     else { result(FlutterMethodNotImplemented); return }
     guard call.arguments == nil || call.arguments is NSNull else {

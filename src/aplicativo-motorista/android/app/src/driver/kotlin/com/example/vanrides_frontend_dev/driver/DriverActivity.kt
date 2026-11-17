@@ -48,10 +48,13 @@ class DriverActivity : FlutterActivity() {
         channel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "vanrides.driver/tracking.v1").also {
             it.setMethodCallHandler { call, result -> handle(call, result) }
         }
-        val sessions = DriverSessionBridge(this, { resumed }, { iconLaunch }) {
+        val sessions = DriverSessionBridge(this, { resumed }, { iconLaunch }, onSessionUi = {
             sessionUiObserved = true
             keepLabScreenVisible()
-        }
+        }, pairingEntry = { intent.dataString }, pairingBlocked = {
+            val status = runtime.snapshot()
+            status["state"] in setOf("TRACKING","STARTING") || status["stopPending"] == true
+        })
         sessionChannel = MethodChannel(flutterEngine.dartExecutor.binaryMessenger, DriverSessionProtocol.CHANNEL).also {
             it.setMethodCallHandler(sessions::handle)
         }

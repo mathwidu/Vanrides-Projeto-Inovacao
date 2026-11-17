@@ -6,6 +6,7 @@ import '../data/driver_session_links.dart';
 import '../data/driver_session_platform.dart';
 import '../data/driver_tracking_platform.dart';
 import '../data/driver_finish_platform.dart';
+import '../data/driver_pairing_link_platform.dart';
 import 'driver_finish_panel.dart';
 import 'driver_collection_panel.dart';
 import 'driver_pairing_controller.dart';
@@ -16,12 +17,14 @@ class DriverPairingApp extends StatelessWidget {
     this.tracking = const NativeDriverTrackingPlatform(),
     this.links,
     this.finishing = const NativeDriverFinishPlatform(),
+    this.pairing = const NativeDriverPairingLinkPlatform(),
     super.key,
   });
   final DriverSessionPlatform session;
   final DriverTrackingPlatform tracking;
   final DriverSessionLinks? links;
   final DriverFinishPlatform finishing;
+  final DriverPairingLinkPlatform pairing;
 
   @override
   Widget build(BuildContext context) => MaterialApp(
@@ -36,6 +39,7 @@ class DriverPairingApp extends StatelessWidget {
       tracking: tracking,
       links: links,
       finishing: finishing,
+      pairing: pairing,
     ),
   );
 }
@@ -46,11 +50,13 @@ class _PairingPage extends StatefulWidget {
     required this.tracking,
     required this.links,
     required this.finishing,
+    required this.pairing,
   });
   final DriverSessionPlatform session;
   final DriverTrackingPlatform tracking;
   final DriverSessionLinks? links;
   final DriverFinishPlatform finishing;
+  final DriverPairingLinkPlatform pairing;
 
   @override
   State<_PairingPage> createState() => _PairingPageState();
@@ -66,6 +72,7 @@ class _PairingPageState extends State<_PairingPage>
     controller = DriverPairingController(
       widget.session,
       widget.links ?? DeviceSessionLinks(),
+      pairing: widget.pairing,
     );
     WidgetsBinding.instance.addObserver(this);
     unawaited(_initialize());
@@ -75,7 +82,8 @@ class _PairingPageState extends State<_PairingPage>
     await controller.initialize();
     if (!mounted ||
         controller.runIntent != null ||
-        controller.finishIntent != null) {
+        controller.finishIntent != null ||
+        controller.pairingIntent != null) {
       return;
     }
     try {
@@ -161,7 +169,7 @@ class _PairingPageState extends State<_PairingPage>
       ),
       DriverSessionState.unpaired => (
         'Vincule seu celular',
-        'Com seu cadastro de motorista confirmado no WhatsApp, toque abaixo para gerar o código deste aparelho.',
+        'No WhatsApp, envie Conectar meu celular. Abra o link recebido para conectar este aparelho.',
       ),
       DriverSessionState.requesting => (
         'Concluindo seu pedido',
@@ -169,7 +177,9 @@ class _PairingPageState extends State<_PairingPage>
       ),
       DriverSessionState.pending => (
         'Confirme pelo WhatsApp',
-        'Mostre o código e envie somente as oito letras na sua conversa com o VanRides. Depois volte aqui.',
+        controller.handoff
+            ? 'No WhatsApp, confirme com Conectar este celular. Depois abra Concluir no app para terminar.'
+            : 'Seu pedido antigo está salvo. Você pode continuá-lo nos detalhes ou pedir Conectar meu celular no WhatsApp.',
       ),
       DriverSessionState.ready when controller.error != null => (
         'Vínculo salvo neste celular',
@@ -185,7 +195,7 @@ class _PairingPageState extends State<_PairingPage>
       ),
       DriverSessionState.expired => (
         'Renove o vínculo',
-        'Gere um novo código para vincular este aparelho.',
+        'No WhatsApp, envie Conectar meu celular para receber um novo link.',
       ),
       DriverSessionState.revoking => (
         'Desvinculação em andamento',
@@ -211,44 +221,86 @@ class _PairingPageState extends State<_PairingPage>
             ),
             const SizedBox(height: 8),
             Text(
-              mayBegin && controller.fromLink
-                  ? 'Feche o VanRides e abra novamente pelo ícone para criar um vínculo.'
+              mayBegin &&
+                      controller.fromLink &&
+                      controller.pairingIntent == null
+                  ? 'No WhatsApp, envie Conectar meu celular para receber o link deste aparelho.'
                   : instruction,
             ),
             const SizedBox(height: 12),
-            if (mayBegin && controller.launchChecked && !controller.fromLink)
+            if (controller.pairingIntent != null) ...[
+              const Text(
+                'Conectar este celular ao VanRides não liga a localização. A confirmação do vínculo será feita na conversa do WhatsApp.',
+              ),
+              if (controller.requiresReplacement)
+                const Text(
+                  'Outro celular está conectado. Usar este aparelho substituirá o vínculo anterior depois da sua aprovação no WhatsApp.',
+                ),
               FilledButton(
                 onPressed:
                     controller.busy
                         ? null
-                        : () =>
-                            controller.act(DriverSessionAction.beginPairing),
-                child: const Text('Vincular este celular'),
+                        : () => controller.connect(
+                          replace: controller.requiresReplacement,
+                        ),
+                child: Text(
+                  controller.requiresReplacement
+                      ? 'Usar este celular'
+                      : 'Conectar este celular',
+                ),
               ),
-            if (state == DriverSessionState.pending) ...[
-              if (controller.code == null)
-                FilledButton(
-                  onPressed: controller.busy ? null : controller.reveal,
-                  child: const Text('Mostrar código'),
-                )
-              else ...[
-                Text(
-                  controller.code!,
-                  style: Theme.of(context).textTheme.headlineMedium,
-                  key: const Key('driver-pairing-code'),
-                ),
-                OutlinedButton(
-                  onPressed: controller.busy ? null : _copyCode,
-                  child: const Text('Copiar código'),
-                ),
-              ],
-              if (controller.links.hasConversation)
-                TextButton(
-                  onPressed:
-                      controller.busy ? null : controller.openConversation,
-                  child: const Text('Abrir conversa no WhatsApp'),
-                ),
             ],
+            if ((mayBegin || state == DriverSessionState.pending) &&
+                controller.links.hasConversation)
+              TextButton(
+                onPressed: controller.busy ? null : controller.openConversation,
+                child: const Text('Abrir conversa no WhatsApp'),
+              ),
+            if (controller.snapshot?.handoff == true &&
+                controller.pairingIntent == null &&
+                controller.canReconcile)
+              FilledButton(
+                onPressed:
+                    controller.busy ? null : controller.continueConnection,
+                child: const Text('Continuar conexão'),
+              ),
+            if (!controller.handoff &&
+                ((mayBegin &&
+                        controller.launchChecked &&
+                        !controller.fromLink) ||
+                    state == DriverSessionState.pending))
+              ExpansionTile(
+                title: const Text('Detalhes e conexão antiga'),
+                children: [
+                  if (mayBegin)
+                    TextButton(
+                      onPressed:
+                          controller.busy
+                              ? null
+                              : () => controller.act(
+                                DriverSessionAction.beginPairing,
+                              ),
+                      child: const Text('Gerar código de conexão antiga'),
+                    ),
+                  if (state == DriverSessionState.pending &&
+                      controller.code == null)
+                    TextButton(
+                      onPressed: controller.busy ? null : controller.reveal,
+                      child: const Text('Mostrar código'),
+                    ),
+                  if (state == DriverSessionState.pending &&
+                      controller.code != null) ...[
+                    Text(
+                      controller.code!,
+                      key: const Key('driver-pairing-code'),
+                    ),
+                    TextButton(
+                      onPressed: controller.busy ? null : _copyCode,
+                      child: const Text('Copiar código'),
+                    ),
+                  ],
+                ],
+              ),
             if (controller.error != null)
               Semantics(liveRegion: true, child: Text(controller.error!)),
             if (controller.canReconcile || controller.error != null)

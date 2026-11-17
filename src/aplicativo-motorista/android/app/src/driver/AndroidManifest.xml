@@ -27,6 +27,7 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="vanridesdriver" android:host="pairing" android:path="/return" />
+                <data android:scheme="vanridesdriver" android:host="pair" android:path="/connect" />
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
@@ -48,6 +49,7 @@
                     android:path="/motorista/vinculo/retorno" />
                 <data android:scheme="https" android:host="${PAIRING_LINK_HOST}" android:path="/motorista/saida" />
                 <data android:scheme="https" android:host="${PAIRING_LINK_HOST}" android:path="/motorista/fim" />
+                <data android:scheme="https" android:host="${PAIRING_LINK_HOST}" android:path="/motorista/conectar" />
             </intent-filter>
         </activity-alias>
     </application>

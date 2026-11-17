@@ -42,12 +42,20 @@ internal object DriverSessionProtocol {
         if (base != "vanridesdriver://run/finish" && (linkHost.isEmpty() || base != "https://$linkHost/motorista/fim")) return false
         return isRunLink("vanridesdriver://run/start" + value.substring(base.length), linkHost)
     }
-    enum class Entry { ICON, RETURN, RUN, FINISH, INVALID }
+    fun isPairingLink(value: String?, linkHost: String = ""): Boolean {
+        if (value == null || value.contains('%')) return false
+        val base = value.substringBefore('#')
+        if (base != "vanridesdriver://pair/connect" && (linkHost.isEmpty() || base != "https://$linkHost/motorista/conectar")) return false
+        val match = Regex("v1\\.([0-9a-f-]{36})\\.([A-Za-z0-9_-]{43})").matchEntire(value.substringAfter('#', "")) ?: return false
+        return try { uuid(match.groupValues[1]); token(match.groupValues[2]); true } catch (_: Exception) { false }
+    }
+    enum class Entry { ICON, RETURN, RUN, FINISH, CONNECT, INVALID }
     fun entry(action: String?, launcher: Boolean, uri: String?, linkHost: String = ""): Entry = when {
         action == "android.intent.action.MAIN" && launcher && uri == null -> Entry.ICON
         action == "android.intent.action.VIEW" && isReturn(uri, linkHost) -> Entry.RETURN
         action == "android.intent.action.VIEW" && isRunLink(uri, linkHost) -> Entry.RUN
         action == "android.intent.action.VIEW" && isFinishLink(uri, linkHost) -> Entry.FINISH
+        action == "android.intent.action.VIEW" && isPairingLink(uri, linkHost) -> Entry.CONNECT
         else -> Entry.INVALID
     }
     fun fields(value: JSONObject, required: Set<String>, optional: Set<String> = emptySet()) {
