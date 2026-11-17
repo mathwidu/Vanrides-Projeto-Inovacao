@@ -20,6 +20,7 @@ import java.util.UUID;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import static com.vanrides.vanrides.whatsapp.transport.WaFoundationResponses.content;
 
 /** Explicit response policies only. A reservation is never retried blindly. */
 @Service
@@ -43,6 +44,7 @@ public class WaOutboxService {
     private final WaApproachDelivery approaches;
     private final WaTeamPassengerNotices teamNotices;
     private final WaDriverAttendanceNotices driverNotices;
+    private final com.vanrides.vanrides.whatsapp.pairing.WaPairingLinkDelivery pairing;
     public WaOutboxService(JdbcTemplate jdbc, WaTransportAccess access, WaDeliveryReconciler reconciliation,
                            WaSettings settings, WaClock clock) {
         this.jdbc = jdbc; this.access = access; this.reconciliation = reconciliation; this.settings = settings; this.clock = clock;
@@ -59,6 +61,7 @@ public class WaOutboxService {
         this.approaches = new WaApproachDelivery(jdbc,settings,clock);
         this.teamNotices = new WaTeamPassengerNotices(jdbc, settings);
         this.driverNotices = new WaDriverAttendanceNotices(jdbc, settings);
+        this.pairing = new com.vanrides.vanrides.whatsapp.pairing.WaPairingLinkDelivery(jdbc,clock,settings);
     }
     private record Item(UUID id, UUID actor, String policy, String state, String payload, Instant expires, UUID credential,
                         String tokenHash, long generation, Instant leaseExpires, String purpose, UUID run, boolean location,
@@ -85,6 +88,7 @@ public class WaOutboxService {
         if (connection.lock(grant.instance(), false)) {
             reconciliation.refresh(grant.instance(), settings.environment());
             maintenance.expireUnsent(grant.instance());
+            pairing.purge(grant.instance());
             var selected = connection.open(grant.instance()) ? jdbc.query("SELECT o.* " + SOURCE + """
                   AND o.not_before<=? AND o.expires_at>?
                   AND (o.state='PENDING' OR (o.state='LEASED' AND o.lease_expires_at<=?))
@@ -147,6 +151,7 @@ public class WaOutboxService {
         var aliases = direct != null ? List.of(Map.<String, Object>of("alias_type", "PN", "alias_value", direct.address()))
             : approach(item) ? approaches.aliases(item.id(),grant.instance()) : reminder(item) ? attendance.aliases(item.id(), grant.instance())
             : teamNotice(item) ? teamNotices.aliases(item.id(), grant.instance())
+            : pairingNotice(item) ? pairing.aliases(item.id(),grant.instance())
             : driverNotice(item) ? driverNotices.aliases(item.id(), grant.instance()) : passenger(item) ? passengers.aliases(item.id(), grant.instance()) : jdbc.queryForList("""
             SELECT a.alias_type,a.alias_value FROM wa.identity_alias a
             JOIN wa.integration_inbox e ON a.id::text=e.payload_json->>'senderAliasId'
@@ -169,6 +174,7 @@ public class WaOutboxService {
         ObjectNode content = content(item.payload());
         content = privateInvites.reveal(id, item.actor(), content);
         content = starts.reveal(id, item.actor(), content);
+        content = pairing.reveal(id,content);
         if (content != null && passenger(item)) content = passengers.render(id, content);
         if(item.location()) { var pin=locations.pin(item.actor(),item.run()); content=pin==null?locations.unavailable():pin; }
         fence(grant, item);
@@ -189,7 +195,7 @@ public class WaOutboxService {
             return WaDecision.error(WaProblem.Code.INTENT_EXPIRED);
         }
         Instant intentDeadline = minimum(item.expires(), runDeadline, inviteDeadline(direct),
-            approach(item) ? approaches.deadline(id) : reminder(item) ? attendance.deadline(id) : passenger(item) ? passengers.deadline(id) : driverNotice(item) ? driverNotices.deadline(id) : Instant.MAX,
+            approach(item) ? approaches.deadline(id) : reminder(item) ? attendance.deadline(id) : passenger(item) ? passengers.deadline(id) : pairingNotice(item) ? pairing.deadline(id) : driverNotice(item) ? driverNotices.deadline(id) : Instant.MAX,
             item.location() && "STATIC_PIN".equals(content.path("type").asText()) ? locations.deadline(item.actor(),item.run()) : Instant.MAX,
             "STATIC_PIN".equals(content.path("type").asText()) ? Instant.parse(content.path("capturedAt").asText()).plusSeconds(20) : Instant.MAX);
         Instant slot = quota.next(grant.instance(), item.actor(), clock.now());
@@ -285,13 +291,13 @@ public class WaOutboxService {
         access.revalidate(grant);
         if (!settings.enabled() || !access.allowedIdentity(item.actor()) || !starts.relevant(item.id())) return Retry.terminal("CANCELED");
         if (!item.directInvite()) {
-            ObjectNode payload = starts.reveal(item.id(), item.actor(), privateInvites.reveal(item.id(), item.actor(), content(item.payload())));
+            ObjectNode payload = pairing.reveal(item.id(),starts.reveal(item.id(), item.actor(), privateInvites.reveal(item.id(), item.actor(), content(item.payload()))));
             access.revalidate(grant);
             if (payload == null) return Retry.terminal("CANCELED");
         }
         Instant deadline = minimum(item.expires(), inviteDeadline(direct),
             approach(item) ? approaches.deadline(item.id()) : reminder(item) ? attendance.deadline(item.id())
-            : passenger(item) ? passengers.deadline(item.id()) : driverNotice(item) ? driverNotices.deadline(item.id()) : Instant.MAX);
+            : passenger(item) ? passengers.deadline(item.id()) : pairingNotice(item) ? pairing.deadline(item.id()) : driverNotice(item) ? driverNotices.deadline(item.id()) : Instant.MAX);
         int number = ((Number) attempt.get("attempt_number")).intValue();
         Instant notBefore = clock.now().plusSeconds(number == 1 ? 5 : 15);
         if (!deadline.isAfter(clock.now()) || number < 3 && !deadline.isAfter(notBefore)) return Retry.terminal("EXPIRED");
@@ -303,7 +309,8 @@ public class WaOutboxService {
     private static boolean attendancePolicy(Item item) { return reminder(item) || item.policy().equals("attendance-v1"); }
     private static boolean teamNotice(Item item) { return item.policy().equals(WaTeamPassengerNotices.POLICY); }
     private static boolean driverNotice(Item item) { return item.policy().equals(WaDriverAttendanceNotices.POLICY); }
-    private static boolean routed(Item item) { return passenger(item) || attendancePolicy(item) || approach(item) || teamNotice(item) || driverNotice(item); }
+    private static boolean pairingNotice(Item item) { return item.policy().equals(com.vanrides.vanrides.whatsapp.pairing.WaPairingLinkDelivery.POLICY); }
+    private static boolean routed(Item item) { return passenger(item) || attendancePolicy(item) || approach(item) || teamNotice(item) || driverNotice(item) || pairingNotice(item); }
     private WaPassengerInviteChannel.Route inviteRoute(Item item, WaTransportAccess.Grant grant, boolean lock) {
         return item.directInvite() ? passengerInvites.current(item.id(), item.actor(), grant.instance(), settings.environment(), lock) : null;
     }
@@ -319,16 +326,8 @@ public class WaOutboxService {
         if (attendancePolicy(item)) return attendance.actorCurrent(item.actor(), lock);
         if (teamNotice(item)) return teamNotices.current(item.id(), instance, lock);
         if (driverNotice(item)) return driverNotices.current(item.id(), instance, lock);
+        if (pairingNotice(item)) return pairing.current(item.id(),instance,lock);
         return !passenger(item) || passengers.current(item.id(), instance, lock);
-    }
-    private ObjectNode content(String stored) {
-        ObjectNode content = WaJson.object(stored);
-        WaJson.fields(content, "type", "text", "referenceTime");
-        if (!"TEXT".equals(content.path("type").asText())) throw WaProblem.denied();
-        WaJson.multilineText(content, "text", 1, 2000);
-        try { Instant.parse(WaJson.text(content, "referenceTime", 20, 40)); }
-        catch (RuntimeException invalid) { throw WaProblem.denied(); }
-        return content;
     }
     private static int integer(ObjectNode request, String field, int max) {
         var value = request.get(field);

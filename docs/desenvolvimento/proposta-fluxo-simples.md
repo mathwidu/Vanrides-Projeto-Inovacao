@@ -16,9 +16,17 @@ com tecnologia.
   trajeto, horário, passageiros previstos e link. Não pede número da saída nem
   `CONFIRMAR` com código. O aplicativo continua exigindo o toque de início;
   receber a mensagem ou abrir o link não liga o GPS.
-- **Várias saídas:** o bot ainda pede uma escolha por nome, direção ou opção.
-  Nomes repetidos ou ambíguos não são escolhidos automaticamente. Esse caso
-  ainda exige uma segunda mensagem e não atende à meta de uma interação.
+- **Várias saídas:** a resposta já inclui um link próprio para cada viagem,
+  junto de nome, direção e horário. São até três opções por mensagem; se houver
+  mais, o bot envia os próximos blocos na mesma resposta, sem pedir outro menu
+  por texto. O limite técnico é de 30 saídas. A primeira ativação aceita invalida
+  as outras opções da oferta; abrir qualquer link não liga o GPS.
+- **Conexão do celular:** “Conectar meu celular” entrega um link com validade
+  de cinco minutos. No app, a pessoa toca em “Conectar este celular” e volta
+  à conversa para confirmar o pedido que acabou de fazer. O bot envia
+  “Concluir no app”; o aplicativo conclui a conexão sem exibir um código.
+  Trocar de aparelho pede uma decisão adicional e só é permitido depois da
+  parada confirmada da coleta anterior. Abrir o link não conecta nem liga GPS.
 - **Cadastro existente:** um convite do mesmo motorista permite adicionar outro
   trajeto sem encerrar o vínculo. A pessoa pode responder “MESMO PONTO”. Nome,
   preferências e trajetos anteriores são preservados. O convite autoriza a
@@ -48,9 +56,11 @@ com tecnologia.
 
 Essas mudanças são locais, com validação registrada nas
 [evidências de implementação](../../program/evidence/mvp-ux-20261117.md).
-O pareamento sem códigos e o início visual com várias opções ainda precisam de
-implementação. A entrada iPhone mantém o botão provisório aceito. Os comandos antigos de
-início e retomada continuam compatíveis; não foram removidos.
+A conexão sem códigos e as opções de início com links independentes agora
+integram o candidato local (V48 e V47, respectivamente). A entrada iPhone mantém
+o botão provisório aceito. Esses percursos ainda precisam de publicação conjunta
+e prova real. Os caminhos antigos de conexão, início e retomada continuam
+compatíveis como contingência; não foram removidos.
 
 No iPhone, a conta Apple gratuita usada no projeto não habilita Associated
 Domains, conforme a [matriz de capacidades da Apple](https://developer.apple.com/help/account/reference/supported-capabilities-ios).
@@ -131,10 +141,12 @@ quatro ou mais opções, os cartões precisam continuar abrindo diretamente o
 trajeto escolhido, sem esconder saídas nem acrescentar outro menu. Esse cenário
 também exige uma prova de contagem e legibilidade antes de aprovação.
 
-Há dependência técnica para várias opções: hoje emitir um `start_intent` revoga
-os anteriores pendentes do motorista. Não basta gerar vários links existentes.
-É necessário desenhar uma oferta correlacionada com opções próprias, consumo
-atômico e uma única ativação, preservando autoria, versão e exclusão mútua.
+No candidato, a V47 agrupa as autorizações em uma oferta com opções próprias.
+Cada opção conserva sua viagem, versão e lista de passageiros. A ativação é
+atômica: só uma opção pode iniciar a coleta e as demais são invalidadas.
+Uma viagem alterada antes do envio perde seu link, sem esconder as opções
+inalteradas; o bot orienta pedir a lista atualizada. O prazo comum de cinco
+minutos não aumenta ao abrir, consultar ou repetir uma opção.
 
 Exemplo de texto, com dados fictícios:
 
@@ -151,8 +163,9 @@ Exemplo de texto, com dados fictícios:
 > VanRides, depois do primeiro GPS válido: Viagem iniciada.
 > Vou avisar seus passageiros quando você estiver chegando.
 
-“Abrir viagem” representa a ação desejada, não um botão já disponível. Links não
-podem exigir edição ou cópia de texto. Preview de link e abertura do app não
+“Abrir viagem” é o rótulo do link de cada opção no candidato; não representa
+um botão nativo do WhatsApp já comprovado. Os links não exigem edição ou cópia
+de texto. Preview de link e abertura do app não
 devem iniciar GPS por si. O aplicativo mantém visíveis o estado e a opção de
 parar/encerrar. Iniciar automaticamente ao abrir um link não faz parte da
 primeira simplificação.
@@ -177,10 +190,14 @@ conhecidas não são pedidas novamente.
    uma origem ou inverter pontos automaticamente quando isso não foi informado.
 4. Um resumo claro para salvar. O aviso de dados e as escolhas necessárias são
    explícitos, curtos e acessíveis; não são aceitos silenciosamente.
-5. Instalação e conexão do aplicativo guiadas no mesmo contexto, com uma ação
-   “Conectar meu celular”. Mensagem pronta e retorno automático substituem
-   mostrar/copiar/colar oito letras. O mecanismo sem segredo visível precisa
-   de desenho técnico próprio; apenas preencher as oito letras não cumpre a meta.
+5. Instalação e conexão do aplicativo guiadas no mesmo contexto. Depois de
+   instalar, o motorista envia “Conectar meu celular”, abre o link e toca em
+   “Conectar este celular” no app. O aplicativo volta à conversa; o bot explica
+   o pedido e a pessoa envia “Conectar este celular” somente se acabou de
+   solicitá-lo. “Concluir no app” termina a conexão e retorna à conversa.
+   Não há oito letras para copiar. No iPhone provisório, a página intermediária
+   continua exigindo o botão “Abrir VanRides”. Esse preparo inicial tem contagem
+   própria; não está incluído nas três ações do início diário.
 6. O bot informa quando o preparo terminou: “Tudo pronto. Na hora de sair,
    escreva Começar viagem.”
 
@@ -264,6 +281,12 @@ pendente, mostrar “Localização desligada. Falta confirmar a finalização”
 oferecer uma tentativa explícita quando a conexão voltar, sem anunciar sucesso
 remoto nem iniciar outra coleta. A primeira versão não promete envio automático
 da finalização pendente em segundo plano.
+Se o celular tiver sido reconectado depois de uma parada já confirmada, o bot
+pode oferecer “Finalizar esta viagem” na própria conversa. Essa recuperação
+exige a confirmação recente da revisão e confere a mesma viagem e a mesma
+parada no servidor. Não permite finalizar uma nova coleta com a resposta de
+uma revisão antiga. Não substitui a parada do sensor nem serve para contornar
+um aparelho ainda compartilhando localização.
 Não usar um estado antigo de parada como prova da ação atual. Se o motorista
 sair da tela, não abrir o WhatsApp depois por causa de uma resposta atrasada.
 
@@ -347,8 +370,10 @@ Cadastro inicial e recuperação têm contagem própria.
 As partes implementadas localmente estão separadas no início desta proposta e
 nas evidências. Pontos por trajeto e finalização já têm código e migrações
 versionadas; conexão sem códigos e opções de início com links independentes
-continuam pendentes. Não há publicação, migração remota, mudança de CI ou
-operação nos aparelhos nesta revisão. A versão publicada não recebe essas mudanças automaticamente.
+foram acrescentadas ao candidato local. A evidência identifica o que passou e
+o que ainda precisa de prova. A referência remota conferida continua em V44;
+não há prova de publicação das V45–V48 neste documento. A versão publicada não
+recebe essas mudanças automaticamente.
 Antes de outro ensaio, conferir a pausa da rotina temporária da tentativa
 interrompida: ela não ficou confirmada na automação. Não usar essa pendência
 como motivo para retomar testes nos aparelhos agora.

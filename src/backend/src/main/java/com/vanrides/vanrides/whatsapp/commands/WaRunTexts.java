@@ -40,6 +40,15 @@ final class WaRunTexts {
         }
     }
     static String startSummary(String label, ObjectNode review) {
+        return label + "\n" + counts(review) + ".\nAo começar, vou usar a localização deste celular para avisar seus passageiros. "
+            + "Confirme o início no aplicativo.";
+    }
+    static String offerHeader(int total,int first,int last) {
+        return "Viagens de hoje — opções " + first + " a " + last + " de " + total + ".\n"
+            + "Toque no link do trajeto e confirme no aplicativo. Só então vou usar a localização deste celular para avisar seus passageiros. Links válidos por 5 minutos.";
+    }
+    static String offerOption(int position,String label,ObjectNode review) { return position + " — " + label + "\n" + counts(review) + "."; }
+    private static String counts(ObjectNode review) {
         int included = 0, pending = 0;
         for (JsonNode member : review.path("members")) if (member.path("included").asBoolean()) {
             included++;
@@ -47,8 +56,7 @@ final class WaRunTexts {
         }
         String passengers = included == 1 ? "1 passageiro previsto" : included + " passageiros previstos";
         String unanswered = pending == 0 ? "" : ", incluindo " + pending + (pending == 1 ? " que ainda não respondeu" : " que ainda não responderam");
-        return label + "\n" + passengers + unanswered + ".\nAo começar, vou usar a localização deste celular para avisar seus passageiros. "
-            + "Confirme o início no aplicativo.";
+        return passengers + unanswered;
     }
     static String roster(ObjectNode review) {
         StringBuilder text = new StringBuilder();

@@ -40,3 +40,6 @@ graphify-out/
 /.graphify/*
 !/.graphify/config.json
 # graphify-standard:end
+
+# Cache local do compilador Kotlin
+/src/aplicativo-motorista/android/.kotlin/

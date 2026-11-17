@@ -4,8 +4,10 @@ Preparação de 17/11/2026 para testar o **candidato local** com pessoas que nã
 conhecem o projeto. Este documento não registra testes executados nem autoriza
 iniciar uma rodada física agora.
 
-O candidato acrescenta ponto por trajeto e a nova finalização pelo link e app.
-**Os builds publicados atuais ainda não contêm o novo fluxo de finalização.**
+O candidato acrescenta ponto por trajeto, finalização pelo link e app,
+conexão do celular sem copiar códigos e links próprios para várias saídas.
+**A referência publicada em V44 e os builds anteriores não comprovam esses
+incrementos locais (V45–V48).**
 Antes da rodada, o responsável deve identificar as versões compatíveis da API,
 do bot, da página do link e do aplicativo. Código implementado ou compilação
 aprovada não comprovam esses percursos. Com componente antigo, registrar
@@ -38,8 +40,9 @@ técnicas; usar este roteiro curto primeiro, sem repetir toda aquela matriz.
 O facilitador prepara o candidato, o acesso do motorista, o app conectado e as
 permissões necessárias. Confere internet, bateria e nomes legíveis dos trajetos.
 Não pede que a pessoa leiga opere o painel interno ou copie códigos técnicos.
-Se a conexão inicial ainda exigir esse trabalho, registrar como preparo separado,
-sem afirmar que o cadastro completo já atende à experiência proposta.
+O caminho normal de conexão deve dispensar códigos. Se for necessário recorrer
+à contingência técnica, registrar a falha, a ajuda e as ações adicionais; não
+considerar o cadastro guiado aprovado.
 
 Combinar uma ida e uma volta com horários e dias reconhecíveis. Usar pontos
 de embarque diferentes quando isso fizer sentido, sem deduzir a volta pelo
@@ -65,18 +68,24 @@ explicação do desenvolvedor não prova uso sem ajuda.
 1. **Motorista:** cadastrar um trajeto e depois o retorno. Conferir se nome,
    ida/volta, horário e dias ajudam a diferenciá-los. Salvar somente após ler o
    resumo. Criação e primeiras permissões têm contagem própria.
-2. **Convite:** o motorista pede um link individual e o compartilha em privado
+2. **Conexão do celular do motorista:** enviar “Conectar meu celular” ao bot.
+   Abrir o link e tocar em “Conectar este celular” no app. Conferir o retorno
+   à conversa, ler o pedido recebido e enviar “Conectar este celular”. Abrir
+   “Concluir no app” e conferir “Aparelho vinculado”, com retorno à conversa.
+   No iPhone, contar também o botão intermediário ao abrir o app. Nenhuma
+   dessas ações pode ligar GPS. Esse é o preparo inicial, com contagem própria.
+3. **Convite:** o motorista pede um link individual e o compartilha em privado
    com P1. P1 abre e envia a mensagem preenchida. Deve reconhecer quem convidou,
    informar só os dados que faltam e aceitar o aviso de dados conscientemente.
-3. **P1:** escolher ida e volta, indicando os números mostrados, como `1,2`.
+4. **P1:** escolher ida e volta, indicando os números mostrados, como `1,2`.
    Informar os dias de cada trajeto e enviar um ponto fixo para cada um pelo
    mapa do WhatsApp. Não usar localização ao vivo. Conferir os dois embarques
    no resumo antes de enviar.
-4. **Motorista:** o convite já autoriza a entrada da pessoa. A revisão restante
+5. **Motorista:** o convite já autoriza a entrada da pessoa. A revisão restante
    deve identificar **qual ponto e trajeto** precisa conferir. Aprovar um ponto
    não pode aprovar o outro silenciosamente; preparar a ordem dos trajetos.
    Se pedir correção da ida, a volta deve permanecer como estava.
-5. **P2, retorno:** abrir um novo convite do mesmo motorista e acrescentar um
+6. **P2, retorno:** abrir um novo convite do mesmo motorista e acrescentar um
    trajeto. Nome, escolhas de avisos e trajetos anteriores devem continuar.
    Reutilizar um ponto aprovado somente ao escolhê-lo explicitamente; enviar
    outro ponto deve mantê-lo pendente de revisão. Não encerrar o cadastro para
@@ -127,10 +136,13 @@ posição válida da sessão atual tiver sido recebida pelo servidor; o facilita
 confere essa evidência. Link aberto ou tela com contador não bastam.
 
 Repetir com **várias saídas prontas**, inclusive nomes parecidos. A pessoa deve
-identificar a correta e o app deve abrir a mesma saída. Hoje a seleção por texto
-pode exigir outra mensagem: contar essa ação e registrar a meta não atendida
-nesse cenário. Não omitir as outras saídas ou escolher uma ambígua automaticamente
-para reduzir a contagem. Não prometer botões nativos ainda sem prova no canal real.
+identificar a correta e abrir diretamente o link daquela saída, com o mesmo
+nome e horário no app. O candidato envia até três opções por mensagem, sem uma
+segunda escolha por texto; repetir com pelo menos quatro saídas para avaliar
+os vários blocos. Não omitir opções nem escolher uma ambígua automaticamente
+para reduzir a contagem. Um início aceito invalida as demais opções da oferta;
+reabrir outra não pode criar uma segunda coleta. Não prometer botões nativos
+sem prova no canal real.
 
 ### 4. Finalizar pelo link e pelo app
 
@@ -166,9 +178,22 @@ contingência de parada do sensor, presente também nos builds anteriores.
 - **Telefone bloqueado:** bloquear durante uma coleta curta, com rede, e
   observar continuidade antes de desbloquear. Repetir a observação após perda
   de rede. Essa checagem parada não substitui segundo plano em movimento.
-- **Acesso expirado ou reconexão:** seguir a orientação exibida, sem recriar
-  nome, trajetos ou passageiros. Depois de uma parada confirmada, reabrir o app
-  deve mantê-lo parado; não começar nova coleta ao consultar ou retomar a tela.
+- **Acesso expirado ou reconexão:** a renovação normal é automática. Quando
+  houver necessidade de nova conexão, pedir o link ao bot e seguir o caminho
+  guiado, sem recriar nome, trajetos ou passageiros. Repetir após reiniciar o
+  app entre o pedido e a conclusão: deve retomar o mesmo pedido, sem códigos.
+  Abertura e consulta não aprovam a conexão nem ligam localização.
+- **Troca de celular:** conferir a mensagem que avisa a substituição e a ação
+  “Usar este celular”. Durante coleta não confirmada como parada, a troca deve
+  ficar bloqueada. Uma resposta antiga ou em outra conversa não pode autorizar
+  o novo pedido. Confirmar só o pedido que acabou de ser feito.
+- **Viagem parada após reconexão:** se a viagem ainda não estiver encerrada,
+  pedir para finalizar e conferir a revisão “Finalizar esta viagem” oferecida
+  na conversa. Passa somente se o servidor já tiver a parada daquela sessão
+  confirmada. Uma retomada ou nova sessão posterior à revisão invalida essa
+  confirmação; não deve finalizar a viagem com uma resposta antiga.
+- **Reabrir após parada:** depois de uma parada confirmada, reabrir o app deve
+  mantê-lo parado; não começar nova coleta ao consultar ou retomar a tela.
 
 ## Só depois: percurso e compreensão
 

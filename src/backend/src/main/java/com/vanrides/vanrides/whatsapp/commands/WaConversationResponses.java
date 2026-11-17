@@ -29,7 +29,7 @@ public final class WaConversationResponses {
         + "Ao terminar, envie Quero finalizar a viagem para receber o link de encerramento.\n"
         + "Para ver suas rotinas, envie RESUMO. Para chamar um passageiro, envie CONVIDAR e encaminhe o link que eu gerar.";
     private static final String PAIRING = "Para compartilhar sua localização durante um trajeto, vincule o aplicativo VanRides Motorista. "
-        + "Abra o aplicativo pelo ícone e envie aqui o código de pareamento exibido.";
+        + "Envie Conectar meu celular. Vou mandar um link e explicar como autorizar este aparelho, sem copiar códigos.";
     private static final String ATTENDANCE = "Antes de cada viagem você recebe um lembrete. Responda o lembrete com VOU ou NÃO VOU. Se não responder, você continua previsto na lista.";
     static final String PREFERENCE_HELP = "Para escolher seus avisos, envie LIGAR AVISOS CHEGADA ou DESLIGAR AVISOS CHEGADA; "
         + "para os lembretes, LIGAR AVISOS PRESENÇA ou DESLIGAR AVISOS PRESENÇA. Cada comando mantém a outra escolha.";

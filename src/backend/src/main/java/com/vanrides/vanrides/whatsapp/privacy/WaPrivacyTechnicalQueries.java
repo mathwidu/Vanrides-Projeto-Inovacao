@@ -60,15 +60,21 @@ final class WaPrivacyTechnicalQueries {
             CASE WHEN wa.privacy_has_active_reference(p.id) THEN 'ACTIVE_REFERENCE'
               WHEN EXISTS(SELECT 1 FROM wa.operation_replay r JOIN replay_owner o ON o.id=r.id WHERE o.driver_id=p.id
                 AND r.response_ciphertext<>decode('00','hex')) THEN 'REPLAY_PENDING' END
-            FROM wa.pairing_challenge c JOIN people p ON p.id=c.driver_id CROSS JOIN scope
+            FROM wa.pairing_challenge c LEFT JOIN wa.pairing_handoff h ON h.pairing_id=c.id AND h.environment=c.environment
+              JOIN people p ON p.id=COALESCE(c.driver_id,h.driver_id) CROSS JOIN scope
             WHERE c.environment=scope.environment AND c.expires_at<=scope.as_of
-              AND c.state IN ('APPROVED','REDEEMED','REVOKED','EXPIRED')
+              AND (h.id IS NULL OR h.instance_id=scope.instance)
+              AND (c.state IN ('APPROVED','REDEEMED','REVOKED','EXPIRED') OR c.state='PENDING' AND h.id IS NOT NULL)
           UNION ALL SELECT 'CIPHER',o.id,NULL::uuid,NULL::uuid,p.id,o.expires_at,p.ambiguous,
             CASE WHEN EXISTS(SELECT 1 FROM wa.message_attempt a WHERE a.outbox_id=o.id AND a.state='SUBMITTING') THEN 'SUBMITTING' END
             FROM wa.message_outbox o JOIN people p ON p.id=o.recipient_identity_id CROSS JOIN scope
-            WHERE (o.private_payload_ciphertext IS NOT NULL OR o.start_payload_ciphertext IS NOT NULL) AND o.expires_at<=scope.as_of
-              AND EXISTS(SELECT 1 FROM wa.command_receipt r JOIN wa.integration_inbox i ON i.id=r.inbox_event_id
+            WHERE (o.private_payload_ciphertext IS NOT NULL OR o.start_payload_ciphertext IS NOT NULL
+                OR EXISTS(SELECT 1 FROM wa.pairing_link_notice n WHERE n.outbox_id=o.id AND n.secret_ciphertext IS NOT NULL))
+              AND o.expires_at<=scope.as_of AND
+              (EXISTS(SELECT 1 FROM wa.command_receipt r JOIN wa.integration_inbox i ON i.id=r.inbox_event_id
                 WHERE r.command_id=o.command_id AND i.instance_id=scope.instance)
+               OR EXISTS(SELECT 1 FROM wa.pairing_link_notice n JOIN wa.pairing_handoff h ON h.id=n.link_id
+                 WHERE n.outbox_id=o.id AND h.driver_id=p.id AND h.environment=scope.environment AND h.instance_id=scope.instance))
         ), eligible AS (
           SELECT DISTINCT family,id,parent,run_id,owner,fact_at,CASE WHEN ambiguous THEN 'MULTI_INSTANCE' ELSE reason END reason,
             (CASE family WHEN 'SAMPLE' THEN '01' WHEN 'BATCH' THEN '02' WHEN 'CONTEXT' THEN '03' WHEN 'REPLAY' THEN '04'

@@ -39,3 +39,13 @@ test('finish preview only opens its distinct app action after a deliberate tap',
     assert.equal(invalid.button.hidden,true); assert.deepEqual(invalid.opened,[]);
   }
 });
+test('connect has its own fragment and action; reading it never creates a pairing', () => {
+  const link=site.replace('/saida','/conectar'), grant=fragment.replace('.1.','.');
+  const state=visit(link+grant);
+  assert.equal(state.button.hidden,false);assert.deepEqual(state.opened,[]);
+  assert.deepEqual(state.replaced,['/motorista/conectar']);
+  state.handlers.click();assert.deepEqual(state.opened,['vanridesdriver://pair/connect'+grant]);
+  for(const invalid of [link+fragment,site+grant,link+'?x=y'+grant,link+grant+'x',link+grant.replace('#v1.','#%761.')]) {
+    const rejected=visit(invalid);assert.equal(rejected.button.hidden,true);assert.deepEqual(rejected.opened,[]);
+  }
+});

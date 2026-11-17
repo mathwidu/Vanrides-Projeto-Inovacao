@@ -1365,6 +1365,164 @@
         "state": "PENDING",
         "serverTime": "2026-10-31T12:00:00Z"
       }
+    },
+    {
+      "id": "PairingLinkPreview",
+      "schema": "PairingLinkPreviewRequest",
+      "family": "pairing",
+      "implementationCard": "VR-HML-010-TEAM-API",
+      "availability": "MVP_GUIDED_PAIRING",
+      "value": {
+        "linkToken": "synthetic_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxA"
+      }
+    },
+    {
+      "id": "PairingLinkReady",
+      "schema": "PairingLinkPreviewResponse",
+      "family": "pairing",
+      "implementationCard": "VR-HML-010-TEAM-API",
+      "availability": "MVP_GUIDED_PAIRING",
+      "value": {
+        "linkId": "00000000-0000-4000-8000-000000000301",
+        "state": "READY",
+        "expiresAt": "2026-10-31T12:05:00Z",
+        "serverTime": "2026-10-31T12:00:00Z",
+        "sameCurrentDevice": false,
+        "replacesDevice": false
+      }
+    },
+    {
+      "id": "PairingLinkClaim",
+      "schema": "PairingLinkClaimRequest",
+      "family": "pairing",
+      "implementationCard": "VR-HML-010-TEAM-API",
+      "availability": "MVP_GUIDED_PAIRING",
+      "value": {
+        "linkToken": "synthetic_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxA",
+        "publicJwk": {
+          "kty": "EC",
+          "crv": "P-256",
+          "x": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+          "y": "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB"
+        },
+        "pkceChallenge": "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC",
+        "pkceMethod": "S256",
+        "platform": "ANDROID",
+        "appVersion": "0.1.0"
+      }
+    },
+    {
+      "id": "PairingLinkClaimed",
+      "schema": "PairingLinkClaimResponse",
+      "family": "pairing",
+      "implementationCard": "VR-HML-010-TEAM-API",
+      "availability": "MVP_GUIDED_PAIRING",
+      "value": {
+        "pairingId": "00000000-0000-4000-8000-000000000302",
+        "state": "PENDING",
+        "expiresAt": "2026-10-31T12:05:00Z",
+        "serverTime": "2026-10-31T12:00:00Z"
+      }
+    },
+    {
+      "id": "FinishIntentRead",
+      "schema": "FinishIntentReadRequest",
+      "family": "run",
+      "implementationCard": "VR-HML-010-TEAM-API",
+      "availability": "MVP_FINISH_INTENT",
+      "value": {
+        "intentToken": "synthetic_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxA",
+        "expectedVersion": 1
+      }
+    },
+    {
+      "id": "FinishIntentConfirm",
+      "schema": "FinishIntentConfirmRequest",
+      "family": "run",
+      "implementationCard": "VR-HML-010-TEAM-API",
+      "availability": "MVP_FINISH_INTENT",
+      "value": {
+        "intentId": "00000000-0000-4000-8000-000000000401",
+        "intentToken": "synthetic_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxA",
+        "expectedVersion": 1,
+        "foregroundConfirmed": "CONFIRMED"
+      }
+    },
+    {
+      "id": "FinishIntentReady",
+      "schema": "FinishIntentPreview",
+      "family": "run",
+      "implementationCard": "VR-HML-010-TEAM-API",
+      "availability": "MVP_FINISH_INTENT",
+      "value": {
+        "intentId": "00000000-0000-4000-8000-000000000401",
+        "runId": "00000000-0000-4000-8000-000000000007",
+        "trackingSessionId": "00000000-0000-4000-8000-000000000008",
+        "sessionGeneration": 1,
+        "expectedVersion": 1,
+        "expiresAt": "2026-10-31T12:05:00Z",
+        "state": "READY",
+        "stopAcknowledged": false,
+        "trip": {
+          "name": "Trajeto sintético",
+          "direction": "OUTBOUND",
+          "localDate": "2026-10-31",
+          "localTime": "15:00",
+          "timezone": "America/Sao_Paulo"
+        }
+      }
+    },
+    {
+      "id": "FinishIntentCompleted",
+      "schema": "FinishIntentReceipt",
+      "family": "run",
+      "implementationCard": "VR-HML-010-TEAM-API",
+      "availability": "MVP_FINISH_INTENT",
+      "value": {
+        "intentId": "00000000-0000-4000-8000-000000000401",
+        "runId": "00000000-0000-4000-8000-000000000007",
+        "trackingSessionId": "00000000-0000-4000-8000-000000000008",
+        "sessionGeneration": 1,
+        "expectedVersion": 1,
+        "state": "COMPLETED",
+        "finishConsumedAt": "2026-10-31T12:00:00Z",
+        "stopAcknowledged": true,
+        "stopRequestRef": "00000000-0000-4000-8000-000000000402",
+        "stoppedAt": "2026-10-31T12:00:00Z"
+      }
+    },
+    {
+      "id": "FinishIntentConfirmed",
+      "schema": "FinishIntentConfirmed",
+      "family": "run",
+      "implementationCard": "VR-HML-010-TEAM-API",
+      "availability": "MVP_FINISH_INTENT",
+      "value": {
+        "receipt": {
+          "intentId": "00000000-0000-4000-8000-000000000401",
+          "runId": "00000000-0000-4000-8000-000000000007",
+          "trackingSessionId": "00000000-0000-4000-8000-000000000008",
+          "sessionGeneration": 1,
+          "expectedVersion": 1,
+          "state": "COMPLETED",
+          "finishConsumedAt": "2026-10-31T12:00:00Z",
+          "stopAcknowledged": true,
+          "stopRequestRef": "00000000-0000-4000-8000-000000000402",
+          "stoppedAt": "2026-10-31T12:00:00Z"
+        },
+        "control": {
+          "runId": "00000000-0000-4000-8000-000000000007",
+          "state": "COMPLETED",
+          "entityVersion": 2,
+          "trackingSessionId": "00000000-0000-4000-8000-000000000008",
+          "generation": 1,
+          "leaseExpiresAt": null,
+          "action": "STOP",
+          "serverTime": "2026-10-31T12:00:00Z",
+          "gpsState": "STALE",
+          "stopRequestRef": "00000000-0000-4000-8000-000000000402"
+        }
+      }
     }
   ],
   "negativeFixtures": [
@@ -1611,6 +1769,82 @@
         "outcome": "UNKNOWN",
         "failureCode": "TIMEOUT",
         "externalMessageId": "SYNTHETIC_ID"
+      }
+    },
+    {
+      "id": "PairingLinkPreviewRejectsActor",
+      "schema": "PairingLinkPreviewRequest",
+      "value": {
+        "linkToken": "synthetic_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxA",
+        "driverId": "00000000-0000-4000-8000-000000000001"
+      }
+    },
+    {
+      "id": "PairingLinkClaimRejectsActor",
+      "schema": "PairingLinkClaimRequest",
+      "value": {
+        "linkToken": "synthetic_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxA",
+        "publicJwk": {
+          "kty": "EC",
+          "crv": "P-256",
+          "x": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+          "y": "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB"
+        },
+        "pkceChallenge": "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC",
+        "pkceMethod": "S256",
+        "platform": "ANDROID",
+        "appVersion": "0.1.0",
+        "driverId": "00000000-0000-4000-8000-000000000001"
+      }
+    },
+    {
+      "id": "PairingLinkClaimResponseRejectsVisibleCode",
+      "schema": "PairingLinkClaimResponse",
+      "value": {
+        "pairingId": "00000000-0000-4000-8000-000000000302",
+        "state": "PENDING",
+        "expiresAt": "2026-10-31T12:05:00Z",
+        "serverTime": "2026-10-31T12:00:00Z",
+        "userCode": "BCDFGHJK"
+      }
+    },
+    {
+      "id": "FinishIntentConfirmRejectsLegacyReason",
+      "schema": "FinishIntentConfirmRequest",
+      "value": {
+        "intentId": "00000000-0000-4000-8000-000000000401",
+        "intentToken": "synthetic_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxA",
+        "expectedVersion": 1,
+        "foregroundConfirmed": "CONFIRMED",
+        "reason": "MANUAL_COMPLETION"
+      }
+    },
+    {
+      "id": "FinishIntentPreviewRejectsInvalidDate",
+      "schema": "FinishIntentPreview",
+      "value": {
+        "intentId": "00000000-0000-4000-8000-000000000401",
+        "runId": "00000000-0000-4000-8000-000000000007",
+        "trackingSessionId": "00000000-0000-4000-8000-000000000008",
+        "sessionGeneration": 1,
+        "expectedVersion": 1,
+        "expiresAt": "2026-10-31T12:05:00Z",
+        "state": "READY",
+        "stopAcknowledged": false,
+        "trip": {
+          "name": "Trajeto sintético",
+          "direction": "OUTBOUND",
+          "localDate": "2026-02-30",
+          "localTime": "15:00",
+          "timezone": "America/Sao_Paulo"
+        }
+      }
+    },
+    {
+      "id": "PairingLinkPreviewRejectsNonCanonicalToken",
+      "schema": "PairingLinkPreviewRequest",
+      "value": {
+        "linkToken": "synthetic_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxB"
       }
     }
   ]

@@ -201,16 +201,18 @@ conforme a política de retenção, sem segredos ou GPS em logs/evidências.
 
 ## Perfil DPoP do produto
 
-O primeiro `begin` vem do app aberto pelo ícone confiável, com chave P-256
-mantida no Keychain/Keystore, desafio PKCE S256 e `Idempotency-Key`. Chave,
-pedido, desafio, plataforma e ambiente são imutáveis. Custom scheme apenas
-retorna ao pedido existente e não cria/substitui esse vínculo.
+O caminho normal do candidato local é a conexão guiada descrita abaixo. O
+`begin` legado continua como contingência explícita pelo app aberto no ícone
+confiável, com chave P-256 no Keychain/Keystore, PKCE S256 e `Idempotency-Key`.
+Chave, pedido, desafio, plataforma e ambiente são imutáveis. Custom scheme não
+cria nem substitui um pedido legado.
 
 Cada prova é um JWS ES256, `typ=dpop+jwt`, chave pública embutida sem referência
 remota, `nonce` do servidor, `jti` único, `iat`, `htm` e `htu` canônica da
 configuração do servidor. Não confiar em `Host`/forwarded headers arbitrários.
 O claim `vr_body_sha256` é SHA256 base64url sem padding dos bytes exatos do
-corpo e é obrigatório em `begin`, `redeem`, `refresh` e `revoke`. Para uma nova
+corpo e é obrigatório em todos os POST do aparelho, incluindo os novos
+`pairing-links/{id}/preview` e `pairing-links/{id}/claim`. Para uma nova
 prova, não reserializar o JSON já enviado ao calcular seu digest. Quando há
 access token, `ath` vincula a prova ao token apresentado. Requests sem prova
 assinada retornam `401 INVALID_CREDENTIAL`; a negociação de nonce usa
@@ -235,6 +237,62 @@ Este é um perfil de produto e não uma implementação OAuth completa.
 Revogação própria continua disponível com flags de novos efeitos desligadas.
 Estado do coletor e fim de run não comprovam parada física antes do ACK.
 `status` inclui somente identidade/preparo/run próprios, sem GPS global.
+
+## Conexão guiada e opções de início (candidato local, OpenAPI 1.11.0)
+
+Implementações V47/V48 em preparação; a referência remota conferida continua
+em V44. Este contrato não comprova publicação, abertura física ou aceite da
+experiência. O [roteiro do candidato](../../../../docs/desenvolvimento/roteiro-validacao-fluxo-simples.md)
+separa essas provas.
+
+O motorista autorizado envia “Conectar meu celular”. O bot emite um link de
+cinco minutos: `/motorista/conectar#v1.<linkId>.<linkToken>`; o esquema nativo é
+`vanridesdriver://pair/connect` com o mesmo fragmento. Não há versão de viagem
+nesse formato. O fragmento fica fora da requisição HTTP e é removido da URL da
+página intermediária. Sua leitura local apenas mostra a revisão; o toque no app
+é que prepara chave/PKCE e solicita a conexão.
+
+- `POST /driver-app/v1/pairing-links/{id}/preview`: somente PROOF/DPoP, sem
+  bearer, corpo fechado `{linkToken}`. Confere pedido vigente e informa se é
+  o aparelho atual ou uma substituição. Não cria autorização nem liga GPS.
+- `POST /driver-app/v1/pairing-links/{id}/claim`: PROOF/DPoP e
+  `Idempotency-Key`; corpo fechado com `linkToken`, `publicJwk`,
+  `pkceChallenge`, `pkceMethod`, `platform` e `appVersion`. A chave deve ser a
+  da prova. Retorna pedido/estado/prazo, **sem `userCode`**. Repetir o mesmo
+  pedido preserva a chave, PKCE e prazo originais; não gera outra conexão.
+- Após o claim, o app volta à conversa fixa do bot. A aprovação exige mensagem
+  humana “Conectar este celular”, na mesma instância e identidade, posterior
+  à submissão confirmada da revisão atual. Uma citação deve apontar exatamente
+  para essa revisão; sem citação, exige horário de envio do provider estritamente
+  posterior à submissão, além do recebimento posterior. Horário de recebimento
+  sozinho ou `date_time` substituto não prova essa sequência. Empate no segundo
+  pede nova confirmação. Não inferir aprovação pelo modelo ou por um clique.
+- “Concluir no app” usa o retorno já existente, sem segredo:
+  `/motorista/vinculo/retorno`. O app usa status/redeem existentes, a mesma chave
+  e PKCE, verifica a sessão e retorna à conversa após ação explícita. Consultar,
+  fazer polling ou reabrir a tela não retorna ao WhatsApp em loop.
+- Trocar aparelho requer “Usar este celular” depois da revisão no app. Claim e
+  redeem recusam coleta sem parada confirmada; um novo START/RESUME entre os
+  dois também impede a troca. Revogação administrativa do motorista, perfil
+  apagado, geração inválida ou coorte diferente não são contornados pelo link.
+  Expiração/reconexão não apagam nome, trajetos ou passageiros.
+- Autorização do link só é revelada no limite de envio privado, cifrada na
+  outbox. Não passa pela projeção do agente; links de conexão colados na conversa
+  são suprimidos pelo normalizador. Não registrar fragmentos completos.
+
+A conexão inicial tem contagem própria. Depois de aparelho e trajetos preparados,
+“Começar viagem” já entrega cada saída pronta com nome, direção, horário e link
+próprio. A V47 permite até 30 opções, em mensagens com até três opções cada,
+sem outro menu por texto. Todas compartilham o prazo original de cinco minutos;
+a primeira ativação aceita consome sua opção e invalida as demais atomicamente.
+Cada opção preserva versão e lista da própria viagem. Abrir links não ativa GPS;
+uma opção alterada perde seu link sem esconder as irmãs ainda válidas.
+
+O teto a validar é uma mensagem, abrir o link escolhido e confirmar no app:
+três ações no Android. No iPhone provisório, o botão da página intermediária
+leva a quatro. Não anunciar botões nativos ou abertura direta no iPhone como
+prova existente. `START`, `RESUME`, `FINISH` e conexão são propósitos separados;
+um link não pode ser reinterpretado como outro.
 
 ## Operação restrita por CLI
 

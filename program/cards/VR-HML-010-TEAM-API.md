@@ -401,3 +401,25 @@ para STOP próprio que incrementa a versão uma vez. Nenhuma troca genérica pel
 versão atual. Recebimento de chave/prova não substitui confirmação nativa.
 Preparação local, sem publicação/VPS/aparelhos nesta etapa. Gate proporcional,
 upgrade com dados sintéticos e roteiro estacionado precedem nova rodada física.
+
+### Conexão guiada, opções diretas e publicação completa — 17/11/2026
+
+O mantenedor autorizou concluir as lacunas e publicar o conjunto compatível.
+Primeiro: desenhar e implementar conexão/renovação sem código visível, com
+prova da chave e confirmação de autoria pelo WhatsApp; emissão de opções de
+início independentes, com consumo mutuamente exclusivo. Nenhum link sozinho
+inicia GPS. A exceção do botão intermediário iPhone permanece aceita.
+
+Impacto de publicação: o CD atual aprova uma migração por SHA. O pacote poderá
+precisar de várias adições, todas nominadas e verificadas por checksum, sem
+permitir alteração de SQL anterior, biblioteca ou configuração Flyway. O ensaio
+em cópia restaurada deve preceder qualquer aprovação no host. Preservar CI simples,
+serviços compartilhados, banco/contatos e versões anteriores recuperáveis.
+
+V45 exige retorno de dados sob janela sem escritas ou runtime já compatível
+com pontos por trajeto: não oferecer rollback apenas da imagem V44 depois de
+novas escritas. Planejar essa transição antes do merge que dispara deploy.
+Validar localmente por etapas, com um build/suíte pesada por vez. Aparelhos
+continuam pausados até o pacote estar preparado; percurso e aceite são a etapa
+posterior com o mantenedor. Atualizar evidências e issues sem encerrar critérios
+que dependam de prova humana ou física ainda ausente.

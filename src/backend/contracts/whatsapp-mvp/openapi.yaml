@@ -2,7 +2,7 @@
   "openapi": "3.0.3",
   "info": {
     "title": "VanRides WhatsApp MVP — contrato v1",
-    "version": "1.10.0",
+    "version": "1.11.0",
     "description": "Contrato normativo do catálogo completo dos documentos02/08. Disponibilidade é explícita por operação/schema. O card040 implementa somente fundação; exemplos sintéticos e parser não provam execução de endpoints futuros, integração Evolution,n8n ou dispositivos. Preserva os endpoints/auth legados."
   },
   "servers": [
@@ -71,7 +71,17 @@
       "bodyDigestClaim": "vr_body_sha256",
       "accessDigestClaim": "ath",
       "accessLifetimeSeconds": 300,
-      "refreshMaximumLifetimeSeconds": 2592000
+      "refreshMaximumLifetimeSeconds": 2592000,
+      "guidedLink": {
+        "ttlSeconds": 300,
+        "fragment": "v1.<linkId>.<linkToken>",
+        "claimApprovesDevice": false,
+        "approval": "FRESH_HUMAN_MESSAGE_AFTER_CURRENT_REVIEW_SUBMISSION",
+        "causalFence": "EXACT_REPLY_TO_CURRENT_REVIEW_OR_PROVIDER_MESSAGE_TIMESTAMP_STRICTLY_AFTER_SUBMISSION",
+        "replacement": "BLOCK_UNCONFIRMED_COLLECTION_AND_REVALIDATE_BEFORE_REDEEM",
+        "visibleUserCode": false,
+        "legacyBegin": "EXPLICIT_CONTINGENCY_ONLY"
+      }
     },
     "deliveryConnection": {
       "implementationCard": "VR-WA-120-DELIVERY-RECOVERY",
@@ -695,6 +705,173 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/driver-app/v1/pairing-links/{id}/preview": {
+      "post": {
+        "operationId": "previewPairingLink",
+        "summary": "Conferir conexão do celular sem ligar a localização",
+        "description": "PROOF + DPoP, sem bearer. Exige nonce e digest dos bytes exatos do corpo. Não aceita query ou Origin. Confere link, perfil/coorte, ambiente, geração e prazo originais. Depois do claim, somente a chave vinculada consulta. Consulta não cria pedido, aprova ou substitui aparelho. Outra chave não pode conectar durante coleta sem parada confirmada.",
+        "tags": [
+          "Driver app"
+        ],
+        "x-vanrides-implementation-card": "VR-HML-010-TEAM-API",
+        "x-vanrides-availability": "MVP_GUIDED_PAIRING",
+        "x-vanrides-principals": [
+          "DEVICE"
+        ],
+        "x-vanrides-allowed-origins": [],
+        "security": [
+          {
+            "DPoPProof": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdPath"
+          },
+          {
+            "$ref": "#/components/parameters/DPoP"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PairingLinkPreviewRequest"
+              },
+              "examples": {
+                "PairingLinkPreview": {
+                  "$ref": "#/components/examples/PairingLinkPreview"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Estado do pedido vinculado ao link, à chave e ao ambiente atuais.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PairingLinkPreviewResponse"
+                },
+                "examples": {
+                  "PairingLinkReady": {
+                    "$ref": "#/components/examples/PairingLinkReady"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        }
+      }
+    },
+    "/driver-app/v1/pairing-links/{id}/claim": {
+      "post": {
+        "operationId": "claimPairingLink",
+        "summary": "Propor chave do celular para aprovação pelo WhatsApp",
+        "description": "PROOF + DPoP e Idempotency-Key, sem bearer. Exige nonce e digest dos bytes exatos do corpo; recusa query e Origin. Vincula uma única chave/PKCE ao link e emite revisão operacional. Não autoriza a conexão: exige confirmação humana posterior à entrega da revisão atual na mesma conversa/instância e resgate PKCE. Repetição do mesmo corpo preserva pairingId e prazo; corpo ou chave diferentes são recusados. Nova coleta antes do resgate impede substituição.",
+        "tags": [
+          "Driver app"
+        ],
+        "x-vanrides-implementation-card": "VR-HML-010-TEAM-API",
+        "x-vanrides-availability": "MVP_GUIDED_PAIRING",
+        "x-vanrides-principals": [
+          "DEVICE"
+        ],
+        "x-vanrides-allowed-origins": [],
+        "security": [
+          {
+            "DPoPProof": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdPath"
+          },
+          {
+            "$ref": "#/components/parameters/DPoP"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PairingLinkClaimRequest"
+              },
+              "examples": {
+                "PairingLinkClaim": {
+                  "$ref": "#/components/examples/PairingLinkClaim"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Estado do pedido vinculado ao link, à chave e ao ambiente atuais.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PairingLinkClaimResponse"
+                },
+                "examples": {
+                  "PairingLinkClaimed": {
+                    "$ref": "#/components/examples/PairingLinkClaimed"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
           }
         }
       }
@@ -1410,6 +1587,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/FinishIntentConfirmed"
+                },
+                "examples": {
+                  "FinishIntentConfirmed": {
+                    "$ref": "#/components/examples/FinishIntentConfirmed"
+                  }
                 }
               }
             }
@@ -1453,6 +1635,11 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/FinishIntentConfirmRequest"
+              },
+              "examples": {
+                "FinishIntentConfirm": {
+                  "$ref": "#/components/examples/FinishIntentConfirm"
+                }
               }
             }
           }
@@ -2178,6 +2365,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/FinishIntentPreview"
+                },
+                "examples": {
+                  "FinishIntentReady": {
+                    "$ref": "#/components/examples/FinishIntentReady"
+                  }
                 }
               }
             }
@@ -2218,6 +2410,11 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/FinishIntentReadRequest"
+              },
+              "examples": {
+                "FinishIntentRead": {
+                  "$ref": "#/components/examples/FinishIntentRead"
+                }
               }
             }
           }
@@ -2250,6 +2447,11 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/FinishIntentReceipt"
+                },
+                "examples": {
+                  "FinishIntentCompleted": {
+                    "$ref": "#/components/examples/FinishIntentCompleted"
+                  }
                 }
               }
             }
@@ -2290,6 +2492,11 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/FinishIntentReadRequest"
+              },
+              "examples": {
+                "FinishIntentRead": {
+                  "$ref": "#/components/examples/FinishIntentRead"
+                }
               }
             }
           }
@@ -4289,7 +4496,7 @@
           "platform",
           "appVersion"
         ],
-        "description": "Pedido/chave/desafio/plataforma são imutáveis. Begin somente pelo app aberto no ícone confiável; custom scheme não cria/substitui pedido."
+        "description": "Contingência explícita pelo app aberto no ícone confiável. Pedido/chave/desafio/plataforma são imutáveis. O fluxo guiado usa pairing-links; custom scheme não cria/substitui este pedido legado."
       },
       "PairingBeginResponse": {
         "type": "object",
@@ -6449,6 +6656,142 @@
             "$ref": "#/components/schemas/RunControlResponse"
           }
         }
+      },
+      "PairingLinkPreviewRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "linkToken": {
+            "type": "string",
+            "minLength": 43,
+            "maxLength": 43,
+            "pattern": "^[A-Za-z0-9_-]{42}[AEIMQUYcgkosw048]$",
+            "description": "Autorização opaca de 32 bytes base64url canônica, sem padding; nunca armazenar em logs ou enviar ao agente."
+          }
+        },
+        "required": [
+          "linkToken"
+        ],
+        "description": "Só consulta o pedido vigente. Corpo fechado; não aceita ator, ambiente, chave ou confirmação de localização."
+      },
+      "PairingLinkPreviewResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "linkId": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "READY",
+              "PENDING",
+              "APPROVED",
+              "REDEEMED"
+            ]
+          },
+          "expiresAt": {
+            "$ref": "#/components/schemas/UtcInstant"
+          },
+          "serverTime": {
+            "$ref": "#/components/schemas/UtcInstant"
+          },
+          "sameCurrentDevice": {
+            "type": "boolean"
+          },
+          "replacesDevice": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "linkId",
+          "state",
+          "expiresAt",
+          "serverTime",
+          "sameCurrentDevice",
+          "replacesDevice"
+        ],
+        "description": "Sem identidade ou tokens de sessão. Expiração é a do link original, não renovada pela consulta. ReplacesDevice exige confirmação explícita no app antes do claim."
+      },
+      "PairingLinkClaimRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "linkToken": {
+            "type": "string",
+            "minLength": 43,
+            "maxLength": 43,
+            "pattern": "^[A-Za-z0-9_-]{42}[AEIMQUYcgkosw048]$",
+            "description": "Autorização opaca de 32 bytes base64url canônica, sem padding; nunca armazenar em logs ou enviar ao agente."
+          },
+          "publicJwk": {
+            "$ref": "#/components/schemas/PublicP256Jwk"
+          },
+          "pkceChallenge": {
+            "type": "string",
+            "minLength": 43,
+            "maxLength": 43,
+            "pattern": "^[A-Za-z0-9_-]{43}$"
+          },
+          "pkceMethod": {
+            "type": "string",
+            "enum": [
+              "S256"
+            ]
+          },
+          "platform": {
+            "type": "string",
+            "enum": [
+              "ANDROID",
+              "IOS"
+            ]
+          },
+          "appVersion": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 40,
+            "pattern": "^[A-Za-z0-9.+_-]+$"
+          }
+        },
+        "required": [
+          "linkToken",
+          "publicJwk",
+          "pkceChallenge",
+          "pkceMethod",
+          "platform",
+          "appVersion"
+        ],
+        "description": "O publicJwk deve corresponder à prova DPoP. Chave, corpo, PKCE, plataforma e versão permanecem idênticos nas repetições. Não contém código humano."
+      },
+      "PairingLinkClaimResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "pairingId": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "APPROVED",
+              "REDEEMED"
+            ]
+          },
+          "expiresAt": {
+            "$ref": "#/components/schemas/UtcInstant"
+          },
+          "serverTime": {
+            "$ref": "#/components/schemas/UtcInstant"
+          }
+        },
+        "required": [
+          "pairingId",
+          "state",
+          "expiresAt",
+          "serverTime"
+        ],
+        "description": "Claim apenas propõe a chave e agenda a revisão no WhatsApp. Não retorna userCode nem credenciais. Prazo original de cinco minutos."
       }
     },
     "examples": {
@@ -7455,6 +7798,128 @@
           "stoppedAt": "2030-01-01T12:00:00Z",
           "serverTime": "2030-01-01T12:05:00Z",
           "runState": "COMPLETED"
+        }
+      },
+      "PairingLinkPreview": {
+        "summary": "EXEMPLO SINTÉTICO; não comprova runtime, sessão ou fornecedor.",
+        "value": {
+          "linkToken": "synthetic_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxA"
+        }
+      },
+      "PairingLinkReady": {
+        "summary": "EXEMPLO SINTÉTICO; não comprova runtime, sessão ou fornecedor.",
+        "value": {
+          "linkId": "00000000-0000-4000-8000-000000000301",
+          "state": "READY",
+          "expiresAt": "2026-10-31T12:05:00Z",
+          "serverTime": "2026-10-31T12:00:00Z",
+          "sameCurrentDevice": false,
+          "replacesDevice": false
+        }
+      },
+      "PairingLinkClaim": {
+        "summary": "EXEMPLO SINTÉTICO; não comprova runtime, sessão ou fornecedor.",
+        "value": {
+          "linkToken": "synthetic_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxA",
+          "publicJwk": {
+            "kty": "EC",
+            "crv": "P-256",
+            "x": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+            "y": "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB"
+          },
+          "pkceChallenge": "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC",
+          "pkceMethod": "S256",
+          "platform": "ANDROID",
+          "appVersion": "0.1.0"
+        }
+      },
+      "PairingLinkClaimed": {
+        "summary": "EXEMPLO SINTÉTICO; não comprova runtime, sessão ou fornecedor.",
+        "value": {
+          "pairingId": "00000000-0000-4000-8000-000000000302",
+          "state": "PENDING",
+          "expiresAt": "2026-10-31T12:05:00Z",
+          "serverTime": "2026-10-31T12:00:00Z"
+        }
+      },
+      "FinishIntentRead": {
+        "summary": "EXEMPLO SINTÉTICO; não comprova runtime, sessão ou fornecedor.",
+        "value": {
+          "intentToken": "synthetic_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxA",
+          "expectedVersion": 1
+        }
+      },
+      "FinishIntentConfirm": {
+        "summary": "EXEMPLO SINTÉTICO; não comprova runtime, sessão ou fornecedor.",
+        "value": {
+          "intentId": "00000000-0000-4000-8000-000000000401",
+          "intentToken": "synthetic_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxA",
+          "expectedVersion": 1,
+          "foregroundConfirmed": "CONFIRMED"
+        }
+      },
+      "FinishIntentReady": {
+        "summary": "EXEMPLO SINTÉTICO; não comprova runtime, sessão ou fornecedor.",
+        "value": {
+          "intentId": "00000000-0000-4000-8000-000000000401",
+          "runId": "00000000-0000-4000-8000-000000000007",
+          "trackingSessionId": "00000000-0000-4000-8000-000000000008",
+          "sessionGeneration": 1,
+          "expectedVersion": 1,
+          "expiresAt": "2026-10-31T12:05:00Z",
+          "state": "READY",
+          "stopAcknowledged": false,
+          "trip": {
+            "name": "Trajeto sintético",
+            "direction": "OUTBOUND",
+            "localDate": "2026-10-31",
+            "localTime": "15:00",
+            "timezone": "America/Sao_Paulo"
+          }
+        }
+      },
+      "FinishIntentCompleted": {
+        "summary": "EXEMPLO SINTÉTICO; não comprova runtime, sessão ou fornecedor.",
+        "value": {
+          "intentId": "00000000-0000-4000-8000-000000000401",
+          "runId": "00000000-0000-4000-8000-000000000007",
+          "trackingSessionId": "00000000-0000-4000-8000-000000000008",
+          "sessionGeneration": 1,
+          "expectedVersion": 1,
+          "state": "COMPLETED",
+          "finishConsumedAt": "2026-10-31T12:00:00Z",
+          "stopAcknowledged": true,
+          "stopRequestRef": "00000000-0000-4000-8000-000000000402",
+          "stoppedAt": "2026-10-31T12:00:00Z"
+        }
+      },
+      "FinishIntentConfirmed": {
+        "summary": "EXEMPLO SINTÉTICO; não comprova runtime, sessão ou fornecedor.",
+        "value": {
+          "receipt": {
+            "intentId": "00000000-0000-4000-8000-000000000401",
+            "runId": "00000000-0000-4000-8000-000000000007",
+            "trackingSessionId": "00000000-0000-4000-8000-000000000008",
+            "sessionGeneration": 1,
+            "expectedVersion": 1,
+            "state": "COMPLETED",
+            "finishConsumedAt": "2026-10-31T12:00:00Z",
+            "stopAcknowledged": true,
+            "stopRequestRef": "00000000-0000-4000-8000-000000000402",
+            "stoppedAt": "2026-10-31T12:00:00Z"
+          },
+          "control": {
+            "runId": "00000000-0000-4000-8000-000000000007",
+            "state": "COMPLETED",
+            "entityVersion": 2,
+            "trackingSessionId": "00000000-0000-4000-8000-000000000008",
+            "generation": 1,
+            "leaseExpiresAt": null,
+            "action": "STOP",
+            "serverTime": "2026-10-31T12:00:00Z",
+            "gpsState": "STALE",
+            "stopRequestRef": "00000000-0000-4000-8000-000000000402"
+          }
         }
       }
     }

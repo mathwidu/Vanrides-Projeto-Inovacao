@@ -26,6 +26,14 @@ public final class WaStartDelivery {
             if(relevant(box)) return content;
             cancel(box); return null;
         }
+        var offers=new WaStartOfferDelivery(jdbc,clock,settings,crypto);
+        if(offers.offered((UUID)row.get("start_intent_id"))) {
+            try {
+                ObjectNode revealed=offers.reveal(box,actor,content,row);
+                if(revealed==null) cancel(box);
+                return revealed;
+            } catch(RuntimeException invalid) { cancel(box); return null; }
+        }
         var intents=jdbc.queryForList("""
             SELECT i.* FROM wa.start_intent i JOIN wa.driver_device d ON d.id=i.device_id
             JOIN wa.driver_authorization a ON a.driver_id=i.driver_id WHERE i.id=? AND i.driver_id=?

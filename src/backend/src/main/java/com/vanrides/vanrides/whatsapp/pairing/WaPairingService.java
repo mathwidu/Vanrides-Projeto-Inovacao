@@ -37,9 +37,10 @@ public class WaPairingService {
     private final WaCrypto crypto;
     private final WaPairingRepository store;
     private final WaReplayStore replay;
+    private final JdbcTemplate jdbc;
 
     public WaPairingService(JdbcTemplate jdbc, WaSettings settings, WaClock clock, WaCrypto crypto) {
-        this.settings = settings; this.clock = clock; this.crypto = crypto;
+        this.settings = settings; this.clock = clock; this.crypto = crypto; this.jdbc=jdbc;
         store = new WaPairingRepository(jdbc); replay = new WaReplayStore(jdbc, crypto, clock);
     }
 
@@ -212,6 +213,7 @@ public class WaPairingService {
         if (!pairing.expiresAt().isAfter(now)) {
             store.expire(pairing); return WaDecision.error(WaProblem.Code.INTENT_EXPIRED);
         }
+        new WaPairingLinkStore(jdbc,settings).requireRedeem(pairing.id(),driver.id(),driver.generation(),now);
         long generation = store.advanceGeneration(driver.id());
         store.replaceDevices(driver.id(), now);
         store.invalidateApprovals(driver.id(), generation, pairing.id());

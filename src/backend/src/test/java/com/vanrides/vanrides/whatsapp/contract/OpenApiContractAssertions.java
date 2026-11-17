@@ -79,6 +79,49 @@ final class OpenApiContractAssertions {
         }
     }
 
+    void assertOperationAvailability(String path, JsonNode operation) {
+        String card = operation.path("x-vanrides-implementation-card").asText();
+        String availability = switch (card) {
+            case "VR-WA-040-DOMAIN-AUTH" -> "CARD_040_FOUNDATION";
+            case "VR-WA-050-WHATSAPP-TRANSPORT" -> "CARD_050_TRANSPORT";
+            case "VR-WA-100-ATTENDANCE" -> "CARD_100_ATTENDANCE";
+            case "VR-WA-110-RUN-TRACKING" -> "CARD_110_RUN_TRACKING";
+            case "VR-HML-010-TEAM-API" -> {
+                boolean pairing = Set.of("/driver-app/v1/pairing-links/{id}/preview",
+                        "/driver-app/v1/pairing-links/{id}/claim").contains(path);
+                assertTrue(pairing || Set.of("/driver-app/v1/runs/{id}/finish",
+                        "/driver-app/v1/finish-intents/{id}/preview",
+                        "/driver-app/v1/finish-intents/{id}/receipt").contains(path));
+                yield pairing ? "MVP_GUIDED_PAIRING" : "MVP_FINISH_INTENT";
+            }
+            default -> throw new AssertionError("Operation has no reviewed implementation card: " + card);
+        };
+        assertEquals(availability, operation.path("x-vanrides-availability").asText());
+    }
+
+    void assertFixtureAvailability(JsonNode entry) {
+        String expected = switch (entry.path("implementationCard").asText()) {
+            case "VR-WA-050-WHATSAPP-TRANSPORT" -> "CARD_050_TRANSPORT";
+            case "VR-WA-070-AGENT-WORKFLOWS" -> "CARD_070_CONVERSATION";
+            case "VR-WA-080-DRIVER-ROUTINES" -> "CARD_080_DRIVER_SETUP";
+            case "VR-WA-090-PASSENGERS" -> "CARD_090_PASSENGER_SETUP";
+            case "VR-WA-100-ATTENDANCE" -> "CARD_100_ATTENDANCE";
+            case "VR-WA-110-RUN-TRACKING" -> "CARD_110_RUN_TRACKING";
+            case "VR-WA-120-DELIVERY-RECOVERY" -> "CARD_120_DELIVERY_RECOVERY";
+            case "VR-WA-130-APPROACH" -> "CARD_130_APPROACH";
+            case "VR-WA-140-FINISH-SUPPORT" -> "SetPreferenceCommand".equals(entry.path("schema").asText())
+                    ? "CARD_140_PREFERENCES" : "FUTURE";
+            case "VR-HML-010-TEAM-API" -> {
+                String schema = entry.path("schema").asText();
+                assertTrue(schema.startsWith("PairingLink") || schema.startsWith("FinishIntent"));
+                yield schema.startsWith("PairingLink") ? "MVP_GUIDED_PAIRING" : "MVP_FINISH_INTENT";
+            }
+            case "VR-WA-150-OPERATIONS" -> "FUTURE";
+            default -> throw new AssertionError("Fixture has no reviewed implementation card");
+        };
+        assertEquals(expected, entry.path("availability").asText());
+    }
+
     void assertMediaExamples(JsonNode media) {
         assertFalse(media.path("schema").isMissingNode());
         assertFalse(media.path("examples").isEmpty());

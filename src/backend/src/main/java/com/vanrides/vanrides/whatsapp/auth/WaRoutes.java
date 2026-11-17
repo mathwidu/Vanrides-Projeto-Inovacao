@@ -24,6 +24,8 @@ public final class WaRoutes {
         service("POST", "/outbox/" + UUID + "/authorize-submit", WaPrincipal.Kind.DELIVERY_WORKER, true, false),
         service("POST", "/outbox/" + UUID + "/result", WaPrincipal.Kind.DELIVERY_WORKER, true, true),
         app("POST", "/pairings/begin", Mode.PROOF, true, false),
+        app("POST", "/pairing-links/" + UUID + "/preview", Mode.PROOF, true, true),
+        app("POST", "/pairing-links/" + UUID + "/claim", Mode.PROOF, true, false),
         app("GET", "/pairings/" + UUID + "/status", Mode.PROOF, true, true),
         app("POST", "/pairings/redeem", Mode.PROOF, true, false),
         app("POST", "/session/refresh", Mode.PROOF, true, true),

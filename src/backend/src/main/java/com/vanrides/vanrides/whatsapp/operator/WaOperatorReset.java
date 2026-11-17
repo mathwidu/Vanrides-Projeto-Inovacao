@@ -86,6 +86,7 @@ public final class WaOperatorReset {
         String sessions = "(SELECT id FROM wa.tracking_session WHERE driver_id IN " + people + ")";
         String devices = "(SELECT id FROM wa.driver_device WHERE driver_id IN " + people + ")";
         String outbox = "(SELECT id FROM wa.message_outbox WHERE recipient_identity_id IN " + people + ")";
+        jdbc.update("DELETE FROM wa.pairing_handoff WHERE driver_id IN "+people,batch);
         jdbc.update("DELETE FROM wa.approach_delivery_route WHERE session_id IN " + sessions, batch);
         jdbc.update("DELETE FROM wa.approach_progress WHERE run_id IN " + runs, batch);
         jdbc.update("DELETE FROM wa.tracking_sample_receipt WHERE session_id IN " + sessions, batch);
@@ -96,8 +97,10 @@ public final class WaOperatorReset {
         jdbc.update("DELETE FROM wa.driver_attendance_notice WHERE outbox_id IN " + outbox, batch);
         jdbc.update("DELETE FROM wa.message_attempt WHERE outbox_id IN " + outbox, batch);
         jdbc.update("DELETE FROM wa.passenger_response_route WHERE outbox_id IN " + outbox, batch);
+        jdbc.update("UPDATE wa.start_intent SET delivery_outbox_id=NULL WHERE driver_id IN " + people, batch);
         jdbc.update("DELETE FROM wa.message_outbox WHERE recipient_identity_id IN " + people, batch);
         jdbc.update("DELETE FROM wa.start_intent WHERE driver_id IN " + people, batch);
+        jdbc.update("DELETE FROM wa.start_offer WHERE driver_id IN " + people, batch);
         jdbc.update("DELETE FROM wa.run_stop WHERE run_id IN " + runs, batch);
         jdbc.update("DELETE FROM wa.attendance WHERE passenger_id IN " + people, batch);
         jdbc.update("DELETE FROM wa.operation_run WHERE driver_id IN " + people, batch);

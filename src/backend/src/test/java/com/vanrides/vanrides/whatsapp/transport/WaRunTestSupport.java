@@ -72,7 +72,7 @@ final class WaRunTestSupport {
         }, option.path("ref").asText());
         ObjectNode body = s.body(lease, commands.get(0), payload).put("expectedVersion", context.path("entityVersion").asLong());
         WaDecision decision = s.execute(lease, body, "synthetic-run-command-" + lease.id());
-        String text = s.string("SELECT o.payload_json->>'text' FROM wa.message_outbox o JOIN wa.command_receipt r ON r.command_id=o.command_id WHERE r.inbox_event_id=?", lease.id());
+        String text = s.string("SELECT o.payload_json->>'text' FROM wa.message_outbox o JOIN wa.command_receipt r ON r.command_id=o.command_id WHERE r.inbox_event_id=? ORDER BY o.response_part LIMIT 1", lease.id());
         if (finish) s.finish(lease);
         return new Step(lease, context, body, decision, text);
     }

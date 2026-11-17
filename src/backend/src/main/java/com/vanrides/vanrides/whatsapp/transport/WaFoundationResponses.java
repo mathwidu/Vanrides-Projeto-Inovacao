@@ -20,11 +20,23 @@ public final class WaFoundationResponses {
           AND r.command_type IN ('ADVANCE_DRIVER_SETUP','CONFIGURE_ROUTINE','SET_STOP_ORDER','SET_ROUTINE_STATE','CREATE_INVITE','REVOKE_INVITE','CANCEL_OCCURRENCE','GET_SUMMARY'))
         OR (o.policy_version='attendance-v1' AND o.response_part='attendance'
           AND r.command_type IN ('ADVANCE_ATTENDANCE','SET_ATTENDANCE','GET_SUMMARY'))
-        OR (o.policy_version='run-start-v1' AND o.response_part='run-start'
+        OR (o.policy_version='run-start-v1' AND (o.response_part='run-start'
+          OR (o.response_part ~ '^run-start-([2-9]|10)$' AND r.command_type='ADVANCE_RUN_SETUP'
+            AND EXISTS(SELECT 1 FROM wa.start_intent si WHERE si.delivery_outbox_id=o.id AND si.offer_id IS NOT NULL
+              AND si.driver_id=o.recipient_identity_id AND si.request_command_id=r.command_id)))
           AND r.command_type IN ('ADVANCE_RUN_SETUP','REQUEST_START','REQUEST_RESUME','SET_OPERATIONAL_ATTENDANCE','FINISH_RUN'))))
         OR
         """ + WaPassengerResponses.ELIGIBLE + ")";
     private WaFoundationResponses() { }
+    public static com.fasterxml.jackson.databind.node.ObjectNode content(String stored) {
+        var content=WaJson.object(stored);
+        WaJson.fields(content,"type","text","referenceTime");
+        if(!"TEXT".equals(content.path("type").asText())) throw com.vanrides.vanrides.whatsapp.api.WaProblem.denied();
+        WaJson.multilineText(content,"text",1,2000);
+        try { Instant.parse(WaJson.text(content,"referenceTime",20,40)); }
+        catch(RuntimeException invalid) { throw com.vanrides.vanrides.whatsapp.api.WaProblem.denied(); }
+        return content;
+    }
     public static void save(JdbcTemplate jdbc, UUID id, UUID command, UUID actor, String type, Instant now) {
         save(jdbc, id, command, actor, text(type), POLICY, "foundation", now);
     }
@@ -52,6 +64,10 @@ public final class WaFoundationResponses {
     }
     public static void saveRun(JdbcTemplate jdbc, UUID id, UUID command, UUID actor, String text, Instant now) {
         save(jdbc, id, command, actor, text, "run-start-v1", "run-start", now);
+    }
+    public static void saveRunPart(JdbcTemplate jdbc,UUID id,UUID command,UUID actor,String text,int part,Instant now) {
+        if(part<1 || part>10) throw new IllegalArgumentException("WA_START_OFFER_PART_INVALID");
+        save(jdbc,id,command,actor,text,"run-start-v1",part==1?"run-start":"run-start-"+part,now);
     }
     private static void save(JdbcTemplate jdbc, UUID id, UUID command, UUID actor, String text, String policy, String part, Instant now) {
         jdbc.update("""

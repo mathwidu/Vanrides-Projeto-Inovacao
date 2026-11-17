@@ -37,3 +37,17 @@ do fluxo alinhado em 17/11/2026; não é prova de publicação ou aceite físico
 Preservar o caminho local “Parar localização” sem rede e após revogação. Parar
 somente localização não conclui a viagem. Comandos legados de contingência
 continuam separados da entrada curta “Quero finalizar a viagem”.
+
+## Recuperação após reconectar o celular
+
+Se o link normal não puder ser emitido e a última sessão da viagem já estiver
+`STOPPED`, com `stopped_at` persistido, o bot pode oferecer a revisão na conversa:
+“Finalizar esta viagem”. Não é um comando livre de encerramento nem uma parada
+presumida. A confirmação recente precisa corresponder à revisão entregue e à
+identidade/instância, com as mesmas cercas temporais da conexão guiada.
+
+A revisão captura versão da viagem e ID, geração, referência e data da parada.
+A confirmação trava e revalida esses fatos antes do encerramento. START/RESUME,
+parada posterior ou revisão vencida não podem ser encerrados por uma resposta
+antiga. Essa contingência não transfere a sessão antiga ao aparelho novo,
+não inventa ACK e não altera o recibo de parada já persistido.

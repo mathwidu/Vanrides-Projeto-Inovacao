@@ -103,6 +103,11 @@ public final class WaEvolutionNormalizer {
         if (TEXT_PIN_PREFIX.matcher(code).lookingAt() && !POINT_SELECTION.matcher(code).matches())
             return unsupported(id, aliases, "INVALID_PIN");
         ObjectNode payload = object();
+        if(code.toLowerCase(java.util.Locale.ROOT).contains("/motorista/conectar") || code.toLowerCase(java.util.Locale.ROOT).contains("vanridesdriver://pair/connect")
+                || Pattern.compile("(?i)#v1\\.[0-9a-f-]{36}\\.[A-Za-z0-9_-]{43}").matcher(code).find()) {
+            payload.put("reason","PAIRING_LINK_CONTENT");messageMetadata(envelope,data,message,payload);
+            return new Event("MESSAGE",id,null,"UNSUPPORTED",payload,"PENDING",aliases);
+        }
         if (PASSENGER_LINK.matcher(code).find()) {
             payload.put("reason", "PASSENGER_INVITE_CONTENT");
             messageMetadata(envelope, data, message, payload);
@@ -223,7 +228,10 @@ public final class WaEvolutionNormalizer {
         JsonNode timestamp = data.path("messageTimestamp");
         if (timestamp.isIntegralNumber() && timestamp.canConvertToLong()) {
             long seconds = timestamp.longValue();
-            if (seconds >= 0 && seconds <= 253402300799L) occurred = Instant.ofEpochSecond(seconds);
+            if (seconds >= 0 && seconds <= 253402300799L) {
+                occurred = Instant.ofEpochSecond(seconds);
+                payload.put("messageSentAt",occurred.toString());
+            }
         }
         if (occurred == null) occurred = instant(string(envelope.get("date_time")));
         if (occurred != null) payload.put("occurredAt", occurred.toString());

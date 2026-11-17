@@ -50,33 +50,25 @@ class WaRunShortStartIntegrationTest {
         f.s.finish(lease);
     }
 
-    @Test void severalReadyTripsRequireAnUnambiguousChoiceWithoutAConfirmationCode() {
+    @Test void severalReadyTripsHaveTheirOwnLinksWithoutAnotherTextSelection() {
         f.pair();
         var returning = readyReturn();
         f.h.jdbc.update("UPDATE wa.routine SET name='Trajeto de teste' WHERE driver_id=?", f.driver);
-        var menu = f.send("Iniciar a viagem");
-        assertTrue(menu.text().contains("Qual viagem você quer começar?"), menu.text());
-        assertEquals(2, f.draft().path("choices").size());
-        assertEquals(0, f.s.number("SELECT count(*) FROM wa.start_intent"));
-        // Repeated route names must never be resolved by nearest time or first item.
-        var ambiguous = f.send("Trajeto de teste");
-        assertTrue(ambiguous.text().contains("Qual viagem você quer começar?"));
-        assertEquals(0, f.s.number("SELECT count(*) FROM wa.start_intent"));
-        f.h.jdbc.update("UPDATE wa.routine SET name='Faculdade' WHERE id=?", f.item.routine());
-        f.h.jdbc.update("UPDATE wa.routine SET name='1' WHERE id=?", returning.routine());
-        f.send("Começar viagem");
-        assertEquals(f.item.occurrence().toString(), f.draft().path("choices").get(0).path("id").asText());
-        assertEquals(returning.occurrence().toString(), f.draft().path("choices").get(1).path("id").asText());
-        // "1" now denotes both the first index and the second trip's name.
-        var numericName = f.send("1");
-        assertTrue(numericName.text().contains("Qual viagem você quer começar?"), numericName.text());
-        assertEquals(0, f.s.number("SELECT count(*) FROM wa.start_intent"));
-        var selected = f.send("opção 2");
-        assertNull(selected.decision().error());
-        assertFalse(selected.text().contains("CONFIRMAR"));
-        assertEquals(returning.occurrence().toString(), f.s.string("SELECT occurrence_id::text FROM wa.start_intent"));
-        assertEquals(1, f.s.number("SELECT count(*) FROM wa.message_outbox WHERE start_payload_ciphertext IS NOT NULL"));
+        var offered = f.send("Iniciar a viagem");
+        assertNull(offered.decision().error());
+        assertTrue(offered.text().contains("opções 1 a 2 de 2"), offered.text());
+        assertFalse(offered.text().contains("Responda"), offered.text());
+        assertFalse(offered.text().contains("CONFIRMAR"), offered.text());
+        assertEquals(2, f.s.number("SELECT count(*) FROM wa.start_intent WHERE state='PENDING'"));
+        assertEquals(1, f.s.number("SELECT count(DISTINCT offer_id) FROM wa.start_intent"));
+        assertEquals(1, offered.decision().body().path("responseIds").size());
+        String delivered = authorizeStartLink(offered);
+        assertTrue(delivered.contains("ida às 15:00 (Trajeto de teste)"), delivered);
+        assertTrue(delivered.contains("volta às 19:00 (Trajeto de teste)"), delivered);
+        assertEquals(2, delivered.split("/motorista/saida#v1\\.", -1).length - 1);
+        assertEquals(1, f.s.number("SELECT count(*) FROM wa.start_intent WHERE occurrence_id=?", returning.occurrence()));
         assertEquals(0, f.s.number("SELECT count(*) FROM wa.operation_run"));
+        assertEquals(0, f.s.number("SELECT count(*) FROM wa.tracking_session"));
     }
 
     @Test void aFinishedTripIsExcludedBeforeAutomaticallyOfferingTheOnlyReadyTrip() {
@@ -92,21 +84,16 @@ class WaRunShortStartIntegrationTest {
         assertEquals("COMPLETED", f.s.string("SELECT state FROM wa.operation_run WHERE id=?", completed));
     }
 
-    @Test void changedRosterAndExpiredSelectionCannotIssueAnIntent() {
+    @Test void changedOptionDoesNotHideTheUnchangedTripAtDelivery() {
         f.pair();
         readyReturn();
-        f.send("Começar viagem");
-        f.attendance.send(f.passenger, "Não vou hoje na ida");
-        var changed = f.send("ida");
-        assertEquals(WaProblem.Code.VERSION_CONFLICT, changed.decision().error());
-        assertEquals(0, f.s.number("SELECT count(*) FROM wa.start_intent"));
-        f.send("Começar viagem");
-        f.h.time.advance(301);
-        var expired = f.send("volta");
-        assertEquals("ADVANCE_RUN_SETUP", expired.body().path("commandType").asText());
-        assertTrue(expired.text().contains("Começar viagem"), expired.text());
-        assertFalse(expired.text().contains("CONFIRMAR"), expired.text());
-        assertEquals(0, f.s.number("SELECT count(*) FROM wa.start_intent"));
+        var offered = f.send("Começar viagem");
+        f.h.jdbc.update("UPDATE wa.routine SET version=version+1 WHERE id=?", f.item.routine());
+        String delivered = authorizeStartLink(offered);
+        assertTrue(delivered.contains("Ida de teste"), delivered);
+        assertTrue(delivered.contains("Esta viagem mudou"), delivered);
+        assertTrue(delivered.contains("Volta de teste"), delivered);
+        assertEquals(1, delivered.split("/motorista/saida#v1\\.", -1).length - 1);
         assertEquals(0, f.s.number("SELECT count(*) FROM wa.operation_run"));
     }
 

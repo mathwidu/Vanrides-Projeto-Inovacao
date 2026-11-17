@@ -10,6 +10,7 @@ import com.vanrides.vanrides.whatsapp.auth.WaCrypto;
 import com.vanrides.vanrides.whatsapp.config.WaClock;
 import com.vanrides.vanrides.whatsapp.config.WaSettings;
 import com.vanrides.vanrides.whatsapp.tracking.WaTrackingService;
+import com.vanrides.vanrides.whatsapp.transport.WaFoundationResponses;
 import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -23,7 +24,9 @@ import org.springframework.jdbc.core.JdbcTemplate;
 final class WaRunConversation {
     static final Set<String> COMMANDS = Set.of("ADVANCE_RUN_SETUP", "REQUEST_START", "REQUEST_RESUME", "SET_OPERATIONAL_ATTENDANCE");
     record Offer(String command, ArrayNode options) { }
-    record Result(WaDecision decision, String text, ObjectNode intent) { }
+    record Result(WaDecision decision, String text, ObjectNode intent, List<WaRunStartOffers.Page> pages) {
+        Result(WaDecision decision,String text,ObjectNode intent) { this(decision,text,intent,List.of()); }
+    }
     private final JdbcTemplate jdbc;
     private final WaClock clock;
     private final WaCrypto crypto;
@@ -32,12 +35,14 @@ final class WaRunConversation {
     private final WaAttendanceSummary summaries;
     private final WaAttendanceQuestions questions;
     private final WaTrackingService tracking;
+    private final WaRunStartOffers starts;
 
     WaRunConversation(JdbcTemplate jdbc, WaClock clock, WaSettings settings, WaCrypto crypto) {
         this.jdbc = jdbc; this.clock = clock; this.crypto = crypto;
         store = new WaRunDraftStore(jdbc, clock, crypto); preparation = new WaRunPreparation(jdbc, clock, settings);
         questions = new WaAttendanceQuestions(jdbc, clock, settings); summaries = new WaAttendanceSummary(questions);
         tracking = new WaTrackingService(jdbc, settings, clock, crypto);
+        starts = new WaRunStartOffers(tracking,settings);
     }
     Offer offer(WaProfileState actor, WaInboxAccess.Context event) {
         if (!eligible(actor) || !event.normalizedKind().equals("TEXT")) return null;
@@ -105,6 +110,11 @@ final class WaRunConversation {
             draft = menu(actor.identityId(), event, action.equals("SHORT_START") ? "START" : action, action.equals("SHORT_START"));
             if (draft.path("shortStart").asBoolean() && draft.path("choices").size() == 1)
                 return shortStart(actor, event, draft.path("choices").get(0));
+            if (draft.path("shortStart").asBoolean() && draft.path("choices").size() > 1) {
+                var pages=starts.create(actor.identityId(),(ArrayNode)draft.path("choices"),box);
+                store.save(actor,event,WaDriverDraftStore.json());
+                return new Result(WaDecision.ok(Map.of("changed",true)),pages.get(0).text(),null,pages);
+            }
         }
         else if (draft.path("stage").asText().equals("OCCURRENCE")) {
             JsonNode choice = draft.path("shortStart").asBoolean() ? tripChoice(draft.path("choices"), text) : numbered(draft.path("choices"), text);
@@ -215,6 +225,7 @@ final class WaRunConversation {
                     ObjectNode review = preparation.startReview(driver, id);
                     choice.put("rosterDigest", WaRunPreparation.digest(review)).put("version", review.path("occurrence").path("version").asLong())
                         .put("name", occurrence.path("routineName").asText()).put("direction", occurrence.path("direction").asText());
+                    choice.put("summary",WaRunTexts.offerOption(choices.size()+1,choice.path("label").asText(),review));
                 } catch (WaProblem unavailable) { continue; }
             }
             choices.add(choice);
@@ -244,8 +255,15 @@ final class WaRunConversation {
         if (rows.size() != 1) throw WaProblem.missing();
         return rows.get(0);
     }
-    void attach(UUID box, UUID command, UUID actor, Result result) {
-        if (result.intent() != null) tracking.attachStartLink(box, command, actor, result.intent());
+    void saveResponses(UUID box, UUID command, UUID actor, Result result) {
+        if(result.pages().isEmpty()) {
+            WaFoundationResponses.saveRun(jdbc,box,command,actor,result.text(),clock.now());
+            if(result.intent()!=null) tracking.attachStartLink(box,command,actor,result.intent());
+        } else for(int i=0;i<result.pages().size();i++) {
+            var page=result.pages().get(i);
+            WaFoundationResponses.saveRunPart(jdbc,page.box(),command,actor,page.text(),i+1,clock.now());
+            tracking.attachStartOffer(page.box(),command,actor,page.packet());
+        }
     }
     String help(WaProfileState actor) {
         ObjectNode draft = store.load(actor.identityId());

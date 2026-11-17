@@ -32,9 +32,10 @@ O ensaio de 16/11 foi interrompido antes do novo GPS: o preparo mostrou excesso
 de etapas e dificuldades de retomada. A usabilidade permanece sem aceite. A
 [proposta de simplificação](docs/desenvolvimento/proposta-fluxo-simples.md) define
 uma interação com o bot e até três ações totais para iniciar uma saída já
-preparada. O primeiro incremento está em implementação e validação locais,
-incluindo início curto e reuso do cadastro; não é a versão publicada nem
-comprova o teto de ações no iPhone ou com várias saídas.
+preparada. O candidato está em implementação e validação locais: início curto,
+reuso do cadastro, pontos por trajeto, finalização pelo app, conexão sem copiar
+códigos e links próprios para várias saídas. Ainda não é a versão publicada;
+o teto de ações e os retornos entre WhatsApp e app dependem de prova física.
 O mantenedor aceitou provisoriamente o botão intermediário do iPhone: a meta
 nesse aparelho passa a quatro ações. O desenho mantém entrada por link e retorno
 à conversa, sem contratação nova.
