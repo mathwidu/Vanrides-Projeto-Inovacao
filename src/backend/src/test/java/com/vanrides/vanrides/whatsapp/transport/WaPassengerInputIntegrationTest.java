@@ -135,7 +135,7 @@ class WaPassengerInputIntegrationTest {
         fixture.send(passenger, "Segunda, Quarta e Sexta");
         var address = fixture.send(passenger, "Rua das Flores 123, perto da padaria");
         assertTrue(address.text().startsWith("Não entendi sua resposta.\n\n"), address.text());
-        assertTrue(address.text().contains("pin estático"), address.text());
+        assertTrue(address.text().contains("Localização"), address.text());
         assertEquals("POINT", fixture.draft(passenger).path("stage").asText());
         fixture.pin(passenger);
         var review = fixture.send(passenger, "PULAR");
@@ -160,7 +160,7 @@ class WaPassengerInputIntegrationTest {
         fixture.confirm(passenger, review);
         assertEquals("false", fixture.conversation.string(
                 "SELECT preferences_json->>'APPROACH_MESSAGES' FROM wa.profile WHERE identity_id=?", passenger));
-        assertEquals("false", fixture.conversation.string(
+        assertEquals("true", fixture.conversation.string(
                 "SELECT preferences_json->>'ATTENDANCE_REMINDERS' FROM wa.profile WHERE identity_id=?", passenger));
     }
 
@@ -173,7 +173,7 @@ class WaPassengerInputIntegrationTest {
         var updatedDays = fixture.send(passenger, "terça");
         assertTrue(updatedDays.text().contains("Entrada antiga"), updatedDays.text());
         fixture.send(passenger, "VOLTAR");
-        var updatedPoint = fixture.send(passenger, "PONTO -12.25, +34.5");
+        var updatedPoint = fixture.pin(passenger, -12.25, 34.5);
         assertFalse(updatedPoint.text().contains("Entrada antiga"), updatedPoint.text());
         assertFalse(fixture.draft(passenger).path("selections").path(0).path("pickup").has("reference"));
     }

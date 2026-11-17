@@ -13,6 +13,11 @@ final class WaPassengerTexts {
     static final String NAVIGATION_HINT =
             "\n\nA qualquer momento do cadastro, envie VOLTAR para voltar uma etapa ou ABANDONAR"
                     + " para cancelar.";
+    static final String ATTACH_LOCATION =
+            "No WhatsApp do celular, toque no clipe ou no +, escolha Localização e envie o ponto onde a van"
+                    + " deve buscar você.";
+    static final String TYPED_POINT =
+            "Não consegui usar esse ponto. Envie a localização pelo WhatsApp do celular.\n\n";
     static final WaPrompt APPROACH =
             WaPrompt.yesNo("Você deseja receber mensagens quando a van estiver se aproximando?");
     static final WaPrompt REMINDER =
@@ -89,7 +94,7 @@ final class WaPassengerTexts {
             case "COMMON_PIN" ->
                     "Envie um pin estático para esse ponto comum.\n\n"
                             + WaConversationResponses.COMPUTER_POINT;
-            case "REVIEW" -> reviewHelp(draft.path("confirmation"));
+            case "REVIEW" -> reviewHelp(draft);
             default ->
                     "Envie seu convite para iniciar ou CONTINUAR CADASTRO para retomar.\n\nPara"
                             + " ajuda, envie AJUDA.";
@@ -179,10 +184,9 @@ final class WaPassengerTexts {
         if (!details.isEmpty()) {
             sections.add(String.join("\n", details));
         }
-        if (draft.path("simpleSignup").asBoolean() && action.equals("REQUEST_LINK")) {
+        if (signupReview(draft)) {
             sections.add("Se estiver tudo certo, envie CONFIRMAR em até 5 minutos. O motorista vai conferir seu pedido.");
-            sections.add("Para ajustar, envie ALTERAR DIAS ou CORRIGIR PONTO. Para um detalhe, envie REFERÊNCIA "
-                    + (draft.path("selections").size()>1 ? "1 Portão lateral." : "Portão lateral.")
+            sections.add("Para mudar alguma informação, envie AJUSTAR. O cadastro recomeça pelo seu nome."
                     + (draft.path("addingRoutines").asBoolean() ? " Seus avisos e trajetos anteriores serão mantidos."
                     : " Para escolher avisos, envie AVISOS TODOS, AVISOS CHEGADA, AVISOS PRESENÇA ou AVISOS NENHUM."));
         } else {
@@ -200,6 +204,11 @@ final class WaPassengerTexts {
         return String.join("\n\n", sections);
     }
 
+    static boolean signupReview(ObjectNode draft) {
+        return draft.path("simpleSignup").asBoolean()
+                && (draft.path("addingRoutines").asBoolean() || draft.path("action").asText().equals("REQUEST_LINK"));
+    }
+
     static String approvalReply(String action) {
         return switch (action) {
             case "APPROVE_LINK" -> "aprovar embarque";
@@ -209,7 +218,8 @@ final class WaPassengerTexts {
         };
     }
 
-    private static String reviewHelp(JsonNode confirmation) {
+    private static String reviewHelp(ObjectNode draft) {
+        JsonNode confirmation = draft.path("confirmation");
         String how =
                 confirmation.isMissingNode()
                         ? "Envie CONTINUAR para receber o resumo novamente."
@@ -219,7 +229,8 @@ final class WaPassengerTexts {
                                         + " encontra, envie CONTINUAR para receber um resumo novo."
                                 : "Para confirmar, responda CONFIRMAR.\nSe passaram mais de 5"
                                         + " minutos, envie CONTINUAR para receber um resumo novo.";
-        return how + "\n\nUse CORRIGIR para mudar algo ou ABANDONAR para cancelar.";
+        return how + (signupReview(draft) ? "\n\nUse AJUSTAR para mudar algo ou ABANDONAR para cancelar."
+                : "\n\nUse CORRIGIR para mudar algo ou ABANDONAR para cancelar.");
     }
 
     private static String days(ObjectNode draft) {
@@ -265,9 +276,7 @@ final class WaPassengerTexts {
         if (draft.path("routePoints").asBoolean()) return WaPassengerPoints.prompt(draft);
         StringBuilder text =
                 new StringBuilder(
-                        "Envie um pin estático do ponto onde a van deve buscar você. No celular,"
-                            + " escolha o local de embarque no mapa do WhatsApp.\n\n"
-                            + WaConversationResponses.COMPUTER_POINT);
+                        ATTACH_LOCATION);
         if (draft.has("reusablePoint")) {
             JsonNode point = draft.path("reusablePoint");
             text.insert(0, "Quer usar o mesmo ponto? Confira: https://www.google.com/maps?q="

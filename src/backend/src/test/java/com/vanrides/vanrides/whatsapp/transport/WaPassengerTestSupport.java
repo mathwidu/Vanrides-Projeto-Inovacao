@@ -153,13 +153,17 @@ final class WaPassengerTestSupport {
     }
 
     Step pin(UUID actor) {
+        return pin(actor, 0, 0);
+    }
+
+    Step pin(UUID actor, double latitude, double longitude) {
         UUID event =
                 conversation.pending(
                         actor,
                         json().set(
                                         "locationMessage",
-                                        json().put("degreesLatitude", 0)
-                                                .put("degreesLongitude", 0)),
+                                        json().put("degreesLatitude", latitude)
+                                                .put("degreesLongitude", longitude)),
                         transport.clock.now());
         return execute(conversation.claim(event), true);
     }

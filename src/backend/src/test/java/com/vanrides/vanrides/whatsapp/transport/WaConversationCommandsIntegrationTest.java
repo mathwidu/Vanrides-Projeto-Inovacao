@@ -94,8 +94,8 @@ class WaConversationCommandsIntegrationTest {
         Lease badPoint = c.text(actor, "PONTO 999, 999");
         assertThat(badPoint.message().path("type").asText()).isEqualTo("UNSUPPORTED");
         c.execute(badPoint, "RESPOND_TO_MESSAGE", reply("UNSUPPORTED_CONTENT")).requireSuccess();
-        assertThat(response(badPoint)).contains("Não consegui usar essa localização", "ponto fixo", "No computador")
-            .doesNotContain("999");
+        assertThat(response(badPoint)).contains("Não consegui usar essa localização", "ponto fixo")
+            .doesNotContain("999", "No computador");
         assertThat(c.number("SELECT count(*) FROM wa.pickup_point")).isZero();
     }
 

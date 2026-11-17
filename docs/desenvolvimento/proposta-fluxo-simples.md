@@ -209,7 +209,7 @@ conhecidas não são pedidas novamente.
    “mesmos dias” como atalho, sem obrigar a ir em ambas. Envia o ponto fixo de
    embarque de cada trajeto pelo recurso de localização do próprio WhatsApp. Orientação
    curta e específica para o celular, com uma imagem de apoio quando necessário.
-   Coordenadas e o comando `PONTO` ficam no guia técnico de testes pelo computador.
+   O passageiro não envia coordenadas digitadas; o comando `PONTO` fica só para o motorista.
 4. Confere um resumo de motorista, trajeto, dias, ponto e avisos e envia o pedido.
    O convite autoriza entrar com aquele motorista; não pedir ao motorista que
    aprove novamente a mesma pessoa. A conferência operacional de ponto novo e

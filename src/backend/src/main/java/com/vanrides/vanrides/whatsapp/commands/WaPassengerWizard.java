@@ -140,6 +140,9 @@ final class WaPassengerWizard {
         if ((draft.path("addingRoutines").asBoolean() || draft.path("editingPickup").asBoolean()) && text.startsWith("avisos ")) {
             return new Step(draft, "Seus avisos foram mantidos. Você pode ajustá-los depois deste pedido.\n\n");
         }
+        if (stage.equals("REVIEW") && text.equals("ajustar") && WaPassengerTexts.signupReview(draft)) {
+            return ok(restart(draft));
+        }
         if (signup.optionalAnswer(event, draft, text, stage)) {
             return ok(draft);
         }
@@ -226,7 +229,13 @@ final class WaPassengerWizard {
             case "ROUTINES" -> signup.selectRoutines(draft, text);
             case "DAYS" -> signup.selectDays(draft, text);
             case "EDIT_ROUTINE", "EDIT_POINT_SELECTION" -> new WaPassengerEdit(data).choose(draft, text);
-            case "POINT" -> point(actor, event, draft, text);
+            case "POINT" -> {
+                if (event.normalizedPayload().path("pin").path("typed").asBoolean()) {
+                    lead = WaPassengerTexts.TYPED_POINT;
+                } else {
+                    point(actor, event, draft, text);
+                }
+            }
             case "REFERENCE" -> {
                 if (diverges(text)) {
                     clearPoint(draft);
@@ -256,6 +265,15 @@ final class WaPassengerWizard {
             lead = WaPassengerTexts.NOT_UNDERSTOOD;
         }
         return new Step(draft, lead);
+    }
+
+    private static ObjectNode restart(ObjectNode draft) {
+        ObjectNode fresh = WaPassengerDraftStore.json();
+        for (String field : List.of("simpleSignup", "routePoints", "action", "inviteHash", "driverId", "driverName",
+                "linkId", "addingRoutines")) {
+            if (draft.has(field)) fresh.set(field, draft.get(field));
+        }
+        return fresh.put("stage", "NAME");
     }
 
     private static void clearPoint(ObjectNode draft) {

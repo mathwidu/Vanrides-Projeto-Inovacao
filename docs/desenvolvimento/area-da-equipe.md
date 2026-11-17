@@ -91,8 +91,8 @@ Use **Testar com o WhatsApp** quando quiser confirmar a jornada real com um
    conversa já estiver aberta no Mac, use **Copiar mensagem do passageiro**
    e cole no chat. O convite tem um uso e vale 24 horas.
 4. No primeiro cadastro, informe o nome e leia o aviso de dados. Confira os
-   dias sugeridos e envie o ponto de embarque. No Mac, use `PONTO` com as
-   coordenadas copiadas do mapa. Revise e confirme uma vez para enviar o pedido.
+   dias sugeridos e envie o ponto de embarque pela localização do WhatsApp no
+   celular. Revise e confirme uma vez para enviar o pedido.
 5. Toque em **Atualizar pedidos** e escolha a ação do motorista: aprovar
    vínculo e ponto, pedir correção do ponto, recusar, aprovar novo ponto ou
    encerrar o vínculo.

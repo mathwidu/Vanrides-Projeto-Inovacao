@@ -17,7 +17,7 @@ Para praticar os dois papéis com dados fictícios, abra **Simular conversas**.
 
 1. Use um WhatsApp diferente do número do bot e dos números que testarão como passageiros. A equipe libera o motorista uma vez na [área da equipe](area-da-equipe.md) e entrega o convite individual em privado.
 2. Abra o link recebido pelo próprio WhatsApp e envie a mensagem pronta para o VanRides. O bot explica o cadastro, pede seu nome e mostra o aviso de dados. Responda `ACEITO` se concordar.
-3. Envie `CRIAR ROTINA` e dê um nome ao trajeto. Você pode enviar o sentido, os dias e o horário numa só mensagem, por exemplo `IDA, SEGUNDA A SEXTA, 07:30`. O bot sugere Brasília. Para ajustar o fuso, envie, por exemplo, `FUSO MANAUS` quando ele pedir o destino. Envie o [ponto fixo](#enviar-um-ponto-fixo-no-mac), use **Responder** no resumo e escreva `SALVAR ROTINA`.
+3. Envie `CRIAR ROTINA` e dê um nome ao trajeto. Você pode enviar o sentido, os dias e o horário numa só mensagem, por exemplo `IDA, SEGUNDA A SEXTA, 07:30`. O bot sugere Brasília. Para ajustar o fuso, envie, por exemplo, `FUSO MANAUS` quando ele pedir o destino. Envie o [ponto fixo](#enviar-um-ponto-fixo), use **Responder** no resumo e escreva `SALVAR ROTINA`.
 4. Instale o aplicativo da rodada no Android ou iPhone. Pelo WhatsApp do
    motorista, envie “Conectar meu celular” e abra o link recebido. No app,
    toque em **Conectar este celular**. De volta à conversa, leia o pedido e
@@ -56,13 +56,14 @@ próprias escolhas. [Política do WhatsApp Business](https://business.whatsapp.c
 1. O bot identifica o motorista e pede nome e aceite somente se faltarem.
    Mostra seus trajetos, com nome, ida/volta, horário e dias. O passageiro pode
    selecionar mais de um, por exemplo `1,2`, e escolher os dias de cada trajeto.
-2. Envia um [ponto fixo](#enviar-um-ponto-fixo-no-mac) de embarque por trajeto,
-   sem localização ao vivo. Ida e volta podem ter pontos diferentes. Quando
-   o bot oferecer, “MESMO PONTO” reutiliza um ponto aprovado por escolha
-   explícita. Depois, confere trajetos, dias e locais no resumo e confirma o
-   pedido. Pode usar `ALTERAR DIAS`, `CORRIGIR PONTO` ou informar uma referência.
-   As escolhas de avisos anteriores são preservadas; conta nova começa com os
-   avisos desligados.
+2. Envia um [ponto fixo](#enviar-um-ponto-fixo) de embarque por trajeto,
+   pelo WhatsApp do celular e sem localização ao vivo. Ida e volta podem ter
+   pontos diferentes. Quando o bot oferecer, “MESMO PONTO” reutiliza um ponto
+   aprovado por escolha explícita. Depois, confere trajetos, dias e locais no
+   resumo e confirma o pedido. Para mudar algo, envia `AJUSTAR`: o cadastro
+   recomeça pelo nome. As escolhas de avisos anteriores são preservadas. Conta
+   nova começa com os lembretes de presença ligados e os avisos de chegada
+   desligados; no resumo, `AVISOS NENHUM` ou `AVISOS CHEGADA` mudam essa escolha.
 3. O convite já autoriza entrar com aquele motorista. Falta conferir os pontos
    novos e a ordem dos embarques. O motorista envia `REVISAR PEDIDO`; se houver
    vários, escolhe o correto. No resumo, usa **Responder** e `APROVAR EMBARQUE`,
@@ -87,8 +88,8 @@ Mensagens já enviadas podem chegar depois de desligar.
 
 ## Corrigir o ponto ou retomar o cadastro
 
-- **Antes de enviar o pedido:** mande `CORRIGIR PONTO` no resumo e envie
-  o novo ponto. Se o bot recusar a localização, siga a instrução na conversa
+- **Antes de enviar o pedido:** mande `AJUSTAR` no resumo. O cadastro
+  recomeça pelo nome, e você escolhe de novo trajetos, dias e ponto. Se o bot recusar a localização, siga a instrução na conversa
   e reenvie um ponto fixo.
 - **Se o motorista pedir correção:** siga o aviso recebido no WhatsApp.
   O pedido continua aguardando aprovação. O motorista pode encontrar o pedido
@@ -101,14 +102,18 @@ Mensagens já enviadas podem chegar depois de desligar.
   revisão expirar, use `CONTINUAR` para receber um novo resumo. A revisão
   vale cinco minutos.
 
-## Enviar um ponto fixo no Mac
+## Enviar um ponto fixo
 
-Quando o bot pedir o destino ou o ponto de embarque, abra o Google Maps no
-computador, clique com o botão direito no ponto desejado e clique nas
-coordenadas para copiá-las. No WhatsApp, digite `PONTO`, dê um espaço e cole.
-Exemplo com um ponto fictício: `PONTO -29.68123, -51.13123`. Confira o ponto
-no mapa antes de enviar. Pelo celular, você também pode usar o botão de
-localização e escolher um ponto fixo. [Ajuda do Google Maps](https://support.google.com/maps/answer/18539?hl=pt-BR)
+**Passageiro:** envie o ponto de embarque pelo WhatsApp do celular. Toque no
+clipe ou no +, escolha Localização, ajuste o ponto no mapa e envie. Não use a
+localização em tempo real. Coordenadas digitadas com `PONTO` não são aceitas
+no cadastro do passageiro.
+
+**Motorista:** quando o bot pedir o destino ou um ponto comum, também é possível usar o
+computador. Abra o Google Maps, clique com o botão direito no ponto desejado e
+clique nas coordenadas para copiá-las. No WhatsApp, digite `PONTO`, dê um
+espaço e cole. Exemplo com um ponto fictício: `PONTO -29.68123, -51.13123`.
+Confira o ponto no mapa antes de enviar. [Ajuda do Google Maps](https://support.google.com/maps/answer/18539?hl=pt-BR)
 
 ## Começar e terminar uma viagem já preparada
 

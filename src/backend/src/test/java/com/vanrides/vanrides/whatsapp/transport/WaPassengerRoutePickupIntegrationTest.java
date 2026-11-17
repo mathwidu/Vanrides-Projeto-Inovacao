@@ -72,7 +72,7 @@ class WaPassengerRoutePickupIntegrationTest {
             if (choice.path("id").asText().equals(outbound.toString())) break;
         }
         f.send(passenger, Integer.toString(index));
-        var summary = f.send(passenger, "PONTO -11.5, +33.25");
+        var summary = f.pin(passenger, -11.5, 33.25);
         f.confirm(passenger, summary);
         assertEquals(oldPoint, point(outbound)); assertEquals(old, row("pickup_point", oldPoint));
         assertEquals(otherMember, member(returning)); assertEquals(other, row("pickup_point", otherPoint));
@@ -139,10 +139,10 @@ class WaPassengerRoutePickupIntegrationTest {
             if (choice.path("direction").asText().equals("OUTBOUND")) ida=index; else volta=index;
         }
         f.send(passenger, ida+","+volta); f.send(passenger, "segunda e quarta"); f.send(passenger, "terça e quinta");
-        var next = f.send(passenger, "PONTO -12.25, +34.5");
+        var next = f.pin(passenger, -12.25, 34.5);
         assertEquals("POINT", f.draft(passenger).path("stage").asText());
         assertTrue(next.text().contains("Embarque 2 de 2"), next.text());
-        return f.send(passenger, "PONTO +12.5, -34.75");
+        return f.pin(passenger, 12.5, -34.75);
     }
     private UUID returning() {
         UUID id = UUID.randomUUID();
