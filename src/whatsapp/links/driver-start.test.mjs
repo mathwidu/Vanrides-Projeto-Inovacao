@@ -29,3 +29,13 @@ test('missing, ambiguous, malformed and unsafe links give recovery guidance with
     assert.deepEqual(state.opened,[]);
   }
 });
+test('finish preview only opens its distinct app action after a deliberate tap', () => {
+  const state=visit(site.replace('/saida','/fim') + fragment);
+  assert.deepEqual(state.opened,[]); assert.equal(state.button.hidden,false);
+  assert.deepEqual(state.replaced,['/motorista/fim']);
+  state.handlers.click(); assert.deepEqual(state.opened,['vanridesdriver://run/finish' + fragment]);
+  for(const suffix of ['?action=start'+fragment,fragment+'x','/'+fragment]) {
+    const invalid=visit(site.replace('/saida','/fim')+suffix);
+    assert.equal(invalid.button.hidden,true); assert.deepEqual(invalid.opened,[]);
+  }
+});

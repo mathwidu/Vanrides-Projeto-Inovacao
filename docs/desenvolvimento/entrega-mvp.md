@@ -22,6 +22,11 @@ de conferir seus critérios, a evidência correspondente e a revisão humana.
 O [roteiro da rodada final](rodada-final.md) reúne instalação, tela bloqueada,
 interrupção de rede, percurso, aviso, encerramento e bateria, com registro
 separado por plataforma e pelas issues correspondentes.
+Antes dele, o [ensaio do fluxo simples](roteiro-validacao-fluxo-simples.md)
+confere cadastro, pontos por trajeto, início e finalização parado, incluindo
+compreensão e número de ações. O incremento V45/V46 está local: ainda não altera
+o pacote publicado abaixo. Preparar e publicar uma versão compatível precede
+qualquer nova rodada nos aparelhos, que seguem pausados nesta implementação.
 
 ## Preparação conferida
 

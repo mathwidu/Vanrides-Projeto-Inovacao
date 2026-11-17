@@ -60,7 +60,7 @@ def main():
     contract = android / "app/src/driverGpsSpikeContract" / package / "DriverSpikeContract.kt"
     tests_folder = android / "app/src/testDriver" / package
     pure = [sources / name for name in ("DriverSessionProtocol.kt", "DriverSessionCore.kt",
-            "TrackingProtocol.kt", "TrackingWire.kt", "DriverEnergyDiagnostics.kt", "DriverHttpClient.kt")]
+            "TrackingProtocol.kt", "TrackingWire.kt", "DriverEnergyDiagnostics.kt", "DriverHttpClient.kt", "DriverFinishFlow.kt")]
     for mode, folder in (("mvp", "driverProduction"), ("spike", "driverGpsSpike")):
         selected = sorted((android / "app/src" / folder / package).glob("*.kt"))
         mode_tests = output / (mode + "-tracking-tests.jar")
@@ -69,7 +69,7 @@ def main():
         subprocess.run([str(java), "-Xmx256m", "-cp", ":".join([str(mode_tests), stdlib, json, junit, hamcrest, str(android_jar)]),
                         "org.junit.runner.JUnitCore", *["com.example.vanrides_frontend_dev.driver." + name for name in
                         ("DriverSessionCoreTest", "TrackingProtocolTest", "DriverEnergyDiagnosticsTest",
-                         "ProductionTrackingWireTest", "DriverTrackingBuildTest")]], check=True)
+                         "ProductionTrackingWireTest", "DriverTrackingBuildTest", "DriverFinishFlowTest")]], check=True)
         print("PASS: " + mode + " source selection and host tracking contracts")
     print("PASS: session host tests and Android session adapters (no Gradle, APK or device)")
 

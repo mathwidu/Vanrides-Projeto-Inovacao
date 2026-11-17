@@ -79,8 +79,9 @@ class WaPassengerBusinessIntegrationTest {
     }
 
     @Test
-    void declineNotifiesPassengerAndDoesNotReleaseOrConsumeInviteAgain() {
+    void legacyRequestCanStillBeDeclinedWithoutReleasingOrConsumingInviteAgain() {
         UUID link = fixture.request(passenger, code);
+        fixture.transport.jdbc.update("UPDATE wa.driver_passenger_link SET state='REQUESTED',approved_by=NULL,approved_at=NULL WHERE id=?", link);
         var result = fixture.confirm(driver, fixture.driverReview(driver, "RECUSAR"));
         assertEquals(
                 "REJECTED",
@@ -107,7 +108,7 @@ class WaPassengerBusinessIntegrationTest {
         assertEquals("ADVANCE_PASSENGER_SETUP", correction.body().path("commandType").asText());
         assertTrue(correction.context().path("options").isEmpty());
         assertEquals(
-                "REQUESTED",
+                "APPROVED",
                 fixture.conversation.string(
                         "SELECT state FROM wa.driver_passenger_link WHERE id=?", link));
         assertEquals(
@@ -263,7 +264,7 @@ class WaPassengerBusinessIntegrationTest {
         var changed = fixture.send(driver, "APROVAR 1");
         assertTrue(changed.text().contains("Essa solicitação mudou"));
         assertEquals(
-                "REQUESTED",
+                "APPROVED",
                 fixture.conversation.string(
                         "SELECT state FROM wa.driver_passenger_link WHERE id=?", ninthLink));
         fixture.send(driver, "PRÓXIMA");

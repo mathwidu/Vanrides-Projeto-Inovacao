@@ -170,8 +170,10 @@ public final class WaTeamController {
             var action = WaTeamTestDriverOperations.Action.valueOf(WaJson.text(data, "action", 1, 32));
             boolean invite = action.decision == null;
             if (invite) WaJson.fields(data, "action", "operationId");
+            else if (data.has("pickupId")) WaJson.fields(data, "action", "operationId", "linkId", "pickupId");
             else WaJson.fields(data, "action", "operationId", "linkId");
-            return new WaTeamTestDriverOperations.Request(action, id, invite ? null : WaJson.uuid(data, "linkId"));
+            return new WaTeamTestDriverOperations.Request(action, id, invite ? null : WaJson.uuid(data, "linkId"),
+                    data.hasNonNull("pickupId") ? WaJson.uuid(data, "pickupId") : null);
         } catch (IllegalArgumentException invalid) { throw WaProblem.invalid(); }
     }
 

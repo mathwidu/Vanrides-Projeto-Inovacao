@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 
 import '../data/driver_session_links.dart';
 import '../data/driver_run_intent.dart';
+import '../data/driver_finish_intent.dart';
 import '../data/driver_session_platform.dart';
 
 class DriverPairingController extends ChangeNotifier {
@@ -13,6 +14,8 @@ class DriverPairingController extends ChangeNotifier {
   final DriverSessionLinks links;
   DriverSessionSnapshot? snapshot;
   DriverRunIntent? runIntent;
+  DriverFinishIntent? finishIntent;
+  int collectionRevision = 0;
   String? code;
   String? error;
   bool busy = false;
@@ -59,12 +62,18 @@ class DriverPairingController extends ChangeNotifier {
     if (canReconcile &&
         (initial == null ||
             links.acceptsReturn(initial) ||
-            runIntent != null)) {
+            runIntent != null ||
+            finishIntent != null)) {
       await act(DriverSessionAction.syncSession);
     }
   }
 
   void _acceptRun(Uri uri) {
+    final host =
+        links is DeviceSessionLinks
+            ? (links as DeviceSessionLinks).returnHost
+            : '';
+    finishIntent = DriverFinishIntent.parse(uri, host: host);
     runIntent = DriverRunIntent.parse(
       uri,
       host:
@@ -72,6 +81,24 @@ class DriverPairingController extends ChangeNotifier {
               ? (links as DeviceSessionLinks).returnHost
               : '',
     );
+  }
+
+  void restoreFinish(String id, int version) {
+    if (_closed || runIntent != null || finishIntent != null) return;
+    finishIntent = DriverFinishIntent.fromJournal(id, version);
+    notifyListeners();
+  }
+
+  Future<void> runFinished(
+    DriverFinishIntent finished,
+    bool allowAutomaticReturn,
+  ) async {
+    if (_closed || !identical(finishIntent, finished)) return;
+    finishIntent = null;
+    collectionRevision++;
+    conversationReturnPending = true;
+    notifyListeners();
+    if (allowAutomaticReturn) unawaited(returnToConversation());
   }
 
   Future<void> runStarted(
@@ -97,7 +124,8 @@ class DriverPairingController extends ChangeNotifier {
         !_foreground ||
         openingConversation ||
         !conversationReturnPending ||
-        runIntent != null) {
+        runIntent != null ||
+        finishIntent != null) {
       return;
     }
     final epoch = _visibilityEpoch;
@@ -112,7 +140,10 @@ class DriverPairingController extends ChangeNotifier {
     }
     if (_closed) return;
     openingConversation = false;
-    if (_foreground && epoch == _visibilityEpoch && runIntent == null) {
+    if (_foreground &&
+        epoch == _visibilityEpoch &&
+        runIntent == null &&
+        finishIntent == null) {
       conversationReturnPending = !opened;
     }
     notifyListeners();
@@ -126,7 +157,10 @@ class DriverPairingController extends ChangeNotifier {
     code = null;
     _visibilityEpoch++;
     notifyListeners();
-    if ((links.acceptsReturn(uri) || runIntent != null) && canReconcile) {
+    if ((links.acceptsReturn(uri) ||
+            runIntent != null ||
+            finishIntent != null) &&
+        canReconcile) {
       unawaited(act(DriverSessionAction.syncSession));
     }
   }
@@ -309,6 +343,7 @@ class DriverPairingController extends ChangeNotifier {
     _closed = true;
     code = null;
     runIntent = null;
+    finishIntent = null;
     _poll?.cancel();
     unawaited(_subscription?.cancel());
     super.dispose();

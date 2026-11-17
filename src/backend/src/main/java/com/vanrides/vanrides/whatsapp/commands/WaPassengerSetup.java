@@ -243,9 +243,10 @@ final class WaPassengerSetup {
                     draft.set("routineChoices", data.additionalRoutines(
                             UUID.fromString(draft.path("driverId").asText()), UUID.fromString(draft.path("linkId").asText())));
                 } else if (draft.has("linkId")) {
-                    draft.put("stage", "POINT");
+                    draft = new WaPassengerEdit(data).start(actor);
                 } else {
                     if (draft.has("inviteHash")) {
+                        draft.put("routePoints", true);
                         draft.put("stage", "ROUTINES");
                         draft.set(
                                 "routineChoices",
@@ -314,8 +315,8 @@ final class WaPassengerSetup {
             options.add(
                     WaDriverDraftStore.option(
                             "QUESTION",
-                            draft.path(draft.has("sourceEvent") ? "sourceEvent" : "selectionEvent")
-                                    .asText()));
+                            draft.path("routePoints").asBoolean() ? draft.path("confirmation").path("sourceInbox").asText()
+                                    : draft.path(draft.has("sourceEvent") ? "sourceEvent" : "selectionEvent").asText()));
         }
         return options.add(
                 WaDriverDraftStore.option(

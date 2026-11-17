@@ -46,6 +46,17 @@ final class WaConversationPolicy {
         return Boolean.TRUE.equals(jdbc.queryForObject("SELECT EXISTS(SELECT 1 FROM wa.conversation_state WHERE identity_id=? AND stage='PAUSED')",
             Boolean.class, identity));
     }
+    String nextStep(WaProfileState actor, boolean enabled) {
+        if (actor.blocked()) return "PAUSED";
+        if (!enabled || paused(actor.identityId())) return "PAUSED";
+        if (!"ACTIVE".equals(actor.status())) return "ONBOARDING";
+        if ("DRIVER".equals(actor.role())) {
+            Boolean paired=jdbc.queryForObject("SELECT EXISTS(SELECT 1 FROM wa.driver_device WHERE driver_id=? AND environment=? AND status='ACTIVE')",
+                Boolean.class,actor.identityId(),environment);
+            if(!Boolean.TRUE.equals(paired)) return "PAIRING";
+        }
+        return "READY";
+    }
     String registration(WaProfileState actor, boolean enabled) {
         if (!enabled || actor.blocked() || paused(actor.identityId())) return "PAUSED";
         if (actor.role().equals("UNREGISTERED")) return "WELCOME";

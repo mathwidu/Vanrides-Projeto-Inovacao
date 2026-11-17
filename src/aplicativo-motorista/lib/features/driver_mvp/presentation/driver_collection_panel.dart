@@ -37,6 +37,7 @@ class _DriverCollectionPanelState extends State<DriverCollectionPanel>
       );
   bool _foreground = true;
   int _visibilityEpoch = 0;
+  bool _stopping = false;
   Timer? _timer;
 
   @override
@@ -129,6 +130,25 @@ class _DriverCollectionPanelState extends State<DriverCollectionPanel>
     }
   }
 
+  Future<void> _stopLocally() async {
+    if (_stopping || !mounted) return;
+    _stopping = true;
+    try {
+      final next = await widget.platform.stop();
+      if (mounted) _view.value = (status: next, busy: false, error: null);
+    } catch (_) {
+      if (mounted) {
+        _view.value = (
+          status: _view.value.status,
+          busy: false,
+          error: 'Confira a parada neste celular e tente novamente.',
+        );
+      }
+    } finally {
+      _stopping = false;
+    }
+  }
+
   @override
   void dispose() {
     _timer?.cancel();
@@ -214,8 +234,7 @@ class _DriverCollectionPanelState extends State<DriverCollectionPanel>
                 ),
               if (canStop)
                 OutlinedButton(
-                  onPressed:
-                      view.busy ? null : () => _update(widget.platform.stop),
+                  onPressed: _stopLocally,
                   child: const Text('Parar localização'),
                 ),
               if (widget.paired &&

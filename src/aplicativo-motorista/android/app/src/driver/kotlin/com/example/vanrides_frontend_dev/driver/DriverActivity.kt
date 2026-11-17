@@ -71,6 +71,24 @@ class DriverActivity : FlutterActivity() {
         }
         try {
             when (call.method) {
+                "getPendingFinish" -> { noArguments(call); result.success(runtime.pendingFinish()) }
+                "previewPendingFinish", "retryFinish" -> {
+                    val args = arguments(call,setOf("intentId","expectedVersion"))
+                    runtime.retryFinish(org.json.JSONObject(args),call.method == "previewPendingFinish") { output, code ->
+                        if (code == null) result.success(output) else result.error(code,code,null)
+                    }
+                }
+                "previewFinish", "finishRun" -> {
+                    val args = arguments(call, setOf("intentId", "expectedVersion", "intentToken"))
+                    val value = org.json.JSONObject(args)
+                    DriverFinishContract.authorization(value)
+                    require(DriverSessionProtocol.isFinishLink(intent.dataString, BuildConfig.PAIRING_LINK_HOST) &&
+                        intent.data?.fragment == "v1.${value.getString("intentId")}.${value.getLong("expectedVersion")}.${value.getString("intentToken")}")
+                    val reply: (Map<String,Any?>?,String?) -> Unit = { output, code ->
+                        if (code == null) result.success(output) else result.error(code,code,null)
+                    }
+                    if (call.method == "previewFinish") runtime.previewFinish(value,reply) else runtime.finishRun(value,reply)
+                }
                 "getStatus" -> { noArguments(call); result.success(runtime.snapshot()) }
                 "syncStatus" -> { noArguments(call); runtime.sync { complete(it) } }
                 "stop" -> { noArguments(call); runtime.stop(); result.success(runtime.snapshot()) }

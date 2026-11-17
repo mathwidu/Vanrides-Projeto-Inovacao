@@ -33,6 +33,7 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="vanridesdriver" android:host="run" android:path="/start" />
+                <data android:scheme="vanridesdriver" android:host="run" android:path="/finish" />
             </intent-filter>
         </activity>
         <!-- Disabled without a compile-time host. Association is verified separately before promotion. -->
@@ -46,6 +47,7 @@
                 <data android:scheme="https" android:host="${PAIRING_LINK_HOST}"
                     android:path="/motorista/vinculo/retorno" />
                 <data android:scheme="https" android:host="${PAIRING_LINK_HOST}" android:path="/motorista/saida" />
+                <data android:scheme="https" android:host="${PAIRING_LINK_HOST}" android:path="/motorista/fim" />
             </intent-filter>
         </activity-alias>
     </application>

@@ -88,6 +88,7 @@ final class WaPassengerWizard {
             }
             ObjectNode request = WaPassengerDraftStore.json()
                     .put("simpleSignup", true)
+                    .put("routePoints", true)
                     .put("action", "REQUEST_LINK")
                     .put("inviteHash", invite.path("code_hash").asText())
                     .put("driverId", invite.path("driver_id").asText())
@@ -95,8 +96,6 @@ final class WaPassengerWizard {
             if (!links.isEmpty()) {
                 request.put("linkId", links.path(0).path("id").asText())
                         .put("action", "PROPOSE_PICKUP").put("addingRoutines", true);
-                ObjectNode point = data.currentPoint(UUID.fromString(request.path("linkId").asText()));
-                if (point != null) request.set("reusablePoint", point);
             }
             signup.afterIdentity(actor, request);
             if (!links.isEmpty() && List.of("POINT", "ROUTINES").contains(request.path("stage").asText())) {
@@ -104,6 +103,11 @@ final class WaPassengerWizard {
                 request.put("stage", "ROUTINES");
             }
             return new Step(request, WaPassengerTexts.inviteLead(request));
+        }
+        if (text.equals("corrigir ponto")
+                && draft.path("routePoints").asBoolean() && !draft.path("selections").isEmpty()) {
+            if (!draft.path("stage").asText().equals("POINT")) new WaPassengerEdit(data).revise(draft);
+            return ok(draft);
         }
         if (text.equals("corrigir ponto")
                 && !draft.isEmpty()
@@ -116,17 +120,7 @@ final class WaPassengerWizard {
             return ok(draft);
         }
         if (text.equals("corrigir ponto") || draft.isEmpty() && text.equals("continuar cadastro")) {
-            ArrayNode links = data.links(actor.identityId(), false);
-            if (links.size() != 1) {
-                throw new WaProblem(WaProblem.Code.ACTION_NOT_ALLOWED);
-            }
-            JsonNode link = links.get(0);
-            draft = baseLink(link).put("stage", "POINT").put("action", "PROPOSE_PICKUP");
-            catalogue(
-                    draft,
-                    "commonChoices",
-                    data.commons(UUID.fromString(draft.path("driverId").asText())));
-            return ok(draft);
+            return ok(new WaPassengerEdit(data).start(actor));
         }
         if (text.equals("encerrar") || text.equals("encerrar vinculo")) {
             ArrayNode links = data.links(actor.identityId(), false);
@@ -142,13 +136,18 @@ final class WaPassengerWizard {
             return ok(draft);
         }
         String stage = draft.path("stage").asText();
-        if (draft.path("addingRoutines").asBoolean() && text.startsWith("avisos ")) {
+        if (new WaPassengerPoints(data).editReference(event, draft, text)) return ok(draft);
+        if ((draft.path("addingRoutines").asBoolean() || draft.path("editingPickup").asBoolean()) && text.startsWith("avisos ")) {
             return new Step(draft, "Seus avisos foram mantidos. Você pode ajustá-los depois deste pedido.\n\n");
         }
         if (signup.optionalAnswer(event, draft, text, stage)) {
             return ok(draft);
         }
         if (stage.equals("REVIEW") && draft.path("simpleSignup").asBoolean() && diverges(text)) {
+            if (draft.path("routePoints").asBoolean()) {
+                new WaPassengerEdit(data).revise(draft);
+                return ok(draft);
+            }
             clearPoint(draft);
             return ok(draft.put("stage", "POINT"));
         }
@@ -193,6 +192,7 @@ final class WaPassengerWizard {
             return ok(draft);
         }
         JsonNode dayBefore = draft.path("dayIndex");
+        JsonNode pointBefore = draft.path("pointIndex");
         String lead = "";
         switch (stage) {
             case "DRIVER_CONFIRM" -> {
@@ -225,6 +225,7 @@ final class WaPassengerWizard {
             case "PREF_APPROACH", "PREF_REMINDER" -> signup.legacyPreference(draft, text, stage.equals("PREF_APPROACH"));
             case "ROUTINES" -> signup.selectRoutines(draft, text);
             case "DAYS" -> signup.selectDays(draft, text);
+            case "EDIT_ROUTINE", "EDIT_POINT_SELECTION" -> new WaPassengerEdit(data).choose(draft, text);
             case "POINT" -> point(actor, event, draft, text);
             case "REFERENCE" -> {
                 if (diverges(text)) {
@@ -249,6 +250,7 @@ final class WaPassengerWizard {
         boolean understood =
                 !draft.path("stage").asText().equals(stage)
                         || !draft.path("dayIndex").equals(dayBefore)
+                        || !draft.path("pointIndex").equals(pointBefore)
                         || stage.equals("NOTICE") && text.equals("aceito");
         if (!understood && lead.isEmpty()) {
             lead = WaPassengerTexts.NOT_UNDERSTOOD;
@@ -262,6 +264,10 @@ final class WaPassengerWizard {
 
     private void point(
             WaProfileState actor, WaInboxAccess.Context event, ObjectNode draft, String text) {
+        if (draft.path("routePoints").asBoolean()) {
+            new WaPassengerPoints(data).answer(actor, event, draft, text);
+            return;
+        }
         String next = draft.path("simpleSignup").asBoolean() ? "REVIEW" : "REFERENCE";
         if (text.equals("mesmo ponto") && draft.has("reusablePoint")) {
             JsonNode point = draft.path("reusablePoint");

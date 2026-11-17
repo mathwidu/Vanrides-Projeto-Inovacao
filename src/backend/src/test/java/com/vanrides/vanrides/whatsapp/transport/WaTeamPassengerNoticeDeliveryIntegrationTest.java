@@ -67,9 +67,9 @@ class WaTeamPassengerNoticeDeliveryIntegrationTest {
 
     @Test
     void approvalNoticeIsAuthorizedForThePassengerAliasWithTheExactText() {
-        UUID box = notice(Decision.APPROVE_LINK, "APPROVE_TEST_LINK");
+        UUID box = notice(Decision.APPROVE_POINT, "APPROVE_TEST_POINT");
         String text = storedText(box);
-        assertTrue(text.startsWith("Cadastro confirmado."), text);
+        assertTrue(text.startsWith("Seu ponto foi aprovado."), text);
         var reservation = fixture.conversation.authorize(lease(box));
         assertEquals(address(), reservation.path("recipient").path("address").asText());
         assertEquals(text, reservation.path("content").path("text").asText());
@@ -84,7 +84,7 @@ class WaTeamPassengerNoticeDeliveryIntegrationTest {
 
     @Test
     void anObsoleteNoticeIsCanceledAtClaimWhileTheCurrentOneIsDelivered() {
-        UUID first = notice(Decision.APPROVE_LINK, "APPROVE_TEST_LINK");
+        UUID first = notice(Decision.APPROVE_POINT, "APPROVE_TEST_POINT");
         UUID second = notice(Decision.CLOSE_LINK, "CLOSE_TEST_LINK");
         var claimed = fixture.conversation.outboxClaim().path("items");
         assertEquals(1, claimed.size());
@@ -98,7 +98,7 @@ class WaTeamPassengerNoticeDeliveryIntegrationTest {
 
     @Test
     void aLeasedNoticeIsCanceledAtAuthorizationWhenTheLinkChangesAfterTheClaim() {
-        UUID first = notice(Decision.APPROVE_LINK, "APPROVE_TEST_LINK");
+        UUID first = notice(Decision.APPROVE_POINT, "APPROVE_TEST_POINT");
         var lease = lease(first);
         notice(Decision.CLOSE_LINK, "CLOSE_TEST_LINK");
         var decision =

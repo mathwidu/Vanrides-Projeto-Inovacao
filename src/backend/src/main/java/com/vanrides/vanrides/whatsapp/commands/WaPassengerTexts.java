@@ -54,7 +54,7 @@ final class WaPassengerTexts {
         return "• " + routineLabel(name, direction, time) + ", dias " + WaPassengerAnswers.dayNames(days);
     }
 
-    private static String routineBlock(JsonNode routine, JsonNode days) {
+    static String routineBlock(JsonNode routine, JsonNode days) {
         return routine.path("name").asText() + "\n"
                 + (routine.path("direction").asText().equals("OUTBOUND") ? "→ Ida" : "← Volta")
                 + " às " + clock(routine.path("local_time").asText())
@@ -78,6 +78,7 @@ final class WaPassengerTexts {
             case "ROUTINES" -> routines(draft);
             case "DAYS" -> days(draft);
             case "POINT" -> points(draft);
+            case "EDIT_ROUTINE", "EDIT_POINT_SELECTION" -> WaPassengerPoints.editPrompt(draft);
             case "REFERENCE" ->
                     "É na entrada principal, portão lateral ou outro acesso? Envie uma referência"
                         + " curta, ou PULAR se o pin já estiver claro.\n\nSe o pin não corresponde"
@@ -108,7 +109,9 @@ final class WaPassengerTexts {
                                 + ".");
                 List<String> lines = new ArrayList<>();
                 for (JsonNode selection : draft.path("selections")) {
-                    lines.add("• " + routineBlock(selection, selection.path("selectedDays")));
+                    lines.add((draft.path("routePoints").asBoolean() ? (lines.size()+1) + ": " : "• ")
+                            + routineBlock(selection, selection.path("selectedDays"))
+                            + (draft.path("routePoints").asBoolean() ? "\n" + WaPassengerPoints.details(selection.path("pickup")) : ""));
                 }
                 if (!lines.isEmpty()) {
                     sections.add(String.join("\n\n", lines));
@@ -127,7 +130,7 @@ final class WaPassengerTexts {
                                     + " iniciadas conservam o roteiro anterior.");
             case "APPROVE_LINK" ->
                     sections.add(
-                            "Aprovar vínculo e ponto de "
+                            "Conferir o ponto de "
                                     + draft.path("passengerName").asText()
                                     + ".\nConfira o acesso e a segurança física do embarque.");
             case "APPROVE_PICKUP" ->
@@ -159,6 +162,10 @@ final class WaPassengerTexts {
         if (draft.has("selectionSummary")) {
             sections.add(draft.path("selectionSummary").asText());
         }
+        if (draft.path("routePoints").asBoolean() && !action.equals("REQUEST_LINK")) {
+            for (var selected : draft.path("selections")) sections.add(routineBlock(selected, selected.path("selectedDays"))
+                    + "\n" + WaPassengerPoints.details(selected.path("pickup")));
+        }
         List<String> details = new ArrayList<>();
         if (draft.has("pointLabel")) {
             details.add("Ponto: " + draft.path("pointLabel").asText());
@@ -174,7 +181,8 @@ final class WaPassengerTexts {
         }
         if (draft.path("simpleSignup").asBoolean() && action.equals("REQUEST_LINK")) {
             sections.add("Se estiver tudo certo, envie CONFIRMAR em até 5 minutos. O motorista vai conferir seu pedido.");
-            sections.add("Para ajustar, envie ALTERAR DIAS, CORRIGIR PONTO ou REFERÊNCIA seguido de um detalhe."
+            sections.add("Para ajustar, envie ALTERAR DIAS ou CORRIGIR PONTO. Para um detalhe, envie REFERÊNCIA "
+                    + (draft.path("selections").size()>1 ? "1 Portão lateral." : "Portão lateral.")
                     + (draft.path("addingRoutines").asBoolean() ? " Seus avisos e trajetos anteriores serão mantidos."
                     : " Para escolher avisos, envie AVISOS TODOS, AVISOS CHEGADA, AVISOS PRESENÇA ou AVISOS NENHUM."));
         } else {
@@ -254,6 +262,7 @@ final class WaPassengerTexts {
     }
 
     private static String points(ObjectNode draft) {
+        if (draft.path("routePoints").asBoolean()) return WaPassengerPoints.prompt(draft);
         StringBuilder text =
                 new StringBuilder(
                         "Envie um pin estático do ponto onde a van deve buscar você. No celular,"

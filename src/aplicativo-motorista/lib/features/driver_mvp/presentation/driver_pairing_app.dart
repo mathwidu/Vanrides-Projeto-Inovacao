@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import '../data/driver_session_links.dart';
 import '../data/driver_session_platform.dart';
 import '../data/driver_tracking_platform.dart';
+import '../data/driver_finish_platform.dart';
+import 'driver_finish_panel.dart';
 import 'driver_collection_panel.dart';
 import 'driver_pairing_controller.dart';
 
@@ -13,11 +15,13 @@ class DriverPairingApp extends StatelessWidget {
     this.session = const NativeDriverSessionPlatform(),
     this.tracking = const NativeDriverTrackingPlatform(),
     this.links,
+    this.finishing = const NativeDriverFinishPlatform(),
     super.key,
   });
   final DriverSessionPlatform session;
   final DriverTrackingPlatform tracking;
   final DriverSessionLinks? links;
+  final DriverFinishPlatform finishing;
 
   @override
   Widget build(BuildContext context) => MaterialApp(
@@ -27,7 +31,12 @@ class DriverPairingApp extends StatelessWidget {
       useMaterial3: true,
       colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF176B52)),
     ),
-    home: _PairingPage(session: session, tracking: tracking, links: links),
+    home: _PairingPage(
+      session: session,
+      tracking: tracking,
+      links: links,
+      finishing: finishing,
+    ),
   );
 }
 
@@ -36,10 +45,12 @@ class _PairingPage extends StatefulWidget {
     required this.session,
     required this.tracking,
     required this.links,
+    required this.finishing,
   });
   final DriverSessionPlatform session;
   final DriverTrackingPlatform tracking;
   final DriverSessionLinks? links;
+  final DriverFinishPlatform finishing;
 
   @override
   State<_PairingPage> createState() => _PairingPageState();
@@ -57,7 +68,24 @@ class _PairingPageState extends State<_PairingPage>
       widget.links ?? DeviceSessionLinks(),
     );
     WidgetsBinding.instance.addObserver(this);
-    unawaited(controller.initialize());
+    unawaited(_initialize());
+  }
+
+  Future<void> _initialize() async {
+    await controller.initialize();
+    if (!mounted ||
+        controller.runIntent != null ||
+        controller.finishIntent != null) {
+      return;
+    }
+    try {
+      final pending = await widget.finishing.pendingFinish();
+      if (mounted && pending != null) {
+        controller.restoreFinish(pending.intentId, pending.version);
+      }
+    } catch (_) {
+      /* The collector and its local stop remain independently available. */
+    }
   }
 
   @override
@@ -241,7 +269,14 @@ class _PairingPageState extends State<_PairingPage>
                 child: const Text('Desvincular este celular'),
               ),
             const SizedBox(height: 16),
+            if (controller.finishIntent != null)
+              DriverFinishPanel(
+                intent: controller.finishIntent!,
+                platform: widget.finishing,
+                onFinished: controller.runFinished,
+              ),
             DriverCollectionPanel(
+              key: ValueKey(controller.collectionRevision),
               platform: widget.tracking,
               paired: paired,
               intent: controller.runIntent,

@@ -10,15 +10,17 @@ const response = (data, status = 200) => ({ ok: status >= 200 && status < 300, s
 const flush = () => new Promise(resolve => setImmediate(resolve));
 async function page(handler, { auth = response(session), bot = () => response({}) } = {}) {
   const nodes = new Map(), calls = [], clipboard = [];
+  const element = tag => ({ tagName: tag, children: [], value: '', checked: false, hidden: true, disabled: false, textContent: '', attributes: {},
+    classList: { toggle() {} }, events: {}, addEventListener(event, fn) { this.events[event] = fn; },
+    append(...children) { this.children.push(...children); }, replaceChildren(...children) { this.children = children; },
+    setAttribute(name, value) { this.attributes[name] = value; }, removeAttribute(name) { delete this.attributes[name]; } });
   const node = id => {
-    if (!nodes.has(id)) nodes.set(id, { value: '', checked: false, hidden: true, disabled: false, textContent: '', attributes: {},
-      classList: { toggle() {} }, events: {}, addEventListener(event, fn) { this.events[event] = fn; },
-      setAttribute(name, value) { this.attributes[name] = value; }, removeAttribute(name) { delete this.attributes[name]; } });
+    if (!nodes.has(id)) nodes.set(id, element('div'));
     return nodes.get(id);
   };
   node('role').value = 'driver'; node('phone').value = '+15550000001'; node('consent').checked = true;
   node('bot-fallback').hidden = false;
-  runInNewContext(source, { document: { getElementById: node }, URLSearchParams, crypto: { randomUUID },
+  runInNewContext(source, { document: { getElementById: node, createElement: element }, URLSearchParams, crypto: { randomUUID },
     window: { location: { search: '' }, confirm: () => true }, navigator: { clipboard: { writeText: async text => clipboard.push(text) } },
     fetch: async (url, options) => {
       calls.push({ url, options });
@@ -31,6 +33,47 @@ async function page(handler, { auth = response(session), bot = () => response({}
 }
 const result = (id, extras = {}) => ({ admissionStatus: 'ADMITTED', inviteStatus: 'ACTIVE', operationId: id,
   inviteId: 'synthetic-invite', driverInviteCode: 'a'.repeat(43), expiresAt: '2026-11-10T12:00:00Z', ...extras });
+
+test('separate pickup cards send only the selected reference and keep technical IDs out of the copy', async () => {
+  const linkId = randomUUID(), first = randomUUID(), second = randomUUID();
+  const links = [{ linkId, passengerName: 'Pessoa sintética', state: 'APPROVED', pointPending: true,
+    routines: 'Faculdade: ida e volta', pickupOptions: [
+      { pickupId: first, routines: 'Faculdade · ida às 07:30 · segunda e quarta' },
+      { pickupId: second, routines: 'Faculdade · volta às 18:00 · terça e quinta' },
+    ] }];
+  const ui = await page(async (url, options) => url.endsWith('/test-driver/status') ? response({ links })
+    : response({ operationId: JSON.parse(options.body).operationId, linkState: 'APPROVED' }));
+  await ui.node('test-refresh').events.click(); await flush();
+  const visit = node => [node, ...node.children.flatMap(visit)];
+  const displayed = visit(ui.node('test-links'));
+  const text = displayed.map(node => node.textContent).join('\n');
+  assert.match(text, /Ponto 1 — Faculdade · ida.*segunda e quarta/);
+  assert.match(text, /Ponto 2 — Faculdade · volta.*terça e quinta/);
+  for (const technical of [linkId, first, second, 'pickupId', 'latitude', 'longitude']) assert.equal(text.includes(technical), false);
+  const approve = displayed.filter(node => node.tagName === 'button' && node.textContent === 'Aprovar novo ponto');
+  assert.equal(approve.length, 2);
+  approve[0].events.click(); await flush();
+  approve[1].events.click(); await flush();
+  const requests = ui.calls.filter(call => call.url.endsWith('/test-driver'));
+  assert.equal(requests.length, 2);
+  assert.deepEqual(requests.map(call => JSON.parse(call.options.body).pickupId), [first, second]);
+  assert.equal(JSON.parse(requests[0].options.body).linkId, linkId);
+  assert.notEqual(JSON.parse(requests[0].options.body).operationId, JSON.parse(requests[1].options.body).operationId);
+  for (const request of requests) assert.equal(request.options.headers['X-CSRF-Token'], session.csrfToken);
+});
+
+test('an ambiguous legacy pickup request asks for the exact trip without changing the action', async () => {
+  const linkId = randomUUID();
+  const ui = await page(async url => url.endsWith('/test-driver/status')
+    ? response({ links: [{ linkId, passengerName: 'Pessoa sintética', state: 'APPROVED', pointPending: true, routines: 'Dois trajetos' }] })
+    : response({ code: 'POINT_SELECTION_REQUIRED' }, 409));
+  await ui.node('test-refresh').events.click(); await flush();
+  const item = ui.node('test-links').children[0];
+  const actions = item.children.at(-1);
+  actions.children[0].events.click(); await flush();
+  assert.match(ui.node('message').textContent, /Escolha o trajeto e o ponto/);
+  assert.equal(JSON.parse(ui.calls.find(call => call.url.endsWith('/test-driver')).options.body).pickupId, undefined);
+});
 
 test('lost response retries the same operation, with CSRF and no redirect', async () => {
   let count = 0;

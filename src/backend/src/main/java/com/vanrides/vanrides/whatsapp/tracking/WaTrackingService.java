@@ -83,6 +83,7 @@ public class WaTrackingService {
         if(!settings.newStartsEnabled()) throw WaProblem.denied();
         Intent intent=store.intent(id,actor.driverId());
         if(intent==null || !actor.deviceId().equals(intent.device()) || !WaCrypto.same(intent.hash(),WaCrypto.digest(token))
+                || !Set.of("START","RESUME").contains(intent.action())
                 || requestedRun!=null && (!requestedRun.equals(intent.run()) || !"RESUME".equals(intent.action()))) throw WaProblem.missing();
         if(!intent.expiry().isAfter(clock.now())) throw new WaProblem(WaProblem.Code.INTENT_EXPIRED);
         if(intent.version()!=WaJson.version(body)) throw new WaProblem(WaProblem.Code.VERSION_CONFLICT);

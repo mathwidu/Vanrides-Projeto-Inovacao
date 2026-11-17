@@ -307,6 +307,7 @@ class WaPassengerWizardIntegrationTest {
         fixture.send(passenger, "1,3,5");
         fixture.send(passenger, "terça e quinta");
         fixture.pin(passenger);
+        fixture.pin(passenger);
         var review = fixture.send(passenger, "PULAR");
         assertTrue(review.text().contains("→ Ida às 06:00\nDias: segunda, quarta e sexta"), review.text());
         assertTrue(review.text().contains("← Volta às 06:00\nDias: terça e quinta"), review.text());

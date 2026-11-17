@@ -117,7 +117,7 @@ public final class WaOperatorReset {
             DELETE FROM wa.operation_replay WHERE
                 (operation_kind='PAIR_REDEEM' AND scope_id IN (SELECT id FROM wa.pairing_challenge WHERE driver_id IN
             """ + people + ")) OR (operation_kind='REFRESH' AND scope_id IN (SELECT id FROM wa.device_token WHERE device_id IN "
-                + devices + ")) OR (operation_kind IN ('SESSION_REVOKE','TRACK_ACTIVATE','TRACK_RESUME','TRACK_STATE') AND scope_id IN " + devices + ")", batch, batch, batch);
+                + devices + ")) OR (operation_kind IN ('SESSION_REVOKE','TRACK_ACTIVATE','TRACK_RESUME','TRACK_STATE','TRACK_FINISH') AND scope_id IN " + devices + ")", batch, batch, batch);
         jdbc.update("DELETE FROM wa.pairing_challenge WHERE driver_id IN " + people, batch);
         jdbc.update("DELETE FROM wa.device_token WHERE device_id IN " + devices, batch);
         jdbc.update("DELETE FROM wa.driver_device WHERE driver_id IN " + people, batch);

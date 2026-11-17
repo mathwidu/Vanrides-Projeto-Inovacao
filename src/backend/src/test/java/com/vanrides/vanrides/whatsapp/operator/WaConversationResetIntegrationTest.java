@@ -36,10 +36,16 @@ class WaConversationResetIntegrationTest {
             jdbc.update("INSERT INTO wa.conversation_state(identity_id,stage,last_event_id,context_json) VALUES (?,'PAUSED',?,?::jsonb)", actor, event,
                 WaJson.MAPPER.createObjectNode().put("supportCaseId", support.toString()).put("sourceInboxEventId", event.toString()).toString());
         }
+        UUID device=UUID.randomUUID(),finishReplay=UUID.randomUUID();
+        jdbc.update("INSERT INTO wa.profile(identity_id,role,status,display_name) VALUES (?,'DRIVER','ONBOARDING','Synthetic reset driver')",own);
+        jdbc.update("INSERT INTO wa.driver_authorization(driver_id,generation) VALUES (?,1)",own);
+        jdbc.update("INSERT INTO wa.driver_device(id,driver_id,jkt,public_jwk,generation,environment,platform,app_version) VALUES (?,?,repeat('A',43),'{}',1,'conversation-reset-test','ANDROID','synthetic-reset')",device,own);
+        jdbc.update("INSERT INTO wa.operation_replay(id,operation_kind,scope_id,request_key,request_hash,response_ciphertext,expires_at) VALUES (?,'TRACK_FINISH',?,'synthetic-reset-finish',repeat('0',64),decode(repeat('00',29),'hex'),TIMESTAMPTZ '2030-01-02T00:00:00Z')",finishReplay,device);
         var reset = new WaOperatorReset(jdbc);
         new TransactionTemplate(new DataSourceTransactionManager(source)).executeWithoutResult(status ->
             reset.reset(new WaOperatorService.Actor(UUID.randomUUID(), ownBatch, "conversation-reset-test", Instant.parse("2030-01-01T12:00:00Z"))));
         assertThat(jdbc.queryForObject("SELECT count(*) FROM wa.identity WHERE id=?", Long.class, own)).isZero();
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM wa.operation_replay WHERE id=?",Long.class,finishReplay)).isZero();
         assertThat(jdbc.queryForObject("SELECT count(*) FROM wa.conversation_state WHERE identity_id=?", Long.class, own)).isZero();
         assertThat(jdbc.queryForObject("SELECT count(*) FROM wa.support_case WHERE identity_id=?", Long.class, own)).isZero();
         assertThat(jdbc.queryForObject("SELECT count(*) FROM wa.support_case WHERE identity_id=? AND state='OPEN'", Long.class, other)).isEqualTo(1);

@@ -1,5 +1,6 @@
 #if VANRIDES_DRIVER_MVP || DRIVER_SESSION_STANDALONE_TESTS
 import Foundation
+import CoreFoundation
 import CryptoKit
 
 enum DriverSessionFailure: String, Error {
@@ -503,11 +504,22 @@ actor DriverSessionController {
   // Called by the native collector, never exposes credentials to Flutter.
   func trackingRequest(path: String, body: Data?, idempotency: String?) async throws -> Data {
     guard !busy else { throw DriverSessionFailure.busy }
+    if path.range(of: "^/driver-app/v1/finish-intents/[0-9a-f-]{36}/receipt$", options: .regularExpression) != nil {
+      guard configuration != nil, record != nil, let body = body, idempotency == nil,
+        let value = try JSONSerialization.jsonObject(with: body) as? [String: Any] else { throw DriverSessionFailure.invalidArguments }
+      guard Set(value.keys) == ["intentToken","expectedVersion"],
+        let token = value["intentToken"] as? String, DriverSessionCodec.canonicalToken(token),
+        let version = value["expectedVersion"] as? NSNumber, CFGetTypeID(version) != CFBooleanGetTypeID(),
+        !String(cString: version.objCType).contains("f"), !String(cString: version.objCType).contains("d"),
+        version.doubleValue >= 0, version.doubleValue <= 9_007_199_254_740_991 else { throw DriverSessionFailure.invalidArguments }
+      busy = true; defer { busy = false }
+      return try await request(path,body: body,access: nil)
+    }
     guard configuration != nil, record?.tokens != nil,
       record?.revocationRequested != true,
       !["REVOKING", "REVOKED", "EXPIRED"].contains(record?.state ?? "") else { throw DriverSessionFailure.unavailable }
     guard path == "/driver-app/v1/tracking-status" ||
-      path.range(of: "^/driver-app/v1/(start-intents/[0-9a-f-]{36}/activate|tracking-sessions/[0-9a-f-]{36}/(state|samples))$", options: .regularExpression) != nil else { throw DriverSessionFailure.invalidArguments }
+      path.range(of: "^/driver-app/v1/(start-intents/[0-9a-f-]{36}/activate|finish-intents/[0-9a-f-]{36}/preview|runs/[0-9a-f-]{36}/finish|tracking-sessions/[0-9a-f-]{36}/(state|samples))$", options: .regularExpression) != nil else { throw DriverSessionFailure.invalidArguments }
     busy = true
     defer { busy = false }
     if record?.journal != nil {

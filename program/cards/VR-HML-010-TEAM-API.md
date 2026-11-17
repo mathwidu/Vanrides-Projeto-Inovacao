@@ -1,5 +1,9 @@
 # VR-HML-010-TEAM-API — Homologação técnica da API para o grupo
 
+O incremento local de 17/11 inclui o contrato `contracts/whatsapp-team-web.md`:
+a seleção de ponto por trajeto altera a interface de teste da equipe, além do
+contrato driver. O escopo foi incluído no programa; não há ampliação de acesso.
+
 ## Resultado esperado
 
 Todos os integrantes podem usar a API implementada do MVP no mesmo endereço HTTPS, inclusive rotas de atendimento e do app do motorista. Issues existentes: [#89](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/89) e [#90](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/90).
@@ -376,3 +380,24 @@ O mantenedor aceitou o botão intermediário no iPhone em 17/11. Registrar quatr
 ações como meta provisória nesse aparelho, sem compra; manter três no Android
 como alvo a provar. A escolha remove a espera por decisão de distribuição para
 o fluxo provisório, sem comprovar abertura/handoff real.
+
+### Embarque por trajeto e encerramento no aplicativo — 17/11/2026
+
+Pedido do mantenedor autoriza implementar as partes seguintes e preparar a
+validação completa. Impacto: V45 para propostas de embarque por seleção e
+entrada autorizada pelo convite; V46 para intenção de finalização vinculada a
+viagem/sessão/aparelho/versão; endpoints, links, consumidores Android/iOS e
+recuperação persistida. Um único card vertical continua ativo.
+
+V45 preserva proposta pendente e ponto aprovado anterior; escopo de alterações
+é o trajeto escolhido, mantendo snapshots materializados. Não prometer rollback
+somente do binário antigo depois de usar múltiplos pontos: aquele binário ainda
+presume ponto global. V46 preserva parada local imediata, mesmo offline;
+finalização remota e ACK têm recibo próprio correlacionado. Novos inícios e
+finalização têm propósitos distintos; abrir link/preview não coleta nem encerra.
+
+Revisão independente definiu baseline para sessão já parada e exceção estrita
+para STOP próprio que incrementa a versão uma vez. Nenhuma troca genérica pela
+versão atual. Recebimento de chave/prova não substitui confirmação nativa.
+Preparação local, sem publicação/VPS/aparelhos nesta etapa. Gate proporcional,
+upgrade com dados sintéticos e roteiro estacionado precedem nova rodada física.

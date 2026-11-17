@@ -13,11 +13,16 @@ final class WaPassengerReview {
     }
 
     void enrich(WaProfileState actor, WaInboxAccess.Context event, ObjectNode draft) {
+        if (draft.path("routePoints").asBoolean()) {
+            new WaPassengerPoints(data).enrich(actor, event, draft);
+            return;
+        }
         ObjectNode pin = null;
         if (draft.has("linkId") && !draft.path("addingRoutines").asBoolean()) {
             draft.put(
                     "selectionSummary",
-                    data.selectionSummary(UUID.fromString(draft.path("linkId").asText())));
+                    draft.has("pickupId") ? new WaPassengerReviewStore(data).summary(UUID.fromString(draft.path("linkId").asText()),
+                            UUID.fromString(draft.path("pickupId").asText())) : data.selectionSummary(UUID.fromString(draft.path("linkId").asText())));
         }
         if (draft.has("sourceEvent")) {
             pin = data.pin(actor.identityId(), draft.path("sourceEvent").asText(), event.eventId());
@@ -33,10 +38,6 @@ final class WaPassengerReview {
                 }
                 if (pin.hasNonNull("label") && !draft.has("reusePickupId")) {
                     draft.put("pointLabel", pin.path("label").asText());
-                }
-                if (draft.has("pickupId") && WaPassengerValidation.samePoint(pin,
-                        data.currentPoint(UUID.fromString(draft.path("linkId").asText())))) {
-                    draft.put("keepingPoint", true);
                 }
             } else {
                 if (draft.has("commonId")) {

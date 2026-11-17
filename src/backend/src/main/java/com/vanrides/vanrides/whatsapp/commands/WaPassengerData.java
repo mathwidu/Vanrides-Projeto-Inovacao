@@ -119,14 +119,6 @@ final class WaPassengerData {
                 """, driver, link);
     }
 
-    ObjectNode currentPoint(UUID link) {
-        ArrayNode points = array("""
-                SELECT to_jsonb(p)::text FROM wa.pickup_point p WHERE link_id=? AND state IN ('APPROVED','PROPOSED')
-                AND valid_until IS NULL ORDER BY CASE state WHEN 'APPROVED' THEN 0 ELSE 1 END,created_at DESC,id LIMIT 1
-                """, link);
-        return points.isEmpty() ? null : (ObjectNode) points.get(0);
-    }
-
     ArrayNode commons(UUID driver) {
         return array(
                 "SELECT to_jsonb(p)::text FROM wa.common_pickup_point p WHERE driver_id=? AND"
@@ -138,7 +130,9 @@ final class WaPassengerData {
         return array(
                 """
                 SELECT (to_jsonb(l)||jsonb_build_object('passengerName',p.display_name,'driverName',d.display_name,
-                'pickupId',(SELECT id FROM wa.pickup_point x WHERE x.link_id=l.id AND x.state='PROPOSED' ORDER BY x.created_at DESC,x.id LIMIT 1)))::text
+                'pickupId',(SELECT id FROM wa.pickup_point x WHERE x.link_id=l.id AND x.state='PROPOSED'
+                    AND EXISTS(SELECT 1 FROM wa.passenger_link_routine s WHERE s.link_id=l.id AND s.pickup_point_id=x.id)
+                    ORDER BY x.created_at DESC,x.id LIMIT 1)))::text
                 FROM wa.driver_passenger_link l JOIN wa.profile p ON p.identity_id=l.passenger_id
                 JOIN wa.profile d ON d.identity_id=l.driver_id WHERE
                 """
@@ -234,6 +228,14 @@ final class WaPassengerData {
             routineRows.add(rows.get(0));
         }
         result.set("selectedRoutines", routineRows);
+        if (draft.path("routePoints").asBoolean()) {
+            ArrayNode pins = WaDriverDraftStore.options();
+            for (var selected : draft.path("selections")) {
+                if (!selected.path("pickup").isObject()) throw WaProblem.denied();
+                pins.add(new WaPassengerPoints(this).pin(actor, event, draft, (ObjectNode)selected.path("pickup")));
+            }
+            result.set("selectedPickups", pins);
+        }
         if (draft.has("linkId")) {
             result.set(
                     "selections",
@@ -291,7 +293,8 @@ final class WaPassengerData {
                 array(
                         """
                         SELECT jsonb_build_object('name',r.name,'direction',r.direction,'time',r.local_time::text,'days',s.weekdays,
-                        'pending',NOT EXISTS(SELECT 1 FROM wa.routine_member m WHERE m.link_id=s.link_id AND m.routine_id=s.routine_id AND m.state='ACTIVE'))::text
+                        'pending',NOT EXISTS(SELECT 1 FROM wa.routine_member m WHERE m.link_id=s.link_id AND m.routine_id=s.routine_id AND m.state='ACTIVE'
+                            AND m.pickup_point_id=s.pickup_point_id AND m.weekdays=s.weekdays))::text
                         FROM wa.passenger_link_routine s JOIN wa.routine r ON r.id=s.routine_id WHERE s.link_id=? ORDER BY r.created_at,r.id
                         """,
                         link)) {

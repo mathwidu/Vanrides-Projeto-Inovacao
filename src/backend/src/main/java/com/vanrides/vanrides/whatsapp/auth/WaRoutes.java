@@ -32,7 +32,9 @@ public final class WaRoutes {
         app("GET", "/tracking-status", Mode.DEVICE, true, true),
         app("POST", "/start-intents/" + UUID + "/activate", Mode.DEVICE, true, false),
         app("POST", "/runs/" + UUID + "/resume", Mode.DEVICE, true, false),
-        app("POST", "/runs/" + UUID + "/finish", Mode.DEVICE, false, true),
+        app("POST", "/runs/" + UUID + "/finish", Mode.DEVICE, true, true),
+        app("POST", "/finish-intents/" + UUID + "/preview", Mode.DEVICE, true, true),
+        app("POST", "/finish-intents/" + UUID + "/receipt", Mode.PROOF, true, true),
         app("POST", "/tracking-sessions/" + UUID + "/samples", Mode.DEVICE, true, false),
         app("POST", "/tracking-sessions/" + UUID + "/state", Mode.DEVICE, true, true),
         app("POST", "/tracking-sessions/" + UUID + "/stop-receipt", Mode.PROOF, true, true)

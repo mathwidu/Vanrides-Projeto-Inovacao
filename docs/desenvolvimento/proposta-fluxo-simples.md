@@ -21,12 +21,22 @@ com tecnologia.
   ainda exige uma segunda mensagem e não atende à meta de uma interação.
 - **Cadastro existente:** um convite do mesmo motorista permite adicionar outro
   trajeto sem encerrar o vínculo. A pessoa pode responder “MESMO PONTO”. Nome,
-  preferências e trajetos anteriores são preservados; novas participações
-  continuam passando pela aprovação e preparação da ordem pelo motorista.
+  preferências e trajetos anteriores são preservados. O convite autoriza a
+  pessoa; o motorista confere apenas o ponto novo e a ordem de embarque.
   Mudar para outro motorista continua fora deste incremento.
 - **Orientações:** AJUDA, lembrete da saída e botão do app usam a mesma linguagem:
   “Começar viagem” e “Começar e compartilhar localização”. As mensagens de
   recuperação também levam de volta à entrada curta.
+- **Pontos por trajeto:** ida e volta podem ter embarques distintos. Uma correção
+  altera somente a seleção daquele trajeto; o ponto já aprovado continua valendo
+  até a aprovação do novo. Viagens em andamento mantêm seu retrato original.
+  Reutilizar um ponto aprovado exige escolha explícita.
+- **Finalização:** “Quero finalizar a viagem” entrega um link próprio. O app
+  permite desligar o GPS imediatamente e confirmar o encerramento remoto. Só
+  retorna ao WhatsApp depois da confirmação da parada daquela operação. Sem
+  rede, mantém a localização desligada e a finalização pendente para tentativa
+  explícita; não anuncia conclusão remota antes da confirmação. Implementação
+  local, ainda sem prova no WhatsApp/aparelho real.
 - **Apresentação:** catálogo do motorista e seleção/resumo do passageiro usam
   blocos com nome, seta, ida/volta, horário e dias disponíveis. As setas não
   inventam origem nem trocam pontos de embarque.
@@ -72,7 +82,7 @@ Qualquer consulta de saída pendente permanece autenticada e não pode iniciar G
 - Nenhum código para copiar, identificador técnico ou comando em maiúsculas será
   requisito da jornada nova. As referências de segurança continuam internas.
 
-O caminho atual exige três mensagens (`INICIAR SAÍDA`, número da saída e
+A versão publicada usada como referência exigia três mensagens (`INICIAR SAÍDA`, número da saída e
 `CONFIRMAR` com oito letras), mais abrir o link e tocar em iniciar: pelo menos
 cinco ações, fora do preparo e das permissões.
 
@@ -220,11 +230,12 @@ de convidar um contato novo apenas informando o número. É preciso redesenhar
 a obtenção/registro da autorização e a admissão antes de oferecer esse caminho
 como pronto; não adicionar uma sequência pública de códigos nem fingir envio.
 
-Hoje há um ponto aprovado global por passageiro, embora a participação tenha
-referência de ponto por trajeto. Permitir embarques diferentes na ida e na volta
-exige rever essa restrição no banco e o escopo da proposta/aprovação. Corrigir
-um ponto de uma rota não pode alterar silenciosamente as demais nem o snapshot
-de uma viagem já iniciada. Reusar o ponto antigo só mediante escolha explícita.
+A restrição anterior de um único ponto aprovado foi substituída localmente por
+seleções por trajeto na migração V45. Propostas novas são independentes; corrigir
+uma delas não muda os outros embarques nem o retrato de uma viagem já iniciada.
+O convite elimina a segunda aprovação da pessoa, mas não libera um ponto ainda
+não conferido para embarque. Reusar um ponto aprovado exige escolha explícita.
+Essa mudança ainda depende de publicação identificada e prova no canal real.
 
 O usuário não deve precisar conhecer GitHub, o painel da equipe ou a configuração
 de testes. Controles do piloto permanecem na operação interna.
@@ -237,10 +248,11 @@ de testes. Controles do piloto permanecem na operação interna.
    coisas. Depois da parada e confirmação da operação atual, o app abre a
    conversa do bot. O bot confirma a viagem concluída e a localização desligada.
 
-É o fluxo de produto escolhido pelo mantenedor, ainda não implementado. O botão
-atual “Parar localização” só interrompe o sensor; não conclui a viagem. Hoje
-`FINALIZAR` abre uma revisão com código e pode solicitar parada remota. Esse
-caminho antigo não deve ser apresentado como se fosse a experiência acima.
+Esse fluxo foi implementado localmente com contrato próprio (V46), separado de
+início e retomada. Ainda depende de build/publicação e prova estacionada no
+WhatsApp. O botão “Parar localização” continua disponível e só interrompe o
+sensor; não conclui a viagem. `FINALIZAR` mantém a revisão legada com código
+como contingência; a entrada nova é “Quero finalizar a viagem”.
 
 O novo link prepara a operação, não encerra ao ser aberto. A autorização de
 finalização deve ser distinta da de início, ligada à viagem, sessão, aparelho,
@@ -249,7 +261,9 @@ gera efeito duplicado. O retorno externo nunca carrega o segredo desse link.
 
 Sem internet, parar o sensor localmente continua disponível. Manter o recibo
 pendente, mostrar “Localização desligada. Falta confirmar a finalização” e
-reconciliar ao reconectar, sem anunciar sucesso remoto nem iniciar outra coleta.
+oferecer uma tentativa explícita quando a conexão voltar, sem anunciar sucesso
+remoto nem iniciar outra coleta. A primeira versão não promete envio automático
+da finalização pendente em segundo plano.
 Não usar um estado antigo de parada como prova da ação atual. Se o motorista
 sair da tela, não abrir o WhatsApp depois por causa de uma resposta atrasada.
 
@@ -331,9 +345,10 @@ cotidiano preparado (quatro no iPhone, pela exceção provisória aceita).
 Cadastro inicial e recuperação têm contagem própria.
 
 As partes implementadas localmente estão separadas no início desta proposta e
-nas evidências; os contratos novos descritos aqui continuam por implementar.
-Não há publicação, migração, mudança de CI ou operação nos aparelhos nesta
-revisão. A versão publicada não recebe essas mudanças automaticamente.
+nas evidências. Pontos por trajeto e finalização já têm código e migrações
+versionadas; conexão sem códigos e opções de início com links independentes
+continuam pendentes. Não há publicação, migração remota, mudança de CI ou
+operação nos aparelhos nesta revisão. A versão publicada não recebe essas mudanças automaticamente.
 Antes de outro ensaio, conferir a pausa da rotina temporária da tentativa
 interrompida: ela não ficou confirmada na automação. Não usar essa pendência
 como motivo para retomar testes nos aparelhos agora.

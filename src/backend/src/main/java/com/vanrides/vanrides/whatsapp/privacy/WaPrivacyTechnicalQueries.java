@@ -17,7 +17,7 @@ final class WaPrivacyTechnicalQueries {
             WHERE p.environment=scope.environment AND p.driver_id IS NOT NULL),
         replay_owner AS (
           SELECT r.id,d.driver_id FROM wa.operation_replay r JOIN wa.driver_device d ON d.id=r.scope_id CROSS JOIN scope
-            WHERE d.environment=scope.environment AND r.operation_kind IN ('SESSION_REVOKE','TRACK_ACTIVATE','TRACK_RESUME','TRACK_STATE')
+            WHERE d.environment=scope.environment AND r.operation_kind IN ('SESSION_REVOKE','TRACK_ACTIVATE','TRACK_RESUME','TRACK_STATE','TRACK_FINISH')
           UNION SELECT r.id,d.driver_id FROM wa.operation_replay r JOIN wa.device_token t ON t.id=r.scope_id
             JOIN wa.driver_device d ON d.id=t.device_id CROSS JOIN scope WHERE r.operation_kind='REFRESH' AND d.environment=scope.environment
           UNION SELECT r.id,p.driver_id FROM wa.operation_replay r JOIN wa.pairing_challenge p ON p.id=r.scope_id CROSS JOIN scope

@@ -18,6 +18,21 @@ final class DriverTrackingBridge: NSObject, FlutterPlugin {
       }
     }
     switch call.method {
+    case "getPendingFinish":
+      guard call.arguments == nil || call.arguments is NSNull else { reply(.failure(.invalidArguments)); return }
+      result(coordinator.pendingFinish())
+    case "previewPendingFinish", "retryFinish":
+      guard let args = call.arguments as? [String: Any] else { reply(.failure(.invalidArguments)); return }
+      coordinator.retryFinish(args,previewOnly: call.method == "previewPendingFinish",completion: reply)
+    case "previewFinish", "finishRun":
+      guard let args = call.arguments as? [String: Any],
+        (try? DriverFinishContract.authorization(args)) != nil,
+        let id = args["intentId"] as? String, let token = args["intentToken"] as? String,
+        let version = try? DriverTrackingContract.integer(args["expectedVersion"]),
+        DriverRunEntry.finishAuthorization?.matches(id: id,version: version,token: token) == true
+      else { reply(.failure(.invalidArguments)); return }
+      if call.method == "previewFinish" { coordinator.previewFinish(args,completion: reply) }
+      else { coordinator.finishRun(args,completion: reply) }
     case "configureCredential":
       #if VANRIDES_GPS_SPIKE
       guard let args = call.arguments as? [String: Any], Set(args.keys) == ["kind", "baseUrl", "token"],

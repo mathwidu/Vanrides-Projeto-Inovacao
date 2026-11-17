@@ -1386,13 +1386,13 @@
     "/driver-app/v1/runs/{id}/finish": {
       "post": {
         "operationId": "finishRun",
-        "summary": "Finalizar run próprio e solicitar parada separada",
-        "description": "Contrato futuro140. Mesma regra de FINISH_RUN humano; flags bloqueiam novos efeitos sem bloquear fim autenticado. Resultado terminal nunca afirma parada física antes do ACK.",
+        "summary": "Finalizar a viagem explicitamente pelo aplicativo",
+        "description": "DEVICE + DPoP + confirmação foreground + chave idempotente. Desligar provider local imediatamente; aguardar este resultado antes de enviar STOP normal. Em falha liberar cleanup e manter journal de FINISH. Só tolerar incremento único de versão causado por STOP da mesma sessão atual com transição exata TRACKING→DEGRADED ou STARTING→START_FAILED e ACK posterior à emissão. Consumo durável vinculado não altera viagem posterior. Control retorna STOP; stopAcknowledged=false exige ACK antes de anunciar conclusão completa.",
         "tags": [
           "Driver app"
         ],
-        "x-vanrides-implementation-card": "VR-WA-140-FINISH-SUPPORT",
-        "x-vanrides-availability": "FUTURE",
+        "x-vanrides-implementation-card": "VR-HML-010-TEAM-API",
+        "x-vanrides-availability": "MVP_FINISH_INTENT",
         "x-vanrides-principals": [
           "DEVICE"
         ],
@@ -1405,16 +1405,11 @@
         ],
         "responses": {
           "200": {
-            "description": "Resultado do contrato; disponível somente no card de implementação indicado.",
+            "description": "Resultado da operação atual; stopAcknowledged só afirma o ACK da sessão vinculada.",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/RunControlResponse"
-                },
-                "examples": {
-                  "RunControl": {
-                    "$ref": "#/components/examples/RunControl"
-                  }
+                  "$ref": "#/components/schemas/FinishIntentConfirmed"
                 }
               }
             }
@@ -1434,12 +1429,6 @@
           "409": {
             "$ref": "#/components/responses/Error409"
           },
-          "410": {
-            "$ref": "#/components/responses/Error410"
-          },
-          "422": {
-            "$ref": "#/components/responses/Error422"
-          },
           "429": {
             "$ref": "#/components/responses/Error429"
           },
@@ -1452,10 +1441,10 @@
             "$ref": "#/components/parameters/IdPath"
           },
           {
-            "$ref": "#/components/parameters/IdempotencyKey"
+            "$ref": "#/components/parameters/DPoP"
           },
           {
-            "$ref": "#/components/parameters/DPoP"
+            "$ref": "#/components/parameters/IdempotencyKey"
           }
         ],
         "requestBody": {
@@ -1463,12 +1452,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/FinishRunRequest"
-              },
-              "examples": {
-                "FinishRunDeviceRequest": {
-                  "$ref": "#/components/examples/FinishRunDeviceRequest"
-                }
+                "$ref": "#/components/schemas/FinishIntentConfirmRequest"
               }
             }
           }
@@ -2161,6 +2145,151 @@
                 "TrackingStopReceipt": {
                   "$ref": "#/components/examples/TrackingStopReceipt"
                 }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/driver-app/v1/finish-intents/{id}/preview": {
+      "post": {
+        "operationId": "previewFinishIntent",
+        "summary": "Conferir viagem antes da confirmação no aplicativo",
+        "description": "DEVICE + DPoP; consulta não reconcilia nem altera viagem, sensor ou credencial. Intenção FINISH, aparelho, ambiente, sessão/geração, prazo e versão exatos. Consumo já persistido pode ser relido; não reviver intenção pendente vencida.",
+        "tags": [
+          "Driver app"
+        ],
+        "x-vanrides-implementation-card": "VR-HML-010-TEAM-API",
+        "x-vanrides-availability": "MVP_FINISH_INTENT",
+        "x-vanrides-principals": [
+          "DEVICE"
+        ],
+        "x-vanrides-allowed-origins": [],
+        "security": [
+          {
+            "DeviceSession": [],
+            "DPoPProof": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resultado da operação atual; stopAcknowledged só afirma o ACK da sessão vinculada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FinishIntentPreview"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdPath"
+          },
+          {
+            "$ref": "#/components/parameters/DPoP"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FinishIntentReadRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/driver-app/v1/finish-intents/{id}/receipt": {
+      "post": {
+        "operationId": "readFinishIntentReceipt",
+        "summary": "Recuperar finalização e ACK correlacionados usando a chave do aparelho",
+        "description": "Somente DPoP, sem bearer ou renovação. Confere chave/aparelho/ambiente/coorte e retenção do perfil. Token/hash e versão vinculados; prazo vencido é aceito apenas para ler consumo já persistido. Não reconcilia nem toca viagem nova. A parada deve ser da sessão/geração/referência exatas; baseline previamente parado não inventa ACK novo.",
+        "tags": [
+          "Driver app"
+        ],
+        "x-vanrides-implementation-card": "VR-HML-010-TEAM-API",
+        "x-vanrides-availability": "MVP_FINISH_INTENT",
+        "x-vanrides-principals": [
+          "DEVICE"
+        ],
+        "x-vanrides-allowed-origins": [],
+        "security": [
+          {
+            "DPoPProof": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resultado da operação atual; stopAcknowledged só afirma o ACK da sessão vinculada.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FinishIntentReceipt"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Error400"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/Error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/Error404"
+          },
+          "409": {
+            "$ref": "#/components/responses/Error409"
+          },
+          "429": {
+            "$ref": "#/components/responses/Error429"
+          },
+          "503": {
+            "$ref": "#/components/responses/Error503"
+          }
+        },
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdPath"
+          },
+          {
+            "$ref": "#/components/parameters/DPoP"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FinishIntentReadRequest"
               }
             }
           }
@@ -4877,7 +5006,8 @@
           "expectedVersion",
           "reason"
         ],
-        "description": "Bloqueia autorização/avisos imediatamente; stop ACK do aparelho é separado. Não confundir fim de run com confirmação física do sensor."
+        "description": "Payload histórico reservado; a operação implementada usa FinishIntentConfirmRequest.",
+        "deprecated": true
       },
       "RunControlResponse": {
         "type": "object",
@@ -6100,6 +6230,225 @@
           "serverTime",
           "runState"
         ]
+      },
+      "FinishIntentReadRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "intentToken",
+          "expectedVersion"
+        ],
+        "properties": {
+          "intentToken": {
+            "type": "string",
+            "minLength": 43,
+            "maxLength": 43,
+            "pattern": "^[A-Za-z0-9_-]{42}[AEIMQUYcgkosw048]$",
+            "writeOnly": true
+          },
+          "expectedVersion": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          }
+        }
+      },
+      "FinishIntentConfirmRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "intentId",
+          "intentToken",
+          "expectedVersion",
+          "foregroundConfirmed"
+        ],
+        "properties": {
+          "intentId": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "intentToken": {
+            "type": "string",
+            "minLength": 43,
+            "maxLength": 43,
+            "pattern": "^[A-Za-z0-9_-]{42}[AEIMQUYcgkosw048]$",
+            "writeOnly": true
+          },
+          "expectedVersion": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "foregroundConfirmed": {
+            "type": "string",
+            "enum": [
+              "CONFIRMED"
+            ]
+          }
+        }
+      },
+      "FinishIntentPreview": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "intentId",
+          "runId",
+          "trackingSessionId",
+          "sessionGeneration",
+          "expectedVersion",
+          "expiresAt",
+          "state",
+          "stopAcknowledged",
+          "trip"
+        ],
+        "properties": {
+          "intentId": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "runId": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "trackingSessionId": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "sessionGeneration": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "expectedVersion": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "READY",
+              "COMPLETED"
+            ]
+          },
+          "stopAcknowledged": {
+            "type": "boolean"
+          },
+          "trip": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "name",
+              "direction",
+              "localDate",
+              "localTime",
+              "timezone"
+            ],
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 80
+              },
+              "direction": {
+                "type": "string",
+                "enum": [
+                  "OUTBOUND",
+                  "RETURN"
+                ]
+              },
+              "localDate": {
+                "type": "string",
+                "format": "date"
+              },
+              "localTime": {
+                "type": "string",
+                "pattern": "^[0-2][0-9]:[0-5][0-9](:[0-5][0-9])?$"
+              },
+              "timezone": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 80
+              }
+            }
+          }
+        }
+      },
+      "FinishIntentReceipt": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "intentId",
+          "runId",
+          "trackingSessionId",
+          "sessionGeneration",
+          "expectedVersion",
+          "state",
+          "finishConsumedAt",
+          "stopAcknowledged",
+          "stopRequestRef",
+          "stoppedAt"
+        ],
+        "properties": {
+          "intentId": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "runId": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "trackingSessionId": {
+            "$ref": "#/components/schemas/Uuid"
+          },
+          "sessionGeneration": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "expectedVersion": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 9007199254740991
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "COMPLETED"
+            ]
+          },
+          "finishConsumedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "stopAcknowledged": {
+            "type": "boolean"
+          },
+          "stopRequestRef": {
+            "type": "string",
+            "format": "uuid",
+            "minLength": 36,
+            "maxLength": 36,
+            "nullable": true
+          },
+          "stoppedAt": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        }
+      },
+      "FinishIntentConfirmed": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "receipt",
+          "control"
+        ],
+        "properties": {
+          "receipt": {
+            "$ref": "#/components/schemas/FinishIntentReceipt"
+          },
+          "control": {
+            "$ref": "#/components/schemas/RunControlResponse"
+          }
+        }
       }
     },
     "examples": {

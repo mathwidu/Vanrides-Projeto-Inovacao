@@ -140,8 +140,8 @@ public final class WaPassengerResponses {
     }
     static boolean validState(String kind, String link, String point) {
         return switch (kind) {
-            case "REQUESTED" -> link.equals("REQUESTED") && "PROPOSED".equals(point);
-            case "POINT_CHANGE" -> Set.of("REQUESTED", "APPROVED").contains(link) && "PROPOSED".equals(point);
+            case "REQUESTED" -> Set.of("REQUESTED", "APPROVED").contains(link) && "PROPOSED".equals(point);
+            case "POINT_CHANGE" -> Set.of("REQUESTED", "APPROVED").contains(link) && Set.of("PROPOSED", "APPROVED").contains(point);
             case "APPROVED", "POINT_APPROVED" -> link.equals("APPROVED") && "APPROVED".equals(point);
             case "REJECTED" -> link.equals("REJECTED");
             case "RECTIFY" -> Set.of("REQUESTED", "APPROVED").contains(link);
@@ -153,7 +153,7 @@ public final class WaPassengerResponses {
         // Aggregate versions also change when another passenger joins or the order changes.
         // Delivery binds the admitted schedule/content, not a new mutation confirmation.
         String selection = jdbc.queryForObject("""
-            SELECT COALESCE(jsonb_agg(jsonb_build_array(s.routine_id,s.weekdays,r.name,r.direction,r.local_time::text,
+            SELECT COALESCE(jsonb_agg(jsonb_build_array(s.routine_id,s.weekdays,s.pickup_point_id,r.name,r.direction,r.local_time::text,
                 r.timezone,r.weekdays,r.state)
               ORDER BY s.routine_id),'[]'::jsonb)::text
             FROM wa.passenger_link_routine s JOIN wa.routine r ON r.id=s.routine_id AND r.driver_id=s.driver_id

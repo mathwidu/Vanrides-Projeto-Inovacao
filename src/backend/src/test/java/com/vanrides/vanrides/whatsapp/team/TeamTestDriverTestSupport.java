@@ -125,14 +125,15 @@ final class TeamTestDriverTestSupport {
             INSERT INTO wa.driver_passenger_link(id,driver_id,passenger_id,invite_id,requested_source_event_id,created_at,valid_from)
             VALUES (?,?,?,?,?,?,?)
             """, link, driver, passenger, invite, inbox, at, at);
+        UUID pickup = UUID.randomUUID();
         jdbc.update("""
             INSERT INTO wa.pickup_point(id,link_id,driver_id,passenger_id,latitude,longitude,source_inbox_event_id,created_at,valid_from)
             VALUES (?,?,?,?,0,0,?,?,?)
-            """, UUID.randomUUID(), link, driver, passenger, inbox, at, at);
+            """, pickup, link, driver, passenger, inbox, at, at);
         if (routine != null) jdbc.update("""
-            INSERT INTO wa.passenger_link_routine(id,link_id,routine_id,driver_id,passenger_id,weekdays,routine_version,created_at)
-            VALUES (?,?,?,?,?,'{1,3,5}'::smallint[],1,?)
-            """, UUID.randomUUID(), link, routine, driver, passenger, at);
+            INSERT INTO wa.passenger_link_routine(id,link_id,routine_id,driver_id,passenger_id,weekdays,routine_version,pickup_point_id,created_at)
+            VALUES (?,?,?,?,?,'{1,3,5}'::smallint[],1,?,?)
+            """, UUID.randomUUID(), link, routine, driver, passenger, pickup, at);
         return link;
     }
 
@@ -143,7 +144,7 @@ final class TeamTestDriverTestSupport {
             INSERT INTO wa.pickup_point(id,link_id,driver_id,passenger_id,latitude,longitude,source_inbox_event_id,created_at,valid_from)
             SELECT ?,l.id,l.driver_id,l.passenger_id,0,0,l.requested_source_event_id,?,? FROM wa.driver_passenger_link l WHERE l.id=?
             """, point, at, at, link);
-        jdbc.update("UPDATE wa.driver_passenger_link SET version=version+1 WHERE id=?", link);
+        jdbc.update("UPDATE wa.passenger_link_routine SET pickup_point_id=?,version=version+1 WHERE link_id=?", point, link);
         return point;
     }
 

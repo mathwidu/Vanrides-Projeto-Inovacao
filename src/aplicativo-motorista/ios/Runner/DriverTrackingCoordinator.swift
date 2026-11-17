@@ -35,6 +35,77 @@ final class DriverTrackingCoordinator: NSObject, CLLocationManagerDelegate {
   private var stopLeaseDeadlineMonotonicMs: Int64?
   private var pendingStop: DriverTrackingStopRequest?
   private let stopJournal = DriverSessionKeychainStore(service: "dev.matheusduarte.vanrides.driver.tracking-stop.v1")
+  private let finishJournal = DriverSessionKeychainStore(service: "dev.matheusduarte.vanrides.driver.tracking-finish.v1")
+  private lazy var finishFlow = DriverFinishFlow(
+    request: { [weak self] path, body, key, completion in
+      self?.transport.finishRequest(path: path,body: body,key: key,completion: completion)
+    }, load: { [weak self] in
+      guard let data = try self?.finishJournal.load(), data != Data("{}".utf8) else { return nil }
+      return data
+    }, save: { [weak self] in try self?.finishJournal.save($0 ?? Data("{}".utf8)) },
+    localOwner: { [weak self] in
+      guard let self = self else { return nil }
+      if let pending = self.pendingStop { return "\(pending.sessionID):\(pending.generation)" }
+      return self.sessionID.map { "\($0):\(self.sessionGeneration)" }
+    }, localOff: { [weak self] in
+      guard let self = self else { return false }
+      return self.provider == nil && self.state != "TRACKING" && self.state != "STARTING"
+    }, available: { [weak self] in self?.task == nil },
+    stopLocal: { [weak self] in self?.stopLocally(reason: "USER_FINISH") },
+    prepareStop: { [weak self] preview in
+      guard let self = self, self.provider == nil, self.state != "TRACKING", self.state != "STARTING" else { throw DriverTrackingFailure.invalidContract }
+      if let pending = self.pendingStop {
+        guard try DriverFinishContract.owner(preview) == "\(pending.sessionID):\(pending.generation)" else { throw DriverTrackingFailure.invalidContract }
+        try self.stopJournal.save(DriverTrackingStopJournal.encode(pending))
+      } else {
+        let current = self.sessionID.map { "\($0):\(self.sessionGeneration)" }
+        let packet = try DriverFinishContract.stoppedPacket(preview,ref: nil,currentOwner: current,providerStopped: true,
+          now: DriverTrackingClock.wallMilliseconds())
+        try self.stopJournal.save(DriverTrackingStopJournal.encode(packet))
+        self.pendingStop = packet; self.sessionID = packet.sessionID; self.sessionGeneration = packet.generation
+        self.stopRequestedAt = try DriverTrackingContract.integer(packet.body["stopRequestedAt"])
+        self.stoppedAt = try DriverTrackingContract.integer(packet.body["stoppedAt"])
+        self.state = "STOPPED"; self.reason = "USER_FINISH"; self.cancelStopRetry(); self.saveDiagnostic()
+      }
+    },
+    bindStop: { [weak self] preview, ref in
+      guard let self = self else { throw DriverTrackingFailure.cancelled }
+      if let pending = self.pendingStop {
+        guard try DriverFinishContract.owner(preview) == "\(pending.sessionID):\(pending.generation)" else { throw DriverTrackingFailure.invalidContract }
+        var body = pending.body; body.removeValue(forKey: "stopRequestRef")
+        if let ref = ref { body["stopRequestRef"] = ref }
+        body["sessionId"] = pending.sessionID
+        let encoded = try JSONSerialization.data(withJSONObject: body,options: [.sortedKeys])
+        let updated = try DriverTrackingStopJournal.decode(encoded)
+        try self.stopJournal.save(DriverTrackingStopJournal.encode(updated)); self.pendingStop = updated
+      } else {
+        let currentOwner = self.sessionID.map { "\($0):\(self.sessionGeneration)" }
+        let updated = try DriverFinishContract.stoppedPacket(preview,ref: ref,currentOwner: currentOwner,
+          providerStopped: self.provider == nil && self.state != "TRACKING" && self.state != "STARTING",
+          now: DriverTrackingClock.wallMilliseconds())
+        try self.stopJournal.save(DriverTrackingStopJournal.encode(updated))
+        self.pendingStop = updated; self.sessionID = updated.sessionID; self.sessionGeneration = updated.generation
+        self.stopRequestedAt = try DriverTrackingContract.integer(updated.body["stopRequestedAt"])
+        self.stoppedAt = try DriverTrackingContract.integer(updated.body["stoppedAt"])
+        self.state = "STOPPED"; self.reason = "USER_FINISH"; self.cancelStopRetry(); self.saveDiagnostic()
+      }
+    }, clearStop: { [weak self] preview, ref in
+      guard let self = self else { throw DriverTrackingFailure.cancelled }
+      if var pending = self.pendingStop {
+        guard try DriverFinishContract.owner(preview) == "\(pending.sessionID):\(pending.generation)",
+          pending.body["stopRequestRef"] as? String == ref || pending.body["stopRequestRef"] == nil else { throw DriverTrackingFailure.invalidContract }
+        if pending.body["stopRequestRef"] == nil, let ref = ref {
+          guard let reason = pending.body["reason"] as? String else { throw DriverTrackingFailure.invalidContract }
+          let bound = DriverTrackingStopRequest(sessionID: pending.sessionID,generation: pending.generation,reason: reason,
+            requestedAt: try DriverTrackingContract.integer(pending.body["stopRequestedAt"]),
+            stoppedAt: try DriverTrackingContract.integer(pending.body["stoppedAt"]),stopRequestRef: ref)
+          try self.stopJournal.save(DriverTrackingStopJournal.encode(bound)); self.pendingStop = bound; pending = bound
+        }
+        try self.confirmStop(pending)
+      }
+      self.transport.recordFinished()
+    }, wake: { [weak self] delay in DispatchQueue.main.asyncAfter(deadline: .now() + delay) { self?.pump() } }
+  )
   private var stopRetry = DriverTrackingStopRetry()
   private var stopRetryWork: DispatchWorkItem?
   private var stopRetryID: UUID?
@@ -106,6 +177,16 @@ final class DriverTrackingCoordinator: NSObject, CLLocationManagerDelegate {
   }
 
   private var foreground: Bool { UIApplication.shared.applicationState == .active }
+  func previewFinish(_ args: [String: Any], completion: @escaping Completion) { finishFlow.preview(args,completion: completion) }
+  func pendingFinish() -> [String: Any]? { finishFlow.pending() }
+  func retryFinish(_ args: [String: Any], previewOnly: Bool, completion: @escaping Completion) {
+    guard foreground else { completion(.failure(.foregroundRequired)); return }
+    finishFlow.retry(args,previewOnly: previewOnly,completion: completion)
+  }
+  func finishRun(_ args: [String: Any], completion: @escaping Completion) {
+    guard foreground else { completion(.failure(.foregroundRequired)); return }
+    finishFlow.finish(args,completion: completion)
+  }
   private var stopPending: Bool { pendingStop != nil }
 
   private var permission: String {
@@ -219,6 +300,7 @@ final class DriverTrackingCoordinator: NSObject, CLLocationManagerDelegate {
     guard credential != nil else { completion(.failure(.credentialRequired)); return }
     guard !stopPending, operation == nil, permissionReply == nil, task == nil,
       state != "TRACKING", state != "STARTING" else { completion(.failure(.busy)); return }
+    finishFlow.cancelAction()
     lifecycle &+= 1
     operation = completion
     state = "STARTING"
@@ -274,6 +356,7 @@ final class DriverTrackingCoordinator: NSObject, CLLocationManagerDelegate {
 
   func syncStatus(completion: @escaping Completion) {
     _ = checkLease()
+    if finishFlow.holdStop || finishFlow.networkBusy { completion(.failure(.busy)); return }
     guard credential != nil else { completion(.failure(.credentialRequired)); return }
     guard operation == nil, permissionReply == nil, task == nil, state != "STARTING" else {
       completion(.failure(.busy)); return
@@ -503,6 +586,8 @@ final class DriverTrackingCoordinator: NSObject, CLLocationManagerDelegate {
   private func pump() {
     _ = checkLease()
     purgeQueue()
+    finishFlow.tick()
+    if finishFlow.holdStop || finishFlow.networkBusy { return }
     guard task == nil, operation == nil, credential != nil else { return }
     if stopPending {
       let delay = stopRetry.remainingDelay(now: DriverTrackingClock.now())

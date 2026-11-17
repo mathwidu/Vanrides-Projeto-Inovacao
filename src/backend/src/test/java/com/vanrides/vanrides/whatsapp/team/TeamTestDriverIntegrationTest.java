@@ -92,7 +92,7 @@ class TeamTestDriverIntegrationTest {
             .containsEntry("state", "APPROVED").containsEntry("approved_by", driver);
         assertThat(s.jdbc.queryForObject("SELECT count(*) FROM wa.routine_member WHERE link_id=? AND state='ACTIVE'", Long.class, link)).isOne();
         assertThat(s.operations.replay(GITHUB, request).path("linkState").asText()).isEqualTo("APPROVED");
-        s.assertPassengerNotice(request.id(), link, "Cadastro confirmado.");
+        s.assertPassengerNotice(request.id(), link, "Seu ponto foi aprovado.");
         assertThat(s.count("wa.message_outbox")).isOne();
         assertThat(s.jdbc.queryForList("SELECT action,link_id,passenger_invite_id FROM wa.team_admission_operation WHERE id=?", request.id()))
             .singleElement().satisfies(row -> assertThat(row).containsEntry("action", "APPROVE_TEST_LINK")

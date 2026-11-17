@@ -26,6 +26,7 @@ public final class WaConversationResponses {
         + "Quando estiver pronta, envie CONVIDAR para receber um link de passageiro.";
     private static final String DAILY_DRIVER = "Vai sair com a van? Envie Começar viagem. "
         + "Eu mostro o trajeto e os passageiros previstos; você confirma o início no aplicativo VanRides Motorista.\n"
+        + "Ao terminar, envie Quero finalizar a viagem para receber o link de encerramento.\n"
         + "Para ver suas rotinas, envie RESUMO. Para chamar um passageiro, envie CONVIDAR e encaminhe o link que eu gerar.";
     private static final String PAIRING = "Para compartilhar sua localização durante um trajeto, vincule o aplicativo VanRides Motorista. "
         + "Abra o aplicativo pelo ícone e envie aqui o código de pareamento exibido.";

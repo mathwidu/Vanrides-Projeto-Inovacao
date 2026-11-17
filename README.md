@@ -20,6 +20,7 @@ Universidade Feevale, 2026/2.
 | Testar uma versão com o grupo | [Homologação da equipe](docs/desenvolvimento/homologacao-da-equipe.md) |
 | Testar o cadastro no WhatsApp | [Cadastro de motorista e passageiro](docs/desenvolvimento/cadastro-guiado-whatsapp.md) |
 | Entender a simplificação em andamento | [Cadastro e início simples](docs/desenvolvimento/proposta-fluxo-simples.md) e [validação local](program/evidence/mvp-ux-20261117.md) |
+| Preparar o teste de facilidade do novo fluxo | [Ensaio parado antes do percurso](docs/desenvolvimento/roteiro-validacao-fluxo-simples.md) — candidato local, sem publicação |
 | Acompanhar a entrega técnica | [Plano e issues](docs/desenvolvimento/entrega-mvp.md) e [evidências](program/evidence/mvp-entrega-20261116.md) |
 | Fazer os testes finais nos aparelhos | [Roteiro por plataforma](docs/desenvolvimento/rodada-final.md) e [pacote identificado da rodada](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/releases/tag/mvp-0.4.0-15) |
 | Conferir falhas ou pausar envios | [Operação e recuperação](docs/desenvolvimento/operacao.md) |

@@ -8,9 +8,11 @@ import GoogleMaps
 // Observe raw URLs before app_links/Uri can normalize percent-encoded input.
 enum DriverRunEntry {
   static var authorization: DriverRunLink?
+  static var finishAuthorization: DriverRunLink?
   static func observe(_ urls: [URL]) {
     let host = Bundle.main.object(forInfoDictionaryKey: "VANRIDES_PAIRING_LINK_HOST") as? String ?? ""
     authorization = urls.count == 1 ? DriverRunLink.parse(urls[0].absoluteString, host: host) : nil
+    finishAuthorization = urls.count == 1 ? DriverRunLink.parseFinish(urls[0].absoluteString, host: host) : nil
   }
 }
 

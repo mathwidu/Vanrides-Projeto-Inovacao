@@ -5,10 +5,143 @@ import XCTest
 #endif
 
 final class DriverTrackingCoreTests: XCTestCase {
+  private var finishArgs: [String: Any] { ["intentId":"12345678-1234-1234-1234-123456789012","expectedVersion":7,"intentToken":String(repeating:"A",count:43)] }
+  private var finishPreview: [String: Any] { ["intentId":finishArgs["intentId"]!,"runId":"12345678-1234-1234-1234-123456789013",
+    "trackingSessionId":"12345678-1234-1234-1234-123456789014","sessionGeneration":2,"expectedVersion":7,"expiresAt":"2030-01-01T18:05:00Z",
+    "state":"READY","stopAcknowledged":false,"trip":["name":"Faculdade sintética","direction":"RETURN","localDate":"2030-01-01","localTime":"18:00:00","timezone":"America/Sao_Paulo"]] }
+  private func finishReceipt(_ ack: Bool) -> [String: Any] { ["intentId":finishArgs["intentId"]!,"runId":finishPreview["runId"]!,
+    "trackingSessionId":finishPreview["trackingSessionId"]!,"sessionGeneration":2,"expectedVersion":7,"state":"COMPLETED",
+    "finishConsumedAt":"2030-01-01T18:00:01Z","stopAcknowledged":ack,
+    "stopRequestRef":"12345678-1234-1234-1234-123456789015","stoppedAt":ack ? "2030-01-01T18:00:02Z" as Any : NSNull()] }
+  private var finishControl: [String: Any] { ["runId":finishPreview["runId"]!,"state":"COMPLETED","entityVersion":8,
+    "trackingSessionId":finishPreview["trackingSessionId"]!,"generation":2,"serverTime":"2030-01-01T18:00:01Z",
+    "action":"STOP","gpsState":"STALE","leaseExpiresAt":"2030-01-01T18:05:00Z","stopRequestRef":"12345678-1234-1234-1234-123456789015"] }
+  func testFinishPurposeAndReceiptRejectStartAndForeignGeneration() throws {
+    let raw="vanridesdriver://run/finish#v1.12345678-1234-1234-1234-123456789012.7." + String(repeating:"A",count:43)
+    XCTAssertNil(DriverRunLink.parse(raw));XCTAssertNotNil(DriverRunLink.parseFinish(raw))
+    XCTAssertNil(DriverRunLink.parseFinish(raw.replacingOccurrences(of:".7.",with:".07.")))
+    try DriverFinishContract.preview(finishPreview,args:finishArgs)
+    try DriverFinishContract.receipt(finishReceipt(true),expected:finishPreview)
+    var wrong=finishReceipt(true);wrong["sessionGeneration"]=3
+    XCTAssertThrowsError(try DriverFinishContract.receipt(wrong,expected:finishPreview))
+  }
+  func testFinishJournalStopsProviderBeforeConsumeAndWaitsForExactACK() throws {
+    var requests: [(String,DriverFinishFlow.NetworkReply)] = []
+    var stored: Data?, off=false, now=Date(timeIntervalSince1970:1_000), completed=false
+    var trace: [String] = []
+    let flow=DriverFinishFlow(request:{path,_,_,reply in requests.append((path,reply));trace.append(path)},
+      load:{nil},save:{stored=$0;trace.append("persist")},localOwner:{"12345678-1234-1234-1234-123456789014:2"},
+      localOff:{off},available:{true},stopLocal:{off=true;trace.append("provider-off")},
+      prepareStop:{_ in},
+      bindStop:{_,ref in XCTAssertEqual(ref,"12345678-1234-1234-1234-123456789015")},
+      clearStop:{_,_ in XCTAssertTrue(off);trace.append("exact-ack")},wake:{_ in},now:{now})
+    flow.preview(finishArgs) { _ in };requests.removeFirst().1(.success(finishPreview),200)
+    flow.finish(finishArgs) { result in if case .success = result { completed=true } }
+    XCTAssertTrue(off);XCTAssertTrue(flow.holdStop);XCTAssertEqual(trace[0],"/driver-app/v1/finish-intents/12345678-1234-1234-1234-123456789012/preview")
+    XCTAssertEqual(trace[1],"persist");XCTAssertEqual(trace[2],"provider-off")
+    let control: [String:Any] = ["runId":finishPreview["runId"]!,"state":"COMPLETED","entityVersion":8,
+      "trackingSessionId":finishPreview["trackingSessionId"]!,"generation":2,"serverTime":"2030-01-01T18:00:01Z",
+      "action":"STOP","gpsState":"STALE","leaseExpiresAt":"2030-01-01T18:05:00Z","stopRequestRef":"12345678-1234-1234-1234-123456789015"]
+    requests.removeFirst().1(.success(["receipt":finishReceipt(false),"control":control]),200)
+    XCTAssertFalse(flow.holdStop);XCTAssertFalse(completed);XCTAssertNotNil(stored)
+    now=now.addingTimeInterval(2);flow.tick();XCTAssertTrue(requests[0].0.hasSuffix("/receipt"))
+    requests.removeFirst().1(.success(finishReceipt(true)),200)
+    XCTAssertTrue(completed);XCTAssertNil(stored);XCTAssertTrue(trace.contains("exact-ack"))
+  }
+  func testOwnerlessFailureHasDurableCleanupBeforeHTTPAndBaselineACKSendsNoNewStop() throws {
+    for acknowledged in [false,true] {
+      var requests: [(String,DriverFinishFlow.NetworkReply)] = []
+      var storedFinish: Data?, storedStop: Data?, off=false, success=false, failure=false
+      let flow=DriverFinishFlow(request:{path,_,_,reply in requests.append((path,reply))},
+        load:{nil},save:{storedFinish=$0},localOwner:{nil},localOff:{off},available:{true},stopLocal:{off=true},
+        prepareStop:{preview in
+          let packet=try DriverFinishContract.stoppedPacket(preview,ref:nil,currentOwner:nil,providerStopped:off,now:1_893_520_800_000)
+          storedStop=try DriverTrackingStopJournal.encode(packet)
+        },bindStop:{_,_ in XCTFail("this scenario must not need a post-response STOP reconstruction")},
+        clearStop:{_,_ in storedStop=nil},wake:{_ in})
+      flow.preview(finishArgs) {_ in};requests.removeFirst().1(.success(finishPreview),200)
+      flow.finish(finishArgs) { result in if case .success = result {success=true} else {failure=true} }
+      XCTAssertTrue(off);XCTAssertTrue(flow.holdStop);XCTAssertNotNil(storedStop)
+      XCTAssertTrue(requests[0].0.hasSuffix("/finish"))
+      let pending=try XCTUnwrap(DriverTrackingStopJournal.decode(storedStop))
+      if acknowledged {
+        requests.removeFirst().1(.success(["receipt":finishReceipt(true),"control":finishControl]),200)
+        XCTAssertTrue(success);XCTAssertFalse(failure);XCTAssertNil(storedStop);XCTAssertNil(storedFinish)
+        XCTAssertTrue(requests.isEmpty)
+      } else {
+        requests.removeFirst().1(.failure(.network),503)
+        XCTAssertTrue(failure);XCTAssertFalse(success);XCTAssertFalse(flow.holdStop)
+        XCTAssertNotNil(storedStop);XCTAssertNotNil(storedFinish)
+        let path="/driver-app/v1/tracking-sessions/\(pending.sessionID)/state"
+        let body=try JSONSerialization.data(withJSONObject:pending.body)
+        let outgoing=try DriverProductionTrackingWire().outgoing(path:path,data:body)
+        let encoded=try XCTUnwrap(outgoing.0)
+        let packet=try XCTUnwrap(JSONSerialization.jsonObject(with:encoded) as? [String:Any])
+        XCTAssertEqual(packet["sessionId"] as? String,finishPreview["trackingSessionId"] as? String)
+        XCTAssertEqual(packet["generation"] as? Int,2);XCTAssertEqual(packet["state"] as? String,"STOPPED")
+      }
+    }
+  }
   func testConfirmedStopKeepsItsAttestationAndConfirmationAcrossRepeatedFailures() {
     XCTAssertTrue(DriverTrackingStopContinuity.reusesAttestation(state: "STOPPED", stoppedAt: 101, providerPresent: false))
     XCTAssertTrue(DriverTrackingStopContinuity.preservesConfirmation(state: "STOPPED", stoppedAt: 101,
       providerPresent: false, pending: false, sessionID: "synthetic-session", generation: 2))
+  }
+  func testRecreatedFinishBuildsExactStopWithNoOwnerOrPendingJournal() throws {
+    var requests: [(String,DriverFinishFlow.NetworkReply)] = []
+    var off=false, now=Date(timeIntervalSince1970:1_000), completed=false
+    var owner: String?, pending: DriverTrackingStopRequest?
+    let flow=DriverFinishFlow(request:{path,_,_,reply in requests.append((path,reply))},
+      load:{nil},save:{_ in},localOwner:{owner},localOff:{off},available:{true},stopLocal:{off=true},
+      prepareStop:{preview in
+        pending=try DriverFinishContract.stoppedPacket(preview,ref:nil,currentOwner:owner,providerStopped:off,now:1_893_520_800_000)
+        owner=try DriverFinishContract.owner(preview)
+      },
+      bindStop:{preview,ref in
+        let packet=try DriverFinishContract.stoppedPacket(preview,ref:ref,currentOwner:owner,providerStopped:off,now:1_893_520_800_000)
+        let stored=try DriverTrackingStopJournal.encode(packet)
+        pending=try DriverTrackingStopJournal.decode(stored);owner=try DriverFinishContract.owner(preview)
+      },clearStop:{_,ref in XCTAssertEqual(pending?.body["stopRequestRef"] as? String,ref);pending=nil},wake:{_ in},now:{now})
+    flow.preview(finishArgs) {_ in};requests.removeFirst().1(.success(finishPreview),200)
+    XCTAssertNil(owner);XCTAssertNil(pending)
+    flow.finish(finishArgs) {if case .success = $0 {completed=true}}
+    requests.removeFirst().1(.success(["receipt":finishReceipt(false),"control":finishControl]),200)
+    XCTAssertFalse(completed)
+    let packet=try XCTUnwrap(pending)
+    let route="/driver-app/v1/tracking-sessions/\(packet.sessionID)/state"
+    let body=try JSONSerialization.data(withJSONObject:packet.body)
+    let outgoing=try DriverProductionTrackingWire().outgoing(path:route,data:body)
+    let sent=try XCTUnwrap(JSONSerialization.jsonObject(with:XCTUnwrap(outgoing.0)) as? [String:Any])
+    XCTAssertEqual(sent["sessionId"] as? String,finishPreview["trackingSessionId"] as? String)
+    XCTAssertEqual(sent["generation"] as? Int,2);XCTAssertEqual(sent["stopRequestRef"] as? String,finishReceipt(false)["stopRequestRef"] as? String)
+    now=now.addingTimeInterval(2);flow.tick();requests.removeFirst().1(.success(finishReceipt(true)),200)
+    XCTAssertTrue(completed);XCTAssertNil(pending)
+    XCTAssertThrowsError(try DriverFinishContract.stoppedPacket(finishPreview,ref:nil,currentOwner:nil,providerStopped:false,now:1))
+  }
+  func testHeldHeartbeatDrainsBeforeOneFinishWithoutLosingCallbackOrHold() throws {
+    var requests: [(String,DriverFinishFlow.NetworkReply)] = []
+    var off=false, busy=false, now=Date(timeIntervalSince1970:1_000), callbacks=0, finishRequests=0, stopPackets=0
+    let flow=DriverFinishFlow(request:{path,_,_,reply in
+      if path.hasSuffix("/finish") && busy { reply(.failure(.busy),nil);return }
+      if path.hasSuffix("/finish") {finishRequests += 1}
+      requests.append((path,reply))
+    },load:{nil},save:{_ in},localOwner:{nil},localOff:{off},available:{true},stopLocal:{off=true},
+      prepareStop:{_ in},
+      bindStop:{preview,ref in
+        _=try DriverFinishContract.stoppedPacket(preview,ref:ref,currentOwner:nil,providerStopped:off,now:1_893_520_800_000)
+        XCTAssertEqual(finishRequests,1);stopPackets += 1
+      },clearStop:{_,_ in},wake:{_ in},now:{now})
+    flow.preview(finishArgs) {_ in};requests.removeFirst().1(.success(finishPreview),200)
+    busy=true
+    flow.finish(finishArgs) {result in if case .success = result {callbacks += 1} else {XCTFail("callback lost while transport busy")}}
+    XCTAssertTrue(off);XCTAssertTrue(flow.holdStop);XCTAssertEqual(callbacks,0);XCTAssertEqual(finishRequests,0);XCTAssertEqual(stopPackets,0)
+    XCTAssertTrue(requests.isEmpty)
+    busy=false;now=now.addingTimeInterval(0.1);flow.tick()
+    XCTAssertEqual(finishRequests,1)
+    requests.removeFirst().1(.success(["receipt":finishReceipt(false),"control":finishControl]),200)
+    XCTAssertFalse(flow.holdStop);XCTAssertEqual(stopPackets,1);XCTAssertEqual(callbacks,0)
+    now=now.addingTimeInterval(2);flow.tick();requests.removeFirst().1(.success(finishReceipt(true)),200)
+    XCTAssertEqual(callbacks,1);XCTAssertEqual(finishRequests,1)
   }
 
   func testErrorWithPendingStopReusesItsRecordWithoutClaimingConfirmation() {
@@ -269,7 +402,7 @@ struct DriverTrackingCoreTestMain {
   static func main() {
     let suite = DriverTrackingCoreTests.defaultTestSuite
     suite.run()
-    guard let run = suite.testRun, run.executionCount == 20, run.totalFailureCount == 0 else { exit(1) }
+    guard let run = suite.testRun, run.executionCount == 25, run.totalFailureCount == 0 else { exit(1) }
   }
 }
 #endif

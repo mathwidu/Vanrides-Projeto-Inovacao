@@ -175,7 +175,7 @@ class WaPassengerInputIntegrationTest {
         fixture.send(passenger, "VOLTAR");
         var updatedPoint = fixture.send(passenger, "PONTO -12.25, +34.5");
         assertFalse(updatedPoint.text().contains("Entrada antiga"), updatedPoint.text());
-        assertFalse(fixture.draft(passenger).has("reference"));
+        assertFalse(fixture.draft(passenger).path("selections").path(0).path("pickup").has("reference"));
     }
 
     @Test
@@ -183,20 +183,20 @@ class WaPassengerInputIntegrationTest {
         UUID passenger = fixture.passenger();
         fixture.request(passenger, code);
         var firstReview = fixture.send(driver, "REVISAR PEDIDO");
-        assertTrue(firstReview.text().contains("APROVAR EMBARQUE"), firstReview.text());
+        assertTrue(firstReview.text().contains("APROVAR PONTO"), firstReview.text());
         String oldSummary = submitReview(firstReview);
-        var review = fixture.send(driver, "APROVAR EMBARQUE");
+        var review = fixture.send(driver, "APROVAR PONTO");
         assertEquals("ADVANCE_PASSENGER_SETUP", review.body().path("commandType").asText());
         String latestSummary = submitReview(review);
         assertTrue(quotedApproval(oldSummary).text().contains("não corresponde à etapa atual"));
-        assertEquals(0, fixture.conversation.number("SELECT count(*) FROM wa.driver_passenger_link WHERE state='APPROVED'"));
-        assertEquals("APPROVE_LINK", quotedApproval(latestSummary).body().path("commandType").asText());
-        assertEquals(1, fixture.conversation.number("SELECT count(*) FROM wa.driver_passenger_link WHERE state='APPROVED'"));
+        assertEquals(0, fixture.count("routine_member"));
+        assertEquals("APPROVE_PICKUP", quotedApproval(latestSummary).body().path("commandType").asText());
+        assertEquals(1, fixture.count("routine_member"));
     }
 
     private WaPassengerTestSupport.Step quotedApproval(String external) {
         var message = json();
-        message.putObject("extendedTextMessage").put("text", "APROVAR EMBARQUE")
+        message.putObject("extendedTextMessage").put("text", "APROVAR PONTO")
                 .putObject("contextInfo").put("stanzaId", external);
         var event = fixture.conversation.pending(driver, message, fixture.transport.clock.now());
         return fixture.execute(fixture.conversation.claim(event), true);

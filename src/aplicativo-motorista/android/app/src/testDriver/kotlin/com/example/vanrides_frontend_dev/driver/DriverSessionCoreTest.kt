@@ -316,6 +316,25 @@ class DriverSessionCoreTest {
         try { core.trackingRequest("/driver-app/v1/session/revoke", body, pairingId); fail("Expected closed route") }
         catch (_: IllegalArgumentException) { }
     }
+    @Test fun finishReceiptUsesFreshProofWithoutAccessOrRefreshAfterRevocation() {
+        val f = Fixture(); paired(f)
+        val saved = JSONObject(f.store.saved!!).put("state","REVOKED")
+        f.store.saved = saved.toString()
+        val calls = mutableListOf<DriverSessionRequest>()
+        val core = DriverSessionCore(origin,"synthetic-finish",f.keys,f.store,DriverSessionTransport { request ->
+            calls.add(request); DriverSessionResponse(200,JSONObject())
+        }, { time })
+        val path = "/driver-app/v1/finish-intents/$pairingId/receipt"
+        val body = JSONObject().put("expectedVersion",7).put("intentToken",access).toString().toByteArray()
+        repeat(2) { assertEquals(200,core.trackingRequest(path,body,null).status) }
+        assertEquals(2,calls.size)
+        calls.forEach { request ->
+            assertNull(request.accessToken); assertNull(request.idempotencyKey)
+            assertFalse(claims(request).has("ath"));assertEquals(p.hash(body),claims(request).getString("vr_body_sha256"))
+            f.keys.verify(request)
+        }
+        assertNotEquals(calls[0].proof,calls[1].proof)
+    }
     @Test fun closedOriginsReturnLinksAndDerConversionRejectUntrustedForms() {
         assertEquals(origin, p.origin(origin)); assertTrue(p.isReturn("vanridesdriver://pairing/return"))
         for (uri in listOf("vanridesdriver://pairing/return?code=BCDFGHJK", "vanridesdriver://pairing/return#x",

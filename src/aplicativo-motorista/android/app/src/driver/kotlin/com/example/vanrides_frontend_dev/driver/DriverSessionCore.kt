@@ -231,8 +231,15 @@ internal class DriverSessionCore(
     /** Same serialized060 owner; tokens and signing keys never cross the bridge. */
     fun trackingRequest(path: String, body: ByteArray?, idempotency: String?): DriverSessionResponse {
         configured(); keyRequired()
+        if (Regex("${p.PREFIX}/finish-intents/[0-9a-f-]{36}/receipt").matches(path)) {
+            require(body != null && idempotency == null)
+            val value = JSONObject(String(body, Charsets.UTF_8))
+            p.fields(value, setOf("intentToken","expectedVersion")); p.token(value.getString("intentToken"))
+            require(value.getLong("expectedVersion") in 0..9007199254740991L)
+            return request("POST", path, body)
+        }
         require(path == "${p.PREFIX}/tracking-status" ||
-            Regex("${p.PREFIX}/(?:start-intents/[0-9a-f-]{36}/activate|tracking-sessions/[0-9a-f-]{36}/(?:state|samples))").matches(path))
+            Regex("${p.PREFIX}/(?:start-intents/[0-9a-f-]{36}/activate|finish-intents/[0-9a-f-]{36}/preview|runs/[0-9a-f-]{36}/finish|tracking-sessions/[0-9a-f-]{36}/(?:state|samples))").matches(path))
         if (data().getString("state") in setOf("REVOKING", "REVOKED", "EXPIRED")) throw DriverSessionFailure("SESSION_EXPIRED")
         if (pending() != null) {
             if (pending()!!.getString("kind") != "REFRESH") throw DriverSessionFailure("BUSY")

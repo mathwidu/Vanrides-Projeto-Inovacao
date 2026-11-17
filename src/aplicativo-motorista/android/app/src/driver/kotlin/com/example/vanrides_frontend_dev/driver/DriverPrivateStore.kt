@@ -21,6 +21,9 @@ internal class DriverPrivateStore(context: Context) {
     private val stopStore = AndroidDriverSessionStore(context, "driver-tracking-stop.v1", "vanrides.driver.tracking.stop.v1.aes")
     fun savePendingStop(value: JSONObject?) { stopStore.save(value ?: JSONObject()) }
     fun loadPendingStop(): JSONObject? = stopStore.load()?.takeIf { it.has("sessionId") }
+    private val finishStore = AndroidDriverSessionStore(context, "driver-tracking-finish.v1", "vanrides.driver.tracking.finish.v1.aes")
+    fun saveFinish(value: JSONObject?) { finishStore.save(value ?: JSONObject()) }
+    fun loadFinish(): JSONObject? = finishStore.load()?.takeIf { it.has("authorization") }
     private val diagnosticsFile = AtomicFile(File(context.noBackupFilesDir, "driver-tracking-diagnostics.v1"))
     private val alias = "vanrides.driver.tracking.v1"
     private fun key(): SecretKey {

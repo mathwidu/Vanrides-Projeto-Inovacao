@@ -32,23 +32,26 @@ public final class WaStartDelivery {
               AND i.request_command_id=? AND i.environment=? AND i.state='PENDING' AND i.expires_at>?
               AND d.status='ACTIVE' AND d.generation=a.generation FOR SHARE OF i,d,a
             """,row.get("start_intent_id"),actor,row.get("command_id"),settings.environment(),Timestamp.from(clock.now()));
-        if(!settings.newStartsEnabled() || intents.size()!=1 || row.get("start_payload_ciphertext")==null) { cancel(box); return null; }
+        boolean finishing=intents.size()==1 && "FINISH".equals(intents.get(0).get("intent_action"));
+        if(intents.size()!=1 || !finishing && !settings.newStartsEnabled() || row.get("start_payload_ciphertext")==null) { cancel(box); return null; }
         try {
             var intent=intents.get(0);
-            if("START".equals(intent.get("intent_action"))) {
+            if(finishing) {
+                if(!new WaFinishService(jdbc,settings,clock,crypto).deliveryValid((UUID)row.get("start_intent_id"),actor)) { cancel(box); return null; }
+            } else if("START".equals(intent.get("intent_action"))) {
                 String digest=new WaRunPreparation(jdbc,clock,settings).rosterDigestForDelivery(actor,(UUID)intent.get("occurrence_id"));
                 if(!WaCrypto.same(digest,(String)intent.get("roster_digest"))) { cancel(box); return null; }
-            } else {
+            } else if("RESUME".equals(intent.get("intent_action"))) {
                 var runs=jdbc.queryForList("SELECT state,version,snapshot_json->>'rosterDigest' digest FROM wa.operation_run WHERE id=? AND driver_id=? FOR SHARE",intent.get("run_id"),actor);
                 if(runs.size()!=1 || !java.util.Set.of("START_FAILED","DEGRADED").contains(runs.get(0).get("state"))
                         || ((Number)runs.get(0).get("version")).longValue()!=((Number)intent.get("expected_version")).longValue()
                         || !WaCrypto.same((String)runs.get(0).get("digest"),(String)intent.get("roster_digest"))) { cancel(box); return null; }
-            }
+            } else { cancel(box); return null; }
             String fragment=crypto.decrypt(aad(box,(UUID)row.get("command_id"),actor),(byte[])row.get("start_payload_ciphertext"));
             if(settings.startLinkBaseUrl().isEmpty() || !fragment.matches("#v1\\."+row.get("start_intent_id")+"\\.[0-9]{1,16}\\.[A-Za-z0-9_-]{43}")) throw new IllegalArgumentException();
             String summary=content.path("text").asText("").strip();
             return content.deepCopy().put("text",(summary.isEmpty()?"":summary+"\n\n")
-                +"Abrir VanRides Motorista: "+settings.startLinkBaseUrl()+"/motorista/saida"+fragment);
+                +"Abrir VanRides Motorista: "+settings.startLinkBaseUrl()+(finishing?"/motorista/fim":"/motorista/saida")+fragment);
         } catch(RuntimeException invalid) { cancel(box); return null; }
     }
     public boolean relevant(UUID box) {

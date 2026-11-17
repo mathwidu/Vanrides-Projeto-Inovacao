@@ -120,6 +120,7 @@ internal class ProductionTrackingWire {
         private set
     var runState: String? = null
         private set
+    fun recordFinished() { runState = "COMPLETED" }
     private val retries = mutableMapOf<String, String>()
     fun request(path: String, original: String?): Pair<String?, String?> {
         if (original == null) return null to null
@@ -144,7 +145,10 @@ internal class ProductionTrackingWire {
             val state = if (body.getString("state") == "STOPPED") "STOPPED" else "ACTIVE"
             val generation = body.getLong("generation")
             val clean = JSONObject().put("sessionId", owner).put("generation", generation).put("state", state)
-            if (state == "STOPPED") stopReference?.let { clean.put("stopRequestRef", it) }
+            if (state == "STOPPED") {
+                val ref = if (body.has("stopRequestRef")) body.optString("stopRequestRef").takeIf { it.isNotEmpty() } else stopReference
+                ref?.let { clean.put("stopRequestRef", DriverSessionProtocol.uuid(it)) }
+            }
             val retryKey = path + clean.toString()
             return clean.toString() to if (state == "STOPPED") owner else retries.getOrPut(retryKey) { java.util.UUID.randomUUID().toString() }
         }

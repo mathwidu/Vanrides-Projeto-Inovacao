@@ -222,7 +222,7 @@ final class WaPassengerTestSupport {
         return UUID.fromString(
                 conversation.string(
                         "SELECT id::text FROM wa.driver_passenger_link WHERE passenger_id=? AND"
-                                + " state='REQUESTED'",
+                                + " state IN ('REQUESTED','APPROVED')",
                         passenger));
     }
 

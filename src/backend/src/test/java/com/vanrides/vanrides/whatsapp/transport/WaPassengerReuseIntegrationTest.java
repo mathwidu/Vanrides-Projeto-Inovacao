@@ -34,21 +34,25 @@ class WaPassengerReuseIntegrationTest {
     }
 
     @Test
-    void approvedPassengerAddsRoutineOnlyAfterReviewAndKeepsPointMembershipPreferencesAndReplay() {
+    void approvedPointReuseKeepsMembershipPreferencesAndOrderAndRejectsAStalePassengerSummary() {
         UUID link = fixture.request(passenger, code);
         fixture.approve(driver);
         fixture.transport.jdbc.update("UPDATE wa.routine SET stop_order_pending=false WHERE id=?", originalRoutine);
         long originalVersion = fixture.conversation.number("SELECT version FROM wa.routine WHERE id=?", originalRoutine);
         fixture.transport.jdbc.update("UPDATE wa.profile SET preferences_json=?::jsonb WHERE identity_id=?",
                 "{\"APPROACH_MESSAGES\":true,\"ATTENDANCE_REMINDERS\":true,\"OTHER_CHOICE\":true}", passenger);
-        String preferences = preferences();
-        String member = member();
-        String point = approvedPoint();
+        String preferences = preferences(), member = member(), point = approvedPoint();
         UUID added = additionalRoutine();
+        var staleReview = additionReview();
+        fixture.transport.jdbc.update("UPDATE wa.routine SET version=version+1 WHERE id=?", added);
+        var stale = fixture.conversation.text(passenger, fixture.confirmation(passenger, staleReview));
+        assertEquals(WaProblem.Code.VERSION_CONFLICT,
+                fixture.decide(stale, "PROPOSE_PICKUP", fixture.payload(fixture.context(stale))).error());
+        fixture.conversation.finish(stale);
+        assertEquals(1, fixture.count("routine_member"));
         var review = additionReview();
         assertTrue(review.text().contains("Novos trajetos"), review.text());
         assertTrue(review.text().contains("Seus avisos e trajetos anteriores serão mantidos"), review.text());
-        assertEquals(1, fixture.count("passenger_link_routine"));
         var lease = fixture.conversation.text(passenger, fixture.confirmation(passenger, review));
         var request = fixture.execute(lease, false);
         assertEquals("PROPOSE_PICKUP", request.body().path("commandType").asText());
@@ -57,53 +61,28 @@ class WaPassengerReuseIntegrationTest {
         assertEquals(request.response(), replay);
         fixture.conversation.finish(lease);
         assertEquals(1, fixture.count("driver_passenger_link"));
-        assertEquals(2, fixture.count("passenger_link_routine"));
-        assertEquals(1, fixture.count("routine_member"));
-        assertEquals(member, member());
-        assertEquals(point, approvedPoint());
-        assertEquals(preferences, preferences());
+        assertEquals(2, fixture.count("routine_member"));
+        assertEquals(1, fixture.count("pickup_point"));
+        assertEquals(member, member()); assertEquals(point, approvedPoint()); assertEquals(preferences, preferences());
         assertEquals(2, fixture.conversation.number("SELECT use_count FROM wa.driver_invite WHERE driver_id=?", driver));
-
-        var staleReview = fixture.driverReview(driver, "APROVAR");
-        assertTrue(staleReview.text().contains("manter o ponto"), staleReview.text());
-        assertTrue(staleReview.text().contains("Volta sintética"), staleReview.text());
-        fixture.transport.jdbc.update("UPDATE wa.routine SET version=version+1 WHERE id=?", added);
-        var stale = fixture.conversation.text(driver, fixture.confirmation(driver, staleReview));
-        assertEquals(WaProblem.Code.VERSION_CONFLICT,
-                fixture.decide(stale, "APPROVE_PICKUP", fixture.payload(fixture.context(stale))).error());
-        fixture.conversation.finish(stale);
-        assertEquals(1, fixture.count("routine_member"));
-        fixture.approve(driver);
-        assertEquals(2, fixture.count("routine_member"));
-        assertEquals(member, member());
-        assertEquals(point, approvedPoint());
-        assertEquals(preferences, preferences());
-        assertEquals(1, fixture.conversation.number("SELECT count(*) FROM wa.routine WHERE id=? AND NOT stop_order_pending AND version=?",
-                originalRoutine, originalVersion));
+        assertEquals(1, fixture.conversation.number("SELECT count(*) FROM wa.routine WHERE id=? AND NOT stop_order_pending AND version=?", originalRoutine, originalVersion));
         assertEquals(1, fixture.conversation.number("SELECT count(*) FROM wa.routine WHERE id=? AND stop_order_pending", added));
-        assertEquals(1, fixture.conversation.number("""
-                SELECT count(*) FROM wa.routine_member m JOIN wa.pickup_point p ON p.id=m.pickup_point_id
-                WHERE m.routine_id=? AND m.link_id=? AND m.state='ACTIVE' AND p.state='APPROVED'
-                AND m.weekdays=ARRAY[2,4]::smallint[]
-                """, added, link));
-        fixture.open(passenger, code);
-        assertTrue(fixture.draft(passenger).path("routineChoices").isEmpty());
-        assertEquals(2, fixture.count("routine_member"));
+        assertEquals(1, fixture.conversation.number("SELECT count(*) FROM wa.routine_member WHERE routine_id=? AND link_id=? AND weekdays=ARRAY[2,4]::smallint[]", added, link));
     }
 
     @Test
-    void requestedPassengerReusesTheRequestAndItsPendingPointWithoutPrematureAdmission() {
+    void invitedPassengerKeepsTheAuthorizedLinkButEveryNewGpsPointStillNeedsReview() {
         UUID link = fixture.request(passenger, code);
         additionalRoutine();
-        var review = additionReview();
-        fixture.confirm(passenger, review);
+        fixture.open(passenger, code); fixture.send(passenger, "1"); fixture.send(passenger, "terça e quinta");
+        fixture.confirm(passenger, fixture.pin(passenger));
         assertEquals(1, fixture.count("driver_passenger_link"));
-        assertEquals("REQUESTED", fixture.conversation.string("SELECT state FROM wa.driver_passenger_link WHERE id=?", link));
+        assertEquals("APPROVED", fixture.conversation.string("SELECT state FROM wa.driver_passenger_link WHERE id=?", link));
         assertEquals(2, fixture.count("passenger_link_routine"));
         assertEquals(0, fixture.count("routine_member"));
-        fixture.approve(driver);
-        assertEquals(2, fixture.count("routine_member"));
-        assertEquals(1, fixture.conversation.number("SELECT count(*) FROM wa.pickup_point WHERE link_id=? AND state='APPROVED'", link));
+        fixture.approve(driver); assertEquals(1, fixture.count("routine_member"));
+        fixture.approve(driver); assertEquals(2, fixture.count("routine_member"));
+        assertEquals(2, fixture.conversation.number("SELECT count(*) FROM wa.pickup_point WHERE link_id=? AND state='APPROVED'", link));
     }
 
     @Test

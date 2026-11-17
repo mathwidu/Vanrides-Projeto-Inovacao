@@ -143,6 +143,10 @@ final class WaPassengerSignup {
     }
 
     private void pointOrReview(ObjectNode draft) {
+        if (draft.path("routePoints").asBoolean()) {
+            new WaPassengerPoints(data).open(draft);
+            return;
+        }
         if (draft.path("simpleSignup").asBoolean() && (draft.has("sourceEvent") || draft.has("commonId"))) {
             draft.put("stage", "REVIEW");
         } else {
