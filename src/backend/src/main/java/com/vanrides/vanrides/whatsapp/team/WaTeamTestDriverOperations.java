@@ -30,7 +30,8 @@ class WaTeamTestDriverOperations {
         final Decision decision;
         Action(Decision decision) { this.decision = decision; }
     }
-    record Request(Action action, UUID id, UUID link) {
+    record Request(Action action, UUID id, UUID link, UUID pickup) {
+        Request(Action action, UUID id, UUID link) { this(action, id, link, null); }
         @Override public String toString() { return "WaTeamTestDriverOperation[" + action + ", " + id + "]"; }
     }
     private record Receipt(long actor, String fingerprint, String action, UUID driver, UUID invite, UUID link) { }
@@ -94,8 +95,8 @@ class WaTeamTestDriverOperations {
             testDrivers.insertInvite(driver, invite, crypto.secretHash("passenger-invite", code(driver, invite)),
                 now.plusSeconds(86400), actor.id(), now);
         } else {
-            try { outcome = drivers.decide(driver, request.link(), request.action().decision); }
-            catch (WaProblem unavailable) { throw new WaTeamProblem(LINK_UNAVAILABLE); }
+            try { outcome = drivers.decide(driver, request.link(), request.pickup(), request.action().decision); }
+            catch (WaProblem unavailable) { throw new WaTeamProblem(unavailable.code()==WaProblem.Code.AMBIGUOUS_OCCURRENCE ? POINT_SELECTION_REQUIRED : LINK_UNAVAILABLE); }
         }
         jdbc.update("""
             INSERT INTO wa.team_admission_operation(id,github_actor_id,github_login,action,request_fingerprint,
@@ -155,6 +156,7 @@ class WaTeamTestDriverOperations {
 
     private String fingerprint(Request request) {
         return crypto.secretHash("team-test-driver-request-v1", settings.environment() + "\0" + team.cohort() + "\0"
-            + team.instance() + "\0" + request.action() + "\0" + request.link());
+            + team.instance() + "\0" + request.action() + "\0" + request.link()
+            + (request.pickup()==null ? "" : "\0" + request.pickup()));
     }
 }

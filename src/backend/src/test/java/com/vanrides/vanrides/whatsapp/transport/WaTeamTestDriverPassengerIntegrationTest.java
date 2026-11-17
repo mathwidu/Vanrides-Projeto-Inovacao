@@ -44,7 +44,7 @@ class WaTeamTestDriverPassengerIntegrationTest {
         assertEquals("REQUEST_LINK", request.body().path("commandType").asText());
         assertEquals(1, request.response().path("responseIds").size());
         assertEquals(
-                "REQUESTED",
+                "APPROVED",
                 fixture.conversation.string(
                         "SELECT state FROM wa.driver_passenger_link WHERE driver_id=? AND"
                                 + " passenger_id=?",

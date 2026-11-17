@@ -23,6 +23,7 @@ const messages = {
   EVOLUTION_UNAVAILABLE: 'Não foi possível confirmar o número no WhatsApp agora. Tente novamente.',
   UPSTREAM_UNAVAILABLE: 'Um serviço está indisponível. Tente novamente em instantes.',
   LINK_UNAVAILABLE: 'Este pedido mudou ou não pode mais ser decidido. Atualize os pedidos.',
+  POINT_SELECTION_REQUIRED: 'Escolha o trajeto e o ponto que deseja revisar. Atualize os pedidos para ver as opções.',
   TEAM_DISABLED: 'A área da equipe ainda não está habilitada neste ambiente.',
 };
 function message(text, error = false) { $('message').textContent = text; $('message').classList.toggle('error', error); }
@@ -217,12 +218,28 @@ function renderLinks(links) {
       : link.state === 'REQUESTED' ? ' · aguardando novo ponto do passageiro' : '');
     const routines = document.createElement('p'); routines.className = 'hint'; routines.textContent = link.routines || '';
     const actions = document.createElement('div'); actions.className = 'actions';
-    for (const [index, action] of linkActions(link).entries()) {
+    const addDecision = (container, action, pickupId, secondary = false) => {
       const [label, , confirmText] = decisions[action];
       const button = document.createElement('button'); button.type = 'button'; button.textContent = label;
-      if (index > 0) button.className = 'secondary';
-      button.addEventListener('click', () => { if (!confirmText || window.confirm(confirmText + title.textContent + '?')) testOperation(action, link.linkId); });
-      actions.append(button); linkButtons.push(button);
+      if (secondary) button.className = 'secondary';
+      button.addEventListener('click', () => { if (!confirmText || window.confirm(confirmText + title.textContent + '?')) testOperation(action, link.linkId, pickupId); });
+      container.append(button); linkButtons.push(button);
+    };
+    const options = Array.isArray(link.pickupOptions) ? link.pickupOptions : [];
+    if (options.length > 0) {
+      let pointNumber = 0;
+      for (const option of options) {
+        if (!/^[0-9a-f-]{36}$/.test(option.pickupId ?? '') || typeof option.routines !== 'string' || !option.routines.trim()) continue;
+        const point = document.createElement('div');
+        const caption = document.createElement('p'); caption.textContent = 'Ponto ' + (++pointNumber) + ' — ' + option.routines;
+        point.append(caption);
+        addDecision(point, link.state === 'REQUESTED' ? 'APPROVE_TEST_LINK' : 'APPROVE_TEST_POINT', option.pickupId);
+        addDecision(point, 'RECTIFY_TEST_POINT', option.pickupId, true);
+        actions.append(point);
+      }
+      addDecision(actions, link.state === 'REQUESTED' ? 'REJECT_TEST_LINK' : 'CLOSE_TEST_LINK', undefined, true);
+    } else {
+      for (const [index, action] of linkActions(link).entries()) addDecision(actions, action, undefined, index > 0);
     }
     item.append(title, detail, routines, actions);
     list.append(item);
@@ -260,11 +277,11 @@ function renderTestInviteLink() {
   link.setAttribute('href', 'https://wa.me/' + botPhoneNumber + '?text=' + encodeURIComponent(testInvite.text));
   link.hidden = false;
 }
-async function testOperation(action, linkId) {
+async function testOperation(action, linkId, pickupId) {
   if (busy) return;
   try {
-    if (!testPending || testPending.action !== action || testPending.linkId !== linkId)
-      testPending = { action, operationId: crypto.randomUUID(), ...(linkId ? { linkId } : {}) };
+    if (!testPending || testPending.action !== action || testPending.linkId !== linkId || testPending.pickupId !== pickupId)
+      testPending = { action, operationId: crypto.randomUUID(), ...(linkId ? { linkId } : {}), ...(pickupId ? { pickupId } : {}) };
     controls(true); message(action === 'ISSUE_TEST_PASSENGER_INVITE' ? 'Gerando convite de passageiro…' : 'Registrando a decisão…');
     const data = await request('test-driver', testPending);
     if (data.operationId !== testPending.operationId) throw Error('O servidor não confirmou este pedido. Tente novamente.');

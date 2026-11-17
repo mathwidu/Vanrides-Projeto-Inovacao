@@ -177,9 +177,9 @@ def allow_migrations(previous_inventory, next_inventory, approval):
         return False
     require(approval is not None,
             'Migrações ou configuração Flyway divergentes. A alteração exige plano de banco próprio.')
-    migration, checksum = approval
-    require(migration not in previous_inventory and next_inventory == {**previous_inventory, migration: checksum},
-            'A aprovação aceita somente a adição da migração aprovada com o checksum revisado.')
+    require(approval and not (approval.keys() & previous_inventory.keys())
+            and next_inventory == {**previous_inventory, **approval},
+            'A aprovação aceita somente a adição das migrações aprovadas com os checksums revisados.')
     return True
 
 
@@ -192,10 +192,17 @@ def read_approval(path):
         info = os.fstat(file.fileno())
         require(stat.S_ISREG(info.st_mode) and stat.S_IMODE(info.st_mode) == 0o600
                 and info.st_uid == os.getuid(), 'A aprovação local da migração deve ser um arquivo privado 0600.')
-        content = file.read(200)
-    match = re.fullmatch(rf'({HASH})  (V[0-9]+__[A-Za-z0-9_]+\.sql)\n?', content)
-    require(match, 'Aprovação local da migração inválida. Use o formato do sha256sum.')
-    return MIGRATIONS + match.group(2), match.group(1)
+        require(0 < info.st_size <= 4096, 'Aprovação local da migração inválida: tamanho excedido.')
+        content = file.read(4097)
+    lines, approval, versions = content.splitlines(), {}, set()
+    require(1 <= len(lines) <= 8, 'Aprovação local da migração inválida: use de uma a oito adições.')
+    for line in lines:
+        match = re.fullmatch(rf'({HASH})  (V([1-9][0-9]*)__[A-Za-z0-9_]+\.sql)', line)
+        require(match and int(match.group(3)) not in versions,
+                'Aprovação local da migração inválida. Use uma linha sha256sum por versão distinta.')
+        versions.add(int(match.group(3)))
+        approval[MIGRATIONS + match.group(2)] = match.group(1)
+    return approval
 
 
 def inspect_jar(image, expected, directory):
@@ -289,7 +296,8 @@ def deploy(request, approval=None):
     tree = verify_source(request.source, installed)
     if matches(old, request.image, request.jar):
         require(installed == request.source, 'Revisão do serviço diverge do candidato solicitado.')
-        used_approval = approval is not None and inspect_jar(old.image, old.jar, STATE).get(approval[0]) == approval[1]
+        inventory = inspect_jar(old.image, old.jar, STATE) if approval else {}
+        used_approval = bool(approval) and all(inventory.get(name) == checksum for name, checksum in approval.items())
         wait_ready(old.image, old.jar, old_id)
         print(f'API já saudável em {request.source} {request.digest}.')
         return used_approval

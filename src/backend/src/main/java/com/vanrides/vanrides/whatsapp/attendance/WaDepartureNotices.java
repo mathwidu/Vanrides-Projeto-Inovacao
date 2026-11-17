@@ -95,7 +95,7 @@ final class WaDepartureNotices {
         if (!names) {
             text.append("\nEnvie PRESENÇAS para ver os nomes.");
         }
-        return text.append("\nPara iniciar a rota, envie INICIAR SAÍDA.").toString();
+        return text.append("\nPara começar, envie Começar viagem.").toString();
     }
 
     private static void group(StringBuilder text, String label, List<Member> members, Group group, boolean names) {

@@ -48,6 +48,7 @@ public class WaCommandService {
     private final WaRunConversation runs;
     private final WaLocationConversation locations;
     private final WaRunFinishConversation finishes;
+    private final WaGuidedPairingCommands guidedPairing;
 
     public WaCommandService(JdbcTemplate jdbc, WaInboxAccess inbox, WaCommandStore store, WaOnboardingCommands onboarding,
                             WaPairingService pairing, WaSettings settings, WaClock clock, WaCrypto crypto) {
@@ -81,6 +82,7 @@ public class WaCommandService {
         this.locations = new WaLocationConversation(jdbc, clock, settings);
         this.finishes = new WaRunFinishConversation(jdbc, clock, settings, crypto);
         this.preferences = new WaPreferenceConversation(jdbc, clock);
+        this.guidedPairing = new WaGuidedPairingCommands(jdbc,inbox,store,settings,clock,crypto);
     }
 
     @Transactional
@@ -89,7 +91,7 @@ public class WaCommandService {
         WaProfileState actor = store.profile(event.identityId());
         inbox.revalidate(event);
         ObjectNode result = WaJson.object(WaJson.write(Map.of("inboxEventId", eventId.toString(), "entityVersion", actor.version(),
-            "actorState", actor.role(), "step", step(actor), "allowedCommands", allowed(actor, event),
+            "actorState", actor.role(), "step", conversation.nextStep(actor,settings.enabled()), "allowedCommands", allowed(actor, event),
             "options", List.of(), "serverTime", clock.now().toString())));
         if(settings.teamApiOnly() || actor.role().equals("PASSENGER") && preferences.recognizes(event)) {
             result.put("registrationStep",conversation.registration(actor,settings.enabled())).put("eventFreshness",conversation.freshness(event));
@@ -137,6 +139,8 @@ public class WaCommandService {
         if (FUTURE.contains(type)) throw new WaProblem(WaProblem.Code.DEPENDENCY_UNAVAILABLE);
         // Validate shape before opening the attempt window. No effect follows a thrown validation error.
         WaCommandPayloads.validate(type, payload);
+        if(type.equals("RESPOND_TO_MESSAGE") && guidedPairing.recognizes(actor,event))
+            return guidedPairing.execute(worker,actor,event,key,hash,correlation);
         boolean business = !type.equals("RESPOND_TO_MESSAGE");
         boolean initiallyCurrent = conversation.freshness(event).equals("CURRENT");
         UUID commandId = UUID.randomUUID();
@@ -177,18 +181,11 @@ public class WaCommandService {
         String response = finishCommand ? finishResult.text() : locationCommand ? locationResult == null ? com.vanrides.vanrides.whatsapp.tracking.WaVehicleLocation.UNAVAILABLE : locationResult.text()
             : runCommand ? runResult.text() : attendanceCommand ? attendanceResult.text() : passengerCommand ? passengerResult.text()
             : driverCommand ? driverResult.text() : response(type, payload, decision, registration, current, event);
-        if (decision.error() == null) {
-            ObjectNode result = WaJson.object("{}");
-            result.put("commandId", commandId.toString());
-            result.put("outcome", decision.body().path("changed").asBoolean() ? "APPLIED" : "NO_CHANGE");
-            result.put("entityVersion", current.version());
-            result.put("nextStep", step(current));
-            var responseIds = result.putArray("responseIds").add(responseId.toString());
-            if (peerResponseId != null) responseIds.add(peerResponseId.toString());
-            if (inviteResponseId != null) responseIds.add(inviteResponseId.toString());
-            result.put("correlationId", correlation);
-            decision = WaDecision.ok(result);
-        }
+        List<UUID> responseIds=new ArrayList<>(List.of(responseId));
+        if(peerResponseId!=null) responseIds.add(peerResponseId);
+        if(inviteResponseId!=null) responseIds.add(inviteResponseId);
+        if(runResult!=null) runResult.pages().stream().skip(1).forEach(page->responseIds.add(page.box()));
+        decision=store.result(decision,commandId,responseIds,current,conversation.nextStep(current,settings.enabled()),correlation);
         store.save(commandId, event, key, type, hash, decision);
         if (!finishCommand && !locationCommand && !runCommand && !attendanceCommand && !driverCommand && !passengerCommand && decision.error() == null && !Set.of("REQUEST_SUPPORT", "SET_PREFERENCE").contains(type)
                 && (!type.equals("RESPOND_TO_MESSAGE") || Set.of("HELP", "CONTINUE").contains(payload.path("responseCode").asText())))
@@ -198,9 +195,9 @@ public class WaCommandService {
             if(locationResult!=null) locations.attach(responseId,locationResult);
         } else if (finishCommand) {
             WaFoundationResponses.saveRun(jdbc,responseId,commandId,actor.identityId(),response,clock.now());
+            finishes.attach(responseId,commandId,actor.identityId(),finishResult);
         } else if (runCommand) {
-            WaFoundationResponses.saveRun(jdbc, responseId, commandId, actor.identityId(), response, clock.now());
-            runs.attach(responseId, commandId, actor.identityId(), runResult);
+            runs.saveResponses(responseId,commandId,actor.identityId(),runResult);
         } else if (attendanceCommand) {
             WaFoundationResponses.saveAttendance(jdbc, responseId, commandId, actor.identityId(), response, clock.now());
         } else if (passengerCommand) {
@@ -281,6 +278,7 @@ public class WaCommandService {
 
     private List<String> allowed(WaProfileState actor, WaInboxAccess.Context event) {
         if (actor.blocked()) return List.of();
+        if (guidedPairing.recognizes(actor,event)) return List.of("RESPOND_TO_MESSAGE");
         if (finishes.offer(actor,event) != null) return List.of("RESPOND_TO_MESSAGE", "FINISH_RUN");
         if (!settings.enabled() || conversation.paused(actor.identityId())) return List.of();
         if(settings.teamApiOnly()) {
@@ -342,15 +340,4 @@ public class WaCommandService {
             && !conversation.explicitSupport(event) && conversation.question(event) == null;
     }
 
-    private String step(WaProfileState actor) {
-        if (actor.blocked()) return "PAUSED";
-        if (!settings.enabled() || conversation.paused(actor.identityId())) return "PAUSED";
-        if (!"ACTIVE".equals(actor.status())) return "ONBOARDING";
-        if ("DRIVER".equals(actor.role())) {
-            Boolean paired = jdbc.queryForObject("SELECT EXISTS(SELECT 1 FROM wa.driver_device WHERE driver_id=? AND environment=? AND status='ACTIVE')",
-                Boolean.class, actor.identityId(), settings.environment());
-            if (!Boolean.TRUE.equals(paired)) return "PAIRING";
-        }
-        return "READY";
-    }
 }

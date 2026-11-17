@@ -26,7 +26,7 @@ services:
       labels:
         traefik.enable: 'true'
         traefik.docker.network: network_swarm_public
-        traefik.http.routers.vanrides-hml-android.rule: 'Host(`vanrides-inovacao-api.matheusduarte.dev.br`) && (Path(`/.well-known/assetlinks.json`) || Path(`/motorista/vinculo/retorno`) || Path(`/motorista/saida`) || Path(`/motorista/saida.js`) || Path(`/motorista/VanRides.apk`))'
+        traefik.http.routers.vanrides-hml-android.rule: 'Host(`vanrides-inovacao-api.matheusduarte.dev.br`) && (Path(`/.well-known/assetlinks.json`) || Path(`/motorista/vinculo/retorno`) || Path(`/motorista/saida`) || Path(`/motorista/fim`) || Path(`/motorista/conectar`) || Path(`/motorista/saida.js`) || Path(`/motorista/VanRides.apk`))'
         traefik.http.routers.vanrides-hml-android.priority: '10100'
         traefik.http.routers.vanrides-hml-android.entrypoints: websecure
         traefik.http.routers.vanrides-hml-android.tls: 'true'

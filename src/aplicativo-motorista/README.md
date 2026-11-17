@@ -24,6 +24,17 @@ de pareamento explícita. Analyzer e testes unitários não precisam de chave de
 mapas, conta Apple ou servidor remoto. O GPS Android usa Google FLP; no iOS,
 CoreLocation. Maps/Waze e mapas próprios não integram o MVP.
 
+O [candidato de fluxo simples](../../docs/desenvolvimento/proposta-fluxo-simples.md)
+acrescenta conexão pelo link enviado pelo bot, sem copiar códigos, e retorno à
+conversa após conexão, início e finalização explícitos. Os links têm propósitos
+separados e sua abertura não liga o GPS. A página intermediária do iPhone é
+provisória; as metas de três ações no Android e quatro no iPhone valem para o
+início diário já preparado, não para instalação/permissões. Código local e
+builds não comprovam publicação ou o percurso real desses links. O
+[roteiro do candidato](../../docs/desenvolvimento/roteiro-validacao-fluxo-simples.md)
+identifica as provas ainda necessárias; o caminho com código fica como
+contingência explícita nos detalhes do app.
+
 A CI verifica Android debug e iOS sem assinatura; resultados ficam nos logs.
 Build aprovado não comprova GPS em segundo plano ou aceite físico. O teste
 do iPhone permanece pausado.

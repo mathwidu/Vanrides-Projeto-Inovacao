@@ -5,19 +5,35 @@ import 'package:flutter/services.dart';
 
 import '../data/driver_session_links.dart';
 import '../data/driver_run_intent.dart';
+import '../data/driver_finish_intent.dart';
 import '../data/driver_session_platform.dart';
+import '../data/driver_pairing_intent.dart';
+import '../data/driver_pairing_link_platform.dart';
 
 class DriverPairingController extends ChangeNotifier {
-  DriverPairingController(this.session, this.links);
+  DriverPairingController(
+    this.session,
+    this.links, {
+    this.pairing = const NativeDriverPairingLinkPlatform(),
+  });
+  final DriverPairingLinkPlatform pairing;
+  DriverPairingIntent? pairingIntent;
+  DriverPairingReview? pairingReview;
+  bool get requiresReplacement => pairingReview?.replacesDevice == true;
+  bool get handoff => pairingIntent != null || snapshot?.handoff == true;
   final DriverSessionPlatform session;
   final DriverSessionLinks links;
   DriverSessionSnapshot? snapshot;
   DriverRunIntent? runIntent;
+  DriverFinishIntent? finishIntent;
+  int collectionRevision = 0;
   String? code;
   String? error;
   bool busy = false;
   bool fromLink = false;
   bool launchChecked = false;
+  bool conversationReturnPending = false;
+  bool openingConversation = false;
   bool _foreground = true;
   bool _closed = false;
   int _visibilityEpoch = 0;
@@ -57,12 +73,20 @@ class DriverPairingController extends ChangeNotifier {
     if (canReconcile &&
         (initial == null ||
             links.acceptsReturn(initial) ||
-            runIntent != null)) {
-      await act(DriverSessionAction.syncSession);
+            runIntent != null ||
+            finishIntent != null)) {
+      await _reconcileReturn(initial != null && links.acceptsReturn(initial));
     }
   }
 
   void _acceptRun(Uri uri) {
+    final host =
+        links is DeviceSessionLinks
+            ? (links as DeviceSessionLinks).returnHost
+            : '';
+    pairingIntent = DriverPairingIntent.parse(uri, host: host);
+    pairingReview = null;
+    finishIntent = DriverFinishIntent.parse(uri, host: host);
     runIntent = DriverRunIntent.parse(
       uri,
       host:
@@ -72,8 +96,76 @@ class DriverPairingController extends ChangeNotifier {
     );
   }
 
-  void runStarted() {
+  void restoreFinish(String id, int version) {
+    if (_closed ||
+        runIntent != null ||
+        finishIntent != null ||
+        pairingIntent != null) {
+      return;
+    }
+    finishIntent = DriverFinishIntent.fromJournal(id, version);
+    notifyListeners();
+  }
+
+  Future<void> runFinished(
+    DriverFinishIntent finished,
+    bool allowAutomaticReturn,
+  ) async {
+    if (_closed || !identical(finishIntent, finished)) return;
+    finishIntent = null;
+    collectionRevision++;
+    conversationReturnPending = true;
+    notifyListeners();
+    if (allowAutomaticReturn) unawaited(returnToConversation());
+  }
+
+  Future<void> runStarted(
+    DriverRunIntent started,
+    bool trackingStarted,
+    bool allowAutomaticReturn,
+  ) async {
+    // A newer link can arrive while the old native START is still awaiting its
+    // reply. Only that reply's authorization may be consumed here.
+    if (_closed || !identical(runIntent, started)) return;
     runIntent = null;
+    conversationReturnPending = trackingStarted;
+    notifyListeners();
+    if (trackingStarted && allowAutomaticReturn) {
+      // The collector's START has already completed. Opening another app must
+      // not delay its status or keep the driver's stop control busy.
+      unawaited(returnToConversation());
+    }
+  }
+
+  Future<void> returnToConversation() async {
+    if (_closed ||
+        !_foreground ||
+        openingConversation ||
+        !conversationReturnPending ||
+        runIntent != null ||
+        finishIntent != null ||
+        pairingIntent != null) {
+      return;
+    }
+    final epoch = _visibilityEpoch;
+    openingConversation = true;
+    notifyListeners();
+    var opened = false;
+    try {
+      if (links.hasConversation) opened = await links.openConversation();
+    } catch (_) {
+      // Collection is already running. A failed chat launch must not start it
+      // again or change the device's authorization state.
+    }
+    if (_closed) return;
+    openingConversation = false;
+    if (_foreground &&
+        epoch == _visibilityEpoch &&
+        runIntent == null &&
+        finishIntent == null &&
+        pairingIntent == null) {
+      conversationReturnPending = !opened;
+    }
     notifyListeners();
   }
 
@@ -81,11 +173,118 @@ class DriverPairingController extends ChangeNotifier {
     if (_closed) return;
     fromLink = true;
     _acceptRun(uri);
+    conversationReturnPending = false;
     code = null;
     _visibilityEpoch++;
     notifyListeners();
-    if ((links.acceptsReturn(uri) || runIntent != null) && canReconcile) {
-      unawaited(act(DriverSessionAction.syncSession));
+    if ((links.acceptsReturn(uri) ||
+            runIntent != null ||
+            finishIntent != null) &&
+        canReconcile) {
+      unawaited(_reconcileReturn(links.acceptsReturn(uri)));
+    }
+  }
+
+  String _pairingError(Object error) => switch (error) {
+    PlatformException(code: 'PAIRING_ACTIVE_RUN') =>
+      'Há uma viagem em andamento. Pare a localização e finalize a viagem antes de trocar o celular.',
+    PlatformException(code: 'PAIRING_SESSION_CONFLICT') =>
+      'Este celular já tem outro vínculo. Confira a conexão pelo WhatsApp antes de trocar.',
+    PlatformException(code: 'PAIRING_REVIEW_REQUIRED') =>
+      'Este link venceu ou mudou. No WhatsApp, envie Conectar meu celular para receber outro link.',
+    _ =>
+      'Não consegui concluir a conexão. Confira a rede e tente novamente. Se o link não funcionar, peça outro no WhatsApp.',
+  };
+
+  Future<void> connect({bool replace = false}) async {
+    final intent = pairingIntent;
+    if (_closed || busy || !_foreground || intent == null) return;
+    final visibility = _visibilityEpoch;
+    busy = true;
+    error = null;
+    _poll?.cancel();
+    notifyListeners();
+    bool current() => !_closed && identical(pairingIntent, intent);
+    bool visible() =>
+        current() && _foreground && visibility == _visibilityEpoch;
+    try {
+      final review = await pairing.prepare(intent);
+      if (!current()) return;
+      snapshot = review.session;
+      pairingReview = review;
+      if (!visible()) return;
+      if (review.alreadyConnected) {
+        pairingIntent = null;
+        pairingReview = null;
+        conversationReturnPending = true;
+        unawaited(returnToConversation());
+        return;
+      }
+      // Replacement is a separate explicit gesture after the authoritative review.
+      if (review.replacesDevice && !replace) return;
+      final next = await pairing.claim(intent);
+      if (!current()) return;
+      snapshot = next;
+      pairingIntent = null;
+      pairingReview = null;
+      code = null;
+      conversationReturnPending = true;
+      if (_foreground && visibility == _visibilityEpoch) {
+        unawaited(returnToConversation());
+      }
+    } catch (failure) {
+      if (current()) {
+        error = _pairingError(failure);
+        try {
+          final saved = await session.run(DriverSessionAction.getState);
+          if (current()) snapshot = saved;
+        } catch (_) {
+          /* Preserve the current view. */
+        }
+      }
+    } finally {
+      if (!_closed) _finish();
+    }
+  }
+
+  Future<void> continueConnection() => _reconcileReturn(true);
+
+  Future<void> _reconcileReturn(bool explicitReturn) async {
+    final wasPending = snapshot?.handoff == true;
+    final visibility = _visibilityEpoch;
+    await act(DriverSessionAction.syncSession);
+    if (_closed ||
+        !explicitReturn ||
+        !wasPending ||
+        !_foreground ||
+        visibility != _visibilityEpoch ||
+        error != null ||
+        pairingIntent != null ||
+        runIntent != null ||
+        finishIntent != null ||
+        !{
+          DriverSessionState.ready,
+          DriverSessionState.setupRequired,
+        }.contains(snapshot?.state)) {
+      return;
+    }
+    var consumed = false;
+    try {
+      consumed = await pairing.completeReturn();
+    } catch (_) {
+      /* Manual chat remains available. */
+    }
+    if (_closed ||
+        pairingIntent != null ||
+        runIntent != null ||
+        finishIntent != null) {
+      return;
+    }
+    if (consumed) snapshot = DriverSessionSnapshot(snapshot!.state);
+    conversationReturnPending = true;
+    notifyListeners();
+    if (consumed && _foreground && visibility == _visibilityEpoch) {
+      unawaited(returnToConversation());
     }
   }
 
@@ -145,7 +344,9 @@ class DriverPairingController extends ChangeNotifier {
       code = null;
       error =
           e is DriverSessionFailure
-              ? e.message
+              ? (e.code.startsWith('PAIRING_')
+                  ? _pairingError(PlatformException(code: e.code))
+                  : e.message)
               : const DriverSessionFailure('UNAVAILABLE').message;
       // A native operation can commit its intent before the network fails.
       // Read the local journal without submitting the command a second time.
@@ -267,6 +468,9 @@ class DriverPairingController extends ChangeNotifier {
     _closed = true;
     code = null;
     runIntent = null;
+    finishIntent = null;
+    pairingIntent = null;
+    pairingReview = null;
     _poll?.cancel();
     unawaited(_subscription?.cancel());
     super.dispose();

@@ -70,7 +70,7 @@ class WhatsAppOpenApiContractTest {
         assertEquals("3.0.3", result.getOpenAPI().getOpenapi());
         assertTrue(result.getMessages() == null || result.getMessages().isEmpty(),
                 () -> "OpenAPI parser messages: " + result.getMessages());
-        assertEquals(22, result.getOpenAPI().getPaths().size());
+        assertEquals(26, result.getOpenAPI().getPaths().size());
     }
 
     @Test
@@ -179,9 +179,13 @@ class WhatsAppOpenApiContractTest {
         checks.assertRequiredHeaders("/integrations/whatsapp/v1/context", "get", "X-Inbox-Lease");
         checks.assertRequiredHeaders("/integrations/whatsapp/v1/commands", "post", "Idempotency-Key", "X-Inbox-Lease");
         checks.assertRequiredHeaders("/integrations/whatsapp/v1/inbox/{id}/result", "post", "X-Inbox-Lease");
-        for (String suffix : new String[] {"pairings/begin", "pairings/redeem", "session/refresh", "session/revoke"}) {
+        for (String suffix : new String[] {"pairings/begin", "pairings/redeem", "session/refresh", "session/revoke",
+                "pairing-links/{id}/claim", "runs/{id}/finish"}) {
             checks.assertRequiredHeaders("/driver-app/v1/" + suffix, "post", "Idempotency-Key", "DPoP");
         }
+        checks.assertRequiredHeaders("/driver-app/v1/pairing-links/{id}/preview", "post", "DPoP");
+        checks.assertRequiredHeaders("/driver-app/v1/finish-intents/{id}/preview", "post", "DPoP");
+        checks.assertRequiredHeaders("/driver-app/v1/finish-intents/{id}/receipt", "post", "DPoP");
         JsonNode policy = contract.at("/x-vanrides-security-policy/idempotency");
         assertTrue(policy.has("request"));
         assertTrue(policy.has("humanEvent"));
@@ -297,9 +301,7 @@ class WhatsAppOpenApiContractTest {
                 assertTrue(Set.of("get", "post").contains(method.getKey()));
                 JsonNode operation = method.getValue();
                 assertTrue(operationIds.add(operation.path("operationId").asText()));
-                assertTrue(operation.path("x-vanrides-implementation-card").asText().startsWith("VR-WA-"));
-                assertTrue(Set.of("CARD_040_FOUNDATION", "CARD_050_TRANSPORT", "CARD_070_CONVERSATION", "CARD_080_DRIVER_SETUP", "CARD_100_ATTENDANCE", "CARD_110_RUN_TRACKING", "FUTURE")
-                        .contains(operation.path("x-vanrides-availability").asText()));
+                checks.assertOperationAvailability(path.getKey(), operation);
                 assertFalse(operation.path("security").isEmpty());
                 assertTrue(operation.path("x-vanrides-allowed-origins").isEmpty());
                 Set<String> principals = textSet(operation.path("x-vanrides-principals"));
@@ -316,7 +318,7 @@ class WhatsAppOpenApiContractTest {
                 }
             }
         }
-        assertEquals(22, operationIds.size());
+        assertEquals(26, operationIds.size());
     }
 
     @Test
@@ -330,17 +332,7 @@ class WhatsAppOpenApiContractTest {
         for (JsonNode entry : fixtureCatalog.path("fixtures")) {
             families.add(entry.path("family").asText());
             if (!CURRENT_CARD.equals(entry.path("implementationCard").asText())) {
-                String expected = switch (entry.path("implementationCard").asText()) {
-                    case "VR-WA-050-WHATSAPP-TRANSPORT" -> "CARD_050_TRANSPORT";
-                    case "VR-WA-070-AGENT-WORKFLOWS" -> "CARD_070_CONVERSATION";
-                    case "VR-WA-080-DRIVER-ROUTINES" -> "CARD_080_DRIVER_SETUP";
-                    case "VR-WA-090-PASSENGERS" -> "CARD_090_PASSENGER_SETUP";
-                    case "VR-WA-100-ATTENDANCE" -> "CARD_100_ATTENDANCE";
-                    case "VR-WA-110-RUN-TRACKING" -> "CARD_110_RUN_TRACKING"; case "VR-WA-120-DELIVERY-RECOVERY" -> "CARD_120_DELIVERY_RECOVERY";
-                    case "VR-WA-130-APPROACH" -> "CARD_130_APPROACH";
-                    default -> "FUTURE";
-                };
-                assertEquals(expected, entry.path("availability").asText());
+                checks.assertFixtureAvailability(entry);
             }
         }
         assertTrue(families.containsAll(Set.of("human-command", "error", "pairing", "session", "driver-status",

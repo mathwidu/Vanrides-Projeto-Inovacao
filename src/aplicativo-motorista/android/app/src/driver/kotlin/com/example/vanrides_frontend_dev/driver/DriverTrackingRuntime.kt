@@ -86,6 +86,76 @@ internal class DriverTrackingRuntime private constructor(private val context: Co
     private var nextHeartbeatAt = 0L
     private val http = DriverTrackingBuild.transport { pump() }
     private data class PendingStop(val owner: SessionOwner, val credential: DriverCredential, val body: String)
+    private val finishFlow by lazy { DriverFinishFlow(
+        request = { path, body, key, reply -> sessions.tracking(path,body,key,reply) },
+        load = { store.loadFinish() }, save = { store.saveFinish(it) },
+        localOwner = { owner ?: pendingStop?.owner ?: activationGuard.terminalOwner },
+        localOff = { !active() && !stopping && service == null && owner == null },
+        available = { !networkPending && !http.busy }, stopLocal = { stop("USER_FINISH") },
+        prepareStop = { expected ->
+            require(!active() && !stopping && service == null && owner == null)
+            val pending = pendingStop
+            if (pending != null) {
+                require(pending.owner == expected)
+                store.savePendingStop(TrackingStopJournal.record(expected,pending.body))
+            } else {
+                val stamp = wall()
+                val body = DriverFinishContract.stoppedPacket(expected,null,activationGuard.terminalOwner,true,stamp)
+                store.savePendingStop(TrackingStopJournal.record(expected,body))
+                pendingStop = PendingStop(expected,credential ?: DriverCredential("",""),body)
+                activationGuard.terminalOwner = expected
+                stopRequestedAt = stamp; stoppedAt = stamp; state = "STOPPED"; reason = "USER_FINISH"
+                stopStatusChecked = false; nextNetworkAt = 0; persist()
+            }
+        },
+        bindStop = { expected, ref ->
+            val pending = pendingStop
+            if (pending != null) {
+                require(pending.owner == expected)
+                val body = org.json.JSONObject(pending.body)
+                if (ref == null) body.remove("stopRequestRef") else body.put("stopRequestRef", ref)
+                store.savePendingStop(TrackingStopJournal.record(pending.owner,body.toString()))
+                pendingStop = pending.copy(body = body.toString())
+            } else {
+                val stamp = wall()
+                val body = DriverFinishContract.stoppedPacket(expected,ref,owner ?: activationGuard.terminalOwner,
+                    !active() && !stopping && service == null && owner == null,stamp)
+                store.savePendingStop(TrackingStopJournal.record(expected,body))
+                pendingStop = PendingStop(expected,credential ?: DriverCredential("",""),body)
+                activationGuard.terminalOwner = expected
+                stopRequestedAt = stamp; stoppedAt = stamp; state = "STOPPED"; reason = "USER_FINISH"
+                stopStatusChecked = false; nextNetworkAt = 0; persist()
+            }
+        },
+        clearStop = { expected, ref ->
+            pendingStop?.let { pending ->
+                require(pending.owner == expected)
+                val body = org.json.JSONObject(pending.body)
+                val actual = if (body.isNull("stopRequestRef")) null else body.getString("stopRequestRef")
+                // A baseline receipt can already acknowledge the original
+                // session. Bind then retire this provisional packet without
+                // transmitting a second STOP or inventing another ACK.
+                require(actual == ref || actual == null)
+                if (actual == null && ref != null) {
+                    body.put("stopRequestRef",ref)
+                    store.savePendingStop(TrackingStopJournal.record(expected,body.toString()))
+                    pendingStop = pending.copy(body = body.toString())
+                }
+                store.savePendingStop(null); pendingStop = null; remoteStopAcknowledgedAt = wall(); persist()
+            }
+            productionWire.recordFinished()
+        }, wake = { delay -> main.postDelayed({ pump() }, delay) }, now = { now() },
+    ) }
+    fun previewFinish(args: org.json.JSONObject, reply: (Map<String,Any?>?,String?) -> Unit) = finishFlow.preview(args,reply)
+    fun pendingFinish(): Map<String,Any?>? = finishFlow.pending()
+    fun retryFinish(args: org.json.JSONObject, previewOnly: Boolean, reply: (Map<String,Any?>?,String?) -> Unit) {
+        if (!visible) { reply(null,"UI_NOT_VISIBLE"); return }
+        finishFlow.retry(args,previewOnly,reply)
+    }
+    fun finishRun(args: org.json.JSONObject, reply: (Map<String,Any?>?,String?) -> Unit) {
+        if (spike || !visible) { reply(null,"UI_NOT_VISIBLE"); return }
+        finishFlow.finish(args,reply)
+    }
 
     init {
         val old = store.loadDiagnostics()
@@ -209,6 +279,7 @@ internal class DriverTrackingRuntime private constructor(private val context: Co
     }
     fun sync(reply: (String?) -> Unit) {
         checkLease()
+        if (!spike && (finishFlow.holdStop || finishFlow.networkBusy)) { reply("BUSY"); return }
         val value = credential ?: run { reply("NOT_CONFIGURED"); return }
         if (state == "STARTING" || stopping) { reply("BUSY"); return }
         // A restored stop has no sensor to restart. Keep the pending snapshot
@@ -250,6 +321,7 @@ internal class DriverTrackingRuntime private constructor(private val context: Co
         val value = credential ?: run { reply("NOT_CONFIGURED"); return }
         try { TrackingProtocol.id(intentId) } catch (_: Exception) { reply("INVALID_ARGUMENT"); return }
         if (active() || stopping || pendingStop != null || reconcileAfterCancelledStart || http.busy || networkPending) { reply("BUSY"); return }
+        if (!spike) finishFlow.cancelAction()
         epoch++; val token = epoch
         state = "STARTING"; reason = null; startingReply = reply
         stopRequestedAt = null; stoppedAt = null; nativeStopCalledAt = null; nativeStopCompletedAt = null
@@ -471,6 +543,10 @@ internal class DriverTrackingRuntime private constructor(private val context: Co
     }
     private fun pump() {
         checkLease()
+        if (!spike) {
+            finishFlow.tick()
+            if (finishFlow.holdStop || finishFlow.networkBusy) return
+        }
         if (networkPending || http.busy || now() < nextNetworkAt) return
         val stopPacket = pendingStop
         if (stopPacket != null) {

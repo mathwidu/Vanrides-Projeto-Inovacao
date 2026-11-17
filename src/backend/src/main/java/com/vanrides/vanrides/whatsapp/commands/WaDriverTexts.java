@@ -12,9 +12,9 @@ import java.util.Map;
 /** Human-facing copy lives in outbox, never in context labels. */
 final class WaDriverTexts {
     private WaDriverTexts() { }
-    static final String MENU = "Envie CRIAR para montar uma rotina, CONVIDAR para receber um link para um passageiro ou RESUMO para conferir tudo. "
-        + "Para gerenciar pela lista, envie EDITAR N, ORDEM N, PAUSAR N, RETOMAR N, CANCELAR N ou REVOGAR N. Troque N pelo número da opção. "
-        + "VOLTAR retorna uma etapa. CORRIGIR recomeça. ABANDONAR descarta o rascunho.";
+    static final String MENU = "Envie:\nCRIAR — cadastrar um trajeto\nCONVIDAR — receber um link para um passageiro\nRESUMO — conferir trajetos e convites"
+        + "\n\nPara gerenciar: EDITAR N, ORDEM N, PAUSAR N, RETOMAR N, CANCELAR N ou REVOGAR N. Use o número da lista."
+        + "\nVOLTAR retorna uma etapa. CORRIGIR recomeça. ABANDONAR descarta o rascunho.";
     static final String LIST_LIMIT = "A lista não foi exibida integralmente: excede 2000 caracteres/100 opções ou contém identificação sem formato suportado. "
         + "Nenhuma opção numerada está disponível. Para atendimento, envie FALAR COM SUPORTE.";
     static final String ORDER_LIMIT = "Não foi possível exibir todos os pontos e sua nova ordem dentro do limite da mensagem. "
@@ -62,14 +62,14 @@ final class WaDriverTexts {
         try { return stops(choices, null).length() <= 1300; } catch (WaProblem invalid) { return false; }
     }
     private static String catalog(ObjectNode draft) {
-        StringBuilder text = new StringBuilder(" Suas rotinas:"); int index = 0;
+        StringBuilder text = new StringBuilder("\n\nSeus trajetos:\n"); int index = 0;
         for (var choice : draft.path("routineChoices")) {
-            text.append(" Rotina ").append(++index).append(": ").append(routine(choice)).append(" (")
-                .append(choice.path("state").asText().equals("ACTIVE") ? "ativa" : "pausada").append(").");
+            text.append("\nRotina ").append(++index).append(": ").append(routine(choice)).append("\nEstado: ")
+                .append(choice.path("state").asText().equals("ACTIVE") ? "ativa" : "pausada").append(".\n");
         }
-        if (index == 0) text.append(" nenhuma.");
-        text.append(" Convites revogáveis:"); index = 0;
-        for (var choice : draft.path("inviteChoices")) text.append(" Convite ").append(++index).append(": ").append(invite(choice)).append(".");
+        if (index == 0) text.append("Nenhum trajeto cadastrado.\n");
+        text.append("\nConvites revogáveis:"); index = 0;
+        for (var choice : draft.path("inviteChoices")) text.append("\nConvite ").append(++index).append(": ").append(invite(choice)).append(".");
         if (index == 0) text.append(" nenhum.");
         return text.toString();
     }
@@ -77,7 +77,7 @@ final class WaDriverTexts {
         ObjectNode draft = WaDriverDraftStore.json(); draft.set("routineChoices", routines); draft.set("inviteChoices", invites);
         if (!menuFits(draft)) return LIST_LIMIT;
         return bounded("Suas rotinas e convites. Presença e execução de viagens ainda não estão disponíveis neste comando."
-            + catalog(draft) + " Nenhum código é reexibido.");
+            + catalog(draft) + "\n\nNenhum código é reexibido.");
     }
     private static String routine(JsonNode row) {
         String direction = row.path("direction").asText();
@@ -86,8 +86,10 @@ final class WaDriverTexts {
         java.time.LocalTime local = java.time.LocalTime.parse(copy(row.path("localTime").asText(), 8, ""));
         String time = local.format(DateTimeFormatter.ofPattern(local.getSecond() == 0 ? "HH:mm" : "HH:mm:ss"));
         String name = copy(row.path("name").asText(), 80, ""); if (name.isEmpty()) throw WaProblem.denied();
-        return name + "; " + (direction.equals("OUTBOUND") ? "IDA" : "VOLTA")
-            + " " + time + "; fuso " + zone;
+        return name + "\n" + (direction.equals("OUTBOUND") ? "→ IDA" : "← VOLTA")
+            + " " + time + "; fuso " + zone
+            + (row.path("weekdays").isArray() && !row.path("weekdays").isEmpty()
+                ? "\nDias: " + WaPassengerAnswers.dayNames(row.path("weekdays")) : "");
     }
     private static String invite(JsonNode row) {
         return "criado " + time(row.path("createdAt").asText()) + "; válido até " + time(row.path("expiresAt").asText())
@@ -124,10 +126,10 @@ final class WaDriverTexts {
     private static String bounded(String value) { if (value.length() > 2000) throw WaProblem.denied(); return value; }
     static String review(ObjectNode d, String marker) {
         String description = switch (d.path("action").asText()) {
-            case "CONFIGURE_ROUTINE" -> "Confira a rotina " + d.path("name").asText() + " ("
-                + (d.path("direction").asText().equals("OUTBOUND") ? "ida" : "volta") + ").\n"
-                + WaPassengerAnswers.dayNames(d.path("weekdays")) + " às " + d.path("time").asText()
-                + " (fuso de " + ZONES.getOrDefault(d.path("timezone").asText(), "sua escolha") + ").\n"
+            case "CONFIGURE_ROUTINE" -> "Confira o trajeto:\n" + d.path("name").asText() + "\n"
+                + (d.path("direction").asText().equals("OUTBOUND") ? "→ Ida" : "← Volta") + " às " + d.path("time").asText()
+                + "\nDias: " + WaPassengerAnswers.dayNames(d.path("weekdays"))
+                + "\nFuso: " + ZONES.getOrDefault(d.path("timezone").asText(), "sua escolha") + ".\n"
                 + (d.hasNonNull("destinationEvent") ? "Destino: ponto recebido." : "Destino: ponto atual mantido.");
             case "CREATE_INVITE" -> d.hasNonNull("inviteRecipient")
                 ? "Vou enviar um convite individual ao WhatsApp com final " + d.path("inviteLastDigits").asText()

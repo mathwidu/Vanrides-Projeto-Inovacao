@@ -5,6 +5,15 @@ aplicativos prontos para a rodada final do mantenedor no Redmi Note 8 e no
 iPhone 13. A lista abaixo acompanha as 65 issues abertas com a etiqueta MVP.
 As sete issues históricas de mapas e e-mail ficam no planejamento posterior.
 
+Atualização após o ensaio de 16/11: a tentativa em deslocamento foi interrompida
+antes de iniciar a nova coleta. A experiência não recebeu aceite: houve muitas
+etapas de preparo e a inclusão em nova rotina exigiu refazer um vínculo de
+teste. Falhas da automação do Mac também consumiram a janela; não representam,
+por si, defeitos do produto. A prioridade seguinte é a
+[jornada simples de cadastro e início](proposta-fluxo-simples.md). As evidências
+técnicas anteriores permanecem válidas nos seus próprios escopos e não aprovam
+essa tentativa como percurso ou teste de usabilidade.
+
 O mantenedor deixou percurso, bateria, utilidade do aviso e aceite final para
 quando a entrega técnica estiver pronta. Esses resultados terão registro
 próprio. As 65 issues continuam abertas: uma tarefa só será encerrada depois
@@ -13,6 +22,11 @@ de conferir seus critérios, a evidência correspondente e a revisão humana.
 O [roteiro da rodada final](rodada-final.md) reúne instalação, tela bloqueada,
 interrupção de rede, percurso, aviso, encerramento e bateria, com registro
 separado por plataforma e pelas issues correspondentes.
+Antes dele, o [ensaio do fluxo simples](roteiro-validacao-fluxo-simples.md)
+confere cadastro, pontos por trajeto, início e finalização parado, incluindo
+compreensão e número de ações. O incremento V45/V46 está local: ainda não altera
+o pacote publicado abaixo. Preparar e publicar uma versão compatível precede
+qualquer nova rodada nos aparelhos, que seguem pausados nesta implementação.
 
 ## Preparação conferida
 

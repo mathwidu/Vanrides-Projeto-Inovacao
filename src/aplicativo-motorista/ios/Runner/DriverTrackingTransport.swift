@@ -91,6 +91,20 @@ final class DriverTrackingTransport: NSObject, URLSessionTaskDelegate {
   var stopReference: String? { production.stopReference }
   var runState: String? { receiptRunState ?? production.runState }
   func recordStopReceipt(_ receipt: DriverTrackingStopReceipt) { receiptRunState = receipt.runState }
+  func recordFinished() { receiptRunState = "COMPLETED" }
+  func finishRequest(path: String, body: [String: Any], key: String?, completion: @escaping DriverFinishFlow.NetworkReply) {
+    Task { @MainActor in
+      do {
+        guard let controller = DriverSessionBridge.controller else { throw DriverSessionFailure.unavailable }
+        let encoded = try JSONSerialization.data(withJSONObject: body,options: [.sortedKeys])
+        let data = try await controller.trackingRequest(path: path,body: encoded,idempotency: key)
+        guard let value = try JSONSerialization.jsonObject(with: data) as? [String: Any] else { throw DriverTrackingFailure.invalidContract }
+        completion(.success(value),200)
+      } catch DriverSessionFailure.busy { completion(.failure(.busy),nil) }
+      catch let failure as DriverSessionRemoteFailure { completion(.failure(.serverRejected),failure.status) }
+      catch { completion(.failure(.network),nil) }
+    }
+  }
 
   func stopReceipt(_ stop: DriverTrackingStopRequest,
     completion: @escaping (Result<DriverTrackingStopReceipt, DriverTrackingFailure>, Int?) -> Void

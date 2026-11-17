@@ -18,7 +18,12 @@ class DriverCollectionPanel extends StatefulWidget {
   final DriverTrackingPlatform platform;
   final bool paired;
   final DriverRunIntent? intent;
-  final VoidCallback? onStarted;
+  final Future<void> Function(
+    DriverRunIntent intent,
+    bool trackingStarted,
+    bool allowAutomaticReturn,
+  )?
+  onStarted;
 
   @override
   State<DriverCollectionPanel> createState() => _DriverCollectionPanelState();
@@ -31,6 +36,8 @@ class _DriverCollectionPanelState extends State<DriverCollectionPanel>
         (status: null, busy: false, error: null),
       );
   bool _foreground = true;
+  int _visibilityEpoch = 0;
+  bool _stopping = false;
   Timer? _timer;
 
   @override
@@ -61,8 +68,35 @@ class _DriverCollectionPanelState extends State<DriverCollectionPanel>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     _foreground = state == AppLifecycleState.resumed;
+    if (!_foreground) _visibilityEpoch++;
     _timer?.cancel();
     if (_foreground) unawaited(_update(_refresh));
+  }
+
+  Future<DriverTrackingStatus> _start() async {
+    final intent = widget.intent;
+    final platform = widget.platform;
+    final epoch = _visibilityEpoch;
+    if (!_foreground ||
+        !widget.paired ||
+        intent == null ||
+        platform is! DriverRunPlatform) {
+      throw StateError('UNAVAILABLE');
+    }
+    final next = await (platform as DriverRunPlatform).startRun(intent);
+    if (mounted && next.isActive && identical(widget.intent, intent)) {
+      final trackingStarted =
+          next.state == 'TRACKING' && !next.stopPending && !next.isRunTerminal;
+      await widget.onStarted?.call(
+        intent,
+        trackingStarted,
+        trackingStarted &&
+            widget.paired &&
+            _foreground &&
+            epoch == _visibilityEpoch,
+      );
+    }
+    return next;
   }
 
   Future<void> _update(Future<DriverTrackingStatus> Function() call) async {
@@ -93,6 +127,25 @@ class _DriverCollectionPanelState extends State<DriverCollectionPanel>
         const Duration(seconds: 6),
         () => unawaited(_update(_refresh)),
       );
+    }
+  }
+
+  Future<void> _stopLocally() async {
+    if (_stopping || !mounted) return;
+    _stopping = true;
+    try {
+      final next = await widget.platform.stop();
+      if (mounted) _view.value = (status: next, busy: false, error: null);
+    } catch (_) {
+      if (mounted) {
+        _view.value = (
+          status: _view.value.status,
+          busy: false,
+          error: 'Confira a parada neste celular e tente novamente.',
+        );
+      }
+    } finally {
+      _stopping = false;
     }
   }
 
@@ -172,26 +225,16 @@ class _DriverCollectionPanelState extends State<DriverCollectionPanel>
                   onPressed:
                       view.busy || !permissionsReady
                           ? null
-                          : () => _update(() async {
-                            final platform = widget.platform;
-                            if (platform is! DriverRunPlatform) {
-                              throw StateError('UNAVAILABLE');
-                            }
-                            final next = await (platform as DriverRunPlatform)
-                                .startRun(widget.intent!);
-                            if (next.isActive) widget.onStarted?.call();
-                            return next;
-                          }),
-                  child: const Text('Iniciar localização desta saída'),
+                          : () => _update(_start),
+                  child: const Text('Começar e compartilhar localização'),
                 ),
               if (widget.paired && widget.intent == null && !canStop)
                 const Text(
-                  'Para iniciar ou retomar, abra o link da saída enviado pelo VanRides no WhatsApp.',
+                  'No WhatsApp, envie Começar viagem ao VanRides e abra o link que eu enviar.',
                 ),
               if (canStop)
                 OutlinedButton(
-                  onPressed:
-                      view.busy ? null : () => _update(widget.platform.stop),
+                  onPressed: _stopLocally,
                   child: const Text('Parar localização'),
                 ),
               if (widget.paired &&

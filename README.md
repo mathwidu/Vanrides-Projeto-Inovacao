@@ -19,12 +19,26 @@ Universidade Feevale, 2026/2.
 | Preparar o computador e contribuir | [Guia de contribuição](CONTRIBUTING.md) |
 | Testar uma versão com o grupo | [Homologação da equipe](docs/desenvolvimento/homologacao-da-equipe.md) |
 | Testar o cadastro no WhatsApp | [Cadastro de motorista e passageiro](docs/desenvolvimento/cadastro-guiado-whatsapp.md) |
+| Entender a simplificação em andamento | [Cadastro e início simples](docs/desenvolvimento/proposta-fluxo-simples.md) e [validação local](program/evidence/mvp-ux-20261117.md) |
+| Preparar o teste de facilidade do novo fluxo | [Ensaio parado antes do percurso](docs/desenvolvimento/roteiro-validacao-fluxo-simples.md) — candidato local, sem publicação |
 | Acompanhar a entrega técnica | [Plano e issues](docs/desenvolvimento/entrega-mvp.md) e [evidências](program/evidence/mvp-entrega-20261116.md) |
 | Fazer os testes finais nos aparelhos | [Roteiro por plataforma](docs/desenvolvimento/rodada-final.md) e [pacote identificado da rodada](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/releases/tag/mvp-0.4.0-15) |
 | Conferir falhas ou pausar envios | [Operação e recuperação](docs/desenvolvimento/operacao.md) |
 | Consultar a entrega da disciplina | [STACK](STACK.docx), [BACKLOG](BACKLOG.xlsx) e [Canvas](docs/06-canvas-mvp.md) |
 
 ## Situação do MVP
+
+O ensaio de 16/11 foi interrompido antes do novo GPS: o preparo mostrou excesso
+de etapas e dificuldades de retomada. A usabilidade permanece sem aceite. A
+[proposta de simplificação](docs/desenvolvimento/proposta-fluxo-simples.md) define
+uma interação com o bot e até três ações totais para iniciar uma saída já
+preparada. O candidato está em implementação e validação locais: início curto,
+reuso do cadastro, pontos por trajeto, finalização pelo app, conexão sem copiar
+códigos e links próprios para várias saídas. Ainda não é a versão publicada;
+o teto de ações e os retornos entre WhatsApp e app dependem de prova física.
+O mantenedor aceitou provisoriamente o botão intermediário do iPhone: a meta
+nesse aparelho passa a quatro ações. O desenho mantém entrada por link e retorno
+à conversa, sem contratação nova.
 
 Em 16/11/2026, a API da homologação usa schema V44, com HTTPS e worker
 saudáveis. O [pacote da rodada final](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/releases/tag/mvp-0.4.0-15)

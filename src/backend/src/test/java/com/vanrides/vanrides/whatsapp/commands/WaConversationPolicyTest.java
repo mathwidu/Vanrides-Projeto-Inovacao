@@ -87,6 +87,20 @@ class WaConversationPolicyTest {
         assertThat(WaConversationResponses.faq(WaConversationResponses.Question.ATTENDANCE, "READY", "DRIVER")).doesNotContain(reminder);
     }
 
+    @Test void askingHowToStartOnlyExplainsTheNextStepForTheCurrentRole() {
+        for (String text : List.of("Como começo a viagem?", "Como inicio a viagem?", "Como faço para começar a viagem?")) {
+            var question = event(text);
+            assertThat(policy.question(question)).isEqualTo(WaConversationResponses.Question.START);
+            assertThat(policy.replyAllowed("FAQ", WaProfileState.absent(question.identityId()), question)).isTrue();
+        }
+        assertThat(WaConversationResponses.faq(WaConversationResponses.Question.START, "READY", "DRIVER"))
+            .contains("Começar viagem", "confirma o início no aplicativo");
+        assertThat(WaConversationResponses.faq(WaConversationResponses.Question.START, "ASK_NAME", "DRIVER"))
+            .contains("Primeiro vamos concluir seu cadastro").doesNotContain("Envie Começar viagem");
+        assertThat(WaConversationResponses.faq(WaConversationResponses.Question.START, "READY", "PASSENGER"))
+            .contains("Quem começa a viagem é o motorista").doesNotContain("você confirma o início no aplicativo");
+    }
+
     private static WaInboxAccess.Context event(String text) {
         return new WaInboxAccess.Context(UUID.randomUUID(), UUID.randomUUID(), WaJson.MAPPER.createObjectNode()
             .put("text", text).put("occurredAt", NOW.toString()), "TEXT", NOW.plusSeconds(60), NOW.plusSeconds(3600));

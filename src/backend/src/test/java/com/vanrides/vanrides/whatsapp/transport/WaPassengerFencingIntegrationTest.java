@@ -49,9 +49,9 @@ class WaPassengerFencingIntegrationTest {
         var attack = fixture.conversation.text(intruder, "APROVAR 1");
         assertEquals(
                 WaProblem.Code.ACTION_NOT_ALLOWED,
-                fixture.decide(attack, "APPROVE_LINK", fixture.payload(context)).error());
+                fixture.decide(attack, "APPROVE_PICKUP", fixture.payload(context)).error());
         assertEquals(
-                "REQUESTED",
+                "APPROVED",
                 fixture.conversation.string(
                         "SELECT state FROM wa.driver_passenger_link WHERE id=?", link));
         assertEquals(0, fixture.count("routine_member"));
@@ -66,10 +66,10 @@ class WaPassengerFencingIntegrationTest {
         payload.put("pickupRef", "pickup_" + UUID.randomUUID().toString().replace("-", ""));
         assertEquals(
                 WaProblem.Code.ACTION_NOT_ALLOWED,
-                assertThrows(WaProblem.class, () -> fixture.decide(lease, "APPROVE_LINK", payload))
+                assertThrows(WaProblem.class, () -> fixture.decide(lease, "APPROVE_PICKUP", payload))
                         .code());
         assertEquals(
-                "REQUESTED",
+                "APPROVED",
                 fixture.conversation.string(
                         "SELECT state FROM wa.driver_passenger_link WHERE id=?", link));
         assertEquals(
@@ -87,7 +87,7 @@ class WaPassengerFencingIntegrationTest {
         var bare = fixture.send(driver, "CONFIRMAR");
         assertNotEquals("CONFIRMAR", fixture.confirmationText(bare), bare.text());
         assertEquals(
-                "REQUESTED",
+                "APPROVED",
                 fixture.conversation.string(
                         "SELECT state FROM wa.driver_passenger_link WHERE id=?", link));
     }
@@ -136,10 +136,10 @@ class WaPassengerFencingIntegrationTest {
         var lease = fixture.conversation.text(driver, fixture.confirmation(driver, review));
         assertEquals(
                 WaProblem.Code.VERSION_CONFLICT,
-                fixture.decide(lease, "APPROVE_LINK", fixture.payload(fixture.context(lease)))
+                fixture.decide(lease, "APPROVE_PICKUP", fixture.payload(fixture.context(lease)))
                         .error());
         assertEquals(
-                "REQUESTED",
+                "APPROVED",
                 fixture.conversation.string(
                         "SELECT state FROM wa.driver_passenger_link WHERE id=?", link));
         assertEquals(0, fixture.count("routine_member"));

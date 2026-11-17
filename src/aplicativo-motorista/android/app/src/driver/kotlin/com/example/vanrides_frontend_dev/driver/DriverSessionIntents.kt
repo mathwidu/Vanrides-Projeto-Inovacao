@@ -12,7 +12,7 @@ internal object DriverSessionIntents {
             clean.action = Intent.ACTION_MAIN; clean.addCategory(Intent.CATEGORY_LAUNCHER)
         } else {
             clean.action = Intent.ACTION_VIEW
-            clean.data = Uri.parse(when (entry) { DriverSessionProtocol.Entry.RETURN -> DriverSessionProtocol.RETURN_URI; DriverSessionProtocol.Entry.RUN -> incoming.dataString!!; else -> DriverSessionProtocol.INVALID_RETURN_URI })
+            clean.data = Uri.parse(when (entry) { DriverSessionProtocol.Entry.RETURN -> DriverSessionProtocol.RETURN_URI; DriverSessionProtocol.Entry.RUN, DriverSessionProtocol.Entry.FINISH, DriverSessionProtocol.Entry.CONNECT -> incoming.dataString!!; else -> DriverSessionProtocol.INVALID_RETURN_URI })
         }
         // No original extras, ClipData, selector, source bounds or URI survive, including on valid returns.
         clean.flags = incoming.flags and (Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or

@@ -33,6 +33,8 @@ final class WaPassengerTexts {
     }
 
     static String inviteLead(ObjectNode draft) {
+        if (draft.path("addingRoutines").asBoolean()) return "Seu cadastro com "
+                + draft.path("driverName").asText() + " foi mantido. Escolha os novos trajetos.\n\n";
         return "Seu convite é do motorista " + draft.path("driverName").asText()
                 + ". Vou ajudar você a indicar seu embarque. Se o convite não for para você, envie ABANDONAR.\n\n";
     }
@@ -52,6 +54,13 @@ final class WaPassengerTexts {
         return "• " + routineLabel(name, direction, time) + ", dias " + WaPassengerAnswers.dayNames(days);
     }
 
+    static String routineBlock(JsonNode routine, JsonNode days) {
+        return routine.path("name").asText() + "\n"
+                + (routine.path("direction").asText().equals("OUTBOUND") ? "→ Ida" : "← Volta")
+                + " às " + clock(routine.path("local_time").asText())
+                + (days.isArray() && !days.isEmpty() ? "\nDias: " + WaPassengerAnswers.dayNames(days) : "");
+    }
+
     static String prompt(ObjectNode draft) {
         String stage = draft.path("stage").asText();
         return switch (stage) {
@@ -69,6 +78,7 @@ final class WaPassengerTexts {
             case "ROUTINES" -> routines(draft);
             case "DAYS" -> days(draft);
             case "POINT" -> points(draft);
+            case "EDIT_ROUTINE", "EDIT_POINT_SELECTION" -> WaPassengerPoints.editPrompt(draft);
             case "REFERENCE" ->
                     "É na entrada principal, portão lateral ou outro acesso? Envie uma referência"
                         + " curta, ou PULAR se o pin já estiver claro.\n\nSe o pin não corresponde"
@@ -87,29 +97,26 @@ final class WaPassengerTexts {
     }
 
     static String review(ObjectNode draft, String marker) {
-        String action = draft.path("action").asText();
+        String action = draft.path("addingRoutines").asBoolean() ? "REQUEST_LINK" : draft.path("action").asText();
         List<String> sections = new ArrayList<>();
         switch (action) {
             case "REQUEST_LINK" -> {
                 sections.add(
-                        "Solicitação de "
+                        (draft.path("addingRoutines").asBoolean() ? "Novos trajetos de " : "Solicitação de ")
                                 + draft.path("passengerName").asText()
                                 + " ao motorista "
                                 + draft.path("driverName").asText()
                                 + ".");
                 List<String> lines = new ArrayList<>();
                 for (JsonNode selection : draft.path("selections")) {
-                    lines.add(
-                            routineLine(
-                                    selection.path("name").asText(),
-                                    selection.path("direction").asText(),
-                                    selection.path("local_time").asText(),
-                                    selection.path("selectedDays")));
+                    lines.add((draft.path("routePoints").asBoolean() ? (lines.size()+1) + ": " : "• ")
+                            + routineBlock(selection, selection.path("selectedDays"))
+                            + (draft.path("routePoints").asBoolean() ? "\n" + WaPassengerPoints.details(selection.path("pickup")) : ""));
                 }
                 if (!lines.isEmpty()) {
-                    sections.add(String.join("\n", lines));
+                    sections.add(String.join("\n\n", lines));
                 }
-                sections.add(
+                if (!draft.path("addingRoutines").asBoolean()) sections.add(
                         "Avisos de aproximação: "
                                 + (draft.path("approachMessages").asBoolean() ? "sim" : "não")
                                 + "\nLembretes de presença: "
@@ -123,12 +130,12 @@ final class WaPassengerTexts {
                                     + " iniciadas conservam o roteiro anterior.");
             case "APPROVE_LINK" ->
                     sections.add(
-                            "Aprovar vínculo e ponto de "
+                            "Conferir o ponto de "
                                     + draft.path("passengerName").asText()
                                     + ".\nConfira o acesso e a segurança física do embarque.");
             case "APPROVE_PICKUP" ->
                     sections.add(
-                            "Aprovar novo ponto de "
+                            (draft.path("keepingPoint").asBoolean() ? "Aprovar os novos trajetos e manter o ponto de " : "Aprovar novo ponto e trajetos pendentes de ")
                                     + draft.path("passengerName").asText()
                                     + ".\nSaídas já iniciadas mantêm o ponto anterior.");
             case "RECTIFY" ->
@@ -155,6 +162,10 @@ final class WaPassengerTexts {
         if (draft.has("selectionSummary")) {
             sections.add(draft.path("selectionSummary").asText());
         }
+        if (draft.path("routePoints").asBoolean() && !action.equals("REQUEST_LINK")) {
+            for (var selected : draft.path("selections")) sections.add(routineBlock(selected, selected.path("selectedDays"))
+                    + "\n" + WaPassengerPoints.details(selected.path("pickup")));
+        }
         List<String> details = new ArrayList<>();
         if (draft.has("pointLabel")) {
             details.add("Ponto: " + draft.path("pointLabel").asText());
@@ -170,8 +181,10 @@ final class WaPassengerTexts {
         }
         if (draft.path("simpleSignup").asBoolean() && action.equals("REQUEST_LINK")) {
             sections.add("Se estiver tudo certo, envie CONFIRMAR em até 5 minutos. O motorista vai conferir seu pedido.");
-            sections.add("Para ajustar, envie ALTERAR DIAS, CORRIGIR PONTO ou REFERÊNCIA seguido de um detalhe."
-                    + " Para escolher avisos, envie AVISOS TODOS, AVISOS CHEGADA, AVISOS PRESENÇA ou AVISOS NENHUM.");
+            sections.add("Para ajustar, envie ALTERAR DIAS ou CORRIGIR PONTO. Para um detalhe, envie REFERÊNCIA "
+                    + (draft.path("selections").size()>1 ? "1 Portão lateral." : "Portão lateral.")
+                    + (draft.path("addingRoutines").asBoolean() ? " Seus avisos e trajetos anteriores serão mantidos."
+                    : " Para escolher avisos, envie AVISOS TODOS, AVISOS CHEGADA, AVISOS PRESENÇA ou AVISOS NENHUM."));
         } else {
             String approval = approvalReply(action);
             String confirm = "Para confirmar este resumo em até 5 minutos, responda CONFIRMAR"
@@ -212,9 +225,8 @@ final class WaPassengerTexts {
     private static String days(ObjectNode draft) {
         JsonNode routine = draft.path("selections").path(draft.path("dayIndex").asInt());
         return WaPassengerAnswers.dayPrompt(
-                                "Para "
-                                        + routine.path("name").asText()
-                                        + ", em quais dias você participa?",
+                                routineBlock(routine, com.fasterxml.jackson.databind.node.MissingNode.getInstance())
+                                        + "\n\nEm quais dias você participa?",
                                 routine.path("weekdays"))
                         .text()
                 + "\n\nVocê pode enviar vários dias separados por vírgula, por exemplo: Segunda,"
@@ -232,32 +244,40 @@ final class WaPassengerTexts {
             lines.add(
                     (lines.size() + 1)
                             + ": "
-                            + routineLabel(
-                                    routine.path("name").asText(),
-                                    routine.path("direction").asText(),
-                                    routine.path("local_time").asText()));
+                            + routineBlock(routine, routine.path("weekdays")));
         }
-        String head = "Quais rotinas você utiliza? Envie os números separados por vírgula.";
+        String head = "Quais trajetos você utiliza? Envie os números separados por vírgula, como 1,2.";
+        if (draft.path("addingRoutines").asBoolean()) head = lines.isEmpty()
+                ? "Não há novos trajetos disponíveis. Seus trajetos e seu pedido atual foram mantidos."
+                    + " Para revisar o embarque, envie ABANDONAR e depois CORRIGIR PONTO."
+                : "Quais novos trajetos você quer acrescentar? Envie os números separados por vírgula, como 1,2.";
         if (lines.isEmpty()) {
+            if (draft.path("addingRoutines").asBoolean()) return head;
             return head
                     + "\n\nNão há uma lista selecionável neste momento. O motorista pode precisar"
                     + " publicar uma rotina ativa ou reduzir o catálogo. Peça orientação ao"
                     + " suporte.";
         }
-        return head + "\n\n" + String.join("\n", lines);
+        return head + "\n\n" + String.join("\n\n", lines);
     }
 
     private static String points(ObjectNode draft) {
+        if (draft.path("routePoints").asBoolean()) return WaPassengerPoints.prompt(draft);
         StringBuilder text =
                 new StringBuilder(
                         "Envie um pin estático do ponto onde a van deve buscar você. No celular,"
                             + " escolha o local de embarque no mapa do WhatsApp.\n\n"
                             + WaConversationResponses.COMPUTER_POINT);
+        if (draft.has("reusablePoint")) {
+            JsonNode point = draft.path("reusablePoint");
+            text.insert(0, "Quer usar o mesmo ponto? Confira: https://www.google.com/maps?q="
+                    + point.path("latitude").asDouble() + "," + point.path("longitude").asDouble()
+                    + "\nEnvie MESMO PONTO para mantê-lo, ou envie outro ponto abaixo.\n\n");
+        }
         if (draft.path("simpleSignup").asBoolean() && draft.path("selections").size() == 1) {
             JsonNode selection = draft.path("selections").path(0);
-            text.insert(0, "Sua rotina: " + routineLabel(selection.path("name").asText(),
-                    selection.path("direction").asText(), selection.path("local_time").asText())
-                    + ", " + WaPassengerAnswers.dayNames(selection.path("selectedDays")) + ". Para mudar os dias, envie ALTERAR DIAS.\n\n");
+            text.insert(0, "Seu trajeto:\n" + routineBlock(selection, selection.path("selectedDays"))
+                    + "\nPara mudar os dias, envie ALTERAR DIAS.\n\n");
         }
         if (draft.path("commonChoicesBlocked").asBoolean()) {
             text.append(

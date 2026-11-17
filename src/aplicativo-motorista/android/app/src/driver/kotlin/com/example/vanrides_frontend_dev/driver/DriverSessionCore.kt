@@ -15,6 +15,8 @@ internal class DriverSessionCore(
     private var value: JSONObject? = null
     private var verifiedReadiness: String? = null
     private var nonce: String? = null
+    private var pairingReview: JSONObject? = null
+    private var reviewedToken: String? = null
     private val p = DriverSessionProtocol
     private fun fresh(state: String) = JSONObject().put("schemaVersion", 1).put("origin", origin).put("state", state)
     private fun data(): JSONObject {
@@ -22,7 +24,8 @@ internal class DriverSessionCore(
             val saved = try { store.load() } catch (_: Exception) { throw DriverSessionFailure("STORAGE_ERROR") }
             if (saved != null) {
                 try {
-                    p.fields(saved, setOf("schemaVersion", "origin", "state"), setOf("verifier", "pairing", "session", "pending"))
+                    p.fields(saved, setOf("schemaVersion", "origin", "state"), setOf("verifier", "pairing", "session", "pending", "pairingMode"))
+                    if (saved.has("pairingMode")) require(saved.getString("pairingMode") == "HANDOFF")
                     require(saved.getInt("schemaVersion") == 1 && saved.getString("origin") == origin)
                     require(saved.getString("state") in p.states && saved.getString("state") != "READY")
                 } catch (_: Exception) { throw DriverSessionFailure("STORAGE_ERROR") }
@@ -49,14 +52,16 @@ internal class DriverSessionCore(
         val saved = data()
         var state = saved.getString("state")
         val pairing = saved.optJSONObject("pairing")
-        if (state == "PENDING" && pairing != null && p.instant(pairing.getString("expiresAt")) <= now()) state = "EXPIRED"
+        if (state == "PENDING" && pairing != null && pending() == null && p.instant(pairing.getString("expiresAt")) <= now()) state = "EXPIRED"
         if (session() != null && pending() == null && state != "REVOKING") state = verifiedReadiness ?: "SETUP_REQUIRED"
-        return if (state == "PENDING" && pairing != null) mapOf("state" to state, "expiresAt" to pairing.getString("expiresAt"))
-            else mapOf("state" to state)
+        val snapshot = mutableMapOf("state" to state)
+        if (state == "PENDING" && pairing != null) snapshot["expiresAt"] = pairing.getString("expiresAt")
+        if (saved.optString("pairingMode") == "HANDOFF" || pairing?.optString("mode") == "HANDOFF" || pending()?.optString("kind") == "CLAIM") snapshot["pairingMode"] = "HANDOFF"
+        return snapshot
     }
     fun showPairingCode(): String? {
         if (origin == null || getState()["state"] != "PENDING") return null
-        return data().optJSONObject("pairing")?.getString("userCode")?.let(p::code)
+        return data().optJSONObject("pairing")?.optString("userCode")?.takeIf { it.isNotEmpty() }?.let(p::code)
     }
     fun beginPairing(): Map<String, String> {
         configured()
@@ -73,6 +78,68 @@ internal class DriverSessionCore(
         val initial = fresh("REQUESTING").put("verifier", verifier).put("pending", journal("BEGIN", body))
         commit(initial); verifiedReadiness = null
         runPending(); return getState()
+    }
+    /** Explicit preparation only: a link read never provisions a key or sends HTTP. */
+    fun preparePairingLink(id: String, token: String): Map<String, Any> {
+        configured(); p.uuid(id); p.token(token)
+        if (data().getString("state") == "REVOKING") throw DriverSessionFailure("PAIRING_SESSION_CONFLICT")
+        if (pending() != null && !(pending()!!.getString("kind") == "CLAIM" && pending()!!.optString("linkId") == id))
+            throw DriverSessionFailure("BUSY")
+        if (!keys.exists()) keys.create()
+        keyRequired()
+        val response = request("POST", "${p.PREFIX}/pairing-links/$id/preview",
+            JSONObject().put("linkToken",token).toString().toByteArray(Charsets.UTF_8))
+        pairingSuccess(response)
+        val review = JSONObject(response.body.toString())
+        p.fields(review,setOf("linkId","state","expiresAt","serverTime","sameCurrentDevice","replacesDevice"))
+        require(p.uuid(p.string(review,"linkId")) == id && p.string(review,"state") in setOf("READY","PENDING","APPROVED","REDEEMED"))
+        require(review.get("sameCurrentDevice") is Boolean && review.get("replacesDevice") is Boolean)
+        p.instant(p.string(review,"expiresAt")); p.instant(p.string(review,"serverTime"))
+        var connected = false
+        val current = session()
+        if (current != null && p.instant(current.getString("refreshExpiresAt")) > now() && data().getString("state") !in setOf("EXPIRED","REVOKED")) {
+            if (!review.getBoolean("sameCurrentDevice")) throw DriverSessionFailure("PAIRING_SESSION_CONFLICT")
+            verifySession()
+            connected = getState()["state"] in setOf("READY","SETUP_REQUIRED")
+            if (!connected) throw DriverSessionFailure("PAIRING_SESSION_CONFLICT")
+        }
+        pairingReview = review; reviewedToken = token
+        val publicReview = review.keys().asSequence().associateWith { review.get(it) }.toMutableMap()
+        publicReview["alreadyConnected"] = connected
+        return mapOf("preview" to publicReview,"session" to getState())
+    }
+    fun claimPairingLink(id: String, token: String): Map<String, String> {
+        configured(); p.uuid(id); p.token(token)
+        val operation = pending()
+        if (operation != null) {
+            if (operation.getString("kind") != "CLAIM" || operation.optString("linkId") != id ||
+                JSONObject(String(p.unb64(operation.getString("body")),Charsets.UTF_8)).optString("linkToken") != token)
+                throw DriverSessionFailure("BUSY")
+            runPending(); return getState()
+        }
+        val pairing = data().optJSONObject("pairing")
+        if (pairing?.optString("linkId") == id && pairing.optString("mode") == "HANDOFF") return getState()
+        val review = pairingReview ?: throw DriverSessionFailure("PAIRING_REVIEW_REQUIRED")
+        if (review.optString("linkId") != id || reviewedToken != token || p.instant(review.getString("expiresAt")) <= now())
+            throw DriverSessionFailure("PAIRING_REVIEW_REQUIRED")
+        val current = session()
+        if (data().getString("state") == "REVOKING" || current != null && p.instant(current.getString("refreshExpiresAt")) > now() && data().getString("state") !in setOf("EXPIRED","REVOKED"))
+            throw DriverSessionFailure("PAIRING_SESSION_CONFLICT")
+        keyRequired()
+        val verifier = p.b64(random(32))
+        val body = JSONObject().put("linkToken",token).put("publicJwk",keys.publicJwk())
+            .put("pkceChallenge",p.hash(verifier.toByteArray(Charsets.US_ASCII))).put("pkceMethod","S256")
+            .put("platform","ANDROID").put("appVersion",appVersion)
+        val intent = journal("CLAIM",body).put("linkId",id)
+        commit(fresh("REQUESTING").put("verifier",verifier).put("pending",intent))
+        verifiedReadiness = null
+        runPending(); return getState()
+    }
+    private fun pairingSuccess(response: DriverSessionResponse) {
+        if (response.status == 409 || response.status == 410) {
+            throw DriverSessionFailure(if (errorCode(response) == "ACTIVE_RUN_EXISTS") "PAIRING_ACTIVE_RUN" else "PAIRING_REVIEW_REQUIRED")
+        }
+        requireSuccess(response)
     }
     fun syncSession(): Map<String, String> {
         if (origin == null) return getState()
@@ -146,10 +213,11 @@ internal class DriverSessionCore(
     private fun runPending() {
         keyRequired()
         val operation = pending() ?: return
-        p.fields(operation, setOf("kind", "idempotencyKey", "body"))
+        p.fields(operation, setOf("kind", "idempotencyKey", "body"),setOf("linkId"))
         val kind = p.string(operation, "kind")
         val path = when (kind) {
             "BEGIN" -> "${p.PREFIX}/pairings/begin"
+            "CLAIM" -> "${p.PREFIX}/pairing-links/${p.uuid(operation.getString("linkId"))}/claim"
             "REDEEM" -> "${p.PREFIX}/pairings/redeem"
             "REFRESH" -> "${p.PREFIX}/session/refresh"
             "REVOKE" -> "${p.PREFIX}/session/revoke"
@@ -165,12 +233,26 @@ internal class DriverSessionCore(
             // if the earlier revoke did apply, refresh is rejected and we report EXPIRED, never an invented ACK.
             startRefresh(); runPending(); continueRevocation(); return
         }
-        if (response.status == 410 || response.status == 401 && errorCode(response) == "INVALID_CREDENTIAL" && kind in setOf("REDEEM", "REFRESH")) {
-            terminal("EXPIRED"); throw DriverSessionFailure("SESSION_EXPIRED")
+        if (kind == "CLAIM" && response.status in setOf(409,410)) {
+            terminal("EXPIRED"); pairingSuccess(response)
         }
-        requireSuccess(response)
+        if (response.status == 410 || response.status == 401 && errorCode(response) == "INVALID_CREDENTIAL" && kind in setOf("REDEEM", "REFRESH")) {
+            terminal("EXPIRED"); throw DriverSessionFailure(if (kind == "CLAIM") "PAIRING_REVIEW_REQUIRED" else "SESSION_EXPIRED")
+        }
+        if (kind == "CLAIM") pairingSuccess(response) else requireSuccess(response)
         when (kind) {
             "BEGIN" -> acceptBegin(response.body)
+            "CLAIM" -> {
+                val body = response.body
+                p.fields(body,setOf("pairingId","state","expiresAt","serverTime"))
+                p.uuid(p.string(body,"pairingId"))
+                require(p.string(body,"state") in setOf("PENDING","APPROVED","REDEEMED"))
+                p.instant(p.string(body,"expiresAt")); p.instant(p.string(body,"serverTime"))
+                val pairing = JSONObject().put("pairingId",body.getString("pairingId")).put("expiresAt",body.getString("expiresAt"))
+                    .put("mode","HANDOFF").put("linkId",operation.getString("linkId"))
+                edit { it.put("pairing",pairing).put("state","PENDING"); it.remove("pending") }
+                pairingReview = null; reviewedToken = null
+            }
             "REDEEM", "REFRESH" -> acceptSession(response.body, kind == "REFRESH")
             "REVOKE" -> {
                 p.fields(response.body, setOf("deviceId", "state", "serverTime"))
@@ -187,6 +269,10 @@ internal class DriverSessionCore(
         require(expires > server && expires - server <= 300000)
         edit { root -> root.put("pairing", JSONObject(body.toString()).apply { remove("serverTime") }).put("state", "PENDING"); root.remove("pending") }
     }
+    fun completePairingReturn(): Boolean {
+        if (origin == null || data().optString("pairingMode") != "HANDOFF" || session() == null || verifiedReadiness == null) return false
+        edit { it.remove("pairingMode") }; return true
+    }
     private fun acceptSession(body: JSONObject, refresh: Boolean) {
         p.fields(body, setOf("deviceId", "accessToken", "refreshToken", "tokenType", "accessExpiresAt", "refreshExpiresAt", "serverTime"))
         val id = p.uuid(p.string(body, "deviceId"))
@@ -200,6 +286,7 @@ internal class DriverSessionCore(
         edit { root ->
             root.put("session", JSONObject(body.toString()).apply { remove("serverTime"); remove("tokenType") })
                 .put("state", if (revoking) "REVOKING" else "SETUP_REQUIRED")
+            if (root.optJSONObject("pairing")?.optString("mode") == "HANDOFF") root.put("pairingMode","HANDOFF")
             root.remove("pending"); root.remove("pairing"); root.remove("verifier")
         }
         verifiedReadiness = null
@@ -231,8 +318,15 @@ internal class DriverSessionCore(
     /** Same serialized060 owner; tokens and signing keys never cross the bridge. */
     fun trackingRequest(path: String, body: ByteArray?, idempotency: String?): DriverSessionResponse {
         configured(); keyRequired()
+        if (Regex("${p.PREFIX}/finish-intents/[0-9a-f-]{36}/receipt").matches(path)) {
+            require(body != null && idempotency == null)
+            val value = JSONObject(String(body, Charsets.UTF_8))
+            p.fields(value, setOf("intentToken","expectedVersion")); p.token(value.getString("intentToken"))
+            require(value.getLong("expectedVersion") in 0..9007199254740991L)
+            return request("POST", path, body)
+        }
         require(path == "${p.PREFIX}/tracking-status" ||
-            Regex("${p.PREFIX}/(?:start-intents/[0-9a-f-]{36}/activate|tracking-sessions/[0-9a-f-]{36}/(?:state|samples))").matches(path))
+            Regex("${p.PREFIX}/(?:start-intents/[0-9a-f-]{36}/activate|finish-intents/[0-9a-f-]{36}/preview|runs/[0-9a-f-]{36}/finish|tracking-sessions/[0-9a-f-]{36}/(?:state|samples))").matches(path))
         if (data().getString("state") in setOf("REVOKING", "REVOKED", "EXPIRED")) throw DriverSessionFailure("SESSION_EXPIRED")
         if (pending() != null) {
             if (pending()!!.getString("kind") != "REFRESH") throw DriverSessionFailure("BUSY")

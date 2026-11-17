@@ -1,5 +1,9 @@
 # VR-HML-010-TEAM-API — Homologação técnica da API para o grupo
 
+O incremento local de 17/11 inclui o contrato `contracts/whatsapp-team-web.md`:
+a seleção de ponto por trajeto altera a interface de teste da equipe, além do
+contrato driver. O escopo foi incluído no programa; não há ampliação de acesso.
+
 ## Resultado esperado
 
 Todos os integrantes podem usar a API implementada do MVP no mesmo endereço HTTPS, inclusive rotas de atendimento e do app do motorista. Issues existentes: [#89](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/89) e [#90](https://github.com/mathwidu/Vanrides-Projeto-Inovacao/issues/90).
@@ -340,3 +344,82 @@ liberação de passageiro e convite de motorista verificados com o mantenedor.
 Guia `docs/desenvolvimento/area-da-equipe.md` publicado para os colegas.
 O aceite individual de um colega e a jornada completa do MVP continuam
 pendentes; o card permanece em andamento. Recibos de CI só provam build/deploy.
+
+### Simplificação da experiência — 17/11/2026
+
+O mantenedor autorizou implementar a redução de etapas do uso cotidiano após o
+ensaio interrompido de 16/11. Impact Analysis: conversas de início, reuso de
+cadastro do passageiro, revelação do link autorizado, lembrete e apresentação
+do botão no aplicativo. Sem migração, dependência nova ou mudança dos canais
+nativos. Preservar as melhorias da equipe: `main` em `14cd663`/PR #132 integrada
+normalmente à branch `codex/ux-cadastro-e-inicio`.
+
+Manter as cercas de perfil, aparelho, versão, lista, prazo, replay e parada.
+Nenhum GPS automático ao receber mensagem, abrir link ou carregar tela. Reuso
+do ponto só quando explícito e exatamente igual; trajetos anteriores continuam
+intactos. Retorno: reverter os commits deste incremento, sem reversão de banco.
+Sem publicação nesta etapa; os testes físicos continuam pausados.
+
+Uma saída pronta passa a dispensar seleção e código no bot; várias opções ainda
+exigem escolha e a entrada iOS depende da decisão de uso/distribuição. Não
+declarar atingida a meta de três ações nem o aceite de usabilidade. Plano e
+pendências na [proposta atualizada](../../docs/desenvolvimento/proposta-fluxo-simples.md)
+e resultados nas [evidências](../evidence/mvp-ux-20261117.md).
+
+Alinhamento adicional de 17/11: o mantenedor manteve a entrada por link e pediu
+retorno automático ao WhatsApp após a ação no app. Fluxo-alvo inclui vários
+trajetos, seleção de trajetos/dias pelo passageiro e finalização que conclui a
+viagem e para o sensor no mesmo toque. Abertura pelo ícone não foi aprovada como
+substituta. Implementar apresentação do catálogo, frase natural de início e
+retorno START em incremento local; sem migração, contrato HTTP novo ou STOP
+automático. Impacto: projeção dos dias existentes, mensagens, lifecycle/callback
+Flutter e testes. Preservar escopo de arquivos de colegas e rollback por commit.
+Ponto por trajeto, autorização do vínculo pelo convite e intenção de finalização
+são mudanças seguintes de domínio/contrato; não declarar implementadas.
+O mantenedor aceitou o botão intermediário no iPhone em 17/11. Registrar quatro
+ações como meta provisória nesse aparelho, sem compra; manter três no Android
+como alvo a provar. A escolha remove a espera por decisão de distribuição para
+o fluxo provisório, sem comprovar abertura/handoff real.
+
+### Embarque por trajeto e encerramento no aplicativo — 17/11/2026
+
+Pedido do mantenedor autoriza implementar as partes seguintes e preparar a
+validação completa. Impacto: V45 para propostas de embarque por seleção e
+entrada autorizada pelo convite; V46 para intenção de finalização vinculada a
+viagem/sessão/aparelho/versão; endpoints, links, consumidores Android/iOS e
+recuperação persistida. Um único card vertical continua ativo.
+
+V45 preserva proposta pendente e ponto aprovado anterior; escopo de alterações
+é o trajeto escolhido, mantendo snapshots materializados. Não prometer rollback
+somente do binário antigo depois de usar múltiplos pontos: aquele binário ainda
+presume ponto global. V46 preserva parada local imediata, mesmo offline;
+finalização remota e ACK têm recibo próprio correlacionado. Novos inícios e
+finalização têm propósitos distintos; abrir link/preview não coleta nem encerra.
+
+Revisão independente definiu baseline para sessão já parada e exceção estrita
+para STOP próprio que incrementa a versão uma vez. Nenhuma troca genérica pela
+versão atual. Recebimento de chave/prova não substitui confirmação nativa.
+Preparação local, sem publicação/VPS/aparelhos nesta etapa. Gate proporcional,
+upgrade com dados sintéticos e roteiro estacionado precedem nova rodada física.
+
+### Conexão guiada, opções diretas e publicação completa — 17/11/2026
+
+O mantenedor autorizou concluir as lacunas e publicar o conjunto compatível.
+Primeiro: desenhar e implementar conexão/renovação sem código visível, com
+prova da chave e confirmação de autoria pelo WhatsApp; emissão de opções de
+início independentes, com consumo mutuamente exclusivo. Nenhum link sozinho
+inicia GPS. A exceção do botão intermediário iPhone permanece aceita.
+
+Impacto de publicação: o CD atual aprova uma migração por SHA. O pacote poderá
+precisar de várias adições, todas nominadas e verificadas por checksum, sem
+permitir alteração de SQL anterior, biblioteca ou configuração Flyway. O ensaio
+em cópia restaurada deve preceder qualquer aprovação no host. Preservar CI simples,
+serviços compartilhados, banco/contatos e versões anteriores recuperáveis.
+
+V45 exige retorno de dados sob janela sem escritas ou runtime já compatível
+com pontos por trajeto: não oferecer rollback apenas da imagem V44 depois de
+novas escritas. Planejar essa transição antes do merge que dispara deploy.
+Validar localmente por etapas, com um build/suíte pesada por vez. Aparelhos
+continuam pausados até o pacote estar preparado; percurso e aceite são a etapa
+posterior com o mantenedor. Atualizar evidências e issues sem encerrar critérios
+que dependam de prova humana ou física ainda ausente.

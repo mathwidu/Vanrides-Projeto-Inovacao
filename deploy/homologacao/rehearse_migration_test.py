@@ -34,8 +34,9 @@ def jar(extra=False, change=None, properties=None, extra_entries=None, omit=()):
 
 
 class DockerProcess:
-    def __init__(self, previous, failure=None):
-        self.previous, self.failure, self.calls, self.owned, self.schema = previous, failure, [], {}, 43
+    def __init__(self, previous, failure=None, previous_version=43, next_version=44):
+        self.previous, self.failure, self.calls, self.owned, self.schema = previous, failure, [], {}, previous_version
+        self.previous_version, self.next_version = previous_version, next_version
         self.fingerprints = 0
         self.service_reads = 0
 
@@ -81,7 +82,7 @@ class DockerProcess:
             stdout = (cid + '\n').encode()
         elif operation == 'cp': Path(args[-1]).write_bytes(self.previous)
         elif operation == 'start':
-            if self.owned[args[-1]]['labels']['dev.vanrides.operation'] == 'candidate-on-new': self.schema = 44
+            if self.owned[args[-1]]['labels']['dev.vanrides.operation'] == 'candidate-on-new': self.schema = self.next_version
         elif operation == 'exec':
             if 'pg_dump' in args: stdout = b'invalid-backup' if self.failure == 'bad-dump' else b'PGDMP-private-real-backup-fixture'
             elif 'psql' in args:
@@ -91,9 +92,9 @@ class DockerProcess:
                     if cid == LIVE_DB: self.fingerprints += 1
                     changed = self.failure == 'source-changed' and cid == LIVE_DB and self.fingerprints > 1
                     changed |= self.failure == 'restore-changed' and cid != LIVE_DB
-                    stdout = ('scope|2|0|1|1\ncredentials|5|0\nunsupported|0\npublic.flyway_schema_history|43|' + '4' * 32
+                    stdout = ('scope|2|0|1|1\ncredentials|5|0\nunsupported|0\npublic.flyway_schema_history|' + str(self.previous_version) + '|' + '4' * 32
                               + '\nwa.profile|' + ('2' if changed else '1') + '|' + '5' * 32 + '\n').encode()
-                else: stdout = (str(43 if LIVE_DB in args else self.schema) + '|0').encode()
+                else: stdout = (str(self.previous_version if LIVE_DB in args else self.schema) + '|0').encode()
             elif 'sha256sum' in args: stdout = (M.sha(self.previous) + '  /app/app.jar').encode()
             elif 'wget' in args: stdout = b'{"status":"UP"}'
         elif operation == 'logs': stdout = b'private-synthetic-log'
@@ -116,9 +117,9 @@ class RehearsalTests(unittest.TestCase):
             'migration': {'path': MIGRATION, 'sha256': M.sha(b'CREATE TABLE retention_journal(id integer);')}}
         self.path = self.root / 'manifest.json'; self.path.write_bytes(M.encode(self.value)); self.expected = M.sha(self.path.read_bytes())
 
-    def flow(self, failure=None):
+    def flow(self, failure=None, previous_version=43, next_version=44):
         output = self.root / 'result'; output.mkdir(mode=0o700)
-        process = DockerProcess(self.old, failure)
+        process = DockerProcess(self.old, failure, previous_version, next_version)
         runner = M.Docker(output, execute=process)
         return output, process, lambda: M.rehearse(self.value, self.new, self.expected, output, runner, pause=lambda _: None)
 
@@ -245,6 +246,138 @@ class RehearsalTests(unittest.TestCase):
             self.assertEqual(M.main(),2)
         self.assertIn('PREFLIGHT_BLOCKED_NO_DOCKER',captured.getvalue())
         self.assertFalse((self.root/'never').exists())
+
+
+class MigrationBundleTests(unittest.TestCase):
+    def setUp(self):
+        RehearsalTests.setUp(self)
+        self.old = jar(True)
+        self.sql = {M.MIGRATIONS + f'V{version}__addition.sql': f'CREATE TABLE addition_{version}(id integer);'.encode()
+                    for version in (45, 46)}
+        self.new = jar(True, extra_entries=self.sql)
+        self.value['schemaVersion'] = 3
+        self.value.pop('migration')
+        self.value['migrations'] = [{'path': path, 'sha256': M.sha(raw)} for path, raw in self.sql.items()]
+        self.value['previous']['jarSha256'] = M.sha(self.old)
+        self.value['candidate']['jarSha256'] = M.sha(self.new)
+        Path(self.value['candidate']['jar']).write_bytes(self.new)
+        self.path.write_bytes(M.encode(self.value)); self.expected = M.sha(self.path.read_bytes())
+
+    def flow(self, failure=None):
+        return RehearsalTests.flow(self, failure, previous_version=44, next_version=46)
+
+    def test_v3_manifest_and_inventory_accept_the_exact_two_migrations(self):
+        value, candidate = M.manifest(self.path, self.expected)
+        self.assertEqual(candidate, self.new)
+        versions, inventory, proof = M.reviewed_inventory(self.old, candidate, value)
+        self.assertEqual(versions, (44, 46)); self.assertFalse(proof)
+        self.assertEqual(inventory, {**M.inventory(self.old), **{item['path']: item['sha256'] for item in value['migrations']}})
+        # Manifest order is preserved; version contiguity follows the SQL versions.
+        value['migrations'].reverse()
+        self.assertEqual(M.reviewed_inventory(self.old, candidate, value)[0], (44, 46))
+
+    def test_v3_accepts_the_one_and_eight_migration_boundaries(self):
+        old = M.inventory(self.old)
+        for size in (1, 8):
+            reviewed = [{'path': M.MIGRATIONS + f'V{version}__addition.sql', 'sha256': 'a' * 64}
+                        for version in range(45, 45 + size)]
+            candidate = {**old, **{item['path']: item['sha256'] for item in reviewed}}
+            value = {**self.value, 'migrations': reviewed}; self.path.write_bytes(M.encode(value))
+            with self.subTest(size=size):
+                self.assertEqual(M.manifest(self.path, M.sha(self.path.read_bytes()))[0]['migrations'], reviewed)
+                self.assertEqual(M.migration_versions(old, candidate, reviewed), (44, 44 + size))
+
+    def test_v3_manifest_refuses_empty_oversized_duplicate_or_malformed_reviews(self):
+        first = self.value['migrations'][0]
+        variants = ([], [first] * 2,
+                    [first, {**first, 'path': first['path'].replace('addition', 'another')}],
+                    [{'path': M.MIGRATIONS + f'V{n}__addition.sql', 'sha256': 'a' * 64} for n in range(45, 54)],
+                    [{**first, 'sha256': 'A' * 64}], [{**first, 'sha256': None}],
+                    [{**first, 'path': M.MIGRATIONS + '../V45__addition.sql'}],
+                    [{**first, 'path': M.MIGRATIONS + 'R__repeatable.sql'}],
+                    [{**first, 'command': 'arbitrary shell'}], [None], {'path': first['path']})
+        for reviewed in variants:
+            value = json.loads(json.dumps(self.value)); value['migrations'] = reviewed
+            self.path.write_bytes(M.encode(value))
+            with self.subTest(reviewed=reviewed), self.assertRaises(M.Blocked):
+                M.manifest(self.path, M.sha(self.path.read_bytes()))
+
+    def test_v3_does_not_accept_single_migration_or_configuration_review_keys(self):
+        for changes in ({'migration': self.value['migrations'][0]}, {'reviewedConfigurations': []}):
+            value = {**self.value, **changes}; self.path.write_bytes(M.encode(value))
+            with self.subTest(changes=changes), self.assertRaises(M.Blocked):
+                M.manifest(self.path, M.sha(self.path.read_bytes()))
+        with self.assertRaises(M.Blocked):
+            M.configuration_reviews({**self.value, 'reviewedConfigurations': []})
+
+    def test_v3_versions_must_be_unique_and_contiguous_after_the_previous_schema(self):
+        old = M.inventory(self.old)
+        for numbers in ((46,), (45, 47), (44, 45), (45, 45)):
+            reviewed = [{'path': M.MIGRATIONS + f'V{version}__addition_{index}.sql', 'sha256': 'a' * 64}
+                        for index, version in enumerate(numbers)]
+            candidate = {**old, **{item['path']: item['sha256'] for item in reviewed}}
+            with self.subTest(numbers=numbers), self.assertRaises(M.Blocked):
+                M.migration_versions(old, candidate, reviewed)
+
+    def test_v3_refuses_wrong_sql_hash_extra_missing_or_changed_inventory(self):
+        first = next(iter(self.sql))
+        changes = (
+            {'extra_entries': {**self.sql, first: b'changed reviewed SQL'}},
+            {'extra_entries': {**self.sql, M.MIGRATIONS + 'V47__unreviewed.sql': b'SELECT 1;'}},
+            {'extra_entries': self.sql, 'omit': (first,)},
+            {'extra_entries': self.sql, 'omit': (MIGRATION,)},
+            {'extra_entries': {**self.sql, MIGRATION: b'changed previous SQL'}},
+            {'extra_entries': {**self.sql, 'BOOT-INF/lib/flyway-core.jar': b'changed library'}},
+            {'extra_entries': {**self.sql, 'BOOT-INF/lib/new-library.jar': b'new library'}},
+            {'extra_entries': self.sql, 'omit': ('BOOT-INF/lib/flyway-core.jar',)},
+            {'extra_entries': self.sql, 'properties': b'spring.flyway.enabled=false\n'},
+            {'extra_entries': {**self.sql, 'BOOT-INF/classes/other.yml': b'unreviewed: true\n'}},
+        )
+        for change in changes:
+            with self.subTest(change=change), self.assertRaises(M.Blocked):
+                M.reviewed_inventory(self.old, jar(True, **change), self.value)
+        value = json.loads(json.dumps(self.value)); value['migrations'][1]['sha256'] = '0' * 64
+        with self.assertRaises(M.Blocked): M.reviewed_inventory(self.old, self.new, value)
+
+    def test_v3_invalid_inventory_stops_before_backup(self):
+        self.value['migrations'][1]['sha256'] = '0' * 64
+        output, process, run = self.flow()
+        with self.assertRaises(M.Blocked): run()
+        self.assertFalse(any('pg_dump' in row or 'pg_restore' in row for row in process.calls))
+        self.assertFalse(process.owned)
+        self.assertEqual(json.loads((output / 'receipt.json').read_bytes())['stage'], 'JAR_INVENTORY')
+
+    def test_v3_receipt_records_every_reviewed_hash_and_the_return_scope(self):
+        output, process, run = self.flow(); receipt = run()
+        self.assertEqual(receipt['status'], 'RESTORE_AND_MIGRATION_RETURN_VERIFIED')
+        self.assertEqual(receipt['manifestSchemaVersion'], 3)
+        self.assertEqual(receipt['migrations'], self.value['migrations'])
+        self.assertEqual((receipt['previousSchemaVersion'], receipt['targetSchemaVersion']), (44, 46))
+        self.assertEqual([row['schemaVersion'] for row in receipt['scenarios']], [44, 46, 46])
+        self.assertFalse(receipt['businessCompatibilityVerified'])
+        self.assertFalse(receipt['returnAfterNewWritesVerified']); self.assertFalse(receipt['releaseEligible'])
+        self.assertNotIn('reviewedConfigurations', receipt)
+        self.assertEqual(json.loads((output / 'receipt.json').read_bytes()), receipt)
+        self.assertFalse(process.owned)
+        for command in process.calls:
+            if command[0] == 'service': self.assertEqual(command[1], 'inspect')
+
+    def test_cli_preserves_exact_v3_manifest_and_its_bundle_receipt(self):
+        from contextlib import nullcontext, redirect_stdout
+        raw = (json.dumps(self.value, indent=2) + '\n').encode(); self.path.write_bytes(raw)
+        output = self.root / 'exact-v3'; process = DockerProcess(self.old, previous_version=44, next_version=46); runner = M.Docker
+        argv = ['rehearse_migration.py', '--execute-on-vps', '--manifest', str(self.path),
+                '--expected-manifest-sha256', M.sha(raw), '--output', str(output)]
+        with patch.object(sys_module(), 'argv', argv), patch.object(M, 'host_identity'), \
+             patch.object(M, 'deploy_lock', return_value=nullcontext()), \
+             patch.object(M, 'Docker', side_effect=lambda folder: runner(folder, execute=process)), redirect_stdout(io.StringIO()):
+            self.assertEqual(M.main(), 0)
+        self.assertEqual((output / 'manifest.json').read_bytes(), raw)
+        receipt = json.loads((output / 'receipt.json').read_bytes())
+        self.assertEqual(receipt['manifestSha256'], M.sha(raw))
+        self.assertEqual(receipt['manifestSchemaVersion'], 3)
+        self.assertEqual(receipt['migrations'], self.value['migrations'])
+        self.assertEqual(receipt['ownedCleanup'], 'VERIFIED')
 
 
 class ConfigurationDeltaTests(unittest.TestCase):

@@ -101,10 +101,18 @@ public final class WaPrivacyTechnicalRetention {
             case BATCH->jdbc.update("DELETE FROM wa.tracking_batch_receipt WHERE session_id=? AND batch_id=?",unit.parent(),unit.id());
             case CONTEXT->jdbc.update("UPDATE wa.conversation_state c SET context_json="+WaPrivacyTechnicalQueries.CONTEXT+",version=version+1,updated_at=? WHERE identity_id=?",Timestamp.from(clock.now()),unit.id());
             case REPLAY->jdbc.update("UPDATE wa.operation_replay SET response_ciphertext=decode('00','hex') WHERE id=?",unit.id());
-            case CIPHER->jdbc.update("UPDATE wa.message_outbox SET private_payload_ciphertext=NULL,start_payload_ciphertext=NULL,version=version+1 WHERE id=?",unit.id());
-            case PAIRING->jdbc.update("DELETE FROM wa.pairing_challenge WHERE id=?",unit.id());
+            case CIPHER->clearCipher(unit.id());
+            case PAIRING->removePairing(unit.id(),unit.owner());
             case DEVICE->jdbc.update("UPDATE wa.driver_device SET public_jwk='{}' WHERE id=?",unit.id());
         };
+    }
+    private int clearCipher(UUID box) {
+        jdbc.update("UPDATE wa.pairing_link_notice SET secret_ciphertext=NULL WHERE outbox_id=?",box);
+        return jdbc.update("UPDATE wa.message_outbox SET private_payload_ciphertext=NULL,start_payload_ciphertext=NULL,version=version+1 WHERE id=?",box);
+    }
+    private int removePairing(UUID pairing,UUID owner) {
+        int handoffs=jdbc.update("DELETE FROM wa.pairing_handoff WHERE pairing_id=? AND driver_id=?",pairing,owner);
+        return Math.max(handoffs,jdbc.update("DELETE FROM wa.pairing_challenge WHERE id=?",pairing));
     }
     private Grant grant(WaPrincipal actor){
         var rows=jdbc.query("SELECT environment,allowed_instance_id,expires_at FROM wa.service_credential WHERE id=? AND principal='SYSTEM_JOB' AND allowed_instance_id IS NOT NULL AND revoked_at IS NULL AND expires_at>? FOR SHARE",

@@ -44,12 +44,19 @@ public final class WaTeamTestDriver {
         ArrayNode links = data.array("""
             SELECT jsonb_build_object('linkId',l.id,'passengerName',p.display_name,'state',l.state,
               'requestedAt',l.created_at,'pointPending',EXISTS(SELECT 1 FROM wa.pickup_point pp
+                JOIN wa.passenger_link_routine s ON s.pickup_point_id=pp.id AND s.link_id=pp.link_id
                 WHERE pp.link_id=l.id AND pp.state='PROPOSED' AND pp.valid_until IS NULL))::text
             FROM wa.driver_passenger_link l JOIN wa.profile p ON p.identity_id=l.passenger_id
             WHERE l.driver_id=? AND l.state IN ('REQUESTED','APPROVED') ORDER BY l.created_at DESC,l.id LIMIT 20
             """, driver);
-        for (JsonNode link : links)
-            ((ObjectNode) link).put("routines", data.selectionSummary(UUID.fromString(link.path("linkId").asText())));
+        for (JsonNode link : links) {
+            UUID id = UUID.fromString(link.path("linkId").asText());
+            ObjectNode row = (ObjectNode) link;
+            row.put("routines", data.selectionSummary(id));
+            ArrayNode options = row.putArray("pickupOptions");
+            for (UUID point : proposed(driver, id)) options.add(WaJson.MAPPER.createObjectNode()
+                    .put("pickupId", point.toString()).put("routines", new WaPassengerReviewStore(data).summary(id, point)));
+        }
         return links;
     }
 
@@ -61,6 +68,10 @@ public final class WaTeamTestDriver {
     }
 
     public Outcome decide(UUID driver, UUID link, Decision decision) {
+        return decide(driver, link, null, decision);
+    }
+
+    public Outcome decide(UUID driver, UUID link, UUID pickup, Decision decision) {
         if (!data.teamTestDriver(driver)) throw WaProblem.denied();
         var actors = jdbc.query("""
             SELECT * FROM wa.profile WHERE identity_id=? AND role='DRIVER' AND status='ACTIVE' AND driver_enabled FOR UPDATE
@@ -71,15 +82,33 @@ public final class WaTeamTestDriver {
             .put("driverId", driver.toString())
             .put("linkId", link.toString());
         if (decision.operation != null) draft.put("operation", decision.operation);
-        var proposed = jdbc.query("""
-            SELECT id FROM wa.pickup_point WHERE link_id=? AND state='PROPOSED' AND valid_until IS NULL
-            """, (rs, i) -> rs.getObject(1, UUID.class), link);
-        if (proposed.size() == 1) draft.put("pickupId", proposed.get(0).toString());
+        boolean reviewsPoint = decision == Decision.APPROVE_LINK || decision == Decision.APPROVE_POINT || decision == Decision.RECTIFY_POINT;
+        if (!reviewsPoint && pickup != null) throw WaProblem.denied();
+        if (reviewsPoint) {
+            var choices = proposed(driver, link);
+            if (pickup == null && choices.size()>1) throw new WaProblem(WaProblem.Code.AMBIGUOUS_OCCURRENCE);
+            if (pickup == null && choices.size()==1) pickup = choices.get(0);
+            if (pickup == null || !choices.contains(pickup)) throw WaProblem.denied();
+            draft.put("pickupId", pickup.toString());
+        }
+        data.snapshot(driver, draft, null);
+        if (reviewsPoint) {
+            jdbc.queryForList("SELECT id FROM wa.passenger_link_routine WHERE link_id=? AND pickup_point_id=? ORDER BY routine_id FOR UPDATE", link, pickup);
+            if (!proposed(driver, link).contains(pickup)) throw WaProblem.denied();
+        }
         var mutations = new WaPassengerMutations(data);
         var prepared = mutations.prepare(actors.get(0), null, draft);
         if (decision.requiredLinkState != null && !decision.requiredLinkState.equals(prepared.link().path("state").asText()))
             throw WaProblem.denied();
         var result = mutations.apply(actors.get(0), null, draft, prepared);
         return new Outcome(result.pickup(), result.kind(), result.peerText());
+    }
+
+    private java.util.List<UUID> proposed(UUID driver, UUID link) {
+        return jdbc.query("""
+                SELECT DISTINCT p.id FROM wa.pickup_point p JOIN wa.passenger_link_routine s
+                  ON s.pickup_point_id=p.id AND s.link_id=p.link_id AND s.driver_id=p.driver_id AND s.passenger_id=p.passenger_id
+                WHERE p.driver_id=? AND p.link_id=? AND p.state='PROPOSED' AND p.valid_until IS NULL ORDER BY p.id
+                """, (rs,row)->rs.getObject(1,UUID.class), driver, link);
     }
 }

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Ensaio privado de uma migração aditiva: nunca publica nem altera serviços live."""
+"""Ensaio privado de migrações aditivas: nunca publica nem altera serviços live."""
 import argparse
 from contextlib import contextmanager
 import fcntl
@@ -120,25 +120,28 @@ def manifest(path, expected):
     require(re.fullmatch('[a-f0-9]{64}', expected or '') and sha(raw) == expected, 'MIG_MANIFEST_CHANGED')
     value = object_json(raw)
     version = value.get('schemaVersion')
-    fields = {'schemaVersion', 'environment', 'previous', 'candidate', 'migration'}
-    require(type(version) is int and version in (1, 2) and value.get('environment') == ENVIRONMENT
+    fields = {'schemaVersion', 'environment', 'previous', 'candidate', 'migrations' if version == 3 else 'migration'}
+    require(type(version) is int and version in (1, 2, 3) and value.get('environment') == ENVIRONMENT
             and set(value) == fields | ({'reviewedConfigurations'} if version == 2 else set()), 'MIG_MANIFEST_INVALID')
     configuration_reviews(value)
-    old, candidate, migration = value['previous'], value['candidate'], value['migration']
-    require(set(old) == {'apiImage', 'postgresImage', 'revision', 'tree', 'jarSha256'}
-            and set(candidate) == {'jar', 'jarSha256', 'revision', 'tree'} and set(migration) == {'path', 'sha256'}, 'MIG_MANIFEST_INVALID')
+    migration_reviews(value)
+    old, candidate = value['previous'], value['candidate']
+    require(isinstance(old, dict) and isinstance(candidate, dict)
+            and set(old) == {'apiImage', 'postgresImage', 'revision', 'tree', 'jarSha256'}
+            and set(candidate) == {'jar', 'jarSha256', 'revision', 'tree'}, 'MIG_MANIFEST_INVALID')
     image(old['apiImage'], API_REPOSITORY)
     image(old['postgresImage'], 'postgres')
-    require(all(re.fullmatch('[a-f0-9]{40}', x) for x in (old['revision'], old['tree'], candidate['revision'], candidate['tree']))
-            and all(re.fullmatch('[a-f0-9]{64}', x) for x in (old['jarSha256'], candidate['jarSha256'], migration['sha256']))
-            and re.fullmatch(re.escape(MIGRATIONS) + r'V[1-9][0-9]*__[A-Za-z0-9_]+\.sql', migration['path']), 'MIG_ANCHOR_INVALID')
+    require(all(isinstance(x, str) and re.fullmatch('[a-f0-9]{40}', x)
+                for x in (old['revision'], old['tree'], candidate['revision'], candidate['tree']))
+            and all(isinstance(x, str) and re.fullmatch('[a-f0-9]{64}', x)
+                    for x in (old['jarSha256'], candidate['jarSha256'])), 'MIG_ANCHOR_INVALID')
     jar = read(Path(candidate['jar']), MAX_JAR)
     require(sha(jar) == candidate['jarSha256'], 'MIG_CANDIDATE_CHANGED')
     return value, jar
 
 
 def configuration_reviews(value):
-    if value['schemaVersion'] == 1:
+    if value['schemaVersion'] in (1, 3):
         require('reviewedConfigurations' not in value, 'MIG_CONFIGURATION_REVIEW_INVALID'); return []
     reviewed = value.get('reviewedConfigurations')
     require(isinstance(reviewed, list) and len(reviewed) == 1 and isinstance(reviewed[0], dict), 'MIG_CONFIGURATION_REVIEW_INVALID')
@@ -146,6 +149,19 @@ def configuration_reviews(value):
     require(set(item) == {'path', 'oldSha256', 'newSha256'} and item['path'] == CONFIGURATION
             and all(isinstance(item[key], str) and re.fullmatch('[a-f0-9]{64}', item[key]) for key in ('oldSha256', 'newSha256'))
             and item['oldSha256'] != item['newSha256'], 'MIG_CONFIGURATION_REVIEW_INVALID')
+    return reviewed
+
+
+def migration_reviews(value):
+    reviewed = value.get('migrations') if value['schemaVersion'] == 3 else [value.get('migration')]
+    require(isinstance(reviewed, list) and 1 <= len(reviewed) <= 8, 'MIG_MIGRATION_REVIEW_INVALID')
+    versions = []
+    for item in reviewed:
+        require(isinstance(item, dict) and set(item) == {'path', 'sha256'}, 'MIG_MIGRATION_REVIEW_INVALID')
+        match = re.fullmatch(re.escape(MIGRATIONS) + r'V([1-9][0-9]*)__[A-Za-z0-9_]+\.sql', item['path']) if isinstance(item['path'], str) else None
+        require(match and isinstance(item['sha256'], str) and re.fullmatch('[a-f0-9]{64}', item['sha256']), 'MIG_ANCHOR_INVALID')
+        versions.append(int(match.group(1)))
+    require(len(set(versions)) == len(versions), 'MIG_VERSION_INVALID')
     return reviewed
 
 
@@ -166,7 +182,7 @@ def reviewed_inventory(previous, candidate, value):
         require(unchanged == original, 'MIG_CONFIGURATION_DELTA_INVALID')
         comparison[path] = old[path]
         proof.append({**item, 'unchangedBaseSha256': sha(unchanged), 'addedProperties': [line.decode().rstrip('\n') for line in CONFIG_ADDITIONS]})
-    return migration_versions(old, comparison, value['migration']), new, proof
+    return migration_versions(old, comparison, migration_reviews(value)), new, proof
 
 
 def inventory(jar):
@@ -188,13 +204,17 @@ def inventory(jar):
 
 
 def migration_versions(old, new, reviewed):
-    require(reviewed['path'] not in old and new == {**old, reviewed['path']: reviewed['sha256']}, 'MIG_UNREVIEWED_CHANGE')
+    # Keep the single-migration helper contract used by v1/v2 callers.
+    reviewed = [reviewed] if isinstance(reviewed, dict) else reviewed
+    reviewed = migration_reviews({'schemaVersion': 3, 'migrations': reviewed})
+    additions = {item['path']: item['sha256'] for item in reviewed}
+    require(not (additions.keys() & old.keys()) and new == {**old, **additions}, 'MIG_UNREVIEWED_CHANGE')
     matches = [re.fullmatch(re.escape(MIGRATIONS) + r'V([0-9]+)__[A-Za-z0-9_]+\.sql', name) for name in old if name.startswith(MIGRATIONS)]
     require(matches and all(matches), 'MIG_VERSION_INVALID')
     versions = [int(match.group(1)) for match in matches]
-    after = int(re.search(r'/V([0-9]+)__', reviewed['path']).group(1))
-    require(len(set(versions)) == len(versions) and after == max(versions) + 1, 'MIG_VERSION_INVALID')
-    return max(versions), after
+    after = sorted(int(re.search(r'/V([0-9]+)__', item['path']).group(1)) for item in reviewed)
+    require(len(set(versions)) == len(versions) and after == list(range(max(versions) + 1, max(versions) + 1 + len(after))), 'MIG_VERSION_INVALID')
+    return max(versions), after[-1]
 
 
 def host_identity():
@@ -383,7 +403,7 @@ def api_probe(owned, image, database, jar, env_file, expected_version, name, pau
 def rehearse(value, candidate, expected, output, run, pause=time.sleep):
     receipt = {'schemaVersion': 1, 'environment': ENVIRONMENT, 'manifestSha256': expected,
                'status': 'BLOCKED', 'releaseEligible': False, 'candidateRevision': value['candidate']['revision'], 'candidateTree': value['candidate']['tree'], 'stage': 'LIVE_SNAPSHOT', 'scope': 'POSTGRES_MIGRATION_AND_IMAGE_RETURN_ONLY'}
-    if value['schemaVersion'] == 2: receipt['manifestSchemaVersion'] = 2
+    if value['schemaVersion'] in (2, 3): receipt['manifestSchemaVersion'] = value['schemaVersion']
     owned = Owned(run)
     try:
         before = live_state(run, value['previous']); source = before[DB]['container']
@@ -397,6 +417,11 @@ def rehearse(value, candidate, expected, output, run, pause=time.sleep):
         versions, new_inventory, configurations = reviewed_inventory(previous, candidate, value)
         if configurations: receipt['reviewedConfigurations'] = configurations
         prior_version, next_version = versions
+        if value['schemaVersion'] == 3:
+            receipt['migrations'] = [dict(item) for item in migration_reviews(value)]
+            receipt['previousSchemaVersion'], receipt['targetSchemaVersion'] = versions
+            receipt['businessCompatibilityVerified'] = False
+            receipt['returnAfterNewWritesVerified'] = False
         receipt['inventorySha256'] = sha(encode(new_inventory))
         require(sql(run, source, FLYWAY_SQL) == str(prior_version) + '|0', 'MIG_SOURCE_SCHEMA_CHANGED')
         fingerprint_before = fingerprint(run, source); receipt['stage'] = 'BACKUP'

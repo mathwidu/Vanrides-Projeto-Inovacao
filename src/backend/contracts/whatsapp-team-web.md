@@ -69,23 +69,35 @@ fictício. A tabela `wa.team_test_driver` identifica esse motorista.
 `POST /equipe/api/test-driver/status` recebe `{}` e retorna `driverReady`,
 `driverName` e `links`. Cada item de `links` traz `linkId`, `passengerName`,
 `state` (`REQUESTED` ou `APPROVED`), `requestedAt`, `pointPending` e
-`routines`. Telefone, pin e coordenadas não são retornados.
+`routines`. A implementação local com V45 acrescenta `pickupOptions`: cada
+opção contém `pickupId` opaco e os nomes dos trajetos que usam aquela proposta.
+Telefone, pin e coordenadas não são retornados. A interface mostra nomes de
+trajetos; os identificadores ficam apenas no transporte técnico.
 
 `POST /equipe/api/test-driver` recebe `{action, operationId}` e, nas decisões,
-`linkId`:
+`linkId`. Decisões sobre ponto aceitam também `pickupId` para selecionar a
+proposta exata. Sem esse campo, o corpo legado continua aceito: o domínio só
+escolhe automaticamente se houver uma única proposta referenciada naquele
+vínculo. Havendo mais de uma, retorna `POINT_SELECTION_REQUIRED` (409), sem
+mutação. Campo presente nulo, inválido ou inesperado continua sendo erro.
+Recusar/encerrar vínculo não recebem `pickupId`.
+
+Ações:
 
 - `ISSUE_TEST_PASSENGER_INVITE` emite um convite de passageiro desse motorista,
   com um uso e validade de 24 horas. A resposta traz `passengerInviteCode`,
   `expiresAt` e `inviteStatus`. O passageiro envia `PASSAGEIRO <código>`.
-- `APPROVE_TEST_LINK` aprova vínculo e ponto de um pedido `REQUESTED` desse
-  motorista. As mesmas validações da aprovação pelo WhatsApp se aplicam.
+- `APPROVE_TEST_LINK` mantém compatibilidade com pedidos legados `REQUESTED`.
+  Convites novos já autorizam a pessoa; a conferência restante é a do ponto.
+  As mesmas validações da aprovação pelo WhatsApp se aplicam.
 - `REJECT_TEST_LINK` recusa um pedido `REQUESTED` desse motorista.
-- `RECTIFY_TEST_POINT` pede ao passageiro que corrija o ponto proposto.
+- `RECTIFY_TEST_POINT` pede ao passageiro que corrija somente o ponto selecionado.
+  Outros trajetos e o embarque anteriormente aprovado permanecem intactos.
 - `APPROVE_TEST_POINT` aprova o novo ponto de um vínculo `APPROVED`.
 - `CLOSE_TEST_LINK` encerra um vínculo `APPROVED`.
 
 As decisões retornam `linkId` e `linkState`. Pedido de outro motorista ou fora
-de `REQUESTED` retorna `LINK_UNAVAILABLE` sem alterar dados. Repetir o mesmo
+do estado admitido pela ação retorna `LINK_UNAVAILABLE` sem alterar dados. Repetir o mesmo
 `operationId` segue a regra das operações de participantes; o código do
 convite é reconstruído no servidor enquanto o convite puder ser usado.
 O recibo guarda o motorista de teste em `identity_id` e o convite ou o vínculo.

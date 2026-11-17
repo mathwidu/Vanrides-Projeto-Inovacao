@@ -5954,6 +5954,7 @@
           "src/test/",
           "scripts/",
           "contracts/whatsapp-mvp/",
+          "contracts/whatsapp-team-web.md",
           "docs/",
           "Dockerfile"
         ],

@@ -24,13 +24,20 @@ enum DriverSessionState {
 }
 
 class DriverSessionSnapshot {
-  const DriverSessionSnapshot(this.state, {this.expiresAt});
+  const DriverSessionSnapshot(
+    this.state, {
+    this.expiresAt,
+    this.handoff = false,
+  });
   final DriverSessionState state;
   final DateTime? expiresAt;
+  final bool handoff;
 
   factory DriverSessionSnapshot.fromNative(Object? value) {
     if (value is! Map ||
-        value.keys.any((k) => k != 'state' && k != 'expiresAt')) {
+        value.keys.any(
+          (k) => k != 'state' && k != 'expiresAt' && k != 'pairingMode',
+        )) {
       throw const DriverSessionFailure('PROTOCOL');
     }
     final state =
@@ -38,8 +45,14 @@ class DriverSessionSnapshot {
             .where((s) => s.wire == value['state'])
             .firstOrNull;
     if (state == null) throw const DriverSessionFailure('PROTOCOL');
+    if (value.containsKey('pairingMode') && value['pairingMode'] != 'HANDOFF') {
+      throw const DriverSessionFailure('PROTOCOL');
+    }
+    final handoff = value['pairingMode'] == 'HANDOFF';
     final raw = value['expiresAt'];
-    if (!value.containsKey('expiresAt')) return DriverSessionSnapshot(state);
+    if (!value.containsKey('expiresAt')) {
+      return DriverSessionSnapshot(state, handoff: handoff);
+    }
     if (state != DriverSessionState.pending ||
         raw is! String ||
         !raw.endsWith('Z')) {
@@ -49,7 +62,7 @@ class DriverSessionSnapshot {
     if (expiry == null || !expiry.isUtc) {
       throw const DriverSessionFailure('PROTOCOL');
     }
-    return DriverSessionSnapshot(state, expiresAt: expiry);
+    return DriverSessionSnapshot(state, expiresAt: expiry, handoff: handoff);
   }
 }
 
@@ -89,6 +102,9 @@ class NativeDriverSessionPlatform implements DriverSessionPlatform {
         'NETWORK' || 'NETWORK_ERROR' => 'NETWORK',
         'RATE_LIMITED' => 'RATE_LIMITED',
         'AUTH' || 'SESSION_EXPIRED' => 'AUTH',
+        'PAIRING_REVIEW_REQUIRED' ||
+        'PAIRING_ACTIVE_RUN' ||
+        'PAIRING_SESSION_CONFLICT' => error.code,
         'STORAGE' ||
         'STORAGE_ERROR' ||
         'SECURE_STORAGE_UNAVAILABLE' ||

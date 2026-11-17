@@ -40,6 +40,20 @@ class WaIngressFilterTest {
         assertThat(response.getContentAsString()).contains("correlationId").doesNotContain("Bearer", "Exception");
         return response;
     }
+    @Test void guidedPairingEndpointsRequireProofAndRejectBrowserOrigins() throws Exception {
+        for (String action : List.of("preview", "claim")) {
+            String path="/driver-app/v1/pairing-links/"+UUID.randomUUID()+"/"+action;
+            var request=request("POST",path);request.setContent("{}".getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            var response=new MockHttpServletResponse();
+            var proofs=new WaProofFilter(new WaDpopVerifier(settings(),CLOCK),mock(WaProofLedger.class));
+            filter.doFilter(request,response,(r,s)->proofs.doFilter(r,s,(rr,ss)->{throw new AssertionError("Missing proof reached the controller");}));
+            assertThat(response.getStatus()).isEqualTo(401);
+            assertThat(((WaRoutes.Route)request.getAttribute(WaHttp.ROUTE)).mode()).isEqualTo(WaRoutes.Mode.PROOF);
+            var browser=request("POST",path);browser.addHeader("Origin","https://untrusted.invalid");rejected(browser,403);
+            rejected(request("GET",path),404);
+        }
+        verifyNoInteractions(jdbc);
+    }
     @Test void legacyRoutesAreUntouchedAndUnknownWhatsappDescendantsDeny() throws Exception {
         var passed = new AtomicBoolean(); filter.doFilter(request("GET", "/login"), new MockHttpServletResponse(), (a,b) -> passed.set(true));
         assertThat(passed).isTrue();
@@ -81,7 +95,7 @@ class WaIngressFilterTest {
         assertThat(passed).isTrue();
         var status = request("GET", "/driver-app/v1/status"); status.addHeader("Authorization", "DPoP " + key(8)); rejected(status, 401);
     }
-    @Test void futureRoutesAndOversizedOrFormBodiesNeverReachHandlers() throws Exception {
+    @Test void finishIsAvailableToADeviceButOversizedAndFormBodiesNeverReachHandlers() throws Exception {
         var credential = new WaPrincipal(WaPrincipal.Kind.SYSTEM_JOB, UUID.randomUUID(), null, null, "instance", null, 0, false);
         returns(credential);
         var tick = request("POST", "/integrations/whatsapp/v1/jobs/tick");
@@ -93,7 +107,10 @@ class WaIngressFilterTest {
                 null, key(7), 1, false));
         var future = request("POST", "/driver-app/v1/runs/" + UUID.randomUUID() + "/finish");
         future.addHeader("Authorization", "DPoP " + key(8));
-        rejected(future, 503);
+        var finishReached=new AtomicBoolean();
+        filter.doFilter(future,new MockHttpServletResponse(),(r,s)->finishReached.set(true));
+        assertThat(finishReached).isTrue();
+        assertThat(((WaRoutes.Route)future.getAttribute(WaHttp.ROUTE)).mode()).isEqualTo(WaRoutes.Mode.DEVICE);
         var large = request("POST", "/driver-app/v1/pairings/begin"); large.setContent(new byte[32769]); rejected(large, 400);
         var form = request("POST", "/driver-app/v1/pairings/begin"); form.setContentType("application/x-www-form-urlencoded"); rejected(form, 400);
     }

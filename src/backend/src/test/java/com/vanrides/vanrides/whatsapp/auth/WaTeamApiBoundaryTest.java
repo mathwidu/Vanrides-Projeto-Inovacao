@@ -18,7 +18,8 @@ class WaTeamApiBoundaryTest {
             {"GET",app+"/pairings/"+id+"/status"},{"POST",app+"/pairings/redeem"},{"POST",app+"/session/refresh"},
             {"POST",app+"/session/revoke"},{"GET",app+"/status"},{"GET",app+"/tracking-status"},{"POST",app+"/start-intents/"+id+"/activate"},
             {"POST",app+"/runs/"+id+"/resume"},{"POST",app+"/tracking-sessions/"+id+"/samples"},{"POST",app+"/tracking-sessions/"+id+"/state"},
-            {"POST",app+"/tracking-sessions/"+id+"/stop-receipt"}}) {
+            {"POST",app+"/tracking-sessions/"+id+"/stop-receipt"},{"POST",app+"/runs/"+id+"/finish"},
+            {"POST",app+"/finish-intents/"+id+"/preview"},{"POST",app+"/finish-intents/"+id+"/receipt"}}) {
             var response=new MockHttpServletResponse();assertThat(WaTeamApiBoundary.admit(request(route[0],route[1]),response,true)).as(route[1]).isTrue();
             assertThat(response.getHeader("X-VanRides-Environment")).isEqualTo("vanrides-mvp-hml");
         }
@@ -26,7 +27,7 @@ class WaTeamApiBoundaryTest {
     @Test void onlineStillBlocksLegacyOperatorUnavailableRoutesAndWrongMethods() throws Exception {
         var filter=new WaIngressFilter(new WaSettings(TeamApiTestEnvironment.validOnline()),null,null,null);
         for(String[] route:new String[][]{{"GET","/motoristas"},{"POST","/login"},{"GET","/actuator/env"},{"POST","/operator"},
-            {"HEAD","/actuator/health"},{"OPTIONS","/driver-app/v1/status"},{"POST","/driver-app/v1/runs/00000000-0000-4000-8000-000000000001/finish"},
+            {"HEAD","/actuator/health"},{"OPTIONS","/driver-app/v1/status"},{"GET","/driver-app/v1/runs/00000000-0000-4000-8000-000000000001/finish"},
             {"GET","/integrations/whatsapp/v1/events"},{"POST","/driver-app/v1/hidden-admin"}}) {
             var response=new MockHttpServletResponse();filter.doFilter(request(route[0],route[1]),response,(a,b)->{throw new AssertionError("Unexpected handler");});
             assertThat(response.getStatus()).as(route[1]).isEqualTo(404);assertThat(response.getHeader("X-VanRides-Environment")).isEqualTo("vanrides-mvp-hml");

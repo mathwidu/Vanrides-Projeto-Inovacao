@@ -87,6 +87,71 @@ final class DriverSessionHostTests: XCTestCase {
     return value
   }
 
+  private func linkReview(same: Bool = false, replacement: Bool = false) -> [String: Any] {
+    ["linkId":fixtureDriver,"state":"READY","expiresAt":DriverSessionCodec.iso(fixtureNow.addingTimeInterval(300)),
+      "serverTime":DriverSessionCodec.iso(fixtureNow),"sameCurrentDevice":same,"replacesDevice":replacement]
+  }
+  func testClaimLostResponseReplaysSamePKCEAndKeyAfterRestartWithoutCode() async throws {
+    let store = SessionMemoryStore(), keys = SessionFixtureKeys(), http = SessionFixtureHTTP()
+    let original = try controller(store,keys,http)
+    let initial = await original.snapshot(); XCTAssertEqual(initial["state"] as? String,"UNPAIRED"); XCTAssertEqual(keys.creates,0)
+    let link = DriverPairingLink(id:fixtureDriver,token:fixtureToken(7))
+    http.enqueue(linkReview()); _ = try await original.preparePairingLink(link)
+    XCTAssertNil(try savedRecord(store)["verifier"])
+    let preview = try XCTUnwrap(http.requests.last)
+    XCTAssertNil(preview.value(forHTTPHeaderField:"Authorization")); XCTAssertNil(preview.value(forHTTPHeaderField:"Idempotency-Key"))
+    http.loseResponse()
+    do { _ = try await original.claimPairingLink(link); XCTFail("Lost claim") } catch {}
+    let first = try XCTUnwrap(http.requests.last), verifier = try XCTUnwrap(try savedRecord(store)["verifier"] as? String)
+    let restored = try controller(store,keys,http)
+    http.enqueue(pairResponse("PENDING")); http.enqueue(pairResponse("PENDING"))
+    let pending = try await restored.perform("syncSession")
+    XCTAssertEqual(pending["pairingMode"] as? String,"HANDOFF")
+    let replay = http.requests[http.requests.count-2]
+    XCTAssertEqual(first.httpBody,replay.httpBody)
+    XCTAssertEqual(first.value(forHTTPHeaderField:"Idempotency-Key"),replay.value(forHTTPHeaderField:"Idempotency-Key"))
+    XCTAssertNotEqual(try proof(first).claims["jti"] as? String,try proof(replay).claims["jti"] as? String)
+    let body = try XCTUnwrap(JSONSerialization.jsonObject(with: XCTUnwrap(replay.httpBody)) as? [String:Any])
+    XCTAssertEqual(body["pkceChallenge"] as? String,DriverSessionCodec.digest(Data(verifier.utf8)))
+    let code = await restored.showPairingCode(); XCTAssertNil(code); XCTAssertEqual(keys.creates,1)
+    let record = try savedRecord(store); XCTAssertNil(record["userCode"]); XCTAssertNil(record["journal"])
+    http.enqueue(pairResponse("APPROVED")); http.enqueue(tokens()); http.enqueue(driverResponse("READY"))
+    let ready = try await restored.perform("syncSession"); XCTAssertEqual(ready["state"] as? String,"READY")
+    XCTAssertEqual(ready["pairingMode"] as? String,"HANDOFF")
+    let consumed = try await restored.completePairingReturn(), repeated = try await restored.completePairingReturn()
+    XCTAssertTrue(consumed); XCTAssertFalse(repeated)
+  }
+  func testPairingReviewPreservesLiveSessionAndRejectsDifferentOwner() async throws {
+    let store = SessionMemoryStore(), keys = SessionFixtureKeys(), http = SessionFixtureHTTP()
+    let current = try await approved(store,keys,http), before = try savedRecord(store)["tokens"] as? [String:Any]
+    let link = DriverPairingLink(id:fixtureDriver,token:fixtureToken(7))
+    http.enqueue(linkReview(same:true)); http.enqueue(driverResponse("READY"))
+    let review = try await current.preparePairingLink(link)
+    XCTAssertEqual((review["preview"] as? [String:Any])?["alreadyConnected"] as? Bool,true)
+    do { _ = try await current.claimPairingLink(link); XCTFail("Claim with live session") } catch { XCTAssertEqual(error as? DriverSessionFailure,.pairingConflict) }
+    http.enqueue(linkReview(replacement:true))
+    do { _ = try await current.preparePairingLink(link); XCTFail("Other owner") } catch { XCTAssertEqual(error as? DriverSessionFailure,.pairingConflict) }
+    let after = try savedRecord(store)["tokens"] as? [String:Any]
+    XCTAssertEqual(after?["access"] as? String,before?["access"] as? String)
+    XCTAssertEqual(after?["deviceID"] as? String,before?["deviceID"] as? String)
+    XCTAssertFalse(http.requests.contains { $0.url?.path.hasSuffix("/claim") == true || $0.url?.path.hasSuffix("/revoke") == true })
+  }
+  func testPairingEntryIsRawStrictAndExpiredClaimCanBeRenewed() async throws {
+    let link = DriverPairingLink(id:fixtureDriver,token:fixtureToken(7))
+    let raw = "vanridesdriver://pair/connect#v1."+link.id+"."+link.token
+    XCTAssertNotNil(DriverPairingLink.parse(raw,host:""))
+    for bad in [raw+"?x=1",raw.replacingOccurrences(of:"pair/connect",with:"pairing/return"),raw.replacingOccurrences(of:link.id,with:"%30"+link.id.dropFirst())] {
+      XCTAssertNil(DriverPairingLink.parse(bad,host:""))
+    }
+    let store = SessionMemoryStore(), keys = SessionFixtureKeys(), http = SessionFixtureHTTP()
+    let current = try controller(store,keys,http)
+    http.enqueue(linkReview()); _ = try await current.preparePairingLink(link)
+    http.enqueue(["code":"INTENT_EXPIRED"],status:410)
+    do { _ = try await current.claimPairingLink(link); XCTFail("Expired") } catch { XCTAssertEqual(error as? DriverSessionFailure,.pairingReview) }
+    let snapshot = await current.snapshot(); XCTAssertEqual(snapshot["state"] as? String,"EXPIRED")
+    XCTAssertNil(try savedRecord(store)["journal"])
+  }
+
   func testConcurrentPairingSyncMakesTrackingTemporarilyBusyWithoutRejectingAuthorization() async throws {
     let store = SessionMemoryStore(); let keys = SessionFixtureKeys(); let http = SessionFixtureHTTP()
     let controller = try await approved(store, keys, http)
@@ -822,7 +887,7 @@ struct DriverSessionHostTestMain {
   static func main() {
     let suite = DriverSessionHostTests.defaultTestSuite
     suite.run()
-    guard let run = suite.testRun, run.executionCount == 33, run.totalFailureCount == 0 else { exit(1) }
+    guard let run = suite.testRun, run.executionCount == 36, run.totalFailureCount == 0 else { exit(1) }
   }
 }
 #endif

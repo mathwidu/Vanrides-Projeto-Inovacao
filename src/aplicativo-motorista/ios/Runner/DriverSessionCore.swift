@@ -1,5 +1,6 @@
 #if VANRIDES_DRIVER_MVP || DRIVER_SESSION_STANDALONE_TESTS
 import Foundation
+import CoreFoundation
 import CryptoKit
 
 enum DriverSessionFailure: String, Error {
@@ -11,6 +12,9 @@ enum DriverSessionFailure: String, Error {
   case storage = "SECURE_STORAGE_UNAVAILABLE"
   case key = "DEVICE_KEY_UNAVAILABLE"
   case response = "INVALID_SESSION_RESPONSE"
+  case pairingReview = "PAIRING_REVIEW_REQUIRED"
+  case pairingActive = "PAIRING_ACTIVE_RUN"
+  case pairingConflict = "PAIRING_SESSION_CONFLICT"
 }
 
 struct DriverSessionConfiguration {
@@ -128,11 +132,35 @@ private struct DriverSessionTokens: Codable {
   let refreshExpiry: Date
 }
 
+// Separate purpose, strict raw entry. Never accepted by START or FINISH.
+struct DriverPairingLink {
+  let id: String
+  let token: String
+  static func parse(_ raw: String, host: String) -> DriverPairingLink? {
+    guard !raw.contains("%"), let split = raw.firstIndex(of: "#") else { return nil }
+    let base = String(raw[..<split])
+    guard base == "vanridesdriver://pair/connect" || (!host.isEmpty && base == "https://" + host + "/motorista/conectar") else { return nil }
+    let parts = raw[raw.index(after: split)...].split(separator: ".", omittingEmptySubsequences: false)
+    guard parts.count == 3, parts[0] == "v1", let id = try? DriverSessionCodec.uuid(String(parts[1])),
+      id == id.lowercased(), DriverSessionCodec.canonicalToken(String(parts[2])) else { return nil }
+    return DriverPairingLink(id: id,token: String(parts[2]))
+  }
+  static func arguments(_ args: [String: Any]) throws -> DriverPairingLink {
+    guard Set(args.keys) == ["linkId","linkToken"], let token = args["linkToken"] as? String,
+      DriverSessionCodec.canonicalToken(token) else { throw DriverSessionFailure.invalidArguments }
+    let id = try DriverSessionCodec.uuid(args["linkId"])
+    guard id == id.lowercased() else { throw DriverSessionFailure.invalidArguments }
+    return DriverPairingLink(id: id,token: token)
+  }
+  func matches(_ other: DriverPairingLink) -> Bool { id == other.id && token == other.token }
+}
+
 private struct DriverSessionOperation: Codable {
   let kind: String
   let body: Data
   let idempotency: String
   let createdAt: Date
+  var linkID: String? = nil
 }
 
 private struct DriverSessionRecord: Codable {
@@ -144,6 +172,8 @@ private struct DriverSessionRecord: Codable {
   var state = "UNPAIRED"
   var verifier: String?
   var pairingID: String?
+  var pairingMode: String?
+  var pairingLinkID: String?
   var userCode: String?
   var pairingExpiry: Date?
   var tokens: DriverSessionTokens?
@@ -163,6 +193,8 @@ actor DriverSessionController {
   private var nonce: String?
   private var busy = false
   private var sessionVerified = false
+  private var pairingReview: [String: Any]?
+  private var reviewedLink: DriverPairingLink?
 
   init(configuration: DriverSessionConfiguration?, store: DriverSessionStore,
        keys: DriverSessionKeyProvider, http: DriverSessionHTTP, now: @escaping () -> Date = Date.init) throws {
@@ -182,6 +214,8 @@ actor DriverSessionController {
 
   private static func valid(_ value: DriverSessionRecord) -> Bool {
     if let id = value.pairingID, UUID(uuidString: id) == nil { return false }
+    if let mode = value.pairingMode, mode != "HANDOFF" { return false }
+    if let id = value.pairingLinkID, (try? DriverSessionCodec.uuid(id)) != id || id != id.lowercased() { return false }
     if let code = value.userCode,
       code.range(of: "^[BCDFGHJKMNPQRSTVWXYZ]{8}$", options: .regularExpression) == nil { return false }
     if let verifier = value.verifier, !DriverSessionCodec.canonicalToken(verifier) { return false }
@@ -189,9 +223,11 @@ actor DriverSessionController {
       UUID(uuidString: tokens.deviceID) == nil || !DriverSessionCodec.canonicalToken(tokens.access)
         || !DriverSessionCodec.canonicalToken(tokens.refresh) { return false }
     if let operation = value.journal {
-      guard ["begin", "redeem", "refresh", "revoke"].contains(operation.kind), operation.body.count <= 32_768,
+      if let id = operation.linkID, (try? DriverSessionCodec.uuid(id)) != id || id != id.lowercased() { return false }
+      guard ["begin", "claim", "redeem", "refresh", "revoke"].contains(operation.kind), operation.body.count <= 32_768,
         UUID(uuidString: operation.idempotency) != nil else { return false }
       switch operation.kind {
+      case "claim": if value.verifier == nil || operation.linkID == nil || value.tokens != nil || value.state != "REQUESTING" { return false }
       case "begin": if value.verifier == nil || value.tokens != nil || value.state != "REQUESTING" { return false }
       case "redeem": if value.verifier == nil || value.pairingID == nil || value.tokens != nil { return false }
       case "refresh": if value.tokens == nil { return false }
@@ -202,7 +238,7 @@ actor DriverSessionController {
     if ["READY", "SETUP_REQUIRED"].contains(value.state), value.tokens == nil { return false }
     if value.state == "PENDING", value.pairingID == nil || value.pairingExpiry == nil { return false }
     if value.state == "REVOKING", value.journal?.kind != "revoke", value.revocationRequested != true { return false }
-    if value.state == "REQUESTING", value.journal?.kind != "begin" { return false }
+    if value.state == "REQUESTING", !["begin","claim"].contains(value.journal?.kind ?? "") { return false }
     if value.state == "REVOKED", value.tokens != nil || value.journal != nil { return false }
     return true
   }
@@ -218,12 +254,95 @@ actor DriverSessionController {
     }
     var result: [String: Any] = ["state": state]
     if state == "PENDING", let expiry = record.pairingExpiry { result["expiresAt"] = DriverSessionCodec.iso(expiry) }
+    if record.pairingMode == "HANDOFF" || record.journal?.kind == "claim" { result["pairingMode"] = "HANDOFF" }
     return result
+  }
+
+  func completePairingReturn() throws -> Bool {
+    guard !busy, record?.pairingMode == "HANDOFF", record?.tokens != nil, sessionVerified,
+      ["READY","SETUP_REQUIRED"].contains(snapshot()["state"] as? String ?? "") else { return false }
+    try change { $0.pairingMode = nil; $0.pairingLinkID = nil }; return true
   }
 
   func showPairingCode() -> String? {
     guard snapshot()["state"] as? String == "PENDING", record?.journal == nil else { return nil }
     return record?.userCode
+  }
+
+  // Explicit UI gesture only. Merely reading/opening a link calls no native mutation.
+  func preparePairingLink(_ link: DriverPairingLink) async throws -> [String: Any] {
+    guard configuration != nil, !busy else { throw DriverSessionFailure.busy }
+    busy = true; defer { busy = false }
+    guard record?.state != "REVOKING", record?.revocationRequested != true else { throw DriverSessionFailure.pairingConflict }
+    if let operation = record?.journal, operation.kind != "claim" || operation.linkID != link.id { throw DriverSessionFailure.busy }
+    try preparePairingKey()
+    do {
+      let data = try await request("/driver-app/v1/pairing-links/" + link.id + "/preview",body: DriverSessionCodec.json(["linkToken":link.token]))
+      var review = try DriverSessionCodec.object(data,fields: ["linkId","state","expiresAt","serverTime","sameCurrentDevice","replacesDevice"])
+      guard try DriverSessionCodec.uuid(review["linkId"]) == link.id,
+        let state = review["state"] as? String, ["READY","PENDING","APPROVED","REDEEMED"].contains(state),
+        let same = review["sameCurrentDevice"] as? NSNumber, CFGetTypeID(same) == CFBooleanGetTypeID(),
+        let replacement = review["replacesDevice"] as? NSNumber, CFGetTypeID(replacement) == CFBooleanGetTypeID()
+      else { throw DriverSessionFailure.response }
+      _ = try DriverSessionCodec.date(review["expiresAt"]); _ = try DriverSessionCodec.date(review["serverTime"])
+      var connected = false
+      if let tokens = record?.tokens, tokens.refreshExpiry > now(), !["EXPIRED","REVOKED"].contains(record?.state ?? "") {
+        guard same.boolValue else { throw DriverSessionFailure.pairingConflict }
+        let current = try await synchronize()
+        connected = ["READY","SETUP_REQUIRED"].contains(current["state"] as? String ?? "")
+        guard connected else { throw DriverSessionFailure.pairingConflict }
+      }
+      pairingReview = review; reviewedLink = link
+      review["alreadyConnected"] = connected
+      return ["preview":review,"session":snapshot()]
+    } catch let failure as DriverSessionRemoteFailure { throw pairingFailure(failure) }
+  }
+
+  private func preparePairingKey() throws {
+    guard let configuration = configuration else { throw DriverSessionFailure.unavailable }
+    if record == nil {
+      try commit(DriverSessionRecord(origin: configuration.origin,keyTag: UUID().uuidString))
+    }
+    guard let current = record else { throw DriverSessionFailure.storage }
+    _ = try keys.key(tag: current.keyTag,create: true)
+  }
+
+  func claimPairingLink(_ link: DriverPairingLink) async throws -> [String: Any] {
+    guard let configuration = configuration, !busy else { throw DriverSessionFailure.busy }
+    busy = true; defer { busy = false }
+    do {
+      if let operation = record?.journal {
+        guard operation.kind == "claim", operation.linkID == link.id,
+          let body = try JSONSerialization.jsonObject(with: operation.body) as? [String: Any], body["linkToken"] as? String == link.token
+        else { throw DriverSessionFailure.busy }
+        try await replayJournal(); return snapshot()
+      }
+      if record?.pairingMode == "HANDOFF", record?.pairingLinkID == link.id { return snapshot() }
+      guard let review = pairingReview, reviewedLink?.matches(link) == true,
+        try DriverSessionCodec.date(review["expiresAt"]) > now() else { throw DriverSessionFailure.pairingReview }
+      guard record?.state != "REVOKING", record?.revocationRequested != true else { throw DriverSessionFailure.pairingConflict }
+      if let tokens = record?.tokens, tokens.refreshExpiry > now(), !["EXPIRED","REVOKED"].contains(record?.state ?? "") { throw DriverSessionFailure.pairingConflict }
+      guard let existing = record else { throw DriverSessionFailure.storage }
+      let key = try keys.key(tag: existing.keyTag,create: false)
+      let verifier = DriverSessionCodec.base64(try keys.random(count: 32))
+      let body = try DriverSessionCodec.json(["linkToken":link.token,"publicJwk":key.publicJWK,
+        "pkceChallenge":DriverSessionCodec.digest(Data(verifier.utf8)),"pkceMethod":"S256","platform":"IOS","appVersion":configuration.appVersion])
+      var next = DriverSessionRecord(origin: configuration.origin,keyTag: existing.keyTag)
+      next.verifier = verifier; next.state = "REQUESTING"
+      next.journal = DriverSessionOperation(kind:"claim",body:body,idempotency:UUID().uuidString.lowercased(),createdAt:now(),linkID:link.id)
+      try commit(next); sessionVerified = false
+      try await replayJournal(); return snapshot()
+    } catch let failure as DriverSessionRemoteFailure {
+      if failure.status == 409 || failure.status == 410, record?.journal?.kind == "claim" {
+        try change { $0.state = "EXPIRED"; $0.journal = nil; $0.verifier = nil }
+      }
+      throw pairingFailure(failure)
+    }
+  }
+  private func pairingFailure(_ failure: DriverSessionRemoteFailure) -> DriverSessionFailure {
+    if failure.code == "ACTIVE_RUN_EXISTS" { return .pairingActive }
+    if failure.status == 409 || failure.status == 410 { return .pairingReview }
+    return failure.status == 429 ? .rateLimited : .unavailable
   }
 
   func perform(_ method: String) async throws -> [String: Any] {
@@ -275,6 +394,12 @@ actor DriverSessionController {
       default: return try await synchronize()
       }
     } catch let remote as DriverSessionRemoteFailure {
+      if record?.journal?.kind == "claim" {
+        if remote.status == 409 || remote.status == 410 {
+          try change { $0.state = "EXPIRED"; $0.journal = nil; $0.verifier = nil }
+        }
+        throw pairingFailure(remote)
+      }
       if remote.code == "INTENT_EXPIRED",
         record?.tokens == nil || ["redeem", "refresh"].contains(record?.journal?.kind ?? "") {
         try change { $0.state = "EXPIRED"; $0.journal = nil; $0.userCode = nil; $0.verifier = nil }
@@ -368,12 +493,23 @@ actor DriverSessionController {
 
   private func replayJournal() async throws {
     guard let operation = record?.journal else { return }
-    let path = operation.kind == "begin" || operation.kind == "redeem"
-      ? "/driver-app/v1/pairings/" + operation.kind : "/driver-app/v1/session/" + operation.kind
+    let path: String
+    if operation.kind == "claim", let id = operation.linkID { path = "/driver-app/v1/pairing-links/" + id + "/claim" }
+    else { path = operation.kind == "begin" || operation.kind == "redeem"
+      ? "/driver-app/v1/pairings/" + operation.kind : "/driver-app/v1/session/" + operation.kind }
     // Revoke keeps the exact access token until the ACK; other operations have no Authorization.
     let response = try await request(path, body: operation.body,
       access: operation.kind == "revoke" ? record?.tokens?.access : nil, idempotency: operation.idempotency)
     switch operation.kind {
+    case "claim":
+      let value = try DriverSessionCodec.object(response,fields:["pairingId","state","expiresAt","serverTime"])
+      let id = try DriverSessionCodec.uuid(value["pairingId"])
+      let expiry = try DriverSessionCodec.date(value["expiresAt"])
+      _ = try DriverSessionCodec.date(value["serverTime"])
+      guard let state = value["state"] as? String, ["PENDING","APPROVED","REDEEMED"].contains(state) else { throw DriverSessionFailure.response }
+      try change { $0.pairingID = id; $0.pairingExpiry = expiry; $0.pairingMode = "HANDOFF"; $0.pairingLinkID = operation.linkID
+        $0.userCode = nil; $0.state = "PENDING"; $0.journal = nil }
+      pairingReview = nil; reviewedLink = nil
     case "begin":
       let value = try DriverSessionCodec.object(response, fields: ["pairingId", "userCode", "expiresAt", "serverTime"])
       let id = try DriverSessionCodec.uuid(value["pairingId"])
@@ -401,7 +537,7 @@ actor DriverSessionController {
         accessExpiry: accessExpiry, refreshExpiry: refreshExpiry)
       try change {
         $0.tokens = tokens; $0.journal = nil; $0.userCode = nil; $0.verifier = nil
-        $0.pairingID = nil; $0.pairingExpiry = nil
+        $0.pairingID = nil; $0.pairingExpiry = nil; $0.pairingLinkID = nil
         $0.state = $0.revocationRequested == true ? "REVOKING" : "SETUP_REQUIRED"
       }
       sessionVerified = false
@@ -503,11 +639,22 @@ actor DriverSessionController {
   // Called by the native collector, never exposes credentials to Flutter.
   func trackingRequest(path: String, body: Data?, idempotency: String?) async throws -> Data {
     guard !busy else { throw DriverSessionFailure.busy }
+    if path.range(of: "^/driver-app/v1/finish-intents/[0-9a-f-]{36}/receipt$", options: .regularExpression) != nil {
+      guard configuration != nil, record != nil, let body = body, idempotency == nil,
+        let value = try JSONSerialization.jsonObject(with: body) as? [String: Any] else { throw DriverSessionFailure.invalidArguments }
+      guard Set(value.keys) == ["intentToken","expectedVersion"],
+        let token = value["intentToken"] as? String, DriverSessionCodec.canonicalToken(token),
+        let version = value["expectedVersion"] as? NSNumber, CFGetTypeID(version) != CFBooleanGetTypeID(),
+        !String(cString: version.objCType).contains("f"), !String(cString: version.objCType).contains("d"),
+        version.doubleValue >= 0, version.doubleValue <= 9_007_199_254_740_991 else { throw DriverSessionFailure.invalidArguments }
+      busy = true; defer { busy = false }
+      return try await request(path,body: body,access: nil)
+    }
     guard configuration != nil, record?.tokens != nil,
       record?.revocationRequested != true,
       !["REVOKING", "REVOKED", "EXPIRED"].contains(record?.state ?? "") else { throw DriverSessionFailure.unavailable }
     guard path == "/driver-app/v1/tracking-status" ||
-      path.range(of: "^/driver-app/v1/(start-intents/[0-9a-f-]{36}/activate|tracking-sessions/[0-9a-f-]{36}/(state|samples))$", options: .regularExpression) != nil else { throw DriverSessionFailure.invalidArguments }
+      path.range(of: "^/driver-app/v1/(start-intents/[0-9a-f-]{36}/activate|finish-intents/[0-9a-f-]{36}/preview|runs/[0-9a-f-]{36}/finish|tracking-sessions/[0-9a-f-]{36}/(state|samples))$", options: .regularExpression) != nil else { throw DriverSessionFailure.invalidArguments }
     busy = true
     defer { busy = false }
     if record?.journal != nil {

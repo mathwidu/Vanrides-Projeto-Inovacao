@@ -48,6 +48,7 @@ test('questions and explicit invitation preferences choose fixed guidance withou
     const ctx = context({ stage });
     for (const text of ['Como funciona o VanRides?', 'Como faço para me cadastrar?', 'Preciso baixar o app?',
       'Como faço para criar uma rotina?', 'Como convido passageiros?', 'Como confirmo minha presença?', 'Posso tirar uma dúvida?',
+      'Como começo a viagem?', 'Como inicio a viagem?', 'Como faço para começar a viagem?',
       'Aceito receber convites', 'PARAR CONVITES']) {
       const decision = decideDeterministically({ sourceMessageId: `event_${id}`, type: 'TEXT', text }, ctx);
       assert.deepEqual(decision, { kind: 'COMMAND', commandType: 'RESPOND_TO_MESSAGE', payload: { responseCode: 'FAQ' } }, text);

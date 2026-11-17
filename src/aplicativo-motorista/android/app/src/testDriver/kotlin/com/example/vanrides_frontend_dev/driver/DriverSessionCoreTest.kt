@@ -70,7 +70,7 @@ class DriverSessionCoreTest {
         fun reply(body: JSONObject) = enqueue { DriverSessionResponse(200, body) }
         override fun send(request: DriverSessionRequest): DriverSessionResponse {
             calls.add(request)
-            if (request.method == "POST" && !request.path.contains("/tracking-sessions/")) {
+            if (request.method == "POST" && !request.path.contains("/tracking-sessions/") && !request.path.matches(Regex("/driver-app/v1/pairing-links/[0-9a-f-]{36}/preview"))) {
                 val journal = JSONObject(store.saved!!).getJSONObject("pending")
                 assertEquals(request.idempotencyKey, journal.getString("idempotencyKey"))
                 assertArrayEquals(request.body, DriverSessionProtocol.unb64(journal.getString("body")))
@@ -102,6 +102,62 @@ class DriverSessionCoreTest {
         f.wire.reply(pairingResponse("APPROVED")); f.wire.reply(sessionResponse()); f.wire.reply(status())
         assertEquals("READY", core.syncSession()["state"])
         return core
+    }
+    private val linkId = "00000000-0000-4000-8000-000000000009"
+    private fun review(same: Boolean = false, replacement: Boolean = false) = JSONObject()
+        .put("linkId",linkId).put("state","READY").put("expiresAt",p.iso(time+300000)).put("serverTime",p.iso(time))
+        .put("sameCurrentDevice",same).put("replacesDevice",replacement)
+    @Test fun claimLostResponseRestartsWithSameKeyPKCEAndIdempotencyWithoutCode() {
+        val f = Fixture(); val original = core(f)
+        assertEquals("UNPAIRED",original.getState()["state"]); assertEquals(0,f.keys.creates)
+        f.wire.reply(review()); original.preparePairingLink(linkId,nonce)
+        assertFalse(JSONObject(f.store.saved!!).has("verifier"))
+        val preview = f.wire.calls.last()
+        assertNull(preview.accessToken); assertNull(preview.idempotencyKey); assertFalse(claims(preview).has("ath"))
+        f.wire.enqueue { throw DriverSessionFailure("NETWORK_ERROR") }
+        fail("NETWORK_ERROR") { original.claimPairingLink(linkId,nonce) }
+        val sent = f.wire.calls.last(); val saved = JSONObject(f.store.saved!!)
+        val verifier = saved.getString("verifier")
+        assertEquals("CLAIM",saved.getJSONObject("pending").getString("kind"))
+        assertEquals("HANDOFF",core(f).getState()["pairingMode"])
+        f.wire.reply(pairingResponse("PENDING")); f.wire.reply(pairingResponse("PENDING"))
+        val restored = core(f); restored.syncSession()
+        val replay = f.wire.calls[f.wire.calls.lastIndex-1]
+        assertArrayEquals(sent.body,replay.body); assertEquals(sent.idempotencyKey,replay.idempotencyKey)
+        assertNotEquals(claims(sent).getString("jti"),claims(replay).getString("jti"))
+        val body = JSONObject(String(replay.body!!,Charsets.UTF_8))
+        assertEquals(p.hash(verifier.toByteArray(Charsets.US_ASCII)),body.getString("pkceChallenge"))
+        assertEquals(1,f.keys.creates); assertNull(restored.showPairingCode())
+        val paired = JSONObject(f.store.saved!!).getJSONObject("pairing")
+        assertFalse(paired.has("userCode")); assertFalse(paired.has("linkToken"))
+        f.wire.reply(pairingResponse("APPROVED")); f.wire.reply(sessionResponse()); f.wire.reply(status())
+        assertEquals("READY",restored.syncSession()["state"])
+        assertEquals("HANDOFF",restored.getState()["pairingMode"])
+        assertTrue(restored.completePairingReturn()); assertFalse(restored.completePairingReturn())
+    }
+    @Test fun linkReviewPreservesExistingSessionAndNeverClaimsAnotherOwner() {
+        val f = Fixture(); val current = paired(f)
+        val before = JSONObject(f.store.saved!!).getJSONObject("session").toString()
+        f.wire.reply(review(same=true)); f.wire.reply(status())
+        val value = current.preparePairingLink(linkId,nonce)
+        assertEquals(true,(value["preview"] as Map<*,*>)["alreadyConnected"])
+        fail("PAIRING_SESSION_CONFLICT") { current.claimPairingLink(linkId,nonce) }
+        f.wire.reply(review(same=false,replacement=true))
+        fail("PAIRING_SESSION_CONFLICT") { current.preparePairingLink(linkId,nonce) }
+        assertEquals(before,JSONObject(f.store.saved!!).getJSONObject("session").toString())
+        assertTrue(f.wire.calls.none { it.path.endsWith("/claim") || it.path.endsWith("/revoke") })
+    }
+    @Test fun expiredClaimClearsJournalAndPairingParserIsPurposeAndRawStrict() {
+        val f = Fixture(); val current = core(f)
+        f.wire.reply(review()); current.preparePairingLink(linkId,nonce)
+        f.wire.enqueue { DriverSessionResponse(410,JSONObject().put("code","INTENT_EXPIRED")) }
+        fail("PAIRING_REVIEW_REQUIRED") { current.claimPairingLink(linkId,nonce) }
+        assertEquals("EXPIRED",current.getState()["state"]); assertFalse(JSONObject(f.store.saved!!).has("pending"))
+        val raw = "vanridesdriver://pair/connect#v1.$linkId.$nonce"
+        assertTrue(p.isPairingLink(raw)); assertFalse(p.isRunLink(raw)); assertFalse(p.isFinishLink(raw))
+        for (bad in listOf(raw+"?x=1",raw.replace(linkId,"%30"+linkId.drop(1)),raw.replace("pair/connect","pairing/return"),raw.replace(nonce,nonce.dropLast(1)+"B")))
+            assertFalse(p.isPairingLink(bad))
+        assertEquals(DriverSessionProtocol.Entry.CONNECT,p.entry("android.intent.action.VIEW",false,raw))
     }
     @Test fun readsNeverGenerateKeysOrAccessStorageWhenUnconfigured() {
         val f = Fixture(); val absent = core(f, null)
@@ -315,6 +371,25 @@ class DriverSessionCoreTest {
         assertEquals(p.hash(request.accessToken!!.toByteArray()), claims.getString("ath"))
         try { core.trackingRequest("/driver-app/v1/session/revoke", body, pairingId); fail("Expected closed route") }
         catch (_: IllegalArgumentException) { }
+    }
+    @Test fun finishReceiptUsesFreshProofWithoutAccessOrRefreshAfterRevocation() {
+        val f = Fixture(); paired(f)
+        val saved = JSONObject(f.store.saved!!).put("state","REVOKED")
+        f.store.saved = saved.toString()
+        val calls = mutableListOf<DriverSessionRequest>()
+        val core = DriverSessionCore(origin,"synthetic-finish",f.keys,f.store,DriverSessionTransport { request ->
+            calls.add(request); DriverSessionResponse(200,JSONObject())
+        }, { time })
+        val path = "/driver-app/v1/finish-intents/$pairingId/receipt"
+        val body = JSONObject().put("expectedVersion",7).put("intentToken",access).toString().toByteArray()
+        repeat(2) { assertEquals(200,core.trackingRequest(path,body,null).status) }
+        assertEquals(2,calls.size)
+        calls.forEach { request ->
+            assertNull(request.accessToken); assertNull(request.idempotencyKey)
+            assertFalse(claims(request).has("ath"));assertEquals(p.hash(body),claims(request).getString("vr_body_sha256"))
+            f.keys.verify(request)
+        }
+        assertNotEquals(calls[0].proof,calls[1].proof)
     }
     @Test fun closedOriginsReturnLinksAndDerConversionRejectUntrustedForms() {
         assertEquals(origin, p.origin(origin)); assertTrue(p.isReturn("vanridesdriver://pairing/return"))

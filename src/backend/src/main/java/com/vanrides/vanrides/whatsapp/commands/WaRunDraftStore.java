@@ -1,5 +1,6 @@
 package com.vanrides.vanrides.whatsapp.commands;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.vanrides.vanrides.whatsapp.api.WaJson;
 import com.vanrides.vanrides.whatsapp.auth.WaCrypto;
@@ -43,6 +44,35 @@ final class WaRunDraftStore {
               version=wa.conversation_state.version+1,updated_at=EXCLUDED.updated_at
             """, actor.identityId(), paused ? "PAUSED" : "RUN_SETUP", context.toString(), event.eventId(), Timestamp.from(clock.now()));
         jdbc.update("UPDATE wa.profile SET version=version+1,updated_at=? WHERE identity_id=?", Timestamp.from(clock.now()), actor.identityId());
+    }
+    void bindSelection(WaProfileState actor, WaInboxAccess.Context event, ObjectNode draft, UUID outbox) {
+        draft.remove("selection");
+        ObjectNode selection = WaDriverDraftStore.json().put("profileVersion", actor.version() + 1)
+            .put("sourceInbox", event.eventId().toString()).put("outboxId", outbox.toString())
+            .put("issuedAt", clock.now().toString()).put("draftDigest", selectionDigest(draft));
+        draft.set("selection", selection);
+    }
+    boolean selects(WaProfileState actor, WaInboxAccess.Context event, ObjectNode draft) {
+        JsonNode selection = draft.path("selection");
+        try {
+            Instant received = Instant.parse(event.normalizedPayload().path("occurredAt").asText());
+            return draft.path("shortStart").asBoolean() && draft.path("stage").asText().equals("OCCURRENCE")
+                && actor.version() == selection.path("profileVersion").asLong(-1)
+                && Instant.parse(draft.path("expiresAt").asText()).isAfter(clock.now())
+                && !received.isBefore(Instant.parse(selection.path("issuedAt").asText()).truncatedTo(ChronoUnit.SECONDS))
+                && !event.eventId().toString().equals(selection.path("sourceInbox").asText())
+                && WaCrypto.same(selectionDigest(draft), selection.path("draftDigest").asText())
+                && Boolean.TRUE.equals(jdbc.queryForObject("""
+                    SELECT EXISTS(SELECT 1 FROM wa.message_outbox o JOIN wa.command_receipt r ON r.command_id=o.command_id
+                      WHERE o.id=? AND o.recipient_identity_id=? AND r.identity_id=? AND r.inbox_event_id=?
+                        AND o.policy_version='run-start-v1' AND o.response_part='run-start'
+                        AND r.command_type='ADVANCE_RUN_SETUP' AND o.state NOT IN ('CANCELED','EXPIRED'))
+                    """, Boolean.class, UUID.fromString(selection.path("outboxId").asText()), actor.identityId(), actor.identityId(),
+                    UUID.fromString(selection.path("sourceInbox").asText())));
+        } catch (IllegalArgumentException | java.time.DateTimeException invalid) { return false; }
+    }
+    private static String selectionDigest(ObjectNode draft) {
+        ObjectNode values = draft.deepCopy(); values.remove("selection"); return WaCrypto.digest(WaJson.canonical(values));
     }
     String marker(WaProfileState actor, WaInboxAccess.Context event, ObjectNode draft, UUID outbox) {
         String marker = WaCrypto.userCode();

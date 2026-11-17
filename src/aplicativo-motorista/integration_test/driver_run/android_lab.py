@@ -169,9 +169,9 @@ def exercise(args, checks):
             "SIDECAR_START_URI_INVALID")
         device.start("-a", "android.intent.action.VIEW", "-c", "android.intent.category.BROWSABLE", "-d", uri)
         del uri, response
-        scroll_to(device, "Iniciar localização desta saída")
+        scroll_to(device, "Começar e compartilhar localização")
         may_be_collecting = True
-        device.tap("Iniciar localização desta saída")
+        device.tap("Começar e compartilhar localização")
         control(args.socket, "/started", {}, timeout=90)
         checks.append("explicit_start_confirmed_only_after_backend_valid_gps")
         device.adb("shell", "input", "keyevent", "KEYCODE_HOME")

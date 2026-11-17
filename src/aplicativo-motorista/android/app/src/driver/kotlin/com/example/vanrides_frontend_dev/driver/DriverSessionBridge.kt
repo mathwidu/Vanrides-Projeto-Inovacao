@@ -25,9 +25,9 @@ internal class AndroidDriverSession private constructor(context: Context) {
         AndroidDriverSessionStore(context), if (origin == null) DriverSessionTransport { throw DriverSessionFailure("UNCONFIGURED") }
         else AndroidDriverSessionTransport(context, origin))
 
-    fun invoke(method: String, visible: () -> Boolean, iconLaunch: Boolean, result: MethodChannel.Result) {
+    fun invoke(method: String, visible: () -> Boolean, iconLaunch: Boolean, result: MethodChannel.Result, pairing: Pair<String,String>? = null) {
         if (method !in methods) { result.notImplemented(); return }
-        if (method in setOf("beginPairing", "showPairingCode", "revokeSession") && !visible()) {
+        if (method in setOf("beginPairing", "showPairingCode", "revokeSession", "preparePairingLink", "claimPairingLink", "completePairingReturn") && !visible()) {
             result.error("UI_NOT_VISIBLE", "UI_NOT_VISIBLE", null); return
         }
         if (method == "beginPairing" && !iconLaunch) { result.error("ACTION_NOT_ALLOWED", "ACTION_NOT_ALLOWED", null); return }
@@ -39,10 +39,13 @@ internal class AndroidDriverSession private constructor(context: Context) {
                 output = when (method) {
                     "getState" -> core.getState()
                     "beginPairing" -> core.beginPairing()
+                    "preparePairingLink" -> requireNotNull(pairing).let { core.preparePairingLink(it.first,it.second) }
+                    "claimPairingLink" -> requireNotNull(pairing).let { core.claimPairingLink(it.first,it.second) }
                     "syncSession" -> core.syncSession()
                     "refreshSession" -> core.refreshSession()
                     "revokeSession" -> core.revokeSession()
                     "showPairingCode" -> core.showPairingCode()
+                    "completePairingReturn" -> core.completePairingReturn()
                     else -> null
                 }
             } catch (error: DriverSessionFailure) { failure = error.code.takeIf { it in errors } ?: "NATIVE_ERROR" }
@@ -77,9 +80,9 @@ internal class AndroidDriverSession private constructor(context: Context) {
         }
     }
     companion object {
-        private val methods = setOf("getState", "beginPairing", "syncSession", "refreshSession", "revokeSession", "showPairingCode")
+        private val methods = setOf("getState", "beginPairing", "syncSession", "refreshSession", "revokeSession", "showPairingCode", "preparePairingLink", "claimPairingLink", "completePairingReturn")
         private val errors = setOf("UNCONFIGURED", "UI_NOT_VISIBLE", "ACTION_NOT_ALLOWED", "BUSY", "KEY_UNAVAILABLE",
-            "STORAGE_ERROR", "INVALID_CONTRACT", "NETWORK_ERROR", "SERVER_REJECTED", "RATE_LIMITED", "REDIRECT_REJECTED", "SESSION_EXPIRED")
+            "STORAGE_ERROR", "INVALID_CONTRACT", "NETWORK_ERROR", "SERVER_REJECTED", "RATE_LIMITED", "REDIRECT_REJECTED", "SESSION_EXPIRED", "PAIRING_REVIEW_REQUIRED", "PAIRING_ACTIVE_RUN", "PAIRING_SESSION_CONFLICT")
         @Volatile private var instance: AndroidDriverSession? = null
         fun get(context: Context): AndroidDriverSession = instance ?: synchronized(this) {
             instance ?: AndroidDriverSession(context.applicationContext).also { instance = it }
@@ -88,9 +91,23 @@ internal class AndroidDriverSession private constructor(context: Context) {
 }
 
 internal class DriverSessionBridge(context: Context, private val visible: () -> Boolean, private val iconLaunch: () -> Boolean,
-    private val onSessionUi: () -> Unit = {}) {
+    private val onSessionUi: () -> Unit = {},
+    private val pairingEntry: () -> String? = { null }, private val pairingBlocked: () -> Boolean = { true }) {
     private val runtime = AndroidDriverSession.get(context)
     fun handle(call: MethodCall, result: MethodChannel.Result) {
+        if (call.method in setOf("preparePairingLink","claimPairingLink")) {
+            try {
+                val args = call.arguments as? Map<*, *> ?: throw IllegalArgumentException()
+                require(args.keys == setOf("linkId","linkToken"))
+                val id = DriverSessionProtocol.uuid(args["linkId"] as? String ?: throw IllegalArgumentException())
+                val token = DriverSessionProtocol.token(args["linkToken"] as? String ?: throw IllegalArgumentException())
+                val raw = pairingEntry()
+                require(DriverSessionProtocol.isPairingLink(raw,BuildConfig.PAIRING_LINK_HOST) && raw!!.substringAfter('#') == "v1.$id.$token")
+                if (call.method == "claimPairingLink" && pairingBlocked()) { result.error("PAIRING_ACTIVE_RUN","PAIRING_ACTIVE_RUN",null); return }
+                onSessionUi(); runtime.invoke(call.method,visible,iconLaunch(),result,id to token)
+            } catch (_: Exception) { result.error("INVALID_ARGUMENT","INVALID_ARGUMENT",null) }
+            return
+        }
         if (call.arguments != null) { result.error("INVALID_ARGUMENT", "INVALID_ARGUMENT", null); return }
         onSessionUi()
         runtime.invoke(call.method, visible, iconLaunch(), result)

@@ -1,6 +1,7 @@
 package com.vanrides.vanrides.whatsapp.tracking;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.vanrides.vanrides.whatsapp.api.WaJson;
 import com.vanrides.vanrides.whatsapp.api.WaProblem;
 import com.vanrides.vanrides.whatsapp.auth.WaCrypto;
@@ -66,6 +67,12 @@ public class WaTrackingService {
         jdbc.update("UPDATE wa.message_outbox SET start_intent_id=?,start_payload_ciphertext=?,expires_at=LEAST(expires_at,?) WHERE id=? AND recipient_identity_id=? AND command_id=?",
             id,crypto.encrypt(WaStartDelivery.aad(box,command,driver),fragment),ts(WaTrackingPolicy.instant(intent,"expiresAt")),box,driver,command);
     }
+    @Transactional public ArrayNode requestStartOffer(UUID driver,ArrayNode choices) {
+        return new WaStartOffers(jdbc,settings,clock,crypto).request(driver,choices);
+    }
+    public void attachStartOffer(UUID box,UUID command,UUID driver,ObjectNode packet) {
+        new WaStartOffers(jdbc,settings,clock,crypto).attach(box,command,driver,packet);
+    }
     @Transactional public ObjectNode activate(WaPrincipal actor,UUID intentId,ObjectNode body,String key) {
         WaJson.fields(body,"expectedVersion","foregroundConfirmed","intentToken"); return activateIntent(actor,intentId,null,body,key,"TRACK_ACTIVATE");
     }
@@ -83,6 +90,7 @@ public class WaTrackingService {
         if(!settings.newStartsEnabled()) throw WaProblem.denied();
         Intent intent=store.intent(id,actor.driverId());
         if(intent==null || !actor.deviceId().equals(intent.device()) || !WaCrypto.same(intent.hash(),WaCrypto.digest(token))
+                || !Set.of("START","RESUME").contains(intent.action())
                 || requestedRun!=null && (!requestedRun.equals(intent.run()) || !"RESUME".equals(intent.action()))) throw WaProblem.missing();
         if(!intent.expiry().isAfter(clock.now())) throw new WaProblem(WaProblem.Code.INTENT_EXPIRED);
         if(intent.version()!=WaJson.version(body)) throw new WaProblem(WaProblem.Code.VERSION_CONFLICT);
@@ -113,6 +121,7 @@ public class WaTrackingService {
         jdbc.update("UPDATE wa.tracking_session SET lease_expires_at=LEAST(lease_expires_at,?) WHERE id=?",ts(until),session.id());
         jdbc.update("UPDATE wa.operation_run SET state='STARTING',start_failure_expires_at=NULL,version=version+1 WHERE id=?",run);
         jdbc.update("UPDATE wa.start_intent SET state='ACTIVATED',run_id=?,consumed_at=? WHERE id=?",run,ts(clock.now()),id);
+        new WaStartOffers(jdbc,settings,clock,crypto).consumed(id,actor.driverId());
         ObjectNode response=control(actor,run); store.remember(kind,actor.deviceId(),key,identity,response,clock.now()); return response;
     }
     @Transactional public ObjectNode samples(WaPrincipal actor,UUID id,ObjectNode body) {

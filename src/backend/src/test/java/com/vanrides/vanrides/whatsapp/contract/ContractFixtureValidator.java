@@ -19,7 +19,7 @@ public final class ContractFixtureValidator {
             "$ref", "title", "description", "type", "format", "pattern", "minLength", "maxLength",
             "minimum", "maximum", "exclusiveMinimum", "exclusiveMaximum", "nullable", "enum",
             "properties", "required", "additionalProperties", "oneOf", "items", "minItems", "maxItems",
-            "uniqueItems", "discriminator");
+            "uniqueItems", "discriminator", "deprecated", "writeOnly");
 
     private ContractFixtureValidator() {}
 
@@ -183,6 +183,7 @@ public final class ContractFixtureValidator {
                     }
                 }
                 case "date-time" -> Instant.parse(value);
+                case "date" -> java.time.LocalDate.parse(value);
                 case "uri" -> {
                     if (!URI.create(value).isAbsolute()) {
                         errors.add(path + " is not an absolute URI");

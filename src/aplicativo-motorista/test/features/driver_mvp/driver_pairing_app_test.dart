@@ -199,7 +199,7 @@ void main() {
       await _show(t, session, links, gps);
       final start = find.widgetWithText(
         FilledButton,
-        'Iniciar localização desta saída',
+        'Começar e compartilhar localização',
       );
       expect(t.widget<FilledButton>(start).onPressed, isNull);
       expect(find.text('Permitir localização no percurso'), findsOneWidget);
@@ -230,13 +230,13 @@ void main() {
       await _show(t, session, links, tracking);
       expect(tracking.starts, isEmpty);
       expect(find.textContaining(token), findsNothing);
-      final start = find.text('Iniciar localização desta saída');
+      final start = find.text('Começar e compartilhar localização');
       await t.ensureVisible(start);
       await t.tap(start);
       await t.pumpAndSettle();
       expect(tracking.starts, hasLength(1));
       expect(find.text('Parar localização'), findsOneWidget);
-      expect(find.text('Iniciar localização desta saída'), findsNothing);
+      expect(find.text('Começar e compartilhar localização'), findsNothing);
       await _close(t, links);
     },
   );
@@ -251,7 +251,7 @@ void main() {
           ..approved = true;
     final tracking = _Tracking();
     await _show(t, session, links, tracking);
-    expect(find.text('Iniciar localização desta saída'), findsNothing);
+    expect(find.text('Começar e compartilhar localização'), findsNothing);
     expect(tracking.starts, isEmpty);
     await _close(t, links);
   });
@@ -346,10 +346,18 @@ void main() {
       final session = _Session(), links = _Links(), gps = _Tracking();
       await _show(t, session, links, gps);
       expect(session.actions, [DriverSessionAction.getState]);
-      await t.tap(find.text('Vincular este celular'));
+      await t.tap(find.text('Detalhes e conexão antiga'));
+      await t.pumpAndSettle();
+      await t.ensureVisible(find.text('Gerar código de conexão antiga'));
+      await t.tap(find.text('Gerar código de conexão antiga'));
       await t.pumpAndSettle();
       expect(find.text('Confirme pelo WhatsApp'), findsOneWidget);
       expect(session.reveals, 0);
+      if (find.text('Mostrar código').evaluate().isEmpty) {
+        await t.tap(find.text('Detalhes e conexão antiga'));
+        await t.pumpAndSettle();
+      }
+      await t.ensureVisible(find.text('Mostrar código'));
       await t.tap(find.text('Mostrar código'));
       await t.pumpAndSettle();
       expect(find.text('BCDFGHJZ'), findsOneWidget);
@@ -388,7 +396,7 @@ void main() {
       ]) {
         final s = _Session(), l = _Links(Uri.parse(uri));
         await _show(t, s, l, _Tracking());
-        expect(find.text('Vincular este celular'), findsNothing);
+        expect(find.text('Detalhes e conexão antiga'), findsNothing);
         expect(s.actions, [DriverSessionAction.getState]);
         await _close(t, l);
       }
@@ -401,16 +409,16 @@ void main() {
       final session = _Session();
       final links = _Links(Uri.parse('vanridesdriver://pairing/return'));
       await _show(t, session, links, _Tracking());
-      expect(find.text('Vincular este celular'), findsNothing);
+      expect(find.text('Detalhes e conexão antiga'), findsNothing);
       t.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
       t.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
       await t.pumpAndSettle();
-      expect(find.text('Vincular este celular'), findsNothing);
+      expect(find.text('Detalhes e conexão antiga'), findsNothing);
       links.trusted = true;
       t.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
       t.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
       await t.pumpAndSettle();
-      expect(find.text('Vincular este celular'), findsOneWidget);
+      expect(find.text('Detalhes e conexão antiga'), findsOneWidget);
       expect(
         session.actions.where(
           (action) => action == DriverSessionAction.beginPairing,
@@ -448,6 +456,9 @@ void main() {
                 ..reveal = Completer<String?>(),
           l = _Links();
       await _show(t, s, l, _Tracking());
+      await t.tap(find.text('Detalhes e conexão antiga'));
+      await t.pumpAndSettle();
+      await t.ensureVisible(find.text('Mostrar código'));
       await t.tap(find.text('Mostrar código'));
       await t.pump();
       t.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);

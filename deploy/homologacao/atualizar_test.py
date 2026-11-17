@@ -103,7 +103,7 @@ class AtualizarTest(unittest.TestCase):
         config = 'BOOT-INF/classes/application.properties'
         old = {v39: 'old', 'BOOT-INF/lib/flyway-core.jar': 'unchanged', config: ('spring.flyway.enabled=true',)}
         checksum = 'a' * 64
-        approval = (v40, checksum)
+        approval = {v40: checksum}
         candidate = {**old, v40: checksum}
         self.assertTrue(cd.allow_migrations(old, candidate, approval))
         self.assertFalse(cd.allow_migrations(old, old, approval))
@@ -128,7 +128,22 @@ class AtualizarTest(unittest.TestCase):
             self.assertEqual(cd.main(), 1)
         deploy.assert_not_called()
 
-    def test_migration_approval_must_be_private_and_name_one_versioned_migration(self):
+    def test_bundle_requires_every_reviewed_addition_and_preserves_previous_inventory(self):
+        old = {cd.MIGRATIONS + 'V44__previous.sql': 'original', 'BOOT-INF/lib/flyway-core.jar': 'same'}
+        approved = {cd.MIGRATIONS + f'V{n}__next.sql': str(n) * 32 for n in (45, 46)}
+        candidate = {**old, **approved}
+        self.assertTrue(cd.allow_migrations(old, candidate, approved))
+        for invalid in (
+            {**old, next(iter(approved)): approved[next(iter(approved))]},
+            {**candidate, cd.MIGRATIONS + 'V47__unreviewed.sql': 'extra'},
+            {**candidate, 'BOOT-INF/lib/flyway-core.jar': 'changed'},
+            {**candidate, next(iter(approved)): 'wrong-checksum'},
+            {key: value for key, value in candidate.items() if key != next(iter(old))},
+        ):
+            with self.subTest(invalid=invalid), self.assertRaises(cd.DeployError):
+                cd.allow_migrations(old, invalid, approved)
+
+    def test_migration_approval_must_be_private_and_name_bounded_distinct_versioned_migrations(self):
         valid = 'a' * 64 + '  V40__whatsapp_team_test_driver.sql\n'
         with tempfile.TemporaryDirectory() as folder:
             file = Path(folder) / f'migration-{self.request.source}.sha256'
@@ -139,9 +154,17 @@ class AtualizarTest(unittest.TestCase):
                 cd.read_approval(file)
             file.chmod(0o600)
             self.assertEqual(cd.read_approval(file),
-                             (cd.MIGRATIONS + 'V40__whatsapp_team_test_driver.sql', 'a' * 64))
+                             {cd.MIGRATIONS + 'V40__whatsapp_team_test_driver.sql': 'a' * 64})
+            file.write_text(valid + 'b' * 64 + '  V41__next.sql\n')
+            self.assertEqual(cd.read_approval(file), {
+                cd.MIGRATIONS + 'V40__whatsapp_team_test_driver.sql': 'a' * 64,
+                cd.MIGRATIONS + 'V41__next.sql': 'b' * 64,
+            })
             for content in ('a' * 64 + '\n', 'a' * 64 + '  R__repeatable.sql\n', 'a' * 64 + '  ../V40__x.sql\n',
-                            'a' * 64 + ' V40__x.sql\n', 'A' * 64 + '  V40__x.sql\n'):
+                            'a' * 64 + ' V40__x.sql\n', 'A' * 64 + '  V40__x.sql\n',
+                            valid + valid, valid + 'a' * 64 + '  V40__other.sql\n',
+                            ''.join('a' * 64 + f'  V{n}__x.sql\n' for n in range(40, 49)),
+                            valid + '\n', ' ' * 4097):
                 file.write_text(content)
                 with self.subTest(content=content), self.assertRaisesRegex(cd.DeployError, 'inválida'):
                     cd.read_approval(file)
@@ -158,7 +181,7 @@ class AtualizarTest(unittest.TestCase):
             (self.request.source, cd.DeployError('Smoke falhou.'), True, True, 1),
             ('5' * 40, False, None, True, 0),
         )
-        approved = (cd.MIGRATIONS + 'V40__b.sql', 'a' * 64)
+        approved = {cd.MIGRATIONS + 'V40__b.sql': 'a' * 64}
         for source, result, expected_pin, approval_remains, exit_code in scenarios:
             with self.subTest(source=source, result=result), tempfile.TemporaryDirectory() as folder, \
                  patch.object(cd, 'STATE', Path(folder)), patch.object(cd.os, 'umask'), \
@@ -173,11 +196,18 @@ class AtualizarTest(unittest.TestCase):
                 self.assertEqual(approval.exists(), approval_remains)
 
     def test_retry_consumes_approval_only_when_the_healthy_image_has_the_approved_migration(self):
-        approval = (cd.MIGRATIONS + 'V40__b.sql', 'a' * 64)
+        migration, checksum = cd.MIGRATIONS + 'V40__b.sql', 'a' * 64
+        approval = {migration: checksum}
+        next_migration, next_checksum = cd.MIGRATIONS + 'V41__c.sql', 'b' * 64
+        bundle = {**approval, next_migration: next_checksum}
         current = ('new-id', self.request.source, '7' * 40, self.request.jar)
-        for installed, consumed in (({approval[0]: approval[1]}, True), ({approval[0]: 'b' * 64}, False),
-                                    ({cd.MIGRATIONS + 'V40__other.sql': approval[1]}, False)):
-            with self.subTest(installed=installed), \
+        for approved, installed, consumed in (
+            (approval, approval, True), (approval, {migration: 'b' * 64}, False),
+            (approval, {cd.MIGRATIONS + 'V40__other.sql': checksum}, False),
+            (bundle, bundle, True), (bundle, approval, False),
+            (bundle, {**bundle, next_migration: 'c' * 64}, False),
+        ):
+            with self.subTest(approved=approved, installed=installed), \
                  patch.object(cd, 'docker', side_effect=['srv1397065|active|true', 'single-node']), \
                  patch.object(cd, 'service', return_value=self.new), \
                  patch.object(cd, 'image_info', return_value=current), \
@@ -185,7 +215,7 @@ class AtualizarTest(unittest.TestCase):
                  patch.object(cd, 'verify_source', return_value=current[2]), \
                  patch.object(cd, 'inspect_jar', return_value=installed), \
                  patch.object(cd, 'wait_ready') as ready, patch.object(cd, 'rollout') as rollout, patch('sys.stdout'):
-                self.assertEqual(cd.deploy(self.request, approval), consumed)
+                self.assertEqual(cd.deploy(self.request, approved), consumed)
             ready.assert_called_once_with(self.request.image, self.request.jar, 'new-id')
             rollout.assert_not_called()
 

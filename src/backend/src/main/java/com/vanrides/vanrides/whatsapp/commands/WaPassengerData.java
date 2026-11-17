@@ -111,6 +111,14 @@ final class WaPassengerData {
                 driver);
     }
 
+    ArrayNode additionalRoutines(UUID driver, UUID link) {
+        return array("""
+                SELECT to_jsonb(r)::text FROM wa.routine r WHERE r.driver_id=? AND r.state='ACTIVE'
+                AND NOT EXISTS(SELECT 1 FROM wa.passenger_link_routine s WHERE s.link_id=? AND s.routine_id=r.id)
+                ORDER BY r.created_at,r.id LIMIT 9
+                """, driver, link);
+    }
+
     ArrayNode commons(UUID driver) {
         return array(
                 "SELECT to_jsonb(p)::text FROM wa.common_pickup_point p WHERE driver_id=? AND"
@@ -122,7 +130,9 @@ final class WaPassengerData {
         return array(
                 """
                 SELECT (to_jsonb(l)||jsonb_build_object('passengerName',p.display_name,'driverName',d.display_name,
-                'pickupId',(SELECT id FROM wa.pickup_point x WHERE x.link_id=l.id AND x.state='PROPOSED' ORDER BY x.created_at DESC,x.id LIMIT 1)))::text
+                'pickupId',(SELECT id FROM wa.pickup_point x WHERE x.link_id=l.id AND x.state='PROPOSED'
+                    AND EXISTS(SELECT 1 FROM wa.passenger_link_routine s WHERE s.link_id=l.id AND s.pickup_point_id=x.id)
+                    ORDER BY x.created_at DESC,x.id LIMIT 1)))::text
                 FROM wa.driver_passenger_link l JOIN wa.profile p ON p.identity_id=l.passenger_id
                 JOIN wa.profile d ON d.identity_id=l.driver_id WHERE
                 """
@@ -205,11 +215,28 @@ final class WaPassengerData {
             requireScope(passenger, event, driver);
         }
         ArrayNode routineRows = WaJson.MAPPER.createArrayNode();
+        var ids = new java.util.TreeSet<String>();
+        draft.path("selections").forEach(s -> ids.add(s.path("id").asText()));
         if (draft.has("linkId")) {
-            jdbc.queryForList(
-                    "SELECT r.id FROM wa.routine r JOIN wa.passenger_link_routine s ON"
-                            + " s.routine_id=r.id WHERE s.link_id=? ORDER BY r.id FOR UPDATE OF r",
-                    UUID.fromString(draft.path("linkId").asText()));
+            array("SELECT jsonb_build_object('id',routine_id)::text FROM wa.passenger_link_routine WHERE link_id=?",
+                    UUID.fromString(draft.path("linkId").asText())).forEach(s -> ids.add(s.path("id").asText()));
+        }
+        for (String id : ids) {
+            var rows = array("SELECT to_jsonb(r)::text FROM wa.routine r WHERE id=? AND driver_id=? FOR UPDATE",
+                    UUID.fromString(id), driver);
+            if (rows.size() != 1) throw WaProblem.missing();
+            routineRows.add(rows.get(0));
+        }
+        result.set("selectedRoutines", routineRows);
+        if (draft.path("routePoints").asBoolean()) {
+            ArrayNode pins = WaDriverDraftStore.options();
+            for (var selected : draft.path("selections")) {
+                if (!selected.path("pickup").isObject()) throw WaProblem.denied();
+                pins.add(new WaPassengerPoints(this).pin(actor, event, draft, (ObjectNode)selected.path("pickup")));
+            }
+            result.set("selectedPickups", pins);
+        }
+        if (draft.has("linkId")) {
             result.set(
                     "selections",
                     array(
@@ -236,30 +263,12 @@ final class WaPassengerData {
                             "SELECT to_jsonb(p)::text FROM wa.pickup_point p WHERE link_id=? ORDER"
                                     + " BY id FOR UPDATE",
                             UUID.fromString(draft.path("linkId").asText())));
-        } else {
-            if (draft.has("selections")) {
-                var ids = new java.util.TreeSet<String>();
-                draft.path("selections").forEach(s -> ids.add(s.path("id").asText()));
-                for (String id : ids) {
-                    var rows =
-                            array(
-                                    "SELECT to_jsonb(r)::text FROM wa.routine r WHERE id=? AND"
-                                            + " driver_id=? AND state='ACTIVE' FOR UPDATE",
-                                    UUID.fromString(id),
-                                    driver);
-                    if (rows.size() != 1) {
-                        throw WaProblem.missing();
-                    }
-                    routineRows.add(rows.get(0));
-                }
-                result.set("routines", routineRows);
-            }
         }
         if (draft.has("sourceEvent")) {
             result.set(
                     "sourcePin", pin(actor, draft.path("sourceEvent").asText(), event.eventId()));
         }
-        if (draft.has("commonId")) {
+        if (draft.has("commonId") && !draft.has("reusePickupId")) {
             var rows =
                     array(
                             "SELECT to_jsonb(c)::text FROM wa.common_pickup_point c WHERE id=? AND"
@@ -283,7 +292,9 @@ final class WaPassengerData {
         for (JsonNode selection :
                 array(
                         """
-                        SELECT jsonb_build_object('name',r.name,'direction',r.direction,'time',r.local_time::text,'days',s.weekdays)::text
+                        SELECT jsonb_build_object('name',r.name,'direction',r.direction,'time',r.local_time::text,'days',s.weekdays,
+                        'pending',NOT EXISTS(SELECT 1 FROM wa.routine_member m WHERE m.link_id=s.link_id AND m.routine_id=s.routine_id AND m.state='ACTIVE'
+                            AND m.pickup_point_id=s.pickup_point_id AND m.weekdays=s.weekdays))::text
                         FROM wa.passenger_link_routine s JOIN wa.routine r ON r.id=s.routine_id WHERE s.link_id=? ORDER BY r.created_at,r.id
                         """,
                         link)) {
@@ -292,7 +303,7 @@ final class WaPassengerData {
                             selection.path("name").asText(),
                             selection.path("direction").asText(),
                             selection.path("time").asText(),
-                            selection.path("days")));
+                            selection.path("days")) + (selection.path("pending").asBoolean() ? " (aguarda aprovação)" : ""));
         }
         return String.join("\n", lines);
     }

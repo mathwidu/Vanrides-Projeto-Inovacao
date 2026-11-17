@@ -42,7 +42,8 @@ final class WaDeliveryOrigins {
               WHERE q.outbox_id=o.id
               AND q.passenger_id=o.recipient_identity_id AND q.occurrence_id=o.occurrence_id
               AND q.instance_id=delivery_scope.instance_id AND q.environment=delivery_scope.environment)) OR
-        """ + WaTeamPassengerNotices.ELIGIBLE + " OR " + WaDriverAttendanceNotices.ELIGIBLE + """
+        """ + WaTeamPassengerNotices.ELIGIBLE + " OR " + WaDriverAttendanceNotices.ELIGIBLE
+        + " OR " + com.vanrides.vanrides.whatsapp.pairing.WaPairingLinkDelivery.ELIGIBLE + """
         )
         """;
     static final String SOURCE =

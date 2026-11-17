@@ -15,6 +15,7 @@ enum DriverTrackingFailure: String, Error {
   case serverRejected = "SERVER_REJECTED"
   case invalidContract = "INVALID_CONTRACT"
   case reconciliationRequired = "RECONCILIATION_REQUIRED"
+  case finishReviewRequired = "FINISH_REVIEW_REQUIRED"
 }
 
 enum DriverTrackingContract {
@@ -292,8 +293,9 @@ final class DriverProductionTrackingWire {
     } else {
       let id = String(path.split(separator: "/").dropLast().last ?? "")
       let state = value["state"] as? String == "STOPPED" ? "STOPPED" : "ACTIVE"
+      let packetStopReference = value["stopRequestRef"] as? String
       value = ["sessionId": id, "generation": value["generation"] as Any, "state": state]
-      if state == "STOPPED", let ref = stopReference { value["stopRequestRef"] = ref }
+      if state == "STOPPED", let ref = packetStopReference ?? stopReference { value["stopRequestRef"] = ref }
       let body = try JSONSerialization.data(withJSONObject: value, options: [.sortedKeys])
       let retry = path + body.base64EncodedString()
       key = state == "STOPPED" ? id : retries[retry] ?? UUID().uuidString.lowercased()
@@ -362,6 +364,11 @@ struct DriverRunLink {
   }
   func matches(id: String, version: Int64, token: String) -> Bool {
     self.id == id && self.version == version && self.token == token
+  }
+  static func parseFinish(_ raw: String, host: String = "") -> DriverRunLink? {
+    let base = raw.split(separator: "#", omittingEmptySubsequences: false).first.map(String.init) ?? ""
+    guard base == "vanridesdriver://run/finish" || !host.isEmpty && base == "https://\(host)/motorista/fim" else { return nil }
+    return parse("vanridesdriver://run/start" + String(raw.dropFirst(base.count)), host: host)
   }
 }
 
@@ -433,4 +440,234 @@ enum DriverTrackingStopJournal {
     return DriverTrackingStopRequest(sessionID: id, generation: generation, reason: reason,
       requestedAt: requested, stoppedAt: stopped, stopRequestRef: value["stopRequestRef"] as? String)
   }
+}
+
+enum DriverFinishContract {
+  static func exact(_ value: [String: Any], _ fields: Set<String>) throws {
+    guard Set(value.keys) == fields else { throw DriverTrackingFailure.invalidContract }
+  }
+  static func uuid(_ raw: Any?) throws -> String {
+    guard let value = raw as? String, value.count == 36, UUID(uuidString: value) != nil,
+      value == value.lowercased() else { throw DriverTrackingFailure.invalidContract }
+    return value
+  }
+  static func instant(_ raw: Any?) throws {
+    guard let value = raw as? String, value.hasSuffix("Z") else { throw DriverTrackingFailure.invalidContract }
+    let formatter = ISO8601DateFormatter()
+    formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+    if formatter.date(from: value) != nil { return }
+    formatter.formatOptions = [.withInternetDateTime]
+    guard formatter.date(from: value) != nil else { throw DriverTrackingFailure.invalidContract }
+  }
+  static func authorization(_ value: [String: Any]) throws {
+    try exact(value,["intentId","intentToken","expectedVersion"])
+    _ = try uuid(value["intentId"])
+    guard let token = value["intentToken"] as? String,
+      token.range(of: "^[A-Za-z0-9_-]{42}[AEIMQUYcgkosw048]$", options: .regularExpression) != nil,
+      try DriverTrackingContract.integer(value["expectedVersion"]) <= 9_007_199_254_740_991 else { throw DriverTrackingFailure.invalidContract }
+  }
+  static func same(_ first: [String: Any]?, _ second: [String: Any]) -> Bool {
+    guard let first = first else { return false }
+    return NSDictionary(dictionary: first).isEqual(to: second)
+  }
+  static func read(_ args: [String: Any]) -> [String: Any] { ["intentToken": args["intentToken"]!, "expectedVersion": args["expectedVersion"]!] }
+  static func owner(_ value: [String: Any]) throws -> String {
+    let id = try uuid(value["trackingSessionId"]), generation = try DriverTrackingContract.integer(value["sessionGeneration"])
+    guard generation >= 1 else { throw DriverTrackingFailure.invalidContract }
+    return "\(id):\(generation)"
+  }
+  static func preview(_ value: [String: Any], args: [String: Any]) throws {
+    try exact(value,["intentId","runId","trackingSessionId","sessionGeneration","expectedVersion","expiresAt","state","trip","stopAcknowledged"])
+    guard value["intentId"] as? String == args["intentId"] as? String,
+      try DriverTrackingContract.integer(value["expectedVersion"]) == DriverTrackingContract.integer(args["expectedVersion"]),
+      ["READY","COMPLETED"].contains(value["state"] as? String ?? ""), value["stopAcknowledged"] is Bool,
+      let trip = value["trip"] as? [String: Any] else { throw DriverTrackingFailure.invalidContract }
+    _ = try uuid(value["runId"]); _ = try owner(value); try instant(value["expiresAt"])
+    try exact(trip,["name","direction","localDate","localTime","timezone"])
+    guard let name = trip["name"] as? String, (1...80).contains(name.count),
+      ["OUTBOUND","RETURN"].contains(trip["direction"] as? String ?? ""),
+      let date = trip["localDate"] as? String, date.range(of: "^\\d{4}-\\d{2}-\\d{2}$", options: .regularExpression) != nil,
+      let time = trip["localTime"] as? String, time.range(of: "^([01]\\d|2[0-3]):[0-5]\\d(:[0-5]\\d)?$", options: .regularExpression) != nil,
+      let timezone = trip["timezone"] as? String, TimeZone(identifier: timezone) != nil else { throw DriverTrackingFailure.invalidContract }
+  }
+  static func receipt(_ value: [String: Any], expected: [String: Any]) throws {
+    try exact(value,["intentId","runId","trackingSessionId","sessionGeneration","expectedVersion","state","finishConsumedAt","stopAcknowledged","stopRequestRef","stoppedAt"])
+    for key in ["intentId","runId","trackingSessionId"] {
+      guard value[key] as? String == expected[key] as? String else { throw DriverTrackingFailure.invalidContract }
+    }
+    for key in ["sessionGeneration","expectedVersion"] {
+      guard try DriverTrackingContract.integer(value[key]) == DriverTrackingContract.integer(expected[key]) else { throw DriverTrackingFailure.invalidContract }
+    }
+    guard value["state"] as? String == "COMPLETED", value["stopAcknowledged"] is Bool else { throw DriverTrackingFailure.invalidContract }
+    try instant(value["finishConsumedAt"])
+    if !(value["stopRequestRef"] is NSNull) { _ = try uuid(value["stopRequestRef"]) }
+    if !(value["stoppedAt"] is NSNull) { try instant(value["stoppedAt"]) }
+    if value["stopAcknowledged"] as? Bool == true { try instant(value["stoppedAt"]) }
+  }
+  static func stoppedPacket(_ preview: [String: Any], ref: String?, currentOwner: String?,
+                            providerStopped: Bool, now: Int64) throws -> DriverTrackingStopRequest {
+    let expected = try owner(preview)
+    guard providerStopped, currentOwner == nil || currentOwner == expected, now > 0 else { throw DriverTrackingFailure.invalidContract }
+    if let ref = ref { _ = try uuid(ref) }
+    return DriverTrackingStopRequest(sessionID: try uuid(preview["trackingSessionId"]),
+      generation: try DriverTrackingContract.integer(preview["sessionGeneration"]),reason: "USER_FINISH",
+      requestedAt: now,stoppedAt: now,stopRequestRef: ref)
+  }
+}
+
+/// Restoring the private journal never restores a navigation callback or starts GPS.
+final class DriverFinishFlow {
+  typealias Reply = (Result<[String: Any], DriverTrackingFailure>) -> Void
+  typealias NetworkReply = (Result<[String: Any], DriverTrackingFailure>, Int?) -> Void
+  typealias Request = (String, [String: Any], String?, @escaping NetworkReply) -> Void
+  private let request: Request
+  private let save: (Data?) throws -> Void
+  private let localOwner: () -> String?
+  private let localOff: () -> Bool
+  private let available: () -> Bool
+  private let stopLocal: () -> Void
+  private let prepareStop: ([String: Any]) throws -> Void
+  private let bindStop: ([String: Any], String?) throws -> Void
+  private let clearStop: ([String: Any], String?) throws -> Void
+  private let wake: (Double) -> Void
+  private let now: () -> Date
+  private var journal: [String: Any]?
+  private var storageAvailable = true
+  private var offered: [String: Any]?, offeredArgs: [String: Any]?
+  private var reply: Reply?
+  private var first = false, recovering = false, prepared = false
+  private var nextAt = Date.distantPast
+  private(set) var networkBusy = false
+  private(set) var holdStop = false
+  init(request: @escaping Request, load: () throws -> Data?, save: @escaping (Data?) throws -> Void,
+       localOwner: @escaping () -> String?, localOff: @escaping () -> Bool, available: @escaping () -> Bool,
+       stopLocal: @escaping () -> Void, prepareStop: @escaping ([String: Any]) throws -> Void,
+       bindStop: @escaping ([String: Any], String?) throws -> Void,
+       clearStop: @escaping ([String: Any], String?) throws -> Void, wake: @escaping (Double) -> Void,
+       now: @escaping () -> Date = Date.init) {
+    self.request = request; self.save = save; self.localOwner = localOwner; self.localOff = localOff
+    self.available = available; self.stopLocal = stopLocal; self.bindStop = bindStop; self.clearStop = clearStop; self.wake = wake
+    self.prepareStop = prepareStop
+    self.now = now
+    do {
+      if let data = try load() {
+        guard data.count <= 16_384, let value = try JSONSerialization.jsonObject(with: data) as? [String: Any],
+          Set(value.keys).isSubset(of: ["authorization","preview","key","receipt"]),
+          let args = value["authorization"] as? [String: Any], let preview = value["preview"] as? [String: Any] else { throw DriverTrackingFailure.invalidContract }
+        try DriverFinishContract.authorization(args); try DriverFinishContract.preview(preview,args: args)
+        _ = try DriverFinishContract.uuid(value["key"]); journal = value
+      }
+    } catch { storageAvailable = false }
+  }
+  private func persist(_ value: [String: Any]?) throws { try save(try value.map { try JSONSerialization.data(withJSONObject: $0,options: [.sortedKeys]) }) }
+  func cancelAction() { let callback = reply; reply = nil; holdStop = false; callback?(.failure(.cancelled)) }
+  func pending() -> [String: Any]? { journal?["preview"] as? [String: Any] }
+  func retry(_ args: [String: Any], previewOnly: Bool, completion: @escaping Reply) {
+    do {
+      try DriverFinishContract.exact(args,["intentId","expectedVersion"])
+      guard let record = journal, let auth = record["authorization"] as? [String: Any],
+        auth["intentId"] as? String == args["intentId"] as? String,
+        try DriverTrackingContract.integer(auth["expectedVersion"]) == DriverTrackingContract.integer(args["expectedVersion"]),
+        let preview = record["preview"] as? [String: Any] else { throw DriverTrackingFailure.invalidContract }
+      offered = preview; offeredArgs = auth
+      if previewOnly { completion(.success(preview)) } else { finish(auth,completion: completion) }
+    } catch { completion(.failure(.invalidContract)) }
+  }
+  func preview(_ args: [String: Any], completion: @escaping Reply) {
+    guard !networkBusy, available() else { completion(.failure(.busy)); return }
+    do { try DriverFinishContract.authorization(args) } catch { completion(.failure(.invalidContract)); return }
+    networkBusy = true
+    request("/driver-app/v1/finish-intents/\(args["intentId"]!)/preview",DriverFinishContract.read(args),nil) { [weak self] result, status in
+      guard let self = self else { return }; self.networkBusy = false
+      do {
+        let value = try result.get(); try DriverFinishContract.preview(value,args: args)
+        self.offered = value; self.offeredArgs = args; completion(.success(value))
+      } catch { completion(.failure(status == 409 || status == 410 ? .finishReviewRequired : .invalidContract)) }
+      self.wake(0)
+    }
+  }
+  func finish(_ args: [String: Any], completion: @escaping Reply) {
+    guard reply == nil, !networkBusy else { completion(.failure(.busy)); return }
+    var mayStop = false
+    do {
+      try DriverFinishContract.authorization(args)
+      guard let preview = offered, DriverFinishContract.same(offeredArgs,args) else { throw DriverTrackingFailure.invalidContract }
+      let expected = try DriverFinishContract.owner(preview)
+      guard localOwner() == nil || localOwner() == expected else { throw DriverTrackingFailure.invalidContract }
+      mayStop = true
+      guard storageAvailable else { throw DriverTrackingFailure.credentialStorage }
+      var existing = journal
+      if let prior = existing?["authorization"] as? [String: Any], !DriverFinishContract.same(prior,args) { existing = nil }
+      let next = existing ?? ["authorization": args,"preview": preview,"key": UUID().uuidString.lowercased()]
+      try persist(next); journal = next
+      recovering = existing != nil && next["receipt"] == nil
+      reply = completion; holdStop = true; first = true; prepared = false; nextAt = .distantPast
+      stopLocal(); tick(); wake(0.1)
+    } catch { if mayStop { stopLocal() }; completion(.failure(.invalidContract)) }
+  }
+  func tick() {
+    guard let record = journal, reply != nil, localOff(),
+      let preview = record["preview"] as? [String: Any], let args = record["authorization"] as? [String: Any],
+      let key = record["key"] as? String else { return }
+    guard localOwner() == nil || localOwner() == (try? DriverFinishContract.owner(preview)) else { fail(.invalidContract); return }
+    if !prepared {
+      do { try prepareStop(preview); prepared = true }
+      catch { fail(.credentialStorage); return }
+    }
+    guard !networkBusy, now() >= nextAt else { return }
+    guard available() else { wake(0.1); return }
+    let consume = first && !recovering && record["receipt"] == nil
+    first = false; networkBusy = true
+    let path = consume ? "/driver-app/v1/runs/\(preview["runId"]!)/finish" : "/driver-app/v1/finish-intents/\(args["intentId"]!)/receipt"
+    var body = consume ? args : DriverFinishContract.read(args)
+    if consume { body["foregroundConfirmed"] = "CONFIRMED" }
+    request(path,body,consume ? key : nil) { [weak self] result, status in
+      guard let self = self else { return }; self.networkBusy = false
+      guard self.journal?["key"] as? String == key, self.reply != nil else { self.wake(0); return }
+      // Cancelling the collector's wrapper does not synchronously drain its
+      // actor-owned URLSession request. BUSY means no FINISH was submitted.
+      if case .failure(.busy) = result {
+        if consume { self.first = true }
+        self.nextAt = self.now().addingTimeInterval(0.1)
+        self.wake(0.1)
+        return
+      }
+      self.holdStop = false
+      if self.recovering && status == 404 { self.recovering = false; self.first = true; self.wake(0); return }
+      self.recovering = false
+      do {
+        let value = try result.get()
+        let receipt: [String: Any]
+        if consume {
+          guard let nested = value["receipt"] as? [String: Any] else { throw DriverTrackingFailure.invalidContract }
+          receipt = nested
+        } else { receipt = value }
+        try DriverFinishContract.receipt(receipt,expected: preview)
+        if consume {
+          try DriverFinishContract.exact(value,["receipt","control"])
+          if let control = value["control"] as? [String: Any] {
+            try DriverFinishContract.exact(control,["runId","state","entityVersion","trackingSessionId","generation","serverTime","action","gpsState","leaseExpiresAt","stopRequestRef"])
+          }
+          guard let control = value["control"] as? [String: Any], control["action"] as? String == "STOP",
+            control["trackingSessionId"] as? String == preview["trackingSessionId"] as? String,
+            control["runId"] as? String == preview["runId"] as? String, control["state"] as? String == "COMPLETED",
+            NSDictionary(dictionary: ["ref": control["stopRequestRef"]!]).isEqual(to: ["ref": receipt["stopRequestRef"]!]),
+            try DriverTrackingContract.integer(control["generation"]) == DriverTrackingContract.integer(preview["sessionGeneration"]) else { throw DriverTrackingFailure.invalidContract }
+        }
+        if let prior = record["receipt"] as? [String: Any] {
+          guard NSDictionary(dictionary: ["ref": prior["stopRequestRef"]!,"at": prior["finishConsumedAt"]!]).isEqual(to: ["ref": receipt["stopRequestRef"]!,"at": receipt["finishConsumedAt"]!]) else { throw DriverTrackingFailure.invalidContract }
+        }
+        var updated = record; updated["receipt"] = receipt; try self.persist(updated); self.journal = updated
+        let ref = receipt["stopRequestRef"] as? String
+        if receipt["stopAcknowledged"] as? Bool != true { try self.bindStop(preview,ref) }
+        if receipt["stopAcknowledged"] as? Bool == true && self.localOff() {
+          try self.clearStop(preview,ref); try self.persist(nil); self.journal = nil
+          let callback = self.reply; self.reply = nil
+          callback?(.success(["receipt": receipt,"providerStopped": true]))
+        } else { self.nextAt = self.now().addingTimeInterval(2); self.wake(2) }
+      } catch { self.fail(status == 409 || status == 410 ? .finishReviewRequired : .serverRejected) }
+      self.wake(0)
+    }
+  }
+  private func fail(_ error: DriverTrackingFailure) { holdStop = false; let callback = reply; reply = nil; callback?(.failure(error)); wake(0) }
 }

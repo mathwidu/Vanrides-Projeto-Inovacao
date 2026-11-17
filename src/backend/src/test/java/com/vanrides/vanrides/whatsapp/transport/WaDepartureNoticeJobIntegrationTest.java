@@ -19,7 +19,7 @@ class WaDepartureNoticeJobIntegrationTest {
     private static final Instant TWENTY_NINE_BEFORE = Instant.parse("2030-01-02T08:31:00Z");
     private static final Instant THIRTY_ONE_BEFORE = Instant.parse("2030-01-02T08:29:00Z");
     private static final String HEADER = "Lista da viagem de hoje, quarta (02/01), ida às 06:00 (Ida habitual)";
-    private static final String LAST_LINE = "\nPara iniciar a rota, envie INICIAR SAÍDA.";
+    private static final String LAST_LINE = "\nPara começar, envie Começar viagem.";
     private WaAttendanceCalendarTestSupport f;
 
     @BeforeEach

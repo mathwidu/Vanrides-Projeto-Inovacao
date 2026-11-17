@@ -43,6 +43,14 @@ public final class WaCommandStore {
             """, commandId, context.identityId(), context.eventId(), key, command, hash, WaJson.write(result),
             Timestamp.from(clock.now()), Timestamp.from(clock.now().plusSeconds(86400)));
     }
+    public WaDecision result(WaDecision effect,UUID command,List<UUID> responses,WaProfileState current,String next,String correlation) {
+        if(effect.error()!=null) return effect;
+        ObjectNode result=WaJson.object("{}").put("commandId",command.toString())
+            .put("outcome",effect.body().path("changed").asBoolean()?"APPLIED":"NO_CHANGE")
+            .put("entityVersion",current.version()).put("nextStep",next).put("correlationId",correlation);
+        var ids=result.putArray("responseIds");responses.forEach(id->ids.add(id.toString()));
+        return WaDecision.ok(result);
+    }
     public boolean attempt(UUID actor, String action) {
         Instant window = Instant.ofEpochSecond(clock.now().getEpochSecond() / 300 * 300);
         jdbc.update("INSERT INTO wa.actor_attempt_window(identity_id,action,window_start,attempts) VALUES (?,?,?,0) ON CONFLICT DO NOTHING",

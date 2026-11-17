@@ -69,6 +69,15 @@ class WaPrivacyTechnicalRetentionIntegrationTest {
         assertThatThrownBy(()->WaPrivacyTrackingReplayProbe.read(f.jdbc,t.crypto,f.time.now,"TRACK_STATE",t.device,"synthetic-tracking",t.request)).isInstanceOf(WaProblem.class).extracting(e->((WaProblem)e).code()).isEqualTo(WaProblem.Code.INTENT_EXPIRED);
         assertThatThrownBy(()->WaPrivacyPairingReplayProbe.read(f.jdbc,t.crypto,f.clock,"SESSION_REVOKE",t.device,"synthetic-pairing",WaJson.object("{\"changed\":true}"))).isInstanceOf(WaProblem.class).extracting(e->((WaProblem)e).code()).isEqualTo(WaProblem.Code.IDEMPOTENCY_CONFLICT);
     }
+    @Test void expiredFinishReplayIsOwnedAndRedactedWithoutLosingItsRequestHash(){
+        UUID finish=t.replay("TRACK_FINISH","synthetic-finish",f.time.now.plusSeconds(60));
+        String hash=f.string("SELECT request_hash FROM wa.operation_replay WHERE id=?",finish);
+        f.time.days(8);t.sweep();
+        assertThat(f.jdbc.queryForObject("SELECT octet_length(response_ciphertext) FROM wa.operation_replay WHERE id=?",Integer.class,finish)).isEqualTo(1);
+        assertThat(f.string("SELECT request_hash FROM wa.operation_replay WHERE id=?",finish)).isEqualTo(hash);
+        assertThatThrownBy(()->WaPrivacyTrackingReplayProbe.read(f.jdbc,t.crypto,f.time.now,"TRACK_FINISH",t.device,"synthetic-finish",t.request))
+            .isInstanceOf(WaProblem.class).extracting(e->((WaProblem)e).code()).isEqualTo(WaProblem.Code.INTENT_EXPIRED);
+    }
     @Test void normalUnexpiredReplayStillDecryptsAndIsNotChanged(){
         t.replay("SESSION_REVOKE","fresh-pairing",f.time.now.plusSeconds(60));t.replay("TRACK_STATE","fresh-tracking",f.time.now.plusSeconds(60));t.sweep();
         assertThat(WaPrivacyPairingReplayProbe.read(f.jdbc,t.crypto,f.clock,"SESSION_REVOKE",t.device,"fresh-pairing",t.request).path("secret").asText()).isEqualTo("SEGREDO_SINTETICO");
