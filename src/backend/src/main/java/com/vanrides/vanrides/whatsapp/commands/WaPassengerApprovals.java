@@ -39,7 +39,7 @@ final class WaPassengerApprovals {
         boolean legacy = draft.path("action").asText().equals("APPROVE_LINK");
         return new WaPassengerMutations.Result(link, point, legacy ? "APPROVED" : "POINT_APPROVED",
                 "Ponto aprovado para este trajeto. Confira a ordem antes da próxima saída. Para conferir outro ponto, envie REVISAR PEDIDO.",
-                "Seu ponto foi aprovado.\n\n" + new WaPassengerReviewStore(data).summary(link, point)
-                        + "\n\nOs outros trajetos foram mantidos.");
+                "O motorista aprovou a sua solicitação da(s) rota(s):\n\n"
+                        + new WaPassengerReviewStore(data).summary(link, point));
     }
 }

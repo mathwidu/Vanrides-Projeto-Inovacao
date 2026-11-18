@@ -57,7 +57,7 @@ class TeamTestDriverPointIntegrationTest {
         assertThat(s.jdbc.queryForObject("SELECT state FROM wa.driver_passenger_link WHERE id=?", String.class, link)).isEqualTo("APPROVED");
         assertThat(s.jdbc.queryForList("SELECT pickup_point_id FROM wa.routine_member WHERE link_id=? AND state='ACTIVE'", UUID.class, link))
             .containsExactly(proposed);
-        s.assertPassengerNotice(request.id(), link, "Seu ponto foi aprovado");
+        s.assertPassengerNotice(request.id(), link, "O motorista aprovou a sua solicitação da(s) rota(s):");
         assertThat(s.count("wa.message_outbox")).isEqualTo(2);
         assertThat(s.jdbc.queryForObject("SELECT action FROM wa.team_admission_operation WHERE id=?", String.class, request.id()))
             .isEqualTo("APPROVE_TEST_POINT");
