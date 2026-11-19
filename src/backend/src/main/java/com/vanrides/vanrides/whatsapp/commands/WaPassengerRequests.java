@@ -24,7 +24,7 @@ final class WaPassengerRequests {
         ObjectNode invite = draft.has("inviteHash") ? data.invite(actor.identityId(), event, draft.path("inviteHash").asText(), true) : null;
         if (invite == null && (link == null || !draft.path("editingPickup").asBoolean())
                 || invite != null && !invite.path("driver_id").asText().equals(driver.toString())) throw WaProblem.denied();
-        if (!draft.path("approachMessages").isBoolean() || !draft.path("attendanceReminders").isBoolean()) throw WaProblem.denied();
+        if (!draft.path("approachMessages").isBoolean()) throw WaProblem.denied();
         ArrayNode selections = WaDriverDraftStore.options();
         java.util.Set<String> seen = new java.util.HashSet<>();
         for (var selected : draft.path("selections")) {
@@ -82,8 +82,7 @@ final class WaPassengerRequests {
         }
         if (prepared.invite()!=null) data.jdbc.update("UPDATE wa.driver_invite SET use_count=use_count+1,version=version+1 WHERE id=?", UUID.fromString(prepared.invite().path("id").asText()));
         if (prepared.link()==null) {
-            ObjectNode preferences = WaPassengerDraftStore.json().put("APPROACH_MESSAGES", draft.path("approachMessages").asBoolean())
-                    .put("ATTENDANCE_REMINDERS", draft.path("attendanceReminders").asBoolean());
+            ObjectNode preferences = WaPassengerDraftStore.json().put("APPROACH_MESSAGES", draft.path("approachMessages").asBoolean());
             data.jdbc.update("UPDATE wa.profile SET preferences_json=preferences_json||?::jsonb WHERE identity_id=?", preferences.toString(), passenger);
         }
         return new WaPassengerMutations.Result(link, notification, draft.path("action").asText().equals("REQUEST_LINK") ? "REQUESTED" : "POINT_CHANGE",

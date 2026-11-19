@@ -169,7 +169,7 @@ class WaPassengerInputIntegrationTest {
         fixture.confirm(passenger, review);
         assertEquals("false", fixture.conversation.string(
                 "SELECT preferences_json->>'APPROACH_MESSAGES' FROM wa.profile WHERE identity_id=?", passenger));
-        assertEquals("true", fixture.conversation.string(
+        assertNull(fixture.conversation.string(
                 "SELECT preferences_json->>'ATTENDANCE_REMINDERS' FROM wa.profile WHERE identity_id=?", passenger));
     }
 

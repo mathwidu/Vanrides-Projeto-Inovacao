@@ -35,12 +35,17 @@ class WaAttendanceCalendarIntegrationTest {
     }
 
     @Test
-    void remindersOptOutPreservesPendingAndManualQuestion() {
+    void aFalseOrMissingReminderPreferenceStillQueuesTheReminder() {
         f.h.jdbc.update("UPDATE wa.profile SET preferences_json='{}'::jsonb WHERE identity_id=?", f.passenger);
+        UUID declined = f.member(f.routine, false);
+        assertEquals("false", f.h.jdbc.queryForObject(
+                "SELECT preferences_json->>'ATTENDANCE_REMINDERS' FROM wa.profile WHERE identity_id=?", String.class, declined));
         f.materialize();
-        assertEquals(0, f.tick("DUE_REMINDERS", 100, null).path("processed").asInt());
+        assertEquals(2, f.tick("DUE_REMINDERS", 100, null).path("processed").asInt());
+        assertEquals(1, f.count("SELECT count(*) FROM wa.message_outbox WHERE purpose='REMINDER' AND recipient_identity_id=?", f.passenger));
+        assertEquals(1, f.count("SELECT count(*) FROM wa.message_outbox WHERE purpose='REMINDER' AND recipient_identity_id=?", declined));
         assertNotNull(f.question(f.passenger, "2030-01-02"));
-        assertEquals(7, f.count("SELECT count(*) FROM wa.attendance WHERE state='PENDING'"));
+        assertEquals(7, f.count("SELECT count(*) FROM wa.attendance WHERE state='PENDING' AND passenger_id=?", f.passenger));
     }
 
     @Test

@@ -19,10 +19,9 @@ class WaAttendanceDeliveryHistoryIntegrationTest {
     void setup() { f = new WaAttendanceDeliveryTestSupport(POSTGRES); }
 
     @Test
-    void resultAndCallbackRemainRecordableAfterCancellationOptOutAndHumanSupport() {
+    void resultAndCallbackRemainRecordableAfterCancellationAndHumanSupport() {
         var reminder = f.reminder();
         var reservation = f.authorize(f.claim(reminder));
-        f.optOut(reminder.passenger());
         f.pause(reminder.passenger());
         f.h.jdbc.update("UPDATE wa.attendance_question SET state='CLOSED' WHERE id=?", reminder.question());
         f.h.jdbc.update("UPDATE wa.driver_passenger_link SET state='CLOSED',valid_until=CURRENT_TIMESTAMP WHERE id=?", reminder.link());

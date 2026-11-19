@@ -37,8 +37,7 @@ public final class WaAttendanceDeliveryTestSupport {
         UUID member = h.jdbc.queryForObject("SELECT id FROM wa.routine_member WHERE routine_id=? AND passenger_id=?",
                 UUID.class, pair.routine(), pair.passenger());
         LocalDate date = LocalDate.of(2030, 1, 2);
-        h.jdbc.update("UPDATE wa.profile SET preferences_json=?::jsonb WHERE identity_id=?",
-                json("{}").put("ATTENDANCE_REMINDERS", true).toString(), pair.passenger());
+        h.jdbc.update("UPDATE wa.profile SET preferences_json='{}'::jsonb WHERE identity_id=?", pair.passenger());
         h.jdbc.update("""
             INSERT INTO wa.routine_occurrence(id,routine_id,driver_id,local_date,scheduled_at)
             VALUES (?,?,?,?,?)
@@ -91,8 +90,11 @@ public final class WaAttendanceDeliveryTestSupport {
         h.jdbc.update("INSERT INTO wa.conversation_state(identity_id,stage) VALUES (?,'PAUSED') "
                 + "ON CONFLICT(identity_id) DO UPDATE SET stage='PAUSED'", actor);
     }
-    void optOut(UUID actor) {
+    void declineReminders(UUID actor) {
         h.jdbc.update("UPDATE wa.profile SET preferences_json=jsonb_set(preferences_json,'{ATTENDANCE_REMINDERS}','false') WHERE identity_id=?", actor);
+    }
+    void suspend(UUID actor) {
+        h.jdbc.update("UPDATE wa.profile SET status='SUSPENDED' WHERE identity_id=?", actor);
     }
     void answer(Reminder reminder) {
         h.jdbc.update("UPDATE wa.attendance SET state='GOING',actor_identity_id=?,answered_at=? WHERE id=?",

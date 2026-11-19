@@ -40,7 +40,7 @@ class WaPassengerReuseIntegrationTest {
         fixture.transport.jdbc.update("UPDATE wa.routine SET stop_order_pending=false WHERE id=?", originalRoutine);
         long originalVersion = fixture.conversation.number("SELECT version FROM wa.routine WHERE id=?", originalRoutine);
         fixture.transport.jdbc.update("UPDATE wa.profile SET preferences_json=?::jsonb WHERE identity_id=?",
-                "{\"APPROACH_MESSAGES\":true,\"ATTENDANCE_REMINDERS\":true,\"OTHER_CHOICE\":true}", passenger);
+                "{\"APPROACH_MESSAGES\":true,\"OTHER_CHOICE\":true}", passenger);
         String preferences = preferences(), member = member(), point = approvedPoint();
         UUID added = additionalRoutine();
         var staleReview = additionReview();

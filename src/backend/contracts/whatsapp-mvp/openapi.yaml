@@ -4096,8 +4096,7 @@
           "preference": {
             "type": "string",
             "enum": [
-              "APPROACH_MESSAGES",
-              "ATTENDANCE_REMINDERS"
+              "APPROACH_MESSAGES"
             ]
           },
           "enabled": {
@@ -4136,7 +4135,7 @@
           "expectedVersion",
           "payload"
         ],
-        "description": "Ator passageiro ativo derivado da inbox e do lease. A API reinterpreta LIGAR/DESLIGAR AVISOS CHEGADA ou LIGAR/DESLIGAR AVISOS PRESENÇA, exige payload idêntico à intenção autenticada e altera somente essa chave, preservando a outra preferência e a conversa. Mensagem corrente e ausência de rascunho ativo são obrigatórias.",
+        "description": "Ator passageiro ativo derivado da inbox e do lease. A API reinterpreta LIGAR/DESLIGAR AVISOS CHEGADA, exige payload idêntico à intenção autenticada e altera somente a chave APPROACH_MESSAGES, preservando as demais chaves e a conversa. Lembretes de presença não são configuráveis e não têm comando de preferência. Mensagem corrente e ausência de rascunho ativo são obrigatórias.",
         "x-vanrides-implementation-card": "VR-WA-140-FINISH-SUPPORT",
         "x-vanrides-availability": "CARD_140_PREFERENCES"
       },

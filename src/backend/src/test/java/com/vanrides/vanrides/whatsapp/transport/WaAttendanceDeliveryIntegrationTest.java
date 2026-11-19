@@ -47,14 +47,28 @@ class WaAttendanceDeliveryIntegrationTest {
     }
 
     @Test
-    void optOutAndAnAlreadyAnsweredQuestionPreventAFirstReminder() {
+    void aFalseReminderPreferenceStillDeliversTheReminder() {
         var reminder = f.reminder();
-        f.h.transaction.executeWithoutResult(tx -> {
-            f.optOut(reminder.passenger());
-            assertThat(f.claim().path("items")).isEmpty();
-            assertThat(f.state(reminder)).isEqualTo("CANCELED");
-            tx.setRollbackOnly();
-        });
+        f.declineReminders(reminder.passenger());
+        var reservation = f.authorize(f.claim(reminder));
+        assertThat(reservation.path("content").path("text").asText()).contains("VOU", "NÃO VOU");
+        assertThat(f.state(reminder)).isEqualTo("LEASED");
+        assertThat(f.attempts(reminder)).isEqualTo(1);
+    }
+
+    @Test
+    void aMissingReminderPreferenceStillDeliversTheReminder() {
+        var reminder = f.reminder();
+        assertThat(f.h.jdbc.queryForObject("SELECT preferences_json->'ATTENDANCE_REMINDERS' IS NULL FROM wa.profile WHERE identity_id=?",
+                Boolean.class, reminder.passenger())).isTrue();
+        var reservation = f.authorize(f.claim(reminder));
+        assertThat(reservation.path("recipient").path("address").asText()).isEqualTo(f.f.address(reminder.passenger()));
+        assertThat(f.attempts(reminder)).isEqualTo(1);
+    }
+
+    @Test
+    void anAlreadyAnsweredQuestionPreventsAFirstReminder() {
+        var reminder = f.reminder();
         f.answer(reminder);
         assertThat(f.claim().path("items")).isEmpty();
         assertThat(f.state(reminder)).isEqualTo("CANCELED");

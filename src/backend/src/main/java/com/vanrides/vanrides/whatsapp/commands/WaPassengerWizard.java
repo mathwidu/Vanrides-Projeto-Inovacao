@@ -170,8 +170,7 @@ final class WaPassengerWizard {
             draft.put(
                     "stage",
                     switch (stage) {
-                        case "PREF_REMINDER" -> "PREF_APPROACH";
-                        case "ROUTINES" -> draft.path("simpleSignup").asBoolean() ? "ROUTINES" : "PREF_REMINDER";
+                        case "ROUTINES" -> draft.path("simpleSignup").asBoolean() ? "ROUTINES" : "PREF_APPROACH";
                         case "DAYS" -> "ROUTINES";
                         case "REFERENCE", "REVIEW" -> "POINT";
                         case "POINT" ->
@@ -225,7 +224,7 @@ final class WaPassengerWizard {
                     lead = WaPassengerTexts.NOTICE_RENEWED;
                 }
             }
-            case "PREF_APPROACH", "PREF_REMINDER" -> signup.legacyPreference(draft, text, stage.equals("PREF_APPROACH"));
+            case "PREF_APPROACH" -> signup.legacyPreference(draft, text);
             case "ROUTINES" -> signup.selectRoutines(draft, text);
             case "DAYS" -> signup.selectDays(draft, text);
             case "EDIT_ROUTINE", "EDIT_POINT_SELECTION" -> new WaPassengerEdit(data).choose(draft, text);

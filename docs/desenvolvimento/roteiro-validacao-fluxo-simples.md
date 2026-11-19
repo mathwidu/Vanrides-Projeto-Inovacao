@@ -105,7 +105,7 @@ pendente. **Ambos devem aparecer entre os previstos**, com os estados claros.
 independente e precisa estar ligada, com ponto e viagem elegíveis.
 
 Ligar os avisos de chegada de P1 e deixar os de P2 desligados. Conferir que
-uma escolha não altera a outra pessoa nem os lembretes de presença. O recebimento
+uma escolha não altera a outra pessoa, e os lembretes de presença são enviados a ambos, sempre. O recebimento
 de aproximação será observado no percurso: P1 recebe o aviso elegível e P2 não.
 Repetir em outra saída com as escolhas invertidas: P2 continua pendente e
 com avisos ligados; P1 fica com avisos desligados. Conferir P2 entre os previstos

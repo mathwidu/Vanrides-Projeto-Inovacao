@@ -26,7 +26,7 @@ export async function runTrackingScenarios(runtime) {
   try {
     proxy=await startTlsProxy(tls,{runLab:true,onPairingBegin:o=>{beginIds.add(o.pairingId);keys.add(o.jkt);}});
     const {schedules,zone}=fixtureTimes();
-    await registerCohort(chat,schedules,zone,{remindersForFirst:false});
+    await registerCohort(chat,schedules,zone);
     const menu=(await send('ROTINAS',dsetup)).reply;
     const option=/Rotina ([1-9][0-9]*): Ida escolar;/u.exec(menu)?.[1];demand(option,'RUN_ROUTINE_NOT_LISTED');
     await send('ORDEM '+option,dsetup);

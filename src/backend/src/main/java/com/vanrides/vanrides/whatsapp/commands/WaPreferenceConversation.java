@@ -34,17 +34,14 @@ final class WaPreferenceConversation {
         return WaDecision.ok(Map.of("changed", changed == 1));
     }
     String response(ObjectNode payload) {
-        String name = payload.path("preference").asText().equals("APPROACH_MESSAGES") ? "de chegada" : "de presença";
-        return "Avisos " + name + (payload.path("enabled").booleanValue() ? " ligados." : " desligados.")
-            + " A outra preferência de avisos foi mantida. Mensagens já enviadas podem chegar depois.";
+        return "Avisos de chegada" + (payload.path("enabled").booleanValue() ? " ligados." : " desligados.")
+            + " Mensagens já enviadas podem chegar depois.";
     }
     private static Choice choice(WaInboxAccess.Context event) {
         if (!event.normalizedKind().equals("TEXT") || !event.normalizedPayload().path("text").isTextual()) return null;
         return switch (WaConversationPolicy.normalize(event.normalizedPayload().path("text").textValue())) {
             case "ligar avisos chegada" -> new Choice("APPROACH_MESSAGES", true);
             case "desligar avisos chegada" -> new Choice("APPROACH_MESSAGES", false);
-            case "ligar avisos presenca" -> new Choice("ATTENDANCE_REMINDERS", true);
-            case "desligar avisos presenca" -> new Choice("ATTENDANCE_REMINDERS", false);
             default -> null;
         };
     }

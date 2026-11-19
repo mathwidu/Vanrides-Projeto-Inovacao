@@ -77,8 +77,7 @@ class WaPassengerWizardIntegrationTest {
                         "SELECT preferences_json->>'APPROACH_MESSAGES' FROM wa.profile WHERE"
                                 + " identity_id=?",
                         passenger));
-        assertEquals(
-                "false",
+        assertNull(
                 fixture.conversation.string(
                         "SELECT preferences_json->>'ATTENDANCE_REMINDERS' FROM wa.profile WHERE"
                                 + " identity_id=?",
@@ -86,7 +85,7 @@ class WaPassengerWizardIntegrationTest {
     }
 
     @Test
-    void knownNameAndNoticeAreReusedWithOnlyAttendanceRemindersOnByDefault() {
+    void knownNameAndNoticeAreReusedWithApproachMessagesOffByDefault() {
         UUID passenger = fixture.passenger();
         fixture.transport.jdbc.update(
                 "INSERT INTO"
@@ -98,7 +97,7 @@ class WaPassengerWizardIntegrationTest {
         assertEquals("POINT", fixture.draft(passenger).path("stage").asText());
         assertTrue(next.text().contains("ALTERAR DIAS"));
         assertFalse(fixture.draft(passenger).path("approachMessages").asBoolean());
-        assertTrue(fixture.draft(passenger).path("attendanceReminders").asBoolean());
+        assertFalse(fixture.draft(passenger).has("attendanceReminders"));
         assertEquals("Nome já aceito", fixture.draft(passenger).path("passengerName").asText());
         assertEquals(
                 "{}",
@@ -280,17 +279,15 @@ class WaPassengerWizardIntegrationTest {
     }
 
     @Test
-    void confirmingWithoutAnyAvisosCommandKeepsAttendanceRemindersOnAndApproachMessagesOff() {
+    void confirmingWithoutAnyAvisosCommandKeepsApproachMessagesOffAndNeverWritesAttendanceReminders() {
         UUID passenger = fixture.passenger();
         fixture.open(passenger, code);
         fixture.send(passenger, "Nome sintético");
         fixture.send(passenger, "ACEITO");
         var review = fixture.pin(passenger, -12.25, 34.5);
-        assertTrue(review.text().contains("Lembretes de presença: sim"), review.text());
-        assertTrue(review.text().contains("Avisos de aproximação: não"), review.text());
+        assertTrue(review.text().contains("Avisos de chegada da van: não"), review.text());
         fixture.confirm(passenger, review);
-        assertEquals(
-                "true",
+        assertNull(
                 fixture.conversation.string(
                         "SELECT preferences_json->>'ATTENDANCE_REMINDERS' FROM wa.profile WHERE"
                                 + " identity_id=?",
@@ -312,6 +309,50 @@ class WaPassengerWizardIntegrationTest {
             assertFalse(review.text().contains(removed), review.text());
         }
         assertTrue(review.text().contains("AVISOS"), review.text());
+    }
+
+    @Test
+    void signupReviewAlwaysStatesTheReminderAndOffersOnlyTheArrivalNoticeChoice() {
+        UUID passenger = fixture.passenger();
+        fixture.open(passenger, code);
+        fixture.send(passenger, "Nome sintético");
+        fixture.send(passenger, "ACEITO");
+        var off = fixture.pin(passenger, -12.25, 34.5);
+        assertTrue(off.text().contains("Avisos de chegada da van: não\n"
+                + "Você recebe um lembrete antes de cada viagem para informar se vai."), off.text());
+        assertTrue(off.text().contains(
+                "Para receber um aviso quando a van estiver chegando, envie AVISOS CHEGADA."), off.text());
+        assertFalse(off.text().contains("AVISOS NENHUM"), off.text());
+        var on = fixture.send(passenger, "AVISOS CHEGADA");
+        assertTrue(on.text().contains("Avisos de chegada da van: sim\n"
+                + "Você recebe um lembrete antes de cada viagem para informar se vai."), on.text());
+        assertTrue(on.text().contains("Para não receber, envie AVISOS NENHUM."), on.text());
+        assertFalse(on.text().contains("envie AVISOS CHEGADA"), on.text());
+        for (String text : new String[] {off.text(), on.text()}) {
+            for (String removed : new String[] {"AVISOS PRESENÇA", "AVISOS TODOS", "Lembretes de presença:"}) {
+                assertFalse(text.contains(removed), text);
+            }
+        }
+        for (String removed : new String[] {"AVISOS PRESENÇA", "AVISOS TODOS"}) {
+            fixture.send(passenger, removed);
+            assertTrue(fixture.draft(passenger).path("approachMessages").asBoolean());
+            assertFalse(fixture.draft(passenger).has("attendanceReminders"));
+        }
+        var back = fixture.send(passenger, "AVISOS NENHUM");
+        assertTrue(back.text().contains("Avisos de chegada da van: não"), back.text());
+        var confirmed = fixture.send(passenger, "AVISOS CHEGADA");
+        fixture.confirm(passenger, confirmed);
+        assertEquals(
+                "true",
+                fixture.conversation.string(
+                        "SELECT preferences_json->>'APPROACH_MESSAGES' FROM wa.profile WHERE"
+                                + " identity_id=?",
+                        passenger));
+        assertNull(
+                fixture.conversation.string(
+                        "SELECT preferences_json->>'ATTENDANCE_REMINDERS' FROM wa.profile WHERE"
+                                + " identity_id=?",
+                        passenger));
     }
 
     @Test

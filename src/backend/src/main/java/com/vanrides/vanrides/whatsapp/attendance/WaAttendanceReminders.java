@@ -39,7 +39,7 @@ final class WaAttendanceReminders {
                 JOIN wa.driver_passenger_link l ON l.id=q.link_id AND l.state='APPROVED' AND l.version=q.link_version
                 JOIN wa.pickup_point p ON p.id=q.pickup_point_id AND p.state='APPROVED' AND p.version=q.pickup_version
                 WHERE q.environment=? AND q.instance_id=? AND q.state='OPEN' AND q.outbox_id IS NULL
-                  AND q.reminder_at<=? AND q.send_until>? AND profile.preferences_json->>'ATTENDANCE_REMINDERS'='true'
+                  AND q.reminder_at<=? AND q.send_until>?
                   AND extract(isodow FROM q.local_date)=ANY(r.weekdays)
                   AND extract(isodow FROM q.local_date)=ANY(m.weekdays)
                   AND l.valid_from<=? AND (l.valid_until IS NULL OR l.valid_until>?)
@@ -139,7 +139,7 @@ final class WaAttendanceReminders {
                   JOIN wa.profile profile ON profile.identity_id=a.passenger_id
                   WHERE a.id=? AND a.state='PENDING' AND a.question_ref=? AND o.state='PLANNED' AND o.calendar_eligible
                     AND extract(isodow FROM o.local_date)=ANY(m.weekdays)
-                    AND profile.status='ACTIVE' AND profile.preferences_json->>'ATTENDANCE_REMINDERS'='true'
+                    AND profile.status='ACTIVE'
                     AND l.valid_from<=? AND (l.valid_until IS NULL OR l.valid_until>?)
                     AND p.valid_from<=? AND (p.valid_until IS NULL OR p.valid_until>?)
                     AND NOT EXISTS(SELECT 1 FROM wa.conversation_state c

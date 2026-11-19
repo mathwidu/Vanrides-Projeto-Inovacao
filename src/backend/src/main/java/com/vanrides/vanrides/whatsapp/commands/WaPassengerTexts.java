@@ -20,8 +20,6 @@ final class WaPassengerTexts {
             "Não consegui usar esse ponto. Envie a localização pelo WhatsApp do celular.\n\n";
     static final WaPrompt APPROACH =
             WaPrompt.yesNo("Você deseja receber mensagens quando a van estiver se aproximando?");
-    static final WaPrompt REMINDER =
-            WaPrompt.yesNo("Você deseja receber lembretes para informar sua presença?");
 
     private WaPassengerTexts() {}
 
@@ -79,7 +77,6 @@ final class WaPassengerTexts {
                         + " que você escolher. Depois disso, você escolhe quais avisos quer receber."
                         + "\n\nSe você concorda, responda ACEITO para continuar.";
             case "PREF_APPROACH" -> APPROACH.text();
-            case "PREF_REMINDER" -> REMINDER.text();
             case "ROUTINES" -> routines(draft);
             case "DAYS" -> days(draft);
             case "POINT" -> points(draft);
@@ -122,10 +119,9 @@ final class WaPassengerTexts {
                     sections.add(String.join("\n\n", lines));
                 }
                 if (!draft.path("addingRoutines").asBoolean()) sections.add(
-                        "Avisos de aproximação: "
+                        "Avisos de chegada da van: "
                                 + (draft.path("approachMessages").asBoolean() ? "sim" : "não")
-                                + "\nLembretes de presença: "
-                                + (draft.path("attendanceReminders").asBoolean() ? "sim" : "não"));
+                                + "\nVocê recebe um lembrete antes de cada viagem para informar se vai.");
             }
             case "PROPOSE_PICKUP" ->
                     sections.add(
@@ -188,7 +184,8 @@ final class WaPassengerTexts {
             sections.add("Se estiver tudo certo, envie CONFIRMAR em até 5 minutos. O motorista vai conferir seu pedido.");
             sections.add("Para mudar alguma informação, envie AJUSTAR. O cadastro recomeça pelo seu nome."
                     + (draft.path("addingRoutines").asBoolean() ? " Seus avisos e trajetos anteriores serão mantidos."
-                    : " Para escolher avisos, envie AVISOS TODOS, AVISOS CHEGADA, AVISOS PRESENÇA ou AVISOS NENHUM."));
+                    : draft.path("approachMessages").asBoolean() ? " Para não receber, envie AVISOS NENHUM."
+                    : " Para receber um aviso quando a van estiver chegando, envie AVISOS CHEGADA."));
         } else {
             String approval = approvalReply(action);
             String confirm = "Para confirmar este resumo em até 5 minutos, responda CONFIRMAR"
