@@ -69,7 +69,8 @@ class WaTeamPassengerNoticeDeliveryIntegrationTest {
     void approvalNoticeIsAuthorizedForThePassengerAliasWithTheExactText() {
         UUID box = notice(Decision.APPROVE_POINT, "APPROVE_TEST_POINT");
         String text = storedText(box);
-        assertTrue(text.startsWith("Seu ponto foi aprovado."), text);
+        assertTrue(text.startsWith("O motorista aprovou a sua solicitação da(s) rota(s):\n\n• "), text);
+        assertFalse(text.contains("Os outros trajetos foram mantidos"), text);
         var reservation = fixture.conversation.authorize(lease(box));
         assertEquals(address(), reservation.path("recipient").path("address").asText());
         assertEquals(text, reservation.path("content").path("text").asText());

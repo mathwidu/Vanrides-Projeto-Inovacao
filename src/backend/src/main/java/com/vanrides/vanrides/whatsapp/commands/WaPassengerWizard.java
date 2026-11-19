@@ -68,7 +68,7 @@ final class WaPassengerWizard {
         String text = text(event);
         ObjectNode draft = old.deepCopy();
         draft.remove("confirmation");
-        if (text.equals("abandonar")) {
+        if (text.equals("abandonar") || text.equals("sair")) {
             return ok(WaPassengerDraftStore.json());
         }
         if (actor.role().equals("DRIVER")) {

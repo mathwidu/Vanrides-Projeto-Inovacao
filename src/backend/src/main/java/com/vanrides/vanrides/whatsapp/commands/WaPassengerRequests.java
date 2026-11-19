@@ -87,7 +87,9 @@ final class WaPassengerRequests {
             data.jdbc.update("UPDATE wa.profile SET preferences_json=preferences_json||?::jsonb WHERE identity_id=?", preferences.toString(), passenger);
         }
         return new WaPassengerMutations.Result(link, notification, draft.path("action").asText().equals("REQUEST_LINK") ? "REQUESTED" : "POINT_CHANGE",
-                pending ? "Você entrou com o motorista. O pedido foi enviado para conferir os pontos e preparar a ordem. Seus trajetos anteriores foram mantidos."
+                pending ? (draft.path("action").asText().equals("REQUEST_LINK")
+                        ? "Cadastro solicitado! O pedido foi enviado ao motorista para validação."
+                        : "Você entrou com o motorista. O pedido foi enviado para conferir os pontos e preparar a ordem. Seus trajetos anteriores foram mantidos.")
                         : "Trajetos incluídos com os pontos que você escolheu. Seus avisos foram mantidos. O motorista precisa preparar a ordem dos novos trajetos.",
                 (pending ? "Confira os embarques de " : "Prepare a ordem dos novos trajetos de ") + draft.path("passengerName").asText()
                         + ".\n\n" + data.selectionSummary(link) + "\n\n" + (pending ? "Envie REVISAR PEDIDO para conferir um ponto por vez." : "Confira a ordem dos trajetos antes da saída."));

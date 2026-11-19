@@ -265,6 +265,21 @@ class WaPassengerWizardIntegrationTest {
     }
 
     @Test
+    void daysQuestionAndRequestConfirmationUseTheSignupWording() {
+        UUID passenger = fixture.passenger();
+        fixture.open(passenger, code);
+        fixture.send(passenger, "Nome sintético");
+        fixture.send(passenger, "ACEITO");
+        var days = fixture.send(passenger, "ALTERAR DIAS");
+        assertTrue(days.text().contains("Em quais dias você irá usar o transporte?"), days.text());
+        fixture.send(passenger, "todos os dias");
+        var review = fixture.pin(passenger, -12.25, 34.5);
+        var request = fixture.confirm(passenger, review);
+        assertTrue(request.text().contains("Cadastro solicitado! O pedido foi enviado ao motorista para validação."),
+                request.text());
+    }
+
+    @Test
     void confirmingWithoutAnyAvisosCommandKeepsAttendanceRemindersOnAndApproachMessagesOff() {
         UUID passenger = fixture.passenger();
         fixture.open(passenger, code);
