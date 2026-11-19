@@ -50,7 +50,7 @@ export async function runRedmiScenarios(runtime) {
   const waitUntil=async(check,ms,code)=>{const end=Date.now()+ms;do{interruption.assertActive();if(await check())return;await sleep(500);}while(Date.now()<end);demand(false,code);};
   try {
     proxy=await startTlsProxy(tls,{runLab:true,onPairingBegin:o=>observed.set(o.pairingId,o.jkt)});
-    const t=fixtureTimes();await registerCohort(chat,t.schedules,t.zone,{remindersForFirst:false});
+    const t=fixtureTimes();await registerCohort(chat,t.schedules,t.zone);
     const menu=await send('ROTINAS','ADVANCE_DRIVER_SETUP'),n=/Rotina ([1-9][0-9]*): Ida escolar;/u.exec(menu.reply)?.[1];
     demand(n,'RUN_ROUTINE_NOT_LISTED');await send('ORDEM '+n,'ADVANCE_DRIVER_SETUP');
     await chat.confirm(driver,await send('1,2','ADVANCE_DRIVER_SETUP'),'SET_STOP_ORDER');

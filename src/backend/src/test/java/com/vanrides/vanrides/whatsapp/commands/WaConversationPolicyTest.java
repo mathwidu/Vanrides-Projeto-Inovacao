@@ -67,14 +67,23 @@ class WaConversationPolicyTest {
         assertThat(policy.isHelp(event("AJUDA\u00A0!\uFEFF"))).isFalse();
         assertThat(policy.explicitSupport(event("FALAR COM SUPORTE !"))).isFalse();
     }
-    @Test void readyPassengerHelpAndRegistrationFaqExplainTheFourExplicitNoticeChoices() {
+    @Test void readyPassengerHelpAndRegistrationFaqExplainOnlyTheArrivalNoticeChoices() {
         for (String text : List.of(WaConversationResponses.text("HELP", "READY", "PASSENGER"),
                 WaConversationResponses.faq(WaConversationResponses.Question.REGISTRATION, "READY", "PASSENGER"))) {
-            assertThat(text).contains("LIGAR AVISOS CHEGADA", "DESLIGAR AVISOS CHEGADA",
-                "LIGAR AVISOS PRESENÇA", "DESLIGAR AVISOS PRESENÇA");
+            assertThat(text).contains("Para escolher os avisos de chegada da van, envie LIGAR AVISOS CHEGADA ou DESLIGAR AVISOS CHEGADA.")
+                .doesNotContain("PRESENÇA");
         }
         assertThat(WaConversationResponses.text("HELP", "READY", "DRIVER")).doesNotContain("LIGAR AVISOS");
         assertThat(WaConversationResponses.text("HELP", "ASK_NOTICE", "PASSENGER")).doesNotContain("LIGAR AVISOS");
+    }
+    @Test void onlyTheArrivalNoticeTextsAreAPreferenceCommand() {
+        var preferences = new WaPreferenceConversation(null, null);
+        for (String text : List.of("LIGAR AVISOS CHEGADA", "desligar avisos chegada!")) {
+            assertThat(preferences.recognizes(event(text))).as(text).isTrue();
+        }
+        for (String text : List.of("LIGAR AVISOS PRESENÇA", "DESLIGAR AVISOS PRESENÇA", "LIGAR AVISOS", "AVISOS TODOS")) {
+            assertThat(preferences.recognizes(event(text))).as(text).isFalse();
+        }
     }
     @Test void passengerAttendanceFaqAndReadyHelpPointToTheReminderReply() {
         String reminder = "Antes de cada viagem você recebe um lembrete. Responda o lembrete com VOU ou NÃO VOU. "

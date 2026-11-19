@@ -176,7 +176,7 @@ o calendário e depois as perguntas devidas. A chamada retorna `status`,
 `calendarProcessed` e `reminderProcessed`. O cursor fica no worker. A API
 deduplica cada efeito e continua procurando itens pendentes após reinício.
 `ATTENDANCE_REMINDER` segue o mesmo fluxo de reserva, autorização e comprovação
-do resultado no W06. O relógio da API e a preferência atual limitam cada envio.
+do resultado no W06. O relógio da API limita cada envio; a preferência do passageiro não desliga o lembrete.
 
 O W05 usa o mesmo `POST /v1/process-inbox` sem corpo de domínio que W02 e W03.
 A inbox identifica o motorista; o backend resolve a ocorrência, a pessoa e a

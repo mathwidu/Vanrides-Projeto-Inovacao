@@ -17,8 +17,7 @@ final class WaPassengerEdit {
                 .put("routePoints", true).put("editingPickup", true).put("simpleSignup", true).put("stage", "EDIT_ROUTINE");
         var preferences = data.jdbc.queryForObject("SELECT preferences_json::text FROM wa.profile WHERE identity_id=?",
                 (rs,row)->WaJson.object(rs.getString(1)), actor.identityId());
-        draft.put("approachMessages", preferences.path("APPROACH_MESSAGES").asBoolean())
-                .put("attendanceReminders", preferences.path("ATTENDANCE_REMINDERS").asBoolean());
+        draft.put("approachMessages", preferences.path("APPROACH_MESSAGES").asBoolean());
         var choices = new WaPassengerReviewStore(data).selections(UUID.fromString(draft.path("linkId").asText()), null);
         WaPassengerAnswers.catalogue(draft, "editChoices", choices);
         if (choices.size()==1) choose(draft, "1");

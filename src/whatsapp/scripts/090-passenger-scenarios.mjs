@@ -61,7 +61,8 @@ export async function runPassengerScenarios(runtime) {
       && memberships('ACTIVE') === 0 && mapPoint(sent.peer)?.every(value => value === 0)
       && sent.peer.includes('Lia Exemplo') && sent.peer.includes('Ida escolar'), 'PASSENGER_REVIEW_SCOPE_INVALID');
     demand(tools.count(`SELECT count(*) FROM wa.profile WHERE identity_id=${quote(passenger.actor)}
-      AND notice_version='wa-mvp-v1' AND preferences_json @> '{"APPROACH_MESSAGES":true,"ATTENDANCE_REMINDERS":false}'::jsonb;`) === 1
+      AND notice_version='wa-mvp-v1' AND preferences_json @> '{"APPROACH_MESSAGES":true}'::jsonb
+      AND NOT preferences_json ? 'ATTENDANCE_REMINDERS';`) === 1
       && tools.count(`SELECT count(*) FROM wa.pickup_point p JOIN wa.integration_inbox e
         ON e.id=p.source_inbox_event_id AND e.identity_id=p.passenger_id
         WHERE p.passenger_id=${quote(passenger.actor)} AND e.normalized_kind='PIN' AND e.instance_id=${quote(runtime.instance)};`) === 1,
@@ -122,7 +123,7 @@ export async function runPassengerScenarios(runtime) {
     await p('PASSAGEIRO ' + secondCode);
     // Existing name and notice are retained. The passenger can choose a different direction and notifications.
     for (const msg of ['2', '2,4', 'PONTO 1']) await p(msg);
-    await confirm(passenger, await p('AVISOS PRESENÇA'), 'REQUEST_LINK', { notify: driver });
+    await confirm(passenger, await p('AVISOS NENHUM'), 'REQUEST_LINK', { notify: driver });
     await review('PASSAGEIROS');
     const rejected = await confirm(driver, await review('RECUSAR 1'), 'CLOSE_LINK', { notify: passenger });
     demand(rejected.peer && !mapPoint(rejected.peer) && links('REJECTED') === 1 && links('APPROVED') === 0

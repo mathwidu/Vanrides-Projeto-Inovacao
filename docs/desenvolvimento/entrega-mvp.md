@@ -65,8 +65,10 @@ o corte conferido; novos merges atualizam a API e exigem nova conferência.
 O recibo usa prova da própria chave retida apenas para conferir um ACK terminal
 já gravado. A validade/revogação dos tokens permanece; a rota não autoriza GPS,
 nova coleta ou renovação. O passageiro já cadastrado pode mudar os avisos de
-chegada e os lembretes de presença por comando explícito posterior, preservando
-o aceite e os padrões do cadastro.
+chegada por comando explícito posterior (`LIGAR AVISOS CHEGADA` ou
+`DESLIGAR AVISOS CHEGADA`), preservando o aceite e os padrões do cadastro. Os
+lembretes de presença são sempre enviados antes de cada viagem e não são
+configuráveis.
 
 A consulta atual das issues encontrou 65 MVP, todas abertas e nenhuma fechada.
 A estimativa anterior de 90% do código e 80% da entrega descreveu um corte

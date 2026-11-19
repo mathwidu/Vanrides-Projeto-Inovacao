@@ -253,7 +253,7 @@ export async function runSession(base, attemptId) {
       delivery: context.credentials[2], job: context.credentials[3], apiKey, assertActive });
     await worker.start();
     chat = passengerConversation({ ...context, input, tools, worker, provider, interruption });
-    const fixture = fixtureTimes(); await registerCohort(chat, fixture.schedules, fixture.zone, { remindersForFirst: false });
+    const fixture = fixtureTimes(); await registerCohort(chat, fixture.schedules, fixture.zone);
     const menu = await chat.send(chat.driver, 'ROTINAS', 'ADVANCE_DRIVER_SETUP'), n = /Rotina ([1-9][0-9]*): Ida escolar;/u.exec(menu.reply)?.[1];
     demand(n, 'RUN_ROUTINE_NOT_LISTED'); await chat.send(chat.driver, 'ORDEM ' + n, 'ADVANCE_DRIVER_SETUP');
     await chat.confirm(chat.driver, await chat.send(chat.driver, '1,2', 'ADVANCE_DRIVER_SETUP'), 'SET_STOP_ORDER');

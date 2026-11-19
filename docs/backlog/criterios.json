@@ -580,7 +580,7 @@
       ],
       "acceptanceCriteria": [
         "No fuso configurado, o lembrete fica elegível às 20h do dia anterior.",
-        "A pergunta identifica a ocorrência correta e respeita a preferência de recebimento.",
+        "A pergunta identifica a ocorrência correta e vai para todo passageiro elegível, sem depender de preferência.",
         "Reexecução ou reinício não cria outra pergunta para a mesma ocorrência."
       ],
       "proofType": "Laboratório",

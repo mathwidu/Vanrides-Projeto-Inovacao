@@ -44,10 +44,6 @@ class WaPassengerWizardTest {
                 "Você deseja receber mensagens quando a van estiver se aproximando?\n\nResponda"
                         + " Sim ou Não.",
                 WaPassengerTexts.APPROACH.text());
-        assertEquals(
-                "Você deseja receber lembretes para informar sua presença?\n\nResponda Sim ou"
-                        + " Não.",
-                WaPassengerTexts.REMINDER.text());
     }
 
     @Test

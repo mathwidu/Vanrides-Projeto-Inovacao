@@ -14,7 +14,7 @@ final class WaCommandPayloads {
         switch (type) {
             case "SET_PREFERENCE" -> {
                 WaJson.fields(payload, "preference", "enabled");
-                if (!Set.of("APPROACH_MESSAGES", "ATTENDANCE_REMINDERS").contains(WaJson.text(payload, "preference", 1, 32))
+                if (!WaJson.text(payload, "preference", 1, 32).equals("APPROACH_MESSAGES")
                         || !payload.path("enabled").isBoolean()) throw WaProblem.invalid();
             }
             case "ADVANCE_DRIVER_SETUP", "ADVANCE_PASSENGER_SETUP", "ADVANCE_ATTENDANCE", "ADVANCE_RUN_SETUP", "GET_DRIVER_LOCATION" -> WaJson.fields(payload);

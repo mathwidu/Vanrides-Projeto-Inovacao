@@ -16,16 +16,22 @@ test('an active passenger can explicitly enable arrival notices using the offere
   assert.doesNotThrow(() => validateDecision(expected, context()));
 });
 
-test('the other three explicit choices preserve preference identity and the requested boolean', () => {
-  for (const [text, preference, enabled] of [
-    ['DESLIGAR AVISOS CHEGADA', 'APPROACH_MESSAGES', false],
-    ['LIGAR AVISOS PRESENÇA', 'ATTENDANCE_REMINDERS', true],
-    ['\uFEFFDESLIGAR\u00A0AVISOS PRESENÇA!', 'ATTENDANCE_REMINDERS', false],
+test('the explicit disable choice preserves the preference identity and the requested boolean', () => {
+  for (const [text, enabled] of [
+    ['DESLIGAR AVISOS CHEGADA', false],
+    ['\uFEFFDESLIGAR\u00A0AVISOS CHEGADA!', false],
   ]) {
     const result = decideDeterministically(message(text), context());
-    assert.deepEqual(result, { kind: 'COMMAND', commandType: 'SET_PREFERENCE', payload: { preference, enabled } });
+    assert.deepEqual(result, { kind: 'COMMAND', commandType: 'SET_PREFERENCE', payload: { preference: 'APPROACH_MESSAGES', enabled } });
     assert.doesNotThrow(() => validateDecision(result, context()));
   }
+});
+
+test('presence reminder phrases are no longer a preference command and the payload is rejected', () => {
+  for (const text of ['LIGAR AVISOS PRESENÇA', 'DESLIGAR AVISOS PRESENÇA', '\uFEFFDESLIGAR\u00A0AVISOS PRESENÇA!', 'AVISOS PRESENÇA', 'AVISOS TODOS'])
+    assert.notEqual(decideDeterministically(message(text), context()).commandType, 'SET_PREFERENCE');
+  const decision = { kind: 'COMMAND', commandType: 'SET_PREFERENCE', payload: { preference: 'ATTENDANCE_REMINDERS', enabled: true } };
+  assert.throws(() => validateDecision(decision, context()), /INVALID_DECISION/);
 });
 
 test('negated, compound and signup-only phrases never change post-signup preferences', () => {

@@ -61,9 +61,10 @@ próprias escolhas. [Política do WhatsApp Business](https://business.whatsapp.c
    pontos diferentes. Quando o bot oferecer, “MESMO PONTO” reutiliza um ponto
    aprovado por escolha explícita. Depois, confere trajetos, dias e locais no
    resumo e confirma o pedido. Para mudar algo, envia `AJUSTAR`: o cadastro
-   recomeça pelo nome. As escolhas de avisos anteriores são preservadas. Conta
-   nova começa com os lembretes de presença ligados e os avisos de chegada
-   desligados; no resumo, `AVISOS NENHUM` ou `AVISOS CHEGADA` mudam essa escolha.
+   recomeça pelo nome. As escolhas de avisos anteriores são preservadas. O
+   passageiro sempre recebe um lembrete antes de cada viagem para informar se
+   vai. Conta nova começa com os avisos de chegada da van desligados; no resumo,
+   `AVISOS CHEGADA` ou `AVISOS NENHUM` mudam essa escolha.
 3. O convite já autoriza entrar com aquele motorista. Falta conferir os pontos
    novos e a ordem dos embarques. O motorista envia `REVISAR PEDIDO`; se houver
    vários, escolhe o correto. No resumo, usa **Responder** e `APROVAR EMBARQUE`,
@@ -79,12 +80,11 @@ adicionar outro trajeto, sem encerrar o vínculo nem repetir os dados conhecidos
 O convite não troca silenciosamente de motorista. Cada convite continua
 individual, de um uso; não é um link público ilimitado.
 
-Depois de concluir o cadastro, use `LIGAR AVISOS CHEGADA` ou
-`DESLIGAR AVISOS CHEGADA` para a aproximação, e `LIGAR AVISOS PRESENÇA` ou
-`DESLIGAR AVISOS PRESENÇA` para os lembretes. Cada comando altera somente a
-escolha indicada e confirma o resultado; a outra permanece como estava.
-Termine ou abandone uma revisão em andamento antes de alterar esses avisos.
-Mensagens já enviadas podem chegar depois de desligar.
+O lembrete antes de cada viagem é sempre enviado e não pode ser desligado.
+Depois de concluir o cadastro, só os avisos de chegada da van podem ser
+ligados ou desligados, com `LIGAR AVISOS CHEGADA` ou `DESLIGAR AVISOS CHEGADA`.
+O bot confirma o resultado. Termine ou abandone uma revisão em andamento antes
+de alterar esse aviso. Mensagens já enviadas podem chegar depois de desligar.
 
 ## Corrigir o ponto ou retomar o cadastro
 

@@ -10,7 +10,7 @@ const pin = { locationMessage: { degreesLatitude: 0, degreesLongitude: 0 } };
 const cited = (text, id) => ({ extendedTextMessage: { text, contextInfo: { stanzaId: id } } });
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
-export async function registerCohort(chat, schedules = [['Ida escolar','IDA','06:00'],['Volta escolar','VOLTA','18:00']], zone = 'MANAUS', { remindersForFirst = true } = {}) {
+export async function registerCohort(chat, schedules = [['Ida escolar','IDA','06:00'],['Volta escolar','VOLTA','18:00']], zone = 'MANAUS') {
   const { send, confirm, driver, passenger, otherDriver: second } = chat;
   const driverStep = msg => send(driver, msg, 'ADVANCE_DRIVER_SETUP');
   await chat.bootstrap(driver, 'Alex Exemplo');
@@ -21,7 +21,7 @@ export async function registerCohort(chat, schedules = [['Ida escolar','IDA','06
   await driverStep('CONVIDAR PERSONALIZADO'); await driverStep('2');
   const invite = extractPassengerInviteCode((await confirm(driver, await driverStep('PADRÃO'), 'CREATE_INVITE')).reply);
   demand(invite, 'ATTENDANCE_INVITE_MISSING');
-  for (const [person, name, reminders] of [[passenger,'Lia Exemplo',remindersForFirst ? 'SIM' : 'NÃO'],[second,'Cris Exemplo','NÃO']]) {
+  for (const [person, name] of [[passenger,'Lia Exemplo'],[second,'Cris Exemplo']]) {
     const step = msg => send(person, msg, setup);
     for (const msg of ['PASSAGEIRO '+invite, name, 'ACEITO'])
       await step(msg);
@@ -31,7 +31,7 @@ export async function registerCohort(chat, schedules = [['Ida escolar','IDA','06
       question = await step('TODOS OS DIAS');
     }
     await step(pin);
-    await confirm(person, await step(reminders === 'SIM' ? 'AVISOS TODOS' : 'AVISOS CHEGADA'), 'REQUEST_LINK', { notify: driver });
+    await confirm(person, await step('AVISOS CHEGADA'), 'REQUEST_LINK', { notify: driver });
     const list = await send(driver, 'PASSAGEIROS', setup);
     const option = [1, 2].find(number => list.reply?.includes(`${number}: ${name} (solicitação)`));
     demand(option, 'ATTENDANCE_PASSENGER_REQUEST_MISSING');
@@ -70,7 +70,7 @@ export async function runAttendanceScenarios(runtime) {
     await registerCohort(chat);
     demand(count(`SELECT count(*) FROM wa.routine_member WHERE driver_id=${quote(driver.actor)} AND state='ACTIVE';`) === 4,
       'ATTENDANCE_COHORT_NOT_REGISTERED');
-    passed('driver_and_two_passengers_register_from_chat_with_independent_reminder_preferences');
+    passed('driver_and_two_passengers_register_from_chat_and_receive_the_reminder_without_choosing_it');
     // W04 evaluates link and pickup validity at the start of the selected minute.
     // The next scheduled tick is the first one guaranteed to include both new approvals.
     await interruption.wait(() => sleep(60300 - Date.now()%60000));
@@ -88,12 +88,12 @@ export async function runAttendanceScenarios(runtime) {
     demand(queued(destination.id) === 1, 'ATTENDANCE_DUE_REMINDER_NOT_QUEUED');
     const raw = tools.sql(`SELECT coalesce(json_agg(json_build_object('id',o.id,'text',o.payload_json->>'text',
       'person',q.passenger_id) ORDER BY o.created_at,o.id),'[]') FROM wa.message_outbox o JOIN wa.attendance_question q ON q.outbox_id=o.id
-      WHERE q.instance_id=${quote(instance)} AND o.purpose='REMINDER' AND o.state='PENDING';`, { recordOutput: false });
+      WHERE q.instance_id=${quote(instance)} AND q.passenger_id=${quote(passenger.actor)} AND o.purpose='REMINDER' AND o.state='PENDING';`, { recordOutput: false });
     const boxes = JSON.parse(raw);
-    demand(boxes.length >= 1 && boxes.every(box => box.person === passenger.actor), 'ATTENDANCE_OPTOUT_OR_RECIPIENT_INVALID');
+    demand(boxes.length >= 1, 'ATTENDANCE_RECIPIENT_INVALID');
     for (const box of boxes) await chat.deliverReminder(passenger, box);
     demand(submittedReminders() === boxes.length, 'ATTENDANCE_DELIVERIES_NOT_DURABLE');
-    passed('eligible_reminder_is_submitted_to_its_passenger_and_opted_out_passenger_remains_pending');
+    passed('eligible_reminder_is_submitted_to_its_passenger');
     await chat.restart(); await tick();
     demand((await worker.request('/v1/dispatch-one')).data.status === 'IDLE' && submittedReminders() === boxes.length,
       'ATTENDANCE_RESTART_REPEATED_REMINDER');
@@ -118,7 +118,7 @@ export async function runAttendanceScenarios(runtime) {
     await chat.send(passenger, 'NÃO VOU amanhã na ida', answer);
     demand(states(passenger,'NOT_GOING','OUTBOUND') === 1 && states(passenger,'PENDING','RETURN') === 1,
       'ATTENDANCE_CORRECTION_INVALID');
-    passed('explicit_absence_and_a_change_of_mind_update_one_occurrence_even_with_reminders_disabled');
+    passed('explicit_absence_and_a_change_of_mind_update_one_occurrence');
     await checkDriverSummary(chat, label, 'Confirmados 0. Não vão 2. Pendentes 0', ['Lia Exemplo — não vai', 'Cris Exemplo — não vai']);
     passed('driver_selects_a_dated_direction_and_receives_a_nominal_summary_with_pending_policy');
     const totals = chat.totals();

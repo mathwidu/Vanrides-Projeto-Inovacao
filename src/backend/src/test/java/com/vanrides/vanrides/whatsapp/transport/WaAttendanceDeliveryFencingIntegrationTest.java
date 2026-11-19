@@ -34,13 +34,12 @@ class WaAttendanceDeliveryFencingIntegrationTest {
     }
 
     @Test
-    void optOutBetweenClaimAndAuthorizationCancelsWithoutAnAttempt() {
+    void aFalseReminderPreferenceAfterClaimStillAllowsAuthorization() {
         var reminder = f.reminder();
         var lease = f.claim(reminder);
-        f.optOut(reminder.passenger());
-        assertThat(f.decision(lease).error()).isEqualTo(WaProblem.Code.ACTION_NOT_ALLOWED);
-        assertThat(f.state(reminder)).isEqualTo("CANCELED");
-        assertThat(f.attempts(reminder)).isZero();
+        f.declineReminders(reminder.passenger());
+        assertThat(f.authorize(lease).path("content").path("text").asText()).contains("VOU", "NÃO VOU");
+        assertThat(f.attempts(reminder)).isEqualTo(1);
     }
 
     @Test
@@ -69,7 +68,7 @@ class WaAttendanceDeliveryFencingIntegrationTest {
     }
 
     @Test
-    void waitingForAProfileRechecksItsCommittedOptOut() throws Exception {
+    void waitingForAProfileRechecksItsCommittedSuspension() throws Exception {
         var reminder = f.reminder();
         var lease = f.claim(reminder);
         var executor = Executors.newSingleThreadExecutor();
@@ -79,7 +78,7 @@ class WaAttendanceDeliveryFencingIntegrationTest {
                 f.h.jdbc.queryForList("SELECT identity_id FROM wa.profile WHERE identity_id=? FOR UPDATE", reminder.passenger());
                 future.set(executor.submit(() -> f.decision(lease)));
                 awaitProfileWait();
-                f.optOut(reminder.passenger());
+                f.suspend(reminder.passenger());
             });
             assertThat(future.get().get(10, TimeUnit.SECONDS).error()).isEqualTo(WaProblem.Code.ACTION_NOT_ALLOWED);
             assertThat(f.state(reminder)).isEqualTo("CANCELED");

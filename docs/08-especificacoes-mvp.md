@@ -593,7 +593,7 @@ F02 · Onda 1 · [Issue #51](https://github.com/mathwidu/Vanrides-Projeto-Inovac
 **Critérios de conclusão:**
 
 - [ ] No fuso configurado, o lembrete fica elegível às 20h do dia anterior.
-- [ ] A pergunta identifica a ocorrência correta e respeita a preferência de recebimento.
+- [ ] A pergunta identifica a ocorrência correta e vai para todo passageiro elegível, sem depender de preferência.
 - [ ] Reexecução ou reinício não cria outra pergunta para a mesma ocorrência.
 
 **Como testar (Laboratório):**

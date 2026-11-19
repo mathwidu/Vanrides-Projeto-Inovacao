@@ -186,7 +186,7 @@ class WaPassengerBusinessIntegrationTest {
         fixture.send(passenger, "ACEITO");
         fixture.send(passenger, "ALTERAR DIAS");
         var points = fixture.send(passenger, "1,3");
-        fixture.send(passenger, "AVISOS PRESENÇA");
+        fixture.send(passenger, "AVISOS CHEGADA");
         assertTrue(points.text().contains("PONTO 1: Portaria pública"));
         var selected = fixture.send(passenger, "PONTO 1");
         fixture.confirm(passenger, fixture.send(passenger, "PULAR"));

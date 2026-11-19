@@ -57,8 +57,7 @@ final class WaPassengerSignup {
         var preferences = data.jdbc.queryForObject(
                 "SELECT preferences_json::text FROM wa.profile WHERE identity_id=?",
                 (rs, row) -> WaJson.object(rs.getString(1)), actor.identityId());
-        draft.put("approachMessages", preferences.path("APPROACH_MESSAGES").asBoolean())
-                .put("attendanceReminders", preferences.path("ATTENDANCE_REMINDERS").asBoolean(true));
+        draft.put("approachMessages", preferences.path("APPROACH_MESSAGES").asBoolean());
         routes(draft);
         if (draft.path("routineChoices").size() == 1) {
             ObjectNode routine = draft.path("routineChoices").path(0).deepCopy();
@@ -74,17 +73,13 @@ final class WaPassengerSignup {
         catalogue(draft, "routineChoices", data.routines(driver(draft)));
     }
 
-    void legacyPreference(ObjectNode draft, String text, boolean approach) {
-        var answer = (approach ? WaPassengerTexts.APPROACH : WaPassengerTexts.REMINDER).answer(text);
+    void legacyPreference(ObjectNode draft, String text) {
+        var answer = WaPassengerTexts.APPROACH.answer(text);
         if (answer.isEmpty()) {
             return;
         }
-        draft.put(approach ? "approachMessages" : "attendanceReminders", answer.get().id().equals("YES"));
-        if (approach) {
-            draft.put("stage", "PREF_REMINDER");
-        } else {
-            routes(draft);
-        }
+        draft.put("approachMessages", answer.get().id().equals("YES"));
+        routes(draft);
     }
 
     void selectRoutines(ObjectNode draft, String text) {
@@ -119,9 +114,8 @@ final class WaPassengerSignup {
             draft.put("dayIndex", 0).put("stage", "DAYS");
             return true;
         }
-        if (List.of("avisos todos", "avisos chegada", "avisos presenca", "avisos nenhum").contains(text)) {
-            draft.put("approachMessages", text.equals("avisos todos") || text.equals("avisos chegada"))
-                    .put("attendanceReminders", text.equals("avisos todos") || text.equals("avisos presenca"));
+        if (List.of("avisos chegada", "avisos nenhum").contains(text)) {
+            draft.put("approachMessages", text.equals("avisos chegada"));
             return true;
         }
         if (stage.equals("REVIEW")) {

@@ -31,8 +31,7 @@ public final class WaConversationResponses {
     private static final String PAIRING = "Para compartilhar sua localização durante um trajeto, vincule o aplicativo VanRides Motorista. "
         + "Envie Conectar meu celular. Vou mandar um link e explicar como autorizar este aparelho, sem copiar códigos.";
     private static final String ATTENDANCE = "Antes de cada viagem você recebe um lembrete. Responda o lembrete com VOU ou NÃO VOU. Se não responder, você continua previsto na lista.";
-    static final String PREFERENCE_HELP = "Para escolher seus avisos, envie LIGAR AVISOS CHEGADA ou DESLIGAR AVISOS CHEGADA; "
-        + "para os lembretes, LIGAR AVISOS PRESENÇA ou DESLIGAR AVISOS PRESENÇA. Cada comando mantém a outra escolha.";
+    static final String PREFERENCE_HELP = "Para escolher os avisos de chegada da van, envie LIGAR AVISOS CHEGADA ou DESLIGAR AVISOS CHEGADA.";
 
     enum Question { PRODUCT, REGISTRATION, APP, ROUTINE, INVITE, START, ATTENDANCE, INVITES_ALLOWED, INVITES_STOPPED, OTHER }
 

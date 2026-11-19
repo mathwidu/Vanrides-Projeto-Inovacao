@@ -25,7 +25,7 @@ class WaPreferenceIntegrationTest {
     @Test void anAppliedPreferenceReplyCanBeClaimedAndAuthorizedOnlyForItsOwnPassenger() {
         UUID actor = passenger(), other = passenger();
         String recipient = c.string("SELECT alias_value FROM wa.identity_alias WHERE identity_id=?", actor);
-        c.h.jdbc.update("UPDATE wa.profile SET preferences_json='{\"APPROACH_MESSAGES\":true,\"ATTENDANCE_REMINDERS\":true}' WHERE identity_id=?", actor);
+        c.h.jdbc.update("UPDATE wa.profile SET preferences_json='{\"APPROACH_MESSAGES\":true}' WHERE identity_id=?", actor);
         var event = c.text(actor, "DESLIGAR AVISOS CHEGADA");
         var result = c.execute(event, "SET_PREFERENCE", preference("APPROACH_MESSAGES", false)).requireSuccess();
         assertThat(result.path("outcome").asText()).isEqualTo("APPLIED");
@@ -68,27 +68,47 @@ class WaPreferenceIntegrationTest {
         assertThat(c.string("SELECT display_name FROM wa.profile WHERE identity_id=?", actor)).isEqualTo("Pessoa sintética");
     }
 
-    @Test void fourExplicitChoicesPreserveTheOtherKeyAndMissingFalseRemainsTheDefault() {
+    @Test void twoExplicitChoicesPreserveOldKeysAndMissingFalseRemainsTheDefault() {
         UUID actor = passenger();
         assertThat(send(actor, "DESLIGAR AVISOS CHEGADA", "APPROACH_MESSAGES", false).path("outcome").asText()).isEqualTo("NO_CHANGE");
         assertThat(c.string("SELECT preferences_json::text FROM wa.profile WHERE identity_id=?", actor)).isEqualTo("{}");
-        send(actor, "LIGAR AVISOS PRESENÇA", "ATTENDANCE_REMINDERS", true);
+        c.h.jdbc.update("UPDATE wa.profile SET preferences_json='{\"ATTENDANCE_REMINDERS\":false}' WHERE identity_id=?", actor);
         send(actor, "LIGAR AVISOS CHEGADA", "APPROACH_MESSAGES", true);
-        send(actor, "\uFEFFDESLIGAR\u00A0AVISOS PRESENÇA!", "ATTENDANCE_REMINDERS", false);
         assertThat(c.string("SELECT preferences_json::text FROM wa.profile WHERE identity_id=?", actor))
             .contains("\"APPROACH_MESSAGES\": true", "\"ATTENDANCE_REMINDERS\": false");
-        send(actor, "DESLIGAR AVISOS CHEGADA", "APPROACH_MESSAGES", false);
+        send(actor, "\uFEFFDESLIGAR\u00A0AVISOS CHEGADA!", "APPROACH_MESSAGES", false);
         assertThat(c.string("SELECT preferences_json::text FROM wa.profile WHERE identity_id=?", actor))
             .contains("\"APPROACH_MESSAGES\": false", "\"ATTENDANCE_REMINDERS\": false");
     }
 
-    @Test void theAuthenticatedMessageCannotBeInvertedOrUsedToChangeAnotherPreference() {
+    @Test void presenceReminderTextsAreNotAPreferenceCommandAndNeverChangeTheProfile() {
         UUID actor = passenger();
-        for (ObjectNode forged : new ObjectNode[] {preference("APPROACH_MESSAGES", false), preference("ATTENDANCE_REMINDERS", true)}) {
-            var event = c.text(actor, "LIGAR AVISOS CHEGADA");
-            assertThat(c.execute(event, "SET_PREFERENCE", forged).error()).isEqualTo(WaProblem.Code.ACTION_NOT_ALLOWED);
+        for (String text : new String[] {"LIGAR AVISOS PRESENÇA", "DESLIGAR AVISOS PRESENÇA"}) {
+            var event = c.text(actor, text);
+            assertThat(c.commands.context(c.worker, event.id(), event.token()).path("allowedCommands").toString())
+                .doesNotContain("SET_PREFERENCE");
+            assertThat(c.execute(event, "SET_PREFERENCE", preference("APPROACH_MESSAGES", true)).error())
+                .isEqualTo(WaProblem.Code.ACTION_NOT_ALLOWED);
             c.finish(event);
         }
+        assertThat(c.string("SELECT preferences_json::text FROM wa.profile WHERE identity_id=?", actor)).isEqualTo("{}");
+        assertThat(c.number("SELECT version FROM wa.profile WHERE identity_id=?", actor)).isEqualTo(1);
+    }
+
+    @Test void thePresenceReminderPreferenceIsNoLongerAcceptedAsAPayload() {
+        UUID actor = passenger();
+        var event = c.text(actor, "LIGAR AVISOS CHEGADA");
+        assertThatThrownBy(() -> c.execute(event, "SET_PREFERENCE", preference("ATTENDANCE_REMINDERS", true)))
+            .isInstanceOfSatisfying(WaProblem.class, error -> assertThat(error.code()).isEqualTo(WaProblem.Code.INVALID_PAYLOAD));
+        assertThat(c.string("SELECT preferences_json::text FROM wa.profile WHERE identity_id=?", actor)).isEqualTo("{}");
+    }
+
+    @Test void theAuthenticatedMessageCannotBeInverted() {
+        UUID actor = passenger();
+        var forged = preference("APPROACH_MESSAGES", false);
+        var event = c.text(actor, "LIGAR AVISOS CHEGADA");
+        assertThat(c.execute(event, "SET_PREFERENCE", forged).error()).isEqualTo(WaProblem.Code.ACTION_NOT_ALLOWED);
+        c.finish(event);
         var stale = c.textAt(actor, "LIGAR AVISOS CHEGADA", c.h.clock.now().minusSeconds(301));
         assertThat(c.execute(stale, "SET_PREFERENCE", preference("APPROACH_MESSAGES", true)).error()).isEqualTo(WaProblem.Code.INTENT_EXPIRED);
         assertThat(c.string("SELECT preferences_json::text FROM wa.profile WHERE identity_id=?", actor)).isEqualTo("{}");

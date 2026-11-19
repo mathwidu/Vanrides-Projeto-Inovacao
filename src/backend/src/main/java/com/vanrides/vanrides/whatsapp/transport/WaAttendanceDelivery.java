@@ -70,7 +70,6 @@ final class WaAttendanceDelivery {
                 AND link.valid_from<=? AND (link.valid_until IS NULL OR link.valid_until>?)
                 AND point.valid_from<=? AND (point.valid_until IS NULL OR point.valid_until>?)
                 AND passenger.role='PASSENGER' AND passenger.status='ACTIVE' AND passenger.notice_version=?
-                AND passenger.preferences_json->>'ATTENDANCE_REMINDERS'='true'
                 AND driver.role='DRIVER' AND driver.status='ACTIVE' AND driver.driver_enabled AND driver.notice_version=?
                 AND ((pi.test_cohort_id IS NULL AND di.test_cohort_id IS NULL AND ?=false)
                   OR (pi.test_cohort_id=di.test_cohort_id AND cohort.environment=?))

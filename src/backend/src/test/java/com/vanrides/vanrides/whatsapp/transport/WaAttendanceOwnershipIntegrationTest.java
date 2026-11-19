@@ -40,16 +40,13 @@ class WaAttendanceOwnershipIntegrationTest {
         assertEquals("PREF_APPROACH", f.draft(passenger).path("stage").asText());
     }
 
-    @Test void yesAndNoRemainWithThePassengerPreferencesDuringRealOnboarding() {
+    @Test void yesRemainsWithThePassengerPreferencesDuringRealOnboarding() {
         var approach = f.send(passenger, "SIM");
         assertEquals("ADVANCE_PASSENGER_SETUP", f.command(approach.context()));
         assertFalse(approach.context().has("attendanceChoice"));
-        assertEquals("PREF_REMINDER", f.draft(passenger).path("stage").asText());
-        var reminder = f.send(passenger, "NÃO");
-        assertEquals("ADVANCE_PASSENGER_SETUP", f.command(reminder.context()));
         assertEquals("ROUTINES", f.draft(passenger).path("stage").asText());
         assertTrue(f.draft(passenger).path("approachMessages").asBoolean());
-        assertFalse(f.draft(passenger).path("attendanceReminders").asBoolean());
+        assertFalse(f.draft(passenger).has("attendanceReminders"));
         assertEquals(0, f.conversation.number("SELECT count(*) FROM wa.attendance"));
     }
 
@@ -64,7 +61,7 @@ class WaAttendanceOwnershipIntegrationTest {
         assertEquals(old, f.draft(passenger));
         assertEquals(0, f.conversation.number("SELECT count(*) FROM wa.attendance"));
         f.send(passenger, "SIM");
-        assertEquals("PREF_REMINDER", f.draft(passenger).path("stage").asText());
+        assertEquals("ROUTINES", f.draft(passenger).path("stage").asText());
     }
 
     @Test void aBareAnswerDuringAPickupCorrectionStaysWithTheWizard() {
